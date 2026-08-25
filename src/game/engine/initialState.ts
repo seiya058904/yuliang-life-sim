@@ -76,6 +76,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     gigs: [],
     employmentHistory: [],
     monthlyHighlights: [],
+    lifeHistory: [],
   };
   state.vacancies = generateVacancies(state, content, balance);
   return state;

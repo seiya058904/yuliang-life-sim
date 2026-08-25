@@ -1,5 +1,5 @@
 import type { BalanceConfig } from '../balance/config';
-import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, PlannedActivity } from '../content/contracts';
+import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity } from '../content/contracts';
 import { evaluateCondition } from './conditions';
 import { calculateNetWorth } from './economy';
 import { applyContentEffects, cloneGameState, itemCost, refreshUnlocks } from './effects';
@@ -9,6 +9,7 @@ import { groupForCategory, recordStateFinancialEntry, syncLegacyMonthlyLedger } 
 import { investmentUnitValue } from './investments';
 import { applyAttributeDelta } from './attributes';
 import { deterministicApplicationDecision, employmentKind, evaluateApplicationCompetitiveness } from './careers';
+import { appendLifeRecord } from './lifeHistory';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
 const find = <T extends { id: string }>(entries: readonly T[], id: string): T | undefined => entries.find((entry) => entry.id === id);
@@ -37,6 +38,20 @@ function recruiterForJob(job: JobDefinition, content: ContentRegistry): ContentI
 function reserveRequired(state: GameState, content: ContentRegistry): number {
   const home = find(content.housing, state.housing.housingId);
   return state.housing.mode === 'rent' ? home?.rentPerDay ?? 0 : 0;
+}
+
+function addLifeRecord(state: GameState, record: Omit<LifeRecordEntry, 'id' | 'day'> & { id?: string; day?: number }): void {
+  const source = (record.sourceId ?? record.title).replace(/[^a-zA-Z0-9_.-]+/g, '-').replace(/^-|-$/g, '') || record.category;
+  const nextRecord: LifeRecordEntry = {
+    id: record.id ?? `life.${record.category}.${source}.${record.day ?? state.time.day}.${(state.lifeHistory ?? []).length + 1}`,
+    day: record.day ?? state.time.day,
+    category: record.category,
+    title: record.title,
+    detail: record.detail,
+    sourceId: record.sourceId,
+    amount: record.amount,
+  };
+  state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], nextRecord);
 }
 
 export function dispatchGameAction(input: GameState, action: GameAction, content: ContentRegistry, balance: BalanceConfig): GameResult {
@@ -179,6 +194,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         state.acquiredSideJobs[job.id] = { jobId: job.id, acquiredDay: state.time.day, sourceApplicationId: application.applicationId };
         state.monthlyHighlights = [...(state.monthlyHighlights ?? []), { id: `side-job.${job.id}`, kind: 'side_job_acquired', day: state.time.day, label: job.name, sourceId: job.id }];
         application.status = 'accepted';
+        addLifeRecord(state, { category: 'career', title: `获得${job.name}资格`, detail: '长期兼职资格已加入我的兼职', sourceId: job.id, amount: application.salaryRange[0] });
         break;
       }
       if (employmentKind(job) === 'gig') return fail(input, '一次性零工需要在工作机会中安排');
@@ -197,6 +213,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         state.employment = { jobId: job.id, companyId: application.companyId, basePay: application.salaryRange[0], salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
       }
       state.monthlyHighlights = [...(state.monthlyHighlights ?? []), { id: `job.${application.applicationId}`, kind: 'new_job', day: state.time.day, label: job.name, sourceId: job.id }];
+      addLifeRecord(state, { category: 'career', title: `接受${job.name} Offer`, detail: `${application.companyId} · ${application.route}`, sourceId: job.id, amount: application.salaryRange[0] });
       break;
     }
     case 'start_recruitment': {
@@ -234,6 +251,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       }
       if (!state.unlockedJobIds.includes(job.id)) state.unlockedJobIds.push(job.id);
       state.activeRecruitment = undefined;
+      addLifeRecord(state, { category: 'career', title: `接受${job.name}工作邀请`, sourceId: job.id, amount: job.basePay });
       effects.push({ type: 'message', text: state.employment?.pendingJobId ? '工作邀请已接受，下周生效' : '工作邀请已接受' });
       break;
     }
@@ -304,6 +322,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (choice.nextEventId) state.pendingEventId = choice.nextEventId;
       if (choice.nextChainStage) state.chainStages[choice.nextChainStage.chainId] = choice.nextChainStage.stage;
       applyContentEffects(state, choice.effects, content, balance, effects);
+      addLifeRecord(state, { category: 'event', title: event.title, detail: choice.text, sourceId: event.id });
       state.pendingReward = {
         eventId: event.id,
         lines: choice.effects.map((effect) => describeRewardEffect(effect, content)),
@@ -350,6 +369,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         const category = item.financialCategory ?? (item.category === 'collectible' ? 'collectible_transfer' : 'shopping');
         const group = groupForCategory(category);
         recordStateFinancialEntry(state, { day: state.time.day, direction: group === 'income' ? 'income' : group === 'consumption' ? 'expense' : 'transfer', category, amount: itemCost(state, item) * quantity, label: group === 'asset_allocation' ? `资产配置 · ${item.name}` : `${item.name} · 购物消费`, sourceType: 'item', sourceId: item.id });
+        addLifeRecord(state, { category: 'purchase', title: `购买${item.name}`, detail: quantity > 1 ? `数量 ${quantity}` : undefined, sourceId: item.id, amount: -itemCost(state, item) * quantity });
       }
       effects.push({ type: 'cash', amount: -total, reason: '购物结算' });
       break;
@@ -378,6 +398,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!state.unlockedHousingIds.includes(home.id)) state.unlockedHousingIds.push(home.id);
       if (price) effects.push({ type: 'cash', amount: -price, reason: '住房购买' });
       if (price) recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'property_transfer', amount: price, label: `购买${home.name}`, sourceType: 'housing', sourceId: home.id });
+      addLifeRecord(state, { category: 'housing', title: action.mode === 'owned' ? `买下${home.name}` : `搬到${home.name}`, detail: action.mode === 'owned' ? '自有住房' : '租住', sourceId: home.id, amount: price ? -price : undefined });
       break;
     }
     case 'buy_business': {
@@ -388,6 +409,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       state.cash -= business.price;
       state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price };
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: business.price, label: `购买${business.name}`, sourceType: 'business', sourceId: business.id });
+      addLifeRecord(state, { category: 'business', title: `买入${business.name}`, sourceId: business.id, amount: -business.price });
       effects.push({ type: 'cash', amount: -business.price, reason: '购买生意' });
       break;
     }
@@ -410,6 +432,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       state.assets[action.assetId] = { assetId: asset.id, purchasePrice: asset.price, purchaseDay: state.time.day, currentValuation: asset.valuation };
       const assetCategory = asset.kind === 'rental' ? 'property_transfer' : asset.kind === 'collectible' ? 'collectible_transfer' : 'investment_transfer';
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: assetCategory, amount: asset.price, label: `购买${asset.name}`, sourceType: 'asset', sourceId: asset.id });
+      addLifeRecord(state, { category: 'asset', title: `买入${asset.name}`, sourceId: asset.id, amount: -asset.price });
       effects.push({ type: 'cash', amount: -asset.price, reason: '购买资产' });
       break;
     }
@@ -419,6 +442,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       state.cash += holding.currentValuation;
       delete state.assets[action.assetId];
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: holding.currentValuation, label: `出售资产`, sourceType: 'asset', sourceId: action.assetId });
+      addLifeRecord(state, { category: 'asset', title: `出售${content.assets.find((entry) => entry.id === action.assetId)?.name ?? '资产'}`, sourceId: action.assetId, amount: holding.currentValuation });
       effects.push({ type: 'cash', amount: holding.currentValuation, reason: '出售资产' });
       break;
     }
@@ -441,6 +465,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         lastValuationDay: state.time.day,
       };
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'investment_transfer', amount: total, label: `买入${investment.name}`, sourceType: 'investment', sourceId: investment.id });
+      addLifeRecord(state, { category: 'investment', title: `买入${investment.name}`, detail: `${action.units} 份`, sourceId: investment.id, amount: -total });
       effects.push({ type: 'cash', amount: -total, reason: '投资配置' });
       break;
     }
@@ -453,6 +478,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       state.cash -= option.cashCost;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'social', amount: option.cashCost, label: `${interaction.name} · ${option.label}`, sourceType: 'relationship', sourceId: interaction.id });
       applyContentEffects(state, option.effects ?? [], content, balance, effects);
+      addLifeRecord(state, { category: 'relationship', title: `${interaction.name} · ${option.label}`, sourceId: interaction.id, amount: option.cashCost ? -option.cashCost : undefined });
       effects.push({ type: 'message', text: `${interaction.name}完成，关系留下了新的进展` });
       break;
     }
@@ -472,6 +498,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: total, costBasis, label: `资产变现 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
       if (realized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: realized, cashDelta: 0, label: `已实现收益 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
       if (realized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized, cashDelta: 0, label: `已实现亏损 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
+      addLifeRecord(state, { category: 'investment', title: `卖出${investment.name}`, detail: `${action.units} 份`, sourceId: investment.id, amount: total });
       effects.push({ type: 'cash', amount: total, reason: '投资退出' });
       break;
     }

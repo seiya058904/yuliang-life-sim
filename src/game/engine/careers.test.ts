@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createInitialState } from './initialState';
-import { advanceCareerLifecycle, evaluateApplicationCompetitiveness, generateVacancies } from './careers';
+import { advanceCareerLifecycle, evaluateApplicationCompetitiveness, generateVacancies, requirementHints } from './careers';
 import { dispatchGameAction } from './actions';
 import { migrateGameState } from '../store/gameStore';
 
@@ -82,5 +82,43 @@ describe('career market', () => {
     const kept = dispatchGameAction(outcome.state, { type: 'choose_resignation', choice: 'stay' }, contentRegistry, balanceConfig);
 
     expect(kept.state.employment).toMatchObject({ negotiationStage: 1, salaryAdjustment: 5 });
+  });
+
+  it('explains recursive unmet requirements with concrete destinations and no satisfied duplicates', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 5);
+    state.ability = 10;
+    state.reputation = 3;
+    state.cash = 400;
+    state.relationships['character.seed-lin'] = 12;
+    state.inventory['item.seed-phone'] = 1;
+    state.unlockedCapabilities = [];
+    const baseJob = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!;
+    const job = {
+      ...baseJob,
+      abilityRequired: 8,
+      reputationRequired: 9,
+      requiredItems: ['item.seed-phone'],
+      requiredCapabilities: ['remote_work'],
+      requirements: {
+        type: 'all',
+        conditions: [
+          { type: 'cash_at_least', amount: 800 },
+          { type: 'relationship_at_least', characterId: 'character.seed-lin', amount: 30 },
+          { type: 'has_capability', capability: 'remote_work' },
+        ],
+      },
+    } as const;
+
+    const hints = requirementHints(job, state, contentRegistry);
+
+    expect(hints).toEqual([
+      expect.objectContaining({ requirementId: 'reputation', destinationView: 'work', currentValue: 3, requiredValue: 9 }),
+      expect.objectContaining({ requirementId: 'capability:remote_work', destinationView: 'shop', targetId: 'item.seed-laptop' }),
+      expect.objectContaining({ requirementId: 'cash:800', destinationView: 'wealth', currentValue: 400, requiredValue: 800 }),
+      expect.objectContaining({ requirementId: 'relationship:character.seed-lin', destinationView: 'relations', currentValue: 12, requiredValue: 30 }),
+    ]);
+    expect(hints.some((hint) => hint.requirementId === 'ability')).toBe(false);
+    expect(hints.filter((hint) => hint.requirementId === 'item:item.seed-phone')).toHaveLength(0);
+    expect(hints.filter((hint) => hint.requirementId === 'capability:remote_work')).toHaveLength(1);
   });
 });

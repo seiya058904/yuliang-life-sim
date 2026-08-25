@@ -27,6 +27,20 @@ describe('game store persistence', () => {
     expect(restored.weeklyPlan.days[3]).toBeDefined();
   });
 
+  it('migrates an old save without life history to the current version while preserving time and pausing', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    const oldSave = { ...state, version: 1, time: { day: 9, hour: 17, minute: 42 }, simulationMode: 'running' };
+    delete (oldSave as Partial<typeof oldSave>).lifeHistory;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify(oldSave));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.version).toBe(balanceConfig.saveVersion);
+    expect(restored.time).toEqual({ day: 9, hour: 17, minute: 42 });
+    expect(restored.simulationMode).toBe('paused');
+    expect(restored.lifeHistory).toEqual([]);
+  });
+
   it('does not persist animation-only effect data as authoritative state', () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
     const state = store.getState().game;

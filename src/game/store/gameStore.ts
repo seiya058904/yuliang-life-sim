@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { BalanceConfig } from '../balance/config';
-import type { ContentRegistry, GameAction, GameEffect, GameState, JobSchedule } from '../content/contracts';
+import type { ContentRegistry, GameAction, GameEffect, GameState, JobSchedule, LifeRecordEntry, ViewId } from '../content/contracts';
 import { calendarForDay } from '../engine/calendar';
 import { dispatchGameAction } from '../engine/actions';
 import { createInitialState } from '../engine/initialState';
@@ -14,11 +14,11 @@ export const SAVE_KEY = 'yuliang-save-v1';
 export interface GameStore {
   game: GameState;
   effects: GameEffect[];
-  activeView: 'life' | 'work' | 'shop' | 'wealth' | 'relations' | 'profile';
+  activeView: ViewId;
   lastError?: string;
   dispatch: (action: GameAction) => void;
   consumeEffects: () => void;
-  setView: (view: GameStore['activeView']) => void;
+  setView: (view: ViewId) => void;
   reset: (seed?: number) => void;
 }
 
@@ -39,6 +39,14 @@ function isWeeklyPlan(value: unknown): value is GameState['weeklyPlan'] {
       && ['study', 'side_job', 'free'].includes(String(day.day.kind))
       && ['study', 'side_job', 'free'].includes(String(day.evening.kind));
   });
+}
+
+function isLifeRecordEntry(value: unknown): value is LifeRecordEntry {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && Number.isInteger(value.day)
+    && ['career', 'purchase', 'housing', 'relationship', 'event', 'business', 'asset', 'investment'].includes(String(value.category))
+    && typeof value.title === 'string';
 }
 
 export function saveGameState(state: GameState): void {
@@ -109,6 +117,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     ? { month: candidate.calendar.month, nextSequence: Math.max(1, Number(candidate.financialLedger.nextSequence) || candidate.financialLedger.entries.length + 1), entries: candidate.financialLedger.entries }
     : emptyFinancialLedger(candidate.calendar.month, candidate.cash, candidate.monthlyLedger.netWorthStart);
   candidate.financialHistory = Array.isArray(candidate.financialHistory) ? candidate.financialHistory.slice(-12) : [];
+  candidate.lifeHistory = Array.isArray(candidate.lifeHistory) ? candidate.lifeHistory.filter(isLifeRecordEntry) : [];
   candidate.ambientLog = Array.isArray(candidate.ambientLog) ? candidate.ambientLog.slice(-20) : [];
   candidate.storylineStages = candidate.storylineStages ?? {};
   const legacyUnlockedJobs = [...candidate.unlockedJobIds];

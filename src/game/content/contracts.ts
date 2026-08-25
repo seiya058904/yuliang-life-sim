@@ -163,18 +163,37 @@ export interface JobOpportunityState {
   salaryRange: readonly [number, number];
 }
 
-export interface RequirementHint {
+export type ViewId = 'life' | 'work' | 'shop' | 'wealth' | 'relations' | 'profile';
+
+export interface AcquisitionHint {
   requirementId: string;
   label: string;
-  source: 'activity' | 'starter_job' | 'item' | 'capability' | 'relationship' | 'goal';
-  targetId?: ContentId;
   actionLabel: string;
+  destinationView: ViewId;
+  targetId?: ContentId;
+  currentValue?: number;
+  requiredValue?: number;
 }
+
+/** @deprecated Use AcquisitionHint. */
+export type RequirementHint = AcquisitionHint;
 
 export interface AcquiredSideJobState { jobId: ContentId; acquiredDay: number; sourceApplicationId?: string; }
 export interface GigOpportunityState { id: ContentId; jobId: ContentId; validFromDay: number; expiresDay: number; executableDay: number; startMinute: number; endMinute: number; pay: number; source: string; }
 export interface EmploymentHistoryEntry { jobId: ContentId; companyId?: ContentId; startedDay?: number; endedDay?: number; finalPay: number; reason?: string; migrated?: boolean; }
 export interface MonthlyHighlight { id: string; kind: 'new_job' | 'new_contact' | 'side_job_acquired' | 'gig_completed' | 'major_purchase' | 'new_asset' | 'attribute_milestone' | 'storyline_completed'; day: number; label: string; sourceId?: ContentId; }
+
+export type LifeRecordCategory = 'career' | 'purchase' | 'housing' | 'relationship' | 'event' | 'business' | 'asset' | 'investment';
+
+export interface LifeRecordEntry {
+  id: string;
+  day: number;
+  category: LifeRecordCategory;
+  title: string;
+  detail?: string;
+  sourceId?: ContentId;
+  amount?: number;
+}
 
 export type ItemCategory = 'consumable' | 'technology' | 'clothing' | 'furniture' | 'leisure_item' | 'entertainment' | 'luxury' | 'collectible';
 
@@ -657,6 +676,7 @@ export interface GameState {
   gigs?: GigOpportunityState[];
   employmentHistory?: EmploymentHistoryEntry[];
   monthlyHighlights?: MonthlyHighlight[];
+  lifeHistory: LifeRecordEntry[];
 }
 
 export type GameAction =

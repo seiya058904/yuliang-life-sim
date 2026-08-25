@@ -84,4 +84,49 @@ describe('game action dispatcher', () => {
     expect(nextWeek.state.employment?.pendingJobId).toBeUndefined();
     expect(nextWeek.state.employment?.effectiveWeek).toBe(2);
   });
+
+  it('records successful life-history actions at domain boundaries and leaves failures quiet', () => {
+    const base = createInitialState(contentRegistry, balanceConfig, 11);
+    const applicationState = {
+      ...base,
+      applications: [{
+        applicationId: 'application.history',
+        vacancyId: 'vacancy.history',
+        jobId: 'job.seed-warehouse',
+        companyId: 'company.yuanwang',
+        salaryRange: [130, 150] as const,
+        route: 'market' as const,
+        submittedDay: 1,
+        resultDay: 1,
+        offerExpiresDay: 8,
+        status: 'offer' as const,
+        competitivenessTier: 'minimum' as const,
+        probabilityBand: 0.7,
+        willReceiveOffer: true,
+        feedback: [],
+      }],
+    };
+
+    const career = dispatchGameAction(applicationState, { type: 'accept_application_offer', applicationId: 'application.history' }, contentRegistry, balanceConfig);
+    expect(career.error).toBeUndefined();
+    expect(career.state.lifeHistory?.at(-1)).toMatchObject({ category: 'career', day: 1, title: '接受仓库理货员 Offer', sourceId: 'job.seed-warehouse', amount: 130 });
+
+    const purchase = dispatchGameAction(career.state, { type: 'purchase_items', items: { 'item.seed-coffee': 1 } }, contentRegistry, balanceConfig);
+    expect(purchase.error).toBeUndefined();
+    expect(purchase.state.lifeHistory?.at(-1)).toMatchObject({ category: 'purchase', day: 1, title: '购买现磨咖啡', sourceId: 'item.seed-coffee', amount: -18 });
+
+    const relationship = dispatchGameAction(purchase.state, { type: 'interact_character', interactionId: 'interaction.seed-lin-meal', optionId: 'meal' }, contentRegistry, balanceConfig);
+    expect(relationship.error).toBeUndefined();
+    expect(relationship.state.lifeHistory?.at(-1)).toMatchObject({ category: 'relationship', day: 1, sourceId: 'interaction.seed-lin-meal' });
+
+    const investor = { ...relationship.state, cash: 10_000 };
+    const investment = dispatchGameAction(investor, { type: 'buy_investment', investmentId: 'investment.seed-index', units: 1 }, contentRegistry, balanceConfig);
+    expect(investment.error).toBeUndefined();
+    expect(investment.state.lifeHistory?.at(-1)).toMatchObject({ category: 'investment', day: 1, title: '买入稳健指数基金', sourceId: 'investment.seed-index' });
+
+    const beforeFailureCount = investment.state.lifeHistory?.length ?? 0;
+    const failed = dispatchGameAction({ ...investment.state, cash: 0 }, { type: 'purchase_items', items: { 'item.seed-phone': 1 } }, contentRegistry, balanceConfig);
+    expect(failed.error).toBeDefined();
+    expect(failed.state.lifeHistory).toHaveLength(beforeFailureCount);
+  });
 });

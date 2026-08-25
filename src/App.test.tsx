@@ -42,4 +42,44 @@ describe('余量 app flow', () => {
     expect(screen.getByTestId('date-value')).toHaveTextContent('08:00');
     expect(screen.getByTestId('cash-value')).toHaveTextContent('¥62');
   });
+
+  it('navigates from a rejected application hint and renders life history newest first', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({
+      activeView: 'work',
+      game: {
+        ...game,
+        lifeHistory: [
+          { id: 'purchase.old', day: 1, category: 'purchase', title: '购买现磨咖啡', amount: -18 },
+          { id: 'career.new', day: 3, category: 'career', title: '接受仓库助理 Offer', amount: 130 },
+        ],
+        applications: [{
+          applicationId: 'application.rejected',
+          vacancyId: 'vacancy.rejected',
+          jobId: 'job.seed-remote',
+          companyId: 'company.xinghe',
+          salaryRange: [80, 100],
+          route: 'market',
+          submittedDay: 1,
+          resultDay: 1,
+          status: 'rejected',
+          competitivenessTier: 'minimum',
+          probabilityBand: 0.7,
+          willReceiveOffer: false,
+          feedback: ['缺少远程工具'],
+        }],
+      },
+    });
+
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '我的申请' }));
+    await user.click(screen.getByRole('button', { name: /去商店/ }));
+    expect(screen.getByRole('heading', { name: '商品' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    const newest = screen.getByText('接受仓库助理 Offer');
+    const oldest = screen.getByText('购买现磨咖啡');
+    expect(newest.compareDocumentPosition(oldest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });

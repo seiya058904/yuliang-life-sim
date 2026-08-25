@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import type { GameAction, GameState, JobDefinition } from '../content/contracts';
+import type { GameAction, GameState, JobDefinition, ViewId } from '../content/contracts';
 import { employmentKind, requirementHints } from '../engine/careers';
 import { contentRegistry } from '../content/registry';
+import { balanceConfig } from '../balance/config';
 
 const categories = ['全部', '基础岗位', '办公室', '技术', '销售', '服务', '管理', '兼职'] as const;
 const states = ['全部', '符合条件', '接近条件', '已申请', '冷却中'] as const;
@@ -11,7 +12,7 @@ const categoryMap: Record<string, string> = { 基础岗位: 'basic', 办公室: 
 const money = (amount: number) => '¥' + Math.round(amount).toLocaleString('zh-CN');
 const companyName = (id: string) => contentRegistry.companies?.find((company) => company.id === id)?.name ?? id.replace('company.', '').replaceAll('.', ' · ');
 
-export function CareerView({ game, dispatch, jobs }: { game: GameState; dispatch: (action: GameAction) => void; jobs: readonly JobDefinition[] }) {
+export function CareerView({ game, dispatch, jobs, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; jobs: readonly JobDefinition[]; onNavigate?: (view: ViewId) => void }) {
   const [tab, setTab] = useState<'current' | 'market' | 'opportunities' | 'applications' | 'side-jobs' | 'history'>('market');
   const labels = { current: '当前工作', market: '招聘市场', opportunities: '工作机会', applications: '我的申请', 'side-jobs': '我的兼职', history: '职业履历' } as const;
   return <section className="career-section">
@@ -20,7 +21,7 @@ export function CareerView({ game, dispatch, jobs }: { game: GameState; dispatch
     {tab === 'current' && <CurrentEmployment game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'market' && <VacancyMarket game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'opportunities' && <OpportunityList game={game} jobs={jobs} dispatch={dispatch} />}
-    {tab === 'applications' && <ApplicationList game={game} jobs={jobs} dispatch={dispatch} />}
+    {tab === 'applications' && <ApplicationList game={game} jobs={jobs} dispatch={dispatch} onNavigate={onNavigate} />}
     {tab === 'side-jobs' && <SideJobList game={game} jobs={jobs} />}
     {tab === 'history' && <HistoryList game={game} jobs={jobs} />}
   </section>;
@@ -63,11 +64,11 @@ function OpportunityList({ game, jobs, dispatch }: { game: GameState; jobs: read
   return <div className="job-grid">{game.opportunities!.map((opportunity) => { const job = jobs.find((entry) => entry.id === opportunity.jobId); return <article className="job-card" key={opportunity.id}><span className="job-kind">{opportunity.source}</span><h2>{job?.name ?? opportunity.jobId}</h2><p>限时至第 {opportunity.expiresDay} 天</p><button className="primary-button" onClick={() => dispatch({ type: 'submit_application', opportunityId: opportunity.id })}>申请机会</button></article>; })}</div>;
 }
 
-function ApplicationList({ game, jobs, dispatch }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void }) {
+function ApplicationList({ game, jobs, dispatch, onNavigate }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void; onNavigate?: (view: ViewId) => void }) {
   if (!(game.applications ?? []).length) return <p className="muted">还没有已提交的申请。</p>;
   return <div className="item-list">{game.applications!.map((application) => {
     const job = jobs.find((entry) => entry.id === application.jobId);
-    return <div className="item-row" key={application.applicationId}><div><h2>{job?.name ?? application.jobId}</h2><p>当前竞争力：{application.competitivenessTier} · {application.feedback.join('；') || '等待反馈'}</p><span className="muted">状态：{application.status}{application.nextEligibleDay ? ' · 第 ' + application.nextEligibleDay + ' 天后可重投' : ''}</span>{application.status === 'rejected' && job && <div className="requirement-box"><strong>下一步</strong>{requirementHints(job, game).map((hint) => <span key={hint.requirementId}>{hint.label} · {hint.actionLabel}</span>)}</div>}</div><div className="button-pair">{application.status === 'offer' && <><button className="primary-button" onClick={() => dispatch({ type: 'accept_application_offer', applicationId: application.applicationId })}>接受 Offer</button><button className="secondary-button" onClick={() => dispatch({ type: 'decline_application_offer', applicationId: application.applicationId })}>拒绝</button></>}{['submitted', 'screening', 'interview', 'waiting'].includes(application.status) && <button className="secondary-button" onClick={() => dispatch({ type: 'withdraw_application', applicationId: application.applicationId })}>撤回</button>}</div></div>;
+    return <div className="item-row" key={application.applicationId}><div><h2>{job?.name ?? application.jobId}</h2><p>当前竞争力：{application.competitivenessTier} · {application.feedback.join('；') || '等待反馈'}</p><span className="muted">状态：{application.status}{application.nextEligibleDay ? ' · 第 ' + application.nextEligibleDay + ' 天后可重投' : ''}</span>{application.status === 'rejected' && job && <div className="requirement-box"><strong>下一步</strong>{requirementHints(job, game, contentRegistry, balanceConfig).map((hint) => <button className="text-button" key={hint.requirementId} onClick={() => onNavigate?.(hint.destinationView)}>{hint.actionLabel} · {hint.label}{hint.currentValue !== undefined && hint.requiredValue !== undefined ? `（${hint.currentValue}/${hint.requiredValue}）` : ''}</button>)}</div>}</div><div className="button-pair">{application.status === 'offer' && <><button className="primary-button" onClick={() => dispatch({ type: 'accept_application_offer', applicationId: application.applicationId })}>接受 Offer</button><button className="secondary-button" onClick={() => dispatch({ type: 'decline_application_offer', applicationId: application.applicationId })}>拒绝</button></>}{['submitted', 'screening', 'interview', 'waiting'].includes(application.status) && <button className="secondary-button" onClick={() => dispatch({ type: 'withdraw_application', applicationId: application.applicationId })}>撤回</button>}</div></div>;
   })}</div>;
 }
 
