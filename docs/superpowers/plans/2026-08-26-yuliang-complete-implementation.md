@@ -13,18 +13,45 @@
 - 不改变财务语义，不让 UI 动画成为状态来源，不破坏旧存档。
 - 不过度模拟房产、车辆、企业或投资；不部署、不发布、不推送。
 
-## Tasks
+## Task 1: Phase 0 — audit and coverage matrix
 
-1. Phase 0：固定测试、构建、E2E、内容与存档基线，建立 `docs/IMPLEMENTATION-COVERAGE-MATRIX.md`。
-2. Phase 1：完成 AcquisitionHint、职业经验/资格、统一历史、地点引用和版本化迁移闭环。
-3. Phase 2：完成公开招聘、兼职、Gig、谈薪离职、专家/管理、跨行业和猎头职业闭环。
-4. Phase 3：完成商品、服务、订阅、活动、娱乐、旅行、愿望清单与消费历史闭环。
-5. Phase 4：完成人物、关系、偏好、消息、Ambient、Major Event、Storyline 与摘要闭环。
-6. Phase 5：完成投资、住房、房产、车辆和高价值资产闭环，保持严格财务语义。
-7. Phase 6：完成属性提升路径、课程、资格、兴趣熟练度和防刷成长闭环。
-8. Phase 7：完成个人业务、企业、合伙、融资、股权、上市、并购和控股闭环。
-9. Phase 8：完成澄川市区域、地点、Venue、轻量通勤和长期世界演化闭环。
-10. Phase 9：完成多年月度/年度模拟、桌面与移动浏览器 QA、覆盖矩阵审计和实际内容数量报告。
+固定测试、构建、E2E、内容与存档基线，建立 `docs/IMPLEMENTATION-COVERAGE-MATRIX.md`。
+
+## Task 2: Phase 1 — shared foundations
+
+完成 AcquisitionHint、职业经验/资格、统一历史、地点引用和版本化迁移闭环。
+
+## Task 3: Phase 2 — career world
+
+完成公开招聘、兼职、Gig、谈薪离职、专家/管理、跨行业和猎头职业闭环。
+
+## Task 4: Phase 3 — consumption and activities
+
+完成商品、服务、订阅、活动、娱乐、旅行、愿望清单与消费历史闭环。
+
+## Task 5: Phase 4 — relationships and events
+
+完成人物、关系、偏好、消息、Ambient、Major Event、Storyline 与摘要闭环。
+
+## Task 6: Phase 5 — wealth and assets
+
+完成投资、住房、房产、车辆和高价值资产闭环，保持严格财务语义。
+
+## Task 7: Phase 6 — growth and qualifications
+
+完成属性提升路径、课程、资格、兴趣熟练度和防刷成长闭环。
+
+## Task 8: Phase 7 — enterprises and equity
+
+完成个人业务、企业、合伙、融资、股权、上市、并购和控股闭环。
+
+## Task 9: Phase 8 — city and long-term world
+
+完成澄川市区域、地点、Venue、轻量通勤和长期世界演化闭环。
+
+## Task 10: Phase 9 — final verification and audit
+
+完成多年月度/年度模拟、桌面与移动浏览器 QA、覆盖矩阵审计和实际内容数量报告。
 
 ## Verification
 
