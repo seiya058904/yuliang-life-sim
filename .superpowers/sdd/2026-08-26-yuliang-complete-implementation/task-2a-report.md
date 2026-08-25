@@ -175,3 +175,71 @@ Results:
 
 - The recursive item requirement test passed during RED because existing production behavior already routed `owns_item` to Shop; the review gap was missing focused coverage, not a failing route.
 - The Minor career amount-format concern was intentionally not changed in this round.
+
+## Fix Round 2 - Direction-Aware Deadline De-Dupe
+
+Addressed the remaining Important finding:
+
+- `dedupeHints` now selects the strongest unmet numeric threshold by requirement direction. Existing lower-bound requirements keep the largest unmet `requiredValue`; `day_at_most` keeps the smallest unmet `requiredValue`, because the earlier deadline is stricter.
+
+Kept scoped:
+
+- Changed only career hint logic/tests plus this report.
+- Did not address separately ledgered Minor items.
+
+### Fix Round 2 RED Evidence
+
+Focused RED command before production edits:
+
+```powershell
+npm test -- src/game/engine/careers.test.ts
+```
+
+Expected RED observed:
+
+- `keeps the earliest unmet deadline for equivalent day-at-most requirements` failed.
+- Received one `day_at_most` hint with `currentValue: 12` and `requiredValue: 10`.
+- Expected the single retained hint to have `requiredValue: 6`, proving the old numeric-largest selection was wrong for deadline upper bounds.
+- Other career tests in the focused file continued to pass during RED, including the lower-bound strongest-threshold regression coverage from Fix Round 1.
+
+### Fix Round 2 Implementation
+
+Changed files:
+
+- `src/game/engine/careers.ts`
+- `src/game/engine/careers.test.ts`
+
+Implementation notes:
+
+- Added a focused regression test with two unmet `day_at_most` requirements.
+- Replaced the inline numeric comparison in `dedupeHints` with `strongerHint`.
+- `strongerHint` treats `day_at_most` as smaller-is-stricter and all other numeric hints as larger-is-stricter, preserving cash, reputation, lifestyle, attribute, and job-experience lower-bound behavior.
+
+### Fix Round 2 GREEN Evidence
+
+Focused GREEN:
+
+```powershell
+npm test -- src/game/engine/careers.test.ts
+```
+
+Result: 1 test file passed, 11 tests passed.
+
+Required verification:
+
+```powershell
+npm test
+npm run content:validate
+npm run build
+```
+
+Results:
+
+- `npm test`: 17 test files passed, 67 tests passed.
+- `npm run content:validate`: passed with 12 jobs, 28 items, 6 housing entries, 5 characters, 29 events, 4 event chains, 3 businesses, 4 assets, 1 activity, 2 investments.
+- `npm run build`: passed; content validation, `tsc -b`, and Vite production build completed.
+- `git diff --check`: exit 0; only CRLF normalization warnings.
+
+### Fix Round 2 Concerns
+
+- No separately ledgered Minor item was changed in this round.

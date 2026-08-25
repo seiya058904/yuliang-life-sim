@@ -214,6 +214,29 @@ describe('career market', () => {
     expect(hints.filter((hint) => hint.requirementId === 'experience:job.seed-office')).toEqual([expect.objectContaining({ currentValue: 4, requiredValue: 12 })]);
   });
 
+  it('keeps the earliest unmet deadline for equivalent day-at-most requirements', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 5);
+    state.time = { day: 12, hour: 8, minute: 0 };
+    const job = {
+      ...contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!,
+      abilityRequired: undefined,
+      reputationRequired: undefined,
+      requirements: {
+        type: 'all',
+        conditions: [
+          { type: 'day_at_most', day: 10 },
+          { type: 'day_at_most', day: 6 },
+        ],
+      },
+    } as const;
+
+    const hints = requirementHints(job, state, contentRegistry, balanceConfig);
+
+    expect(hints.filter((hint) => hint.requirementId === 'day_at_most')).toEqual([
+      expect.objectContaining({ currentValue: 12, requiredValue: 6 }),
+    ]);
+  });
+
   it('routes an unmet recursive item requirement to the exact shop item', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 5);
     state.inventory = {};

@@ -333,9 +333,16 @@ function dedupeHints(hints: AcquisitionHint[]): AcquisitionHint[] {
   const byRequirement = new Map<string, AcquisitionHint>();
   for (const hint of hints) {
     const existing = byRequirement.get(hint.requirementId);
-    if (!existing || (hint.requiredValue ?? 0) > (existing.requiredValue ?? 0)) byRequirement.set(hint.requirementId, hint);
+    if (!existing || strongerHint(hint, existing)) byRequirement.set(hint.requirementId, hint);
   }
   return [...byRequirement.values()];
+}
+
+function strongerHint(candidate: AcquisitionHint, existing: AcquisitionHint): boolean {
+  const candidateRequired = candidate.requiredValue;
+  const existingRequired = existing.requiredValue;
+  if (candidateRequired === undefined || existingRequired === undefined) return false;
+  return candidate.requirementId === 'day_at_most' ? candidateRequired < existingRequired : candidateRequired > existingRequired;
 }
 
 export function advanceCareerLifecycle(state: GameState, day: number, _content: ContentRegistry, balance: BalanceConfig): void {
