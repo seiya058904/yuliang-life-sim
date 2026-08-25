@@ -109,16 +109,133 @@ describe('career market', () => {
       },
     } as const;
 
-    const hints = requirementHints(job, state, contentRegistry);
+    const hints = requirementHints(job, state, contentRegistry, balanceConfig);
 
     expect(hints).toEqual([
       expect.objectContaining({ requirementId: 'reputation', destinationView: 'work', currentValue: 3, requiredValue: 9 }),
       expect.objectContaining({ requirementId: 'capability:remote_work', destinationView: 'shop', targetId: 'item.seed-laptop' }),
-      expect.objectContaining({ requirementId: 'cash:800', destinationView: 'wealth', currentValue: 400, requiredValue: 800 }),
+      expect.objectContaining({ requirementId: 'cash', destinationView: 'wealth', currentValue: 400, requiredValue: 800 }),
       expect.objectContaining({ requirementId: 'relationship:character.seed-lin', destinationView: 'relations', currentValue: 12, requiredValue: 30 }),
     ]);
     expect(hints.some((hint) => hint.requirementId === 'ability')).toBe(false);
     expect(hints.filter((hint) => hint.requirementId === 'item:item.seed-phone')).toHaveLength(0);
     expect(hints.filter((hint) => hint.requirementId === 'capability:remote_work')).toHaveLength(1);
+  });
+
+  it('preserves identity for unmet non-numeric condition variants instead of collapsing to a generic fallback', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 5);
+    state.time = { day: 8, hour: 8, minute: 0 };
+    state.currentJobId = 'job.seed-shop-clerk';
+    state.completedEvents = [];
+    state.completedMilestones = [];
+    state.chainStages = {};
+    state.flags = {};
+    const job = {
+      ...contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!,
+      abilityRequired: undefined,
+      reputationRequired: undefined,
+      requiredItems: [],
+      requiredCapabilities: [],
+      requirements: {
+        type: 'all',
+        conditions: [
+          { type: 'current_job', jobId: 'job.seed-office' },
+          { type: 'completed_event', eventId: 'event.seed-bonus' },
+          { type: 'completed_milestone', milestoneId: 'milestone.seed-first-week' },
+          { type: 'chain_stage_at_least', chainId: 'chain.seed-career', stage: 2 },
+          { type: 'flag', flag: 'met.office.manager' },
+          { type: 'day_at_least', day: 12 },
+          { type: 'day_at_most', day: 4 },
+          { type: 'time_between', startHour: 10, endHour: 12 },
+          { type: 'player_stage', stage: 'stable' },
+        ],
+      },
+    } as const;
+
+    const hints = requirementHints(job, state, contentRegistry, balanceConfig);
+
+    expect(hints.map((hint) => hint.requirementId)).toEqual([
+      'current_job:job.seed-office',
+      'completed_event:event.seed-bonus',
+      'completed_milestone:milestone.seed-first-week',
+      'chain_stage:chain.seed-career',
+      'flag:met.office.manager',
+      'day_at_least',
+      'day_at_most',
+      'time_between:10-12',
+      'player_stage:stable',
+    ]);
+    expect(hints).toEqual([
+      expect.objectContaining({ destinationView: 'work', targetId: 'job.seed-office' }),
+      expect.objectContaining({ destinationView: 'profile', targetId: 'event.seed-bonus' }),
+      expect.objectContaining({ destinationView: 'profile', targetId: 'milestone.seed-first-week' }),
+      expect.objectContaining({ destinationView: 'profile', targetId: 'chain.seed-career', currentValue: 0, requiredValue: 2 }),
+      expect.objectContaining({ destinationView: 'profile', targetId: 'met.office.manager' }),
+      expect.objectContaining({ destinationView: 'life', currentValue: 8, requiredValue: 12 }),
+      expect.objectContaining({ destinationView: 'life', currentValue: 8, requiredValue: 4 }),
+      expect.objectContaining({ destinationView: 'life', currentValue: 8, requiredValue: 10 }),
+      expect.objectContaining({ destinationView: 'wealth', targetId: 'stable' }),
+    ]);
+  });
+
+  it('keeps only the strongest unmet threshold for equivalent acquisition paths', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 5);
+    state.cash = 400;
+    state.reputation = 3;
+    state.lifestyle = 10;
+    state.attributes = { ...state.attributes!, professional: 12 };
+    state.jobExperience['job.seed-office'] = 4;
+    const job = {
+      ...contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!,
+      abilityRequired: undefined,
+      reputationRequired: 6,
+      requirements: {
+        type: 'all',
+        conditions: [
+          { type: 'cash_at_least', amount: 800 },
+          { type: 'cash_at_least', amount: 1200 },
+          { type: 'reputation_at_least', amount: 9 },
+          { type: 'lifestyle_at_least', amount: 14 },
+          { type: 'lifestyle_at_least', amount: 18 },
+          { type: 'attribute_at_least', attribute: 'professional', amount: 20 },
+          { type: 'attribute_at_least', attribute: 'professional', amount: 30 },
+          { type: 'job_experience_at_least', jobId: 'job.seed-office', amount: 8 },
+          { type: 'job_experience_at_least', jobId: 'job.seed-office', amount: 12 },
+        ],
+      },
+    } as const;
+
+    const hints = requirementHints(job, state, contentRegistry, balanceConfig);
+
+    expect(hints.filter((hint) => hint.requirementId === 'cash')).toEqual([expect.objectContaining({ currentValue: 400, requiredValue: 1200 })]);
+    expect(hints.filter((hint) => hint.requirementId === 'reputation')).toEqual([expect.objectContaining({ currentValue: 3, requiredValue: 9 })]);
+    expect(hints.filter((hint) => hint.requirementId === 'lifestyle')).toEqual([expect.objectContaining({ currentValue: 10, requiredValue: 18 })]);
+    expect(hints.filter((hint) => hint.requirementId === 'attribute:professional')).toEqual([expect.objectContaining({ currentValue: 12, requiredValue: 30 })]);
+    expect(hints.filter((hint) => hint.requirementId === 'experience:job.seed-office')).toEqual([expect.objectContaining({ currentValue: 4, requiredValue: 12 })]);
+  });
+
+  it('routes an unmet recursive item requirement to the exact shop item', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 5);
+    state.inventory = {};
+    const job = {
+      ...contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!,
+      abilityRequired: undefined,
+      reputationRequired: undefined,
+      requiredItems: [],
+      requiredCapabilities: [],
+      requirements: { type: 'owns_item', itemId: 'item.seed-laptop' },
+    } as const;
+
+    const hints = requirementHints(job, state, contentRegistry, balanceConfig);
+
+    expect(hints).toEqual([
+      expect.objectContaining({
+        requirementId: 'item:item.seed-laptop',
+        destinationView: 'shop',
+        targetId: 'item.seed-laptop',
+        currentValue: 0,
+        requiredValue: 1,
+      }),
+    ]);
   });
 });
