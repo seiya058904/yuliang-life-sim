@@ -1,0 +1,134 @@
+import type { BusinessDefinition } from '../contracts';
+
+export const officialBusinesses = [
+  {
+    "id": "business.seed-kiosk",
+    "contentStatus": "official",
+    "name": "早餐与咖啡档",
+    "description": "第一份真正不完全依赖自己工时的经营收入。",
+    "tags": [
+      "business",
+      "starter"
+    ],
+    "price": 3200,
+    "baseRevenue": 420,
+    "baseGoodsCost": 140,
+    "baseWage": 70,
+    "baseRent": 60,
+    "priceLevels": [
+      0.92,
+      1,
+      1.12
+    ],
+    "wageLevels": [
+      0.9,
+      1,
+      1.12
+    ],
+    "inventoryLevels": [
+      0.85,
+      1,
+      1.2
+    ],
+    "requirements": {
+      "type": "has_capability",
+      "capability": "business_license"
+    }
+  },
+  {
+    "id": "business.online-store",
+    "contentStatus": "official",
+    "name": "线上小店",
+    "description": "依赖设备和选品判断，固定成本较低，适合中期经营。",
+    "tags": [
+      "business",
+      "remote",
+      "technology"
+    ],
+    "price": 7800,
+    "baseRevenue": 840,
+    "baseGoodsCost": 350,
+    "baseWage": 120,
+    "baseRent": 40,
+    "priceLevels": [
+      0.92,
+      1,
+      1.1
+    ],
+    "wageLevels": [
+      0.9,
+      1,
+      1.12
+    ],
+    "inventoryLevels": [
+      0.82,
+      1,
+      1.18
+    ],
+    "requirements": {
+      "type": "all",
+      "conditions": [
+        {
+          "type": "has_capability",
+          "capability": "business_license"
+        },
+        {
+          "type": "has_capability",
+          "capability": "remote_work"
+        },
+        {
+          "type": "ability_at_least",
+          "amount": 18
+        }
+      ]
+    }
+  },
+  {
+    "id": "business.service-studio",
+    "contentStatus": "official",
+    "name": "社区服务工作室",
+    "description": "规模更大一些，需要稳定声誉和更成熟的经营判断。",
+    "tags": [
+      "business",
+      "career"
+    ],
+    "price": 14500,
+    "baseRevenue": 1320,
+    "baseGoodsCost": 320,
+    "baseWage": 420,
+    "baseRent": 160,
+    "priceLevels": [
+      0.93,
+      1,
+      1.09
+    ],
+    "wageLevels": [
+      0.9,
+      1,
+      1.12
+    ],
+    "inventoryLevels": [
+      0.85,
+      1,
+      1.15
+    ],
+    "requirements": {
+      "type": "all",
+      "conditions": [
+        {
+          "type": "has_capability",
+          "capability": "business_license"
+        },
+        {
+          "type": "ability_at_least",
+          "amount": 22
+        },
+        {
+          "type": "reputation_at_least",
+          "amount": 15
+        }
+      ]
+    }
+  }
+] satisfies readonly BusinessDefinition[];
+

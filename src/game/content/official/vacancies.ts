@@ -1,0 +1,20 @@
+import type { VacancyTemplate } from '../contracts';
+
+const market = 'market' as const;
+const range = [0.92, 1.08] as const;
+
+export const officialVacancyTemplates: readonly VacancyTemplate[] = [
+  { id: 'vacancy-template.office-xinghe', contentStatus: 'official', name: '星河行政助理', description: '星河科技公开招聘行政助理。', tags: ['work', 'office'], jobId: 'job.seed-office', companyId: 'company.xinghe', route: market, salaryMultiplierRange: [0.95, 1.1], marketWeight: 2 },
+  { id: 'vacancy-template.office-yuanwang', contentStatus: 'official', name: '远望行政助理', description: '远望零售公开招聘行政助理。', tags: ['work', 'office'], jobId: 'job.seed-office', companyId: 'company.yuanwang', route: market, salaryMultiplierRange: [0.9, 1.02], marketWeight: 2 },
+  { id: 'vacancy-template.shop-qiming', contentStatus: 'official', name: '启明便利店员', description: '启明服务的基础岗位。', tags: ['work', 'starter'], jobId: 'job.seed-shop-clerk', companyId: 'company.qiming', route: market, salaryMultiplierRange: range, marketWeight: 3 },
+  { id: 'vacancy-template.warehouse-yuanwang', contentStatus: 'official', name: '远望仓库理货', description: '远望零售的仓储岗位。', tags: ['work', 'starter'], jobId: 'job.seed-warehouse', companyId: 'company.yuanwang', route: market, salaryMultiplierRange: range, marketWeight: 3 },
+  { id: 'vacancy-template.delivery-qiming', contentStatus: 'official', name: '启明同城配送', description: '启明服务的限时配送班次。', tags: ['work', 'starter'], jobId: 'job.delivery-shift', companyId: 'company.qiming', route: market, salaryMultiplierRange: range },
+  { id: 'vacancy-template.cafe-qiming', contentStatus: 'official', name: '启明咖啡店员', description: '启明服务的门店岗位。', tags: ['work', 'starter'], jobId: 'job.cafe-assistant', companyId: 'company.qiming', route: market, salaryMultiplierRange: range },
+  { id: 'vacancy-template.service-yuanwang', contentStatus: 'official', name: '远望客服', description: '远望零售的客户服务岗位。', tags: ['work'], jobId: 'job.customer-service', companyId: 'company.yuanwang', route: market, salaryMultiplierRange: range },
+  { id: 'vacancy-template.data-xinghe', contentStatus: 'official', name: '星河数据录入', description: '星河科技的长期兼职资格。', tags: ['work', 'office'], jobId: 'job.data-entry', companyId: 'company.xinghe', route: market, salaryMultiplierRange: range },
+  { id: 'vacancy-template.remote-xinghe', contentStatus: 'official', name: '星河远程校对', description: '星河科技的长期兼职资格。', tags: ['work', 'remote'], jobId: 'job.seed-remote', companyId: 'company.xinghe', route: market, salaryMultiplierRange: range },
+  { id: 'vacancy-template.operations-xinghe', contentStatus: 'official', name: '星河数据运营', description: '星河科技的数据运营岗位。', tags: ['work', 'office'], jobId: 'job.operations-specialist', companyId: 'company.xinghe', route: market, salaryMultiplierRange: [0.95, 1.12] },
+  { id: 'vacancy-template.operator-yuanwang', contentStatus: 'official', name: '远望远程运营', description: '远望零售的远程运营岗位。', tags: ['work', 'remote'], jobId: 'job.remote-operator', companyId: 'company.yuanwang', route: market, salaryMultiplierRange: range },
+  { id: 'vacancy-template.project-yuanwang', contentStatus: 'official', name: '远望项目助理', description: '远望零售的项目协同岗位。', tags: ['work', 'office'], jobId: 'job.project-coordinator', companyId: 'company.yuanwang', route: market, salaryMultiplierRange: range },
+  { id: 'vacancy-template.consult-xinghe', contentStatus: 'official', name: '星河独立顾问', description: '星河科技的长期顾问资格。', tags: ['work'], jobId: 'job.independent-consultant', companyId: 'company.xinghe', route: market, salaryMultiplierRange: [1, 1.18] },
+];

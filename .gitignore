@@ -1,0 +1,9 @@
+node_modules/
+dist/
+test-results/
+.playwright-cli/
+coverage/
+.env
+.env.*
+!.env.example
+
