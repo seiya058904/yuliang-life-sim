@@ -134,6 +134,19 @@ describe('automatic simulation', () => {
     expect(result.state.lifeHistory.some((entry) => entry.title === '基础通信套餐月度扣费')).toBe(true);
   });
 
+  it('pays company-equity dividends as investment income without changing the holding valuation semantics', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 31);
+    initial.investments = { 'investment.qiming-equity': { investmentId: 'investment.qiming-equity', units: 1000, averageCost: 220, currentValuation: 220000, lastValuationDay: 1 } };
+    const running = { ...initial, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 24 * 60, contentRegistry, balance);
+
+    const dividend = result.state.financialLedger?.entries.find((entry) => entry.category === 'investment_dividend');
+    expect(dividend?.amount).toBeGreaterThan(0);
+    expect(dividend?.direction).toBe('income');
+    expect(result.state.investments?.['investment.qiming-equity'].currentValuation).toBeGreaterThan(0);
+  });
+
   it('applies gentle vehicle depreciation and a monthly vehicle cost without treating depreciation as consumption', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 31);

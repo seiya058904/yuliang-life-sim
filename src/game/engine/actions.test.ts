@@ -338,6 +338,13 @@ describe('game action dispatcher', () => {
     expect(investment.error).toBeUndefined();
     expect(investment.state.lifeHistory?.at(-1)).toMatchObject({ category: 'investment', day: 1, title: '买入稳健指数基金', sourceId: 'investment.seed-index' });
 
+    const equityBought = dispatchGameAction({ ...createInitialState(contentRegistry, balanceConfig, 1), cash: 1000 }, { type: 'buy_investment', investmentId: 'investment.qiming-equity', units: 1 }, contentRegistry, balanceConfig);
+    const equitySold = dispatchGameAction(equityBought.state, { type: 'sell_investment', investmentId: 'investment.qiming-equity', units: 1 }, contentRegistry, balanceConfig);
+    expect(equityBought.error).toBeUndefined();
+    expect(equityBought.state.investments?.['investment.qiming-equity']).toMatchObject({ units: 1 });
+    expect(equitySold.error).toBeUndefined();
+    expect(equitySold.state.lifeHistory?.at(-1)).toMatchObject({ category: 'investment', sourceId: 'investment.qiming-equity' });
+
     const beforeFailureCount = investment.state.lifeHistory?.length ?? 0;
     const failed = dispatchGameAction({ ...investment.state, cash: 0 }, { type: 'purchase_items', items: { 'item.seed-phone': 1 } }, contentRegistry, balanceConfig);
     expect(failed.error).toBeDefined();

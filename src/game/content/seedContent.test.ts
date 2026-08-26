@@ -32,6 +32,7 @@ describe('seed content registry', () => {
       'investment.broad-market-index',
       'investment.technology-growth',
       'investment.commercial-reit',
+      'investment.qiming-equity',
     ]);
   });
 
