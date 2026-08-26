@@ -174,6 +174,32 @@ describe('phase 3 additive systems', () => {
     expect(settled.state.relationships['character.seed-lin']).toBeGreaterThan(state.relationships['character.seed-lin']);
   });
 
+  it('settles Xuke technology coffee with his preference-specific relationship bonus', () => {
+    const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 3);
+    state.relationships['character.xuke'] = 12;
+    state.weeklyPlan.days[1].evening = { kind: 'free' };
+    const planned = dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity: { kind: 'activity', activityId: 'activity.coffee-with-contact', optionId: 'with-xuke' } }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    expect(planned.error).toBeUndefined();
+    const started = dispatchGameAction(planned.state, { type: 'start_week' }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    const settled = dispatchGameAction(started.state, { type: 'advance_simulation', minutes: 24 * 60 }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+
+    expect(settled.state.lifeHistory).toContainEqual(expect.objectContaining({ title: '和联系人喝咖啡 · 和徐可聊设备', detail: expect.stringContaining('徐可喜欢这类活动') }));
+    expect(settled.state.relationships['character.xuke']).toBeGreaterThan(12);
+  });
+
+  it('settles Heyan housing dinner with his meal preference-specific relationship bonus', () => {
+    const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 3);
+    state.relationships['character.heyan'] = 10;
+    state.weeklyPlan.days[1].evening = { kind: 'free' };
+    const planned = dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity: { kind: 'activity', activityId: 'activity.dinner-with-friend', optionId: 'with-heyan' } }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    expect(planned.error).toBeUndefined();
+    const started = dispatchGameAction(planned.state, { type: 'start_week' }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    const settled = dispatchGameAction(started.state, { type: 'advance_simulation', minutes: 24 * 60 }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+
+    expect(settled.state.lifeHistory).toContainEqual(expect.objectContaining({ title: '一起吃饭 · 和何彦聊房子', detail: expect.stringContaining('何彦喜欢这类活动') }));
+    expect(settled.state.relationships['character.heyan']).toBeGreaterThan(10);
+  });
+
   it('records income, consumption, and asset allocation as different cash-flow groups', () => {
     let ledger = emptyFinancialLedger(1);
     ledger = recordFinancialEntry(ledger, { day: 1, direction: 'income', category: 'wage', amount: 620, label: '工资' });

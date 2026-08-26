@@ -140,6 +140,7 @@ export const officialCharacters = [
     ],
     "identity": "数码店店主",
     "preferredInteractionCategories": ["work"],
+    "preferredActivityTags": ["technology", "social"],
     "initialRelationship": 0,
     "careerHistory": [
       { "startYear": 1, "title": "技术支持", "companyId": "company.xinghe" },
@@ -183,6 +184,7 @@ export const officialCharacters = [
     ],
     "identity": "房产经纪",
     "preferredInteractionCategories": ["meal"],
+    "preferredActivityTags": ["meal", "social"],
     "initialRelationship": 0,
     "careerHistory": [
       { "startYear": 1, "title": "房产顾问", "companyId": "company.yuanwang" },
