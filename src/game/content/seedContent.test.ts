@@ -39,6 +39,9 @@ describe('seed content registry', () => {
       'activity.premium-weekend',
       'activity.domestic-standard',
       'activity.luxury-vacation',
+      'activity.coffee-with-contact',
+      'activity.dinner-with-friend',
+      'activity.exhibition-with-contact',
       'activity.brand-film-project',
     ]);
   });

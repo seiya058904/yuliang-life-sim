@@ -495,6 +495,17 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
   await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '品质周末旅行 · premium-stay' })).toBeVisible();
 });
 
+test('discovers a contact-specific activity and schedules it with its relationship gate', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const coffee = page.locator('article.activity-card').filter({ hasText: '和联系人喝咖啡 · 和林晨聊聊' });
+  await expect(coffee).toContainText('¥100');
+  await expect(coffee).toContainText('关系 +3');
+  await expect(coffee.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
+  await coffee.getByRole('button', { name: '安排到本周自由时间' }).click();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '和联系人喝咖啡 · with-lin' })).toBeVisible();
+});
+
 test('acquires camping gear and unlocks the weekend camping plan', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
