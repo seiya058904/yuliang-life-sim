@@ -24,4 +24,18 @@ describe('career progression', () => {
     applyCareerExperience(state, ['operations', 'office'], 25);
     expect(requirementForJob(job, state)).toEqual([]);
   });
+
+  it('keeps the first expert and management routes gated by real progression data', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 7);
+    const manager = contentRegistry.jobs.find((entry) => entry.id === 'job.regional-operations-manager')!;
+    const expert = contentRegistry.jobs.find((entry) => entry.id === 'job.category-operations-expert')!;
+
+    expect(requirementForJob(manager, state).map((hint) => hint.requirementId)).toEqual(['experience:operations', 'experience:management', 'qualification:people_management_basics']);
+    expect(requirementForJob(expert, state).map((hint) => hint.requirementId)).toEqual(['experience:operations']);
+
+    state.careerExperience = { ...(state.careerExperience ?? {}), operations: 121, management: 1 };
+    state.qualifications = ['people_management_basics'];
+    expect(requirementForJob(manager, state)).toEqual([]);
+    expect(requirementForJob(expert, state)).toEqual([]);
+  });
 });

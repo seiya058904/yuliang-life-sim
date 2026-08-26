@@ -21,6 +21,14 @@ describe('career market', () => {
     expect(first.some((vacancy) => vacancy.jobId === 'job.seed-office' && vacancy.companyId === 'company.yuanwang')).toBe(true);
   });
 
+  it('keeps the first expert and management routes discoverable in the public market', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 31);
+    const vacancies = generateVacancies(state, contentRegistry, balanceConfig);
+
+    expect(vacancies.some((vacancy) => vacancy.jobId === 'job.regional-operations-manager')).toBe(true);
+    expect(vacancies.some((vacancy) => vacancy.jobId === 'job.category-operations-expert')).toBe(true);
+  });
+
   it('rates a referred, experienced candidate above a minimally qualified candidate without exposing a raw chance', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 7);
     const job = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!;

@@ -47,4 +47,29 @@ export const officialCourses = [
     requirements: { type: 'attribute_at_least', attribute: 'knowledge', amount: 10 },
     effects: [{ type: 'attribute', attribute: 'knowledge', amount: 4 }],
   },
+  {
+    id: 'course.people-management',
+    contentStatus: 'official',
+    name: '团队管理基础',
+    description: '从分工、反馈和协作开始，准备第一次真正带人。',
+    tags: ['education', 'management', 'career'],
+    durationMinutes: 240,
+    cashCost: 2800,
+    effects: [
+      { type: 'attribute', attribute: 'communication', amount: 4 },
+      { type: 'attribute', attribute: 'professional', amount: 2 },
+    ],
+    experienceTags: ['management'],
+    experienceGain: 2,
+    qualificationId: 'people_management_basics',
+    cooldownDays: 30,
+    maxCompletions: 1,
+    requirements: {
+      type: 'all',
+      conditions: [
+        { type: 'attribute_at_least', attribute: 'communication', amount: 30 },
+        { type: 'attribute_at_least', attribute: 'professional', amount: 30 },
+      ],
+    },
+  },
 ] satisfies readonly CourseDefinition[];

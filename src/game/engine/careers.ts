@@ -39,6 +39,16 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     const vacancy = vacancyFromTemplate(starterTemplate, state.calendar.month, content, balance);
     if (!selected.some((entry) => entry.vacancyId === vacancy.vacancyId)) selected.unshift(vacancy);
   }
+  const guaranteedRoutes = ['job.regional-operations-manager', 'job.category-operations-expert'];
+  const protectedJobIds = new Set([starterTemplate?.jobId, ...officeTemplates.map((template) => template.jobId), ...guaranteedRoutes]);
+  for (const jobId of guaranteedRoutes) {
+    const template = templates.find((entry) => entry.jobId === jobId);
+    if (!template || selected.some((entry) => entry.jobId === jobId)) continue;
+    const vacancy = vacancyFromTemplate(template, state.calendar.month, content, balance);
+    const replacementIndex = selected.findIndex((entry) => !protectedJobIds.has(entry.jobId));
+    if (replacementIndex >= 0) selected[replacementIndex] = vacancy;
+    else if (selected.length < maximum) selected.push(vacancy);
+  }
   return selected.slice(0, Math.min(maximum, templates.length));
 }
 

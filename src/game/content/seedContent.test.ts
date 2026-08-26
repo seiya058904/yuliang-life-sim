@@ -50,6 +50,18 @@ describe('seed content registry', () => {
       'course.workplace-basics',
       'course.office-tools',
       'course.data-analysis-basics',
+      'course.people-management',
+    ]);
+  });
+
+  it('exposes the first official expert and management career routes', () => {
+    expect(contentRegistry.jobs.filter((job) => job.contentStatus === 'official' && ['job.category-operations-expert', 'job.regional-operations-manager'].includes(job.id)).map((job) => job.id)).toEqual([
+      'job.regional-operations-manager',
+      'job.category-operations-expert',
+    ]);
+    expect(contentRegistry.vacancyTemplates?.filter((vacancy) => ['job.category-operations-expert', 'job.regional-operations-manager'].includes(vacancy.jobId)).map((vacancy) => vacancy.jobId)).toEqual([
+      'job.regional-operations-manager',
+      'job.category-operations-expert',
     ]);
   });
 
