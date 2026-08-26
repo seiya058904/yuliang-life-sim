@@ -31,4 +31,14 @@ export const officialRelationshipInteractions = [
     category: 'meal',
     options: [{ id: 'dinner', label: '一起吃饭', durationMinutes: 180, cashCost: 160, effects: [{ type: 'relation', characterId: 'character.heyan', amount: 5 }, { type: 'attribute', attribute: 'mood', amount: 4 }] }],
   },
+  {
+    id: 'interaction.business-with-zhou',
+    contentStatus: 'official',
+    name: '和周妍看看小生意',
+    description: '聊聊附近的经营机会，也把生活里的实际问题说清楚。',
+    tags: ['relationship', 'business', 'social'],
+    characterId: 'character.seed-zhou',
+    category: 'business',
+    options: [{ id: 'visit', label: '一起看看店', durationMinutes: 180, cashCost: 80, effects: [{ type: 'relation', characterId: 'character.seed-zhou', amount: 7 }, { type: 'attribute', attribute: 'network', amount: 1 }] }],
+  },
 ] satisfies readonly RelationshipInteractionDefinition[];

@@ -359,3 +359,24 @@ test('records the first investment dividend as a milestone after monthly settlem
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一笔投资分红');
 });
+
+test('settles Zhou business interaction and persists the follow-up message', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 500;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const contact = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '周妍', exact: true }) });
+  await contact.getByRole('button', { name: /一起看看店/ }).click();
+  await expect(contact).toContainText('12');
+  await expect(page.getByRole('region', { name: '消息' })).toContainText('周妍发来新消息');
+
+  await page.reload();
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  await expect(page.getByRole('region', { name: '消息' })).toContainText('周妍发来新消息');
+});

@@ -411,6 +411,19 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory.at(-1)).toMatchObject({ detail: '符合对方偏好，关系进展更顺利' });
   });
 
+  it('settles the official business interaction with Zhou and queues a persisted message', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 500;
+
+    const result = dispatchGameAction(state, { type: 'interact_character', interactionId: 'interaction.business-with-zhou', optionId: 'visit' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.relationships['character.seed-zhou']).toBe(12);
+    expect(result.state.cash).toBe(420);
+    expect(result.state.lifeHistory.at(-1)).toMatchObject({ category: 'relationship', sourceId: 'interaction.business-with-zhou' });
+    expect(result.state.messages?.at(-1)).toMatchObject({ characterId: 'character.seed-zhou', read: false, sourceId: 'interaction.business-with-zhou' });
+  });
+
   it('diminishes repeated relationship gains without decaying the stored relationship', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 1_000;

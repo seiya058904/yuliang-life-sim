@@ -24,6 +24,7 @@ describe('seed content registry', () => {
       'interaction.coffee-with-recruiter',
       'interaction.tech-coffee',
       'interaction.dinner-with-agent',
+      'interaction.business-with-zhou',
     ]);
   });
 
