@@ -6,7 +6,7 @@ import { calculateNetWorth } from '../src/game/engine/economy';
 import { activityAtTime, createDefaultWeeklyPlan, defaultJobSchedule } from '../src/game/engine/schedule';
 import type { GameAction, GameState } from '../src/game/content/contracts';
 
-type Strategy = 'career' | 'consumer' | 'relationship' | 'investor' | 'expert' | 'manager' | 'property' | 'business' | 'high-wealth';
+type Strategy = 'career' | 'consumer' | 'relationship' | 'investor' | 'expert' | 'manager' | 'property' | 'business' | 'high-wealth' | 'high-wealth-normal-life';
 
 function configureScenario(state: GameState, strategy: Strategy): void {
   if (strategy === 'expert' || strategy === 'manager') {
@@ -38,7 +38,17 @@ function configureScenario(state: GameState, strategy: Strategy): void {
     state.businesses = { [business.id]: { businessId: business.id, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: business.price, equityPercent: 100 } };
   }
 
-  if (strategy === 'high-wealth') state.cash = 10_000_000;
+  if (strategy === 'high-wealth' || strategy === 'high-wealth-normal-life') state.cash = 10_000_000;
+
+  if (strategy === 'high-wealth-normal-life') {
+    const job = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-shop-clerk')!;
+    state.currentJobId = job.id;
+    state.unlockedJobIds = [...new Set([...state.unlockedJobIds, job.id])];
+    state.employment = { jobId: job.id, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week, basePay: job.basePay, salaryAdjustment: 0, negotiationStage: 0 };
+    state.weeklyPlan = createDefaultWeeklyPlan();
+    state.previousWeeklyPlan = structuredClone(state.weeklyPlan);
+    state.currentActivity = activityAtTime(state.time, state.weeklyPlan, state.employment, contentRegistry);
+  }
 }
 
 function chooseAction(state: GameState, strategy: Strategy): GameAction {
@@ -91,4 +101,4 @@ function run(strategy: Strategy): { strategy: Strategy; day: number; cash: numbe
   };
 }
 
-for (const strategy of ['career', 'consumer', 'relationship', 'investor', 'expert', 'manager', 'property', 'business', 'high-wealth'] as const) console.log(JSON.stringify(run(strategy)));
+for (const strategy of ['career', 'consumer', 'relationship', 'investor', 'expert', 'manager', 'property', 'business', 'high-wealth', 'high-wealth-normal-life'] as const) console.log(JSON.stringify(run(strategy)));
