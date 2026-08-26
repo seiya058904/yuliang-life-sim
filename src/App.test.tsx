@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, beforeEach } from 'vitest';
 import App from './App';
@@ -64,6 +64,21 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: /聊聊远程工作/ }));
     await user.click(screen.getByRole('button', { name: '我的' }));
     expect(screen.getByText('和徐可聊设备 · 聊聊远程工作')).toBeInTheDocument();
+  });
+
+  it('trades an official investment through the wealth page and records both sides', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    expect(screen.getByRole('heading', { name: '灵活储蓄' })).toBeInTheDocument();
+    const investmentCard = screen.getByRole('heading', { name: '灵活储蓄' }).closest('article');
+    expect(investmentCard).not.toBeNull();
+    await user.click(within(investmentCard as HTMLElement).getByRole('button', { name: '买入 1 份' }));
+    await user.click(within(investmentCard as HTMLElement).getByRole('button', { name: '卖出 1 份' }));
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('买入灵活储蓄')).toBeInTheDocument();
+    expect(screen.getByText('卖出灵活储蓄')).toBeInTheDocument();
   });
 
   it('navigates from a rejected application hint and renders life history newest first', async () => {

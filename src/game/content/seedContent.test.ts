@@ -24,6 +24,15 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes official investment products from the content registry', () => {
+    expect(contentRegistry.investments?.filter((investment) => investment.contentStatus === 'official').map((investment) => investment.id)).toEqual([
+      'investment.flexible-savings',
+      'investment.broad-market-index',
+      'investment.technology-growth',
+      'investment.commercial-reit',
+    ]);
+  });
+
   it('supports replacing one category while keeping the remaining Seed categories', () => {
     const result = composeContentRegistry({ jobs: [{ ...contentRegistry.jobs[0], id: 'job.seed-shop-clerk', contentStatus: 'official', name: '正式示例工作' }] });
     expect(result.jobs[0].id).toBe('job.seed-shop-clerk');
