@@ -17,6 +17,7 @@ describe('seed content registry', () => {
       'activity.industrial-design-exhibition',
       'activity.weekend-getaway',
       'activity.old-town-culture',
+      'activity.riverside-park-ride',
       'activity.browse-bookstore',
       'activity.city-photography',
       'activity.brand-film-project',

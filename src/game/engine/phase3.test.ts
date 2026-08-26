@@ -39,6 +39,21 @@ describe('phase 3 additive systems', () => {
     expect(settled.state.financialLedger?.entries).toContainEqual(expect.objectContaining({ label: '河畔夜市 · 逛一圈', amount: 96, category: 'entertainment' }));
   });
 
+  it('settles the official riverside park ride through the weekly plan', () => {
+    const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 7);
+    state.weeklyPlan.days[1].evening = { kind: 'free' };
+    const activity = contentRegistry.activities?.find((entry) => entry.id === 'activity.riverside-park-ride')!;
+    const planned = dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity: { kind: 'activity', activityId: activity.id, optionId: 'ride' } }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+
+    expect(planned.error).toBeUndefined();
+    const started = dispatchGameAction(planned.state, { type: 'start_week' }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    const settled = dispatchGameAction(started.state, { type: 'advance_simulation', minutes: 24 * 60 }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+
+    expect(settled.state.lifeHistory).toContainEqual(expect.objectContaining({ title: '临江公园骑行 · 沿江骑行', sourceId: activity.id }));
+    expect(settled.state.financialLedger?.entries).toContainEqual(expect.objectContaining({ label: '临江公园骑行 · 沿江骑行', amount: 180, category: 'travel' }));
+    expect(settled.state.attributes?.fitness).toBeGreaterThan(state.attributes?.fitness ?? 0);
+  });
+
   it('applies location development discount to activities at that location', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 7);
     state.locationDevelopment = { 'location.riverside': 3 };

@@ -620,6 +620,15 @@ test('discovers and plans the old-town cultural trip', async ({ page }) => {
   await expect(page.getByText('旧城文化日 · 看一场展览')).toBeVisible();
 });
 
+test('discovers and plans the riverside park ride', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const ride = page.getByRole('heading', { name: '临江公园骑行 · 沿江骑行' }).locator('..');
+  await expect(ride).toContainText('¥180');
+  await expect(ride).toContainText('体能 +2');
+  await ride.getByRole('button', { name: '安排到本周自由时间' }).click();
+  await expect(page.getByText('临江公园骑行 · 沿江骑行')).toBeVisible();
+});
+
 test('buys and gives a preference-matching gift with persisted social history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

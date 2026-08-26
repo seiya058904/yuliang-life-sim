@@ -91,6 +91,18 @@ export const officialActivities = [
     options: [{ id: 'exhibition', label: '看一场展览', durationMinutes: 240, cashCost: 220, effects: [] }],
   },
   {
+    id: 'activity.riverside-park-ride',
+    contentStatus: 'official',
+    name: '临江公园骑行',
+    description: '沿着临江区的公园慢慢骑一圈，把一段时间留给身体和风景。',
+    tags: ['life', 'travel', 'hobby'],
+    category: 'travel',
+    financialCategory: 'travel',
+    locationId: 'location.riverside',
+    familiarityTags: ['cycling'],
+    options: [{ id: 'ride', label: '沿江骑行', durationMinutes: 180, cashCost: 180, cooldownDays: 21, effects: [{ type: 'attribute', attribute: 'fitness', amount: 2 }, { type: 'attribute', attribute: 'mood', amount: 4 }] }],
+  },
+  {
     id: 'activity.browse-bookstore',
     contentStatus: 'official',
     name: '周末逛书店',
