@@ -185,6 +185,9 @@ test('discovers the expanded daily services and subscriptions', async ({ page })
   const nutrition = page.getByRole('heading', { name: '营养餐计划' }).locator('..').locator('..');
   await nutrition.getByRole('button', { name: '使用服务' }).click();
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('营养餐计划');
+  const workdayMeal = page.getByRole('heading', { name: '工作日简餐' }).locator('..').locator('..');
+  await workdayMeal.getByRole('button', { name: '使用服务' }).click();
+  await expect(page.getByRole('region', { name: '服务记录' })).toContainText('工作日简餐');
   const video = page.getByRole('heading', { name: '视频会员' }).locator('..').locator('..');
   await video.getByRole('button', { name: '开通订阅' }).click();
   await expect(video.getByRole('button', { name: '取消订阅' })).toBeVisible();

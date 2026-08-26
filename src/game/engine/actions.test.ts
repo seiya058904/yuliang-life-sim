@@ -101,6 +101,18 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '营养餐计划', sourceId: 'service.nutrition-coaching' });
   });
 
+  it('settles the workday meal service and records its short cooldown', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const before = state.attributes?.mood ?? 0;
+    const result = dispatchGameAction(state, { type: 'use_service', serviceId: 'service.workday-meal' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.cash).toBe(state.cash - 42);
+    expect(result.state.attributes?.mood).toBe(before + 1);
+    expect(result.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '工作日简餐', sourceId: 'service.workday-meal' });
+    expect(dispatchGameAction(result.state, { type: 'use_service', serviceId: 'service.workday-meal' }, contentRegistry, balanceConfig).error).toContain('冷却中');
+  });
+
   it('uses the vehicle annual service only when a vehicle is owned', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 1000;
