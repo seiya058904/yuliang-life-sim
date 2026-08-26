@@ -415,6 +415,37 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       effects.push({ type: 'cash', amount: total, reason: '出售商品' });
       break;
     }
+    case 'use_service': {
+      const service = content.services?.find((entry) => entry.id === action.serviceId);
+      if (!service) return fail(input, '找不到这项服务');
+      if (!hasRequirements(state, service.requirements, content, balance)) return fail(input, '当前条件还不满足');
+      if (state.cash < service.price) return fail(input, '现金不足以使用这项服务');
+      state.cash -= service.price;
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: service.financialCategory ?? 'service', amount: service.price, label: service.name, sourceType: 'service', sourceId: service.id });
+      applyContentEffects(state, service.effects ?? [], content, balance, effects);
+      addLifeRecord(state, { category: 'service', title: service.name, detail: '服务已完成', sourceId: service.id, amount: -service.price });
+      effects.push({ type: 'cash', amount: -service.price, reason: `${service.name}结算` });
+      break;
+    }
+    case 'manage_subscription': {
+      const subscription = content.subscriptions?.find((entry) => entry.id === action.subscriptionId);
+      if (!subscription) return fail(input, '找不到这项订阅');
+      state.activeSubscriptions ??= {};
+      if (action.enabled) {
+        if (state.activeSubscriptions[subscription.id]) return fail(input, '这项订阅已经开通');
+        if (!hasRequirements(state, subscription.requirements, content, balance)) return fail(input, '当前条件还不满足');
+        state.activeSubscriptions[subscription.id] = { subscriptionId: subscription.id, startedDay: state.time.day };
+        applyContentEffects(state, subscription.effects ?? [], content, balance, effects);
+        addLifeRecord(state, { category: 'service', title: `开通${subscription.name}`, detail: `每月 ¥${subscription.monthlyFee}`, sourceId: subscription.id });
+        effects.push({ type: 'message', text: `已开通${subscription.name}` });
+      } else {
+        if (!state.activeSubscriptions[subscription.id]) return fail(input, '这项订阅尚未开通');
+        delete state.activeSubscriptions[subscription.id];
+        addLifeRecord(state, { category: 'service', title: `取消${subscription.name}`, sourceId: subscription.id });
+        effects.push({ type: 'message', text: `已取消${subscription.name}` });
+      }
+      break;
+    }
     case 'move_housing': {
       const home = find(content.housing, action.housingId);
       if (!home) return fail(input, '找不到这套住房');

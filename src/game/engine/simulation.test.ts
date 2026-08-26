@@ -74,4 +74,16 @@ describe('automatic simulation', () => {
     expect(result.state.simulationMode).toBe('monthly_summary');
     expect(result.state.pendingMonthlySummary?.month).toBe(1);
   });
+
+  it('charges an active subscription in the monthly summary and keeps its record active', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 29);
+    initial.activeSubscriptions = { 'subscription.mobile-basic': { subscriptionId: 'subscription.mobile-basic', startedDay: 1 } };
+    const running = { ...initial, simulationMode: 'running' as const, autoRepeatPlan: true, weeklyPlan: { ...initial.weeklyPlan, autoRepeat: true } };
+    const result = advanceSimulation(running, 28 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.activeSubscriptions?.['subscription.mobile-basic']).toBeDefined();
+    expect(result.state.lastFinancialSummary?.consumption.categories.service).toBe(39);
+    expect(result.state.lifeHistory.some((entry) => entry.title === '基础通信套餐月度扣费')).toBe(true);
+  });
 });

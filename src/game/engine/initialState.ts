@@ -53,6 +53,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     businesses: {},
     assets: {},
     investments: {},
+    activeSubscriptions: {},
     completedEvents: [],
     completedMilestones: [],
     eventCooldowns: {},

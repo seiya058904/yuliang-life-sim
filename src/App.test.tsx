@@ -81,6 +81,22 @@ describe('余量 app flow', () => {
     expect(screen.getByText('卖出灵活储蓄')).toBeInTheDocument();
   });
 
+  it('uses a service and manages a monthly subscription from the shop', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getAllByRole('button', { name: '使用服务' })[0]);
+    const subscriptionRow = screen.getByRole('heading', { name: '基础通信套餐' }).closest('.item-row');
+    expect(subscriptionRow).not.toBeNull();
+    await user.click(within(subscriptionRow as HTMLElement).getByRole('button', { name: '开通订阅' }));
+    await user.click(within(subscriptionRow as HTMLElement).getByRole('button', { name: '取消订阅' }));
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('基础理发')).toBeInTheDocument();
+    expect(screen.getByText('开通基础通信套餐')).toBeInTheDocument();
+    expect(screen.getByText('取消基础通信套餐')).toBeInTheDocument();
+  });
+
   it('navigates from a rejected application hint and renders life history newest first', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

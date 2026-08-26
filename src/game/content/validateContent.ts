@@ -29,6 +29,8 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     ...(registry.investments ?? []).length ? [['投资', registry.investments ?? []] as [string, ContentCollection]] : [],
     ...(registry.companies ?? []).length ? [['公司', registry.companies ?? []] as [string, ContentCollection]] : [],
     ...(registry.dialogues ?? []).length ? [['对白', registry.dialogues ?? []] as [string, ContentCollection]] : [],
+    ...(registry.services ?? []).length ? [['服务', registry.services ?? []] as [string, ContentCollection]] : [],
+    ...(registry.subscriptions ?? []).length ? [['订阅', registry.subscriptions ?? []] as [string, ContentCollection]] : [],
     ...(registry.storylines ?? []).length ? [['剧情', registry.storylines ?? []] as [string, ContentCollection]] : [],
   ];
   const known = {
@@ -228,6 +230,16 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
       checkEffects(option.effects, `活动 ${activity.id} 的 Option ${option.id}`);
       if (option.requiredCharacterId && !known.characters.has(option.requiredCharacterId)) errors.push(`活动 ${activity.id} 引用了未知人物: ${option.requiredCharacterId}`);
     }
+  }
+  for (const service of registry.services ?? []) {
+    if (service.price < 0) errors.push(`服务 ${service.id} 的价格无效`);
+    checkCondition(service.requirements, `服务 ${service.id}`);
+    checkEffects(service.effects, `服务 ${service.id}`);
+  }
+  for (const subscription of registry.subscriptions ?? []) {
+    if (subscription.monthlyFee <= 0) errors.push(`订阅 ${subscription.id} 的月费无效`);
+    checkCondition(subscription.requirements, `订阅 ${subscription.id}`);
+    checkEffects(subscription.effects, `订阅 ${subscription.id}`);
   }
   for (const interaction of registry.relationshipInteractions ?? []) {
     if (!known.characters.has(interaction.characterId)) errors.push(`互动 ${interaction.id} 引用了未知人物: ${interaction.characterId}`);

@@ -64,6 +64,28 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory?.at(-1)).toMatchObject({ title: '出售实用手机', category: 'purchase', amount: 189 });
   });
 
+  it('uses a service without advancing time and records the service expense', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const result = dispatchGameAction(state, { type: 'use_service', serviceId: 'service.haircut-basic' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.cash).toBe(state.cash - 68);
+    expect(result.state.time).toEqual(state.time);
+    expect(result.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'service', amount: 68 });
+    expect(result.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '基础理发' });
+  });
+
+  it('starts and cancels a subscription with a persisted active record', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const started = dispatchGameAction(state, { type: 'manage_subscription', subscriptionId: 'subscription.mobile-basic', enabled: true }, contentRegistry, balanceConfig);
+    expect(started.error).toBeUndefined();
+    expect(started.state.activeSubscriptions?.['subscription.mobile-basic']).toMatchObject({ subscriptionId: 'subscription.mobile-basic', startedDay: 1 });
+    const cancelled = dispatchGameAction(started.state, { type: 'manage_subscription', subscriptionId: 'subscription.mobile-basic', enabled: false }, contentRegistry, balanceConfig);
+    expect(cancelled.error).toBeUndefined();
+    expect(cancelled.state.activeSubscriptions?.['subscription.mobile-basic']).toBeUndefined();
+    expect(cancelled.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '取消基础通信套餐' });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);

@@ -45,7 +45,7 @@ function isLifeRecordEntry(value: unknown): value is LifeRecordEntry {
   return isRecord(value)
     && typeof value.id === 'string'
     && Number.isInteger(value.day)
-    && ['career', 'purchase', 'housing', 'relationship', 'event', 'business', 'asset', 'investment'].includes(String(value.category))
+    && ['career', 'purchase', 'service', 'activity', 'housing', 'relationship', 'event', 'business', 'asset', 'investment'].includes(String(value.category))
     && typeof value.title === 'string';
 }
 
@@ -96,6 +96,8 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.assets = Object.fromEntries(Object.entries(candidate.assets ?? {}).filter(([id]) => knownIds(content, 'assets').has(id)));
   const investmentIds = new Set((content.investments ?? []).map((entry) => entry.id));
   candidate.investments = Object.fromEntries(Object.entries(candidate.investments ?? {}).filter(([id]) => investmentIds.has(id)));
+  const subscriptionIds = new Set((content.subscriptions ?? []).map((entry) => entry.id));
+  candidate.activeSubscriptions = Object.fromEntries(Object.entries(candidate.activeSubscriptions ?? {}).filter(([id, holding]) => subscriptionIds.has(id) && isRecord(holding) && holding.subscriptionId === id && Number.isInteger(holding.startedDay) && holding.startedDay > 0).map(([id, holding]) => [id, { subscriptionId: id, startedDay: Number((holding as Record<string, unknown>).startedDay) }]));
   candidate.jobExperience = candidate.jobExperience ?? {};
   candidate.careerExperience = Object.fromEntries(Object.entries(candidate.careerExperience ?? {}).filter(([id, value]) => ['office', 'operations', 'customer_service', 'retail', 'logistics', 'data', 'project', 'management', 'media', 'finance'].includes(id) && Number.isFinite(value) && Number(value) >= 0).map(([id, value]) => [id, Number(value)]));
   candidate.qualifications = [...new Set((candidate.qualifications ?? []).filter((id) => typeof id === 'string' && ['office_basics', 'operations_foundation', 'client_service_experience', 'retail_operations_experience', 'logistics_experience', 'data_analysis_foundation', 'project_coordination', 'people_management_basics', 'media_production_experience', 'investment_basics'].includes(id)))];

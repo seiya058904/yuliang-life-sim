@@ -2,12 +2,29 @@ import type { BalanceConfig } from '../balance/config';
 import type { ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary } from '../content/contracts';
 import { calculateNetWorth } from './economy';
 import { emptyFinancialLedger, projectLegacyMonthlyLedger, summarizeFinancialLedger } from './financialLedger';
+import { appendLifeRecord } from './lifeHistory';
 
 export function emptyMonthlyLedger(netWorthStart: number): MonthlyLedger {
   return { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart, netWorthEnd: netWorthStart };
 }
 
 export function closeMonth(state: GameState, month: number, content: ContentRegistry, balance: BalanceConfig, output: GameEffect[]): MonthlySummary {
+  for (const [subscriptionId, holding] of Object.entries(state.activeSubscriptions ?? {})) {
+    const subscription = content.subscriptions?.find((entry) => entry.id === subscriptionId);
+    if (!subscription) {
+      delete state.activeSubscriptions![subscriptionId];
+      continue;
+    }
+    if (state.cash < subscription.monthlyFee) {
+      delete state.activeSubscriptions![subscriptionId];
+      state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.service.subscription-paused.${subscription.id}.${month}`, day: state.time.day, category: 'service', title: `订阅暂停${subscription.name}`, detail: '本月现金不足，已停止自动续费', sourceId: subscription.id });
+      output.push({ type: 'message', text: `${subscription.name}因现金不足暂停` });
+      continue;
+    }
+    state.cash -= subscription.monthlyFee;
+    recordSubscriptionFee(state, subscription.id, subscription.name, subscription.monthlyFee);
+    state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.service.subscription-fee.${subscription.id}.${month}`, day: state.time.day, category: 'service', title: `${subscription.name}月度扣费`, sourceId: subscription.id, amount: -subscription.monthlyFee });
+  }
   const financialLedger = state.financialLedger ?? emptyFinancialLedger(month, state.monthlyLedger.netWorthStart, state.monthlyLedger.netWorthStart);
   const netWorthEnd = calculateNetWorth(state, content, balance);
   const financialSummary = summarizeFinancialLedger(financialLedger, financialLedger.cashStart ?? state.monthlyLedger.netWorthStart, state.cash, financialLedger.netWorthStart ?? state.monthlyLedger.netWorthStart, netWorthEnd);
@@ -20,4 +37,11 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
   state.monthlyLedger = emptyMonthlyLedger(ledger.netWorthEnd);
   output.push({ type: 'month', summary });
   return summary;
+}
+
+function recordSubscriptionFee(state: GameState, subscriptionId: string, name: string, amount: number): void {
+  const ledger = state.financialLedger;
+  if (!ledger) return;
+  const sequence = ledger.nextSequence++;
+  ledger.entries.push({ id: `ledger.${ledger.month}.${sequence}`, day: state.time.day, direction: 'expense', group: 'consumption', category: 'service', amount, cashDelta: -amount, sourceType: 'subscription', sourceId: subscriptionId, label: `${name}月度订阅` });
 }

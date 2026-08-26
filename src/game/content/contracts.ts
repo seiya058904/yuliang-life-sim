@@ -188,7 +188,7 @@ export interface GigOpportunityState { id: ContentId; jobId: ContentId; validFro
 export interface EmploymentHistoryEntry { jobId: ContentId; companyId?: ContentId; startedDay?: number; endedDay?: number; finalPay: number; reason?: string; migrated?: boolean; }
 export interface MonthlyHighlight { id: string; kind: 'new_job' | 'new_contact' | 'side_job_acquired' | 'gig_completed' | 'major_purchase' | 'new_asset' | 'attribute_milestone' | 'storyline_completed'; day: number; label: string; sourceId?: ContentId; }
 
-export type LifeRecordCategory = 'career' | 'purchase' | 'activity' | 'housing' | 'relationship' | 'event' | 'business' | 'asset' | 'investment';
+export type LifeRecordCategory = 'career' | 'purchase' | 'service' | 'activity' | 'housing' | 'relationship' | 'event' | 'business' | 'asset' | 'investment';
 
 export interface LifeRecordEntry {
   id: string;
@@ -215,6 +215,19 @@ export interface ItemDefinition extends ContentMeta {
   financialCategory?: FinancialCategory;
   requirements?: ConditionDefinition;
   housingTags?: readonly ContentTag[];
+  effects?: readonly EffectDefinition[];
+}
+
+export interface ServiceDefinition extends ContentMeta {
+  price: number;
+  financialCategory?: 'service' | 'maintenance';
+  requirements?: ConditionDefinition;
+  effects?: readonly EffectDefinition[];
+}
+
+export interface SubscriptionDefinition extends ContentMeta {
+  monthlyFee: number;
+  requirements?: ConditionDefinition;
   effects?: readonly EffectDefinition[];
 }
 
@@ -509,6 +522,8 @@ export interface ContentRegistry {
   companies?: readonly CompanyDefinition[];
   dialogues?: readonly DialogueDefinition[];
   relationshipInteractions?: readonly RelationshipInteractionDefinition[];
+  services?: readonly ServiceDefinition[];
+  subscriptions?: readonly SubscriptionDefinition[];
   storylines?: readonly StorylineDefinition[];
   locations?: readonly LocationDefinition[];
   vacancyTemplates?: readonly VacancyTemplate[];
@@ -666,6 +681,7 @@ export interface GameState {
   businesses: Record<ContentId, BusinessHolding>;
   assets: Record<ContentId, AssetHolding>;
   investments?: Record<ContentId, InvestmentHolding>;
+  activeSubscriptions?: Record<ContentId, { subscriptionId: ContentId; startedDay: number }>;
   completedEvents: ContentId[];
   completedMilestones: ContentId[];
   eventCooldowns: Record<ContentId, number>;
@@ -728,6 +744,8 @@ export type GameAction =
   | { type: 'purchase_items'; items: Record<ContentId, number> }
   | { type: 'use_item'; itemId: ContentId; quantity?: number }
   | { type: 'sell_item'; itemId: ContentId; quantity: number }
+  | { type: 'use_service'; serviceId: ContentId }
+  | { type: 'manage_subscription'; subscriptionId: ContentId; enabled: boolean }
   | { type: 'move_housing'; housingId: ContentId; mode: 'rent' | 'owned' }
   | { type: 'buy_business'; businessId: ContentId }
   | { type: 'update_business'; businessId: ContentId; priceLevel: number; wageLevel: number; inventoryLevel: number }

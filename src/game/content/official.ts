@@ -15,5 +15,6 @@ import { officialLocations } from './official/locations';
 import { officialActivities } from './official/activities';
 import { officialRelationshipInteractions } from './official/relationshipInteractions';
 import { officialInvestments } from './official/investments';
+import { officialServices, officialSubscriptions } from './official/services';
 
-export const officialContent: ContentRegistry = { jobs: officialJobs, items: officialItems, housing: officialHousing, businesses: officialBusinesses, assets: officialAssets, characters: officialCharacters, events: officialEvents, eventChains: officialEventChains, milestones: officialMilestones, activities: officialActivities, relationshipInteractions: officialRelationshipInteractions, investments: officialInvestments, companies: officialCompanies, locations: officialLocations, vacancyTemplates: officialVacancyTemplates, vocabulary };
+export const officialContent: ContentRegistry = { jobs: officialJobs, items: officialItems, housing: officialHousing, businesses: officialBusinesses, assets: officialAssets, characters: officialCharacters, events: officialEvents, eventChains: officialEventChains, milestones: officialMilestones, activities: officialActivities, relationshipInteractions: officialRelationshipInteractions, investments: officialInvestments, services: officialServices, subscriptions: officialSubscriptions, companies: officialCompanies, locations: officialLocations, vacancyTemplates: officialVacancyTemplates, vocabulary };

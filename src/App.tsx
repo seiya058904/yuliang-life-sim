@@ -103,7 +103,7 @@ function App() {
         {lastError && <div className="notice error" role="alert">{lastError}</div>}
         {activeView === 'life' && <LifeView game={game} dispatch={dispatch} />}
         {activeView === 'work' && <><CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={setView} /><section className="planning-section"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><ForecastPanel game={game} /></>}
-        {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /></>}
+        {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></>}
         {activeView === 'wealth' && <AssetsView game={game} dispatch={dispatch} />}
         {activeView === 'relations' && <RelationsView game={game} dispatch={dispatch} />}
         {activeView === 'city' && <CityView game={game} />}
@@ -183,6 +183,10 @@ function WeekPlanner({ game, dispatch }: { game: GameState; dispatch: (action: G
 function InventoryPanel({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
   const entries = contentRegistry.items.filter((item) => (game.inventory[item.id] ?? 0) > 0);
   return <section className="detail-panel" aria-label="我的库存"><div className="section-heading compact"><div><span className="eyebrow">库存</span><h2>我的商品</h2></div><p>消耗品可以使用；耐用品可以出售，所有变化都会进入账本与人生记录。</p></div>{entries.length ? <div className="item-list">{entries.map((item) => <div className="item-row" key={item.id}><div><h2>{item.name}</h2><p>库存 ×{game.inventory[item.id]}</p></div><div className="button-pair">{item.consumable && <button className="secondary-button" onClick={() => dispatch({ type: 'use_item', itemId: item.id })}>使用一次</button>}{item.sellable && <button className="text-button" onClick={() => dispatch({ type: 'sell_item', itemId: item.id, quantity: 1 })}>出售一次</button>}</div></div>)}</div> : <p className="muted">购买商品后，会在这里管理库存。</p>}</section>;
+}
+
+function ServiceMarket({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
+  return <section className="detail-panel" aria-label="服务与订阅"><div className="section-heading compact"><div><span className="eyebrow">日常生活</span><h2>服务与订阅</h2></div><p>一次性服务立即结算；订阅在每月结算时自动扣费，可随时取消。</p></div><div className="item-list">{(contentRegistry.services ?? []).map((service) => <div className="item-row" key={service.id}><div><span className="job-kind">一次性服务</span><h2>{service.name}</h2><p>{service.description}</p></div><div className="row-meta"><strong>{money(service.price)}</strong><button className="text-button" onClick={() => dispatch({ type: 'use_service', serviceId: service.id })}>使用服务</button></div></div>)}</div><div className="item-list">{(contentRegistry.subscriptions ?? []).map((subscription) => { const active = Boolean(game.activeSubscriptions?.[subscription.id]); return <div className="item-row" key={subscription.id}><div><span className="job-kind">月度订阅</span><h2>{subscription.name}</h2><p>{subscription.description}</p></div><div className="row-meta"><strong>{money(subscription.monthlyFee)} /月</strong><button className="text-button" onClick={() => dispatch({ type: 'manage_subscription', subscriptionId: subscription.id, enabled: !active })}>{active ? '取消订阅' : '开通订阅'}</button></div></div>; })}</div></section>;
 }
 
 function ShopView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
