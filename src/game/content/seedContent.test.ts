@@ -23,6 +23,12 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes a stable venue for the riverside night market activity', () => {
+    expect(contentRegistry.venues).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'venue.riverside-night-market', name: '临江夜市', locationId: 'location.riverside', activityIds: ['activity.riverside-night-market'] }),
+    ]));
+  });
+
   it('exposes the smart-home set as the lifestyle technology anchor item', () => {
     expect(contentRegistry.items.find((item) => item.id === 'item.smart-home-set')).toMatchObject({
       contentStatus: 'official',
@@ -226,7 +232,7 @@ describe('seed content registry', () => {
   });
 
   it('exposes official venues that bind to real locations and activities', () => {
-    expect(contentRegistry.venues?.filter((venue) => venue.contentStatus === 'official')).toHaveLength(5);
+    expect(contentRegistry.venues?.filter((venue) => venue.contentStatus === 'official')).toHaveLength(6);
     expect(contentRegistry.venues?.every((venue) => venue.activityIds.every((id) => contentRegistry.activities?.some((activity) => activity.id === id)))).toBe(true);
   });
 
