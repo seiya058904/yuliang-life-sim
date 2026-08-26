@@ -153,6 +153,22 @@ describe('game action dispatcher', () => {
     expect(bought.state.locationVisits?.['location.central']).toBe(1);
   });
 
+  it('acquires a second unlocked business and records the holding-group transfer', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 15000;
+    state.ability = 18;
+    state.unlockedCapabilities.push('business_license', 'remote_work');
+    state.unlockedBusinessIds.push('business.seed-kiosk', 'business.online-store');
+    const bought = dispatchGameAction(state, { type: 'buy_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    const acquired = dispatchGameAction(bought.state, { type: 'acquire_business', businessId: 'business.online-store' }, contentRegistry, balanceConfig);
+
+    expect(acquired.error).toBeUndefined();
+    expect(acquired.state.businesses['business.online-store']).toMatchObject({ purchasePrice: 8580, acquiredDay: 1, acquiredFromBusinessId: 'business.seed-kiosk' });
+    expect(acquired.state.locationVisits?.['location.industrial']).toBe(1);
+    expect(acquired.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 8580, cashDelta: -8580 });
+    expect(acquired.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '并购线上小店', amount: -8580 });
+  });
+
   it('keeps business capital separate and records one dilutive funding round', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 10000;

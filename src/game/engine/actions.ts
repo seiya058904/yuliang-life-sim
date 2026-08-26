@@ -548,6 +548,23 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       effects.push({ type: 'cash', amount: -business.price, reason: '购买生意' });
       break;
     }
+    case 'acquire_business': {
+      const business = find(content.businesses, action.businessId);
+      const parentBusinessId = Object.keys(state.businesses)[0];
+      const acquisitionPrice = business ? Math.round(business.price * 1.1) : 0;
+      if (!business || !state.unlockedBusinessIds.includes(action.businessId)) return fail(input, '这项生意还没有解锁');
+      if (!parentBusinessId) return fail(input, '需要先拥有一家企业才能发起并购');
+      if (state.businesses[action.businessId]) return fail(input, '这项企业已经在你的企业组合中');
+      if (!hasRequirements(state, business.requirements, content, balance)) return fail(input, '并购条件还不满足');
+      if (state.cash - acquisitionPrice < reserveRequired(state, content)) return fail(input, '现金不足以完成并购');
+      state.cash -= acquisitionPrice;
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: acquisitionPrice, capitalInvested: 0, equityPercent: 100, fundingRaised: 0, fundingRound: 0, acquiredDay: state.time.day, acquiredFromBusinessId: parentBusinessId };
+      if (business.locationId) recordLocationVisit(state, business.locationId, content);
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: acquisitionPrice, label: `并购${business.name}`, sourceType: 'business', sourceId: business.id, cashDelta: -acquisitionPrice });
+      addLifeRecord(state, { category: 'business', title: `并购${business.name}`, detail: `纳入${content.businesses.find((entry) => entry.id === parentBusinessId)?.name ?? parentBusinessId}企业组合`, sourceId: business.id, amount: -acquisitionPrice });
+      effects.push({ type: 'cash', amount: -acquisitionPrice, reason: '企业并购' });
+      break;
+    }
     case 'update_business': {
       const holding = state.businesses[action.businessId];
       const business = find(content.businesses, action.businessId);

@@ -565,6 +565,8 @@ export interface BusinessHolding {
   fundingRound?: number;
   listed?: boolean;
   listedDay?: number;
+  acquiredDay?: number;
+  acquiredFromBusinessId?: ContentId;
 }
 
 export interface AssetHolding {
@@ -800,6 +802,7 @@ export type GameAction =
   | { type: 'move_housing'; housingId: ContentId; mode: 'rent' | 'owned' }
   | { type: 'sell_housing' }
   | { type: 'buy_business'; businessId: ContentId }
+  | { type: 'acquire_business'; businessId: ContentId }
   | { type: 'update_business'; businessId: ContentId; priceLevel: number; wageLevel: number; inventoryLevel: number }
   | { type: 'inject_business_capital'; businessId: ContentId; amount: number }
   | { type: 'raise_business_funding'; businessId: ContentId }

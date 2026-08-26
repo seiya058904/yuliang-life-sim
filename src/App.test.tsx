@@ -143,6 +143,19 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/定价 3/)).toBeInTheDocument();
   });
 
+  it('exposes an acquisition action for another unlocked business', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 15000, ability: 18, unlockedCapabilities: ['business_license', 'remote_work'], unlockedBusinessIds: ['business.seed-kiosk', 'business.online-store'], businesses: { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200 } } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    expect(screen.getByRole('heading', { name: '可并购企业' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '并购 ¥8,580' }));
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('并购线上小店')).toBeInTheDocument();
+  });
+
   it('exposes long-run period controls from the time console', () => {
     render(<App />);
 
