@@ -255,7 +255,10 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
   else recordStateFinancialEntry(state, { day, direction: 'expense', category: 'business_cost', amount: -passive.profit, label: '企业经营成本', sourceType: 'business' });
   if (propertyIncome > 0) recordStateFinancialEntry(state, { day, direction: 'income', category: 'property_income', amount: propertyIncome, label: '房产租金', sourceType: 'asset' });
   if (otherAssetIncome > 0) recordStateFinancialEntry(state, { day, direction: 'income', category: 'investment_dividend', amount: otherAssetIncome, label: '资产收益', sourceType: 'asset' });
-  if (investmentDividend > 0) recordStateFinancialEntry(state, { day, direction: 'income', category: 'investment_dividend', amount: investmentDividend, label: '投资分红', sourceType: 'investment' });
+  if (investmentDividend > 0) {
+    state.flags.investment_dividend_received = true;
+    recordStateFinancialEntry(state, { day, direction: 'income', category: 'investment_dividend', amount: investmentDividend, label: '投资分红', sourceType: 'investment' });
+  }
   if (rent > 0) recordStateFinancialEntry(state, { day, direction: 'expense', category: 'housing', amount: rent, label: '房租', sourceType: 'housing', sourceId: state.housing.housingId });
   recordStateFinancialEntry(state, { day, direction: 'expense', category: 'living', amount: living, label: '基础生活', sourceType: 'living' });
   recordStateFinancialEntry(state, { day, direction: 'expense', category: 'transport', amount: transport, label: '交通', sourceType: 'living' });

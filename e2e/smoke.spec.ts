@@ -334,3 +334,28 @@ test('records and shows a reached milestone in the profile', async ({ page }) =>
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一万现金');
 });
+
+test('records the first investment dividend as a milestone after monthly settlement', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 50_000;
+    state.investments = {
+      'investment.qiming-equity': { investmentId: 'investment.qiming-equity', units: 1_000, averageCost: 220, currentValuation: 220_000, lastValuationDay: 1 },
+    };
+    state.majorEventsThisMonth = 3;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await expect(page.getByRole('dialog')).toContainText('第 1 月');
+  await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一笔投资分红');
+
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一笔投资分红');
+});

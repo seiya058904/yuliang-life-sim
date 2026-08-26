@@ -176,6 +176,26 @@ export const officialMilestones = [
         "amount": 3
       }
     ]
+  },
+  {
+    "id": "milestone.first-investment-dividend",
+    "contentStatus": "official",
+    "name": "第一笔投资分红",
+    "description": "第一次看到投资产生了真正进入现金流的收入。",
+    "tags": [
+      "investment",
+      "life"
+    ],
+    "condition": {
+      "type": "flag",
+      "flag": "investment_dividend_received"
+    },
+    "effects": [
+      {
+        "type": "stat",
+        "stat": "reputation",
+        "amount": 1
+      }
+    ]
   }
 ] satisfies readonly MilestoneDefinition[];
-

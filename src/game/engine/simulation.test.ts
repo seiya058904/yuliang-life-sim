@@ -174,6 +174,8 @@ describe('automatic simulation', () => {
     expect(dividend?.amount).toBeGreaterThan(0);
     expect(dividend?.direction).toBe('income');
     expect(result.state.investments?.['investment.qiming-equity'].currentValuation).toBeGreaterThan(0);
+    expect(result.state.completedMilestones).toContain('milestone.first-investment-dividend');
+    expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'milestone.first-investment-dividend')).toBe(true);
   });
 
   it('applies gentle vehicle depreciation and a monthly vehicle cost without treating depreciation as consumption', () => {
