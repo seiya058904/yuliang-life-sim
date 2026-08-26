@@ -181,8 +181,8 @@ function WeekPlanner({ game, dispatch }: { game: GameState; dispatch: (action: G
 }
 
 function InventoryPanel({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
-  const entries = contentRegistry.items.filter((item) => item.consumable && (game.inventory[item.id] ?? 0) > 0);
-  return <section className="detail-panel" aria-label="我的库存"><div className="section-heading compact"><div><span className="eyebrow">库存</span><h2>可使用的商品</h2></div><p>使用不会再次扣款，消耗品的效果和使用记录会保留。</p></div>{entries.length ? <div className="item-list">{entries.map((item) => <div className="item-row" key={item.id}><div><h2>{item.name}</h2><p>库存 ×{game.inventory[item.id]}</p></div><button className="secondary-button" onClick={() => dispatch({ type: 'use_item', itemId: item.id })}>使用一次</button></div>)}</div> : <p className="muted">购买咖啡、早餐或其他消耗品后，会在这里使用。</p>}</section>;
+  const entries = contentRegistry.items.filter((item) => (game.inventory[item.id] ?? 0) > 0);
+  return <section className="detail-panel" aria-label="我的库存"><div className="section-heading compact"><div><span className="eyebrow">库存</span><h2>我的商品</h2></div><p>消耗品可以使用；耐用品可以出售，所有变化都会进入账本与人生记录。</p></div>{entries.length ? <div className="item-list">{entries.map((item) => <div className="item-row" key={item.id}><div><h2>{item.name}</h2><p>库存 ×{game.inventory[item.id]}</p></div><div className="button-pair">{item.consumable && <button className="secondary-button" onClick={() => dispatch({ type: 'use_item', itemId: item.id })}>使用一次</button>}{item.sellable && <button className="text-button" onClick={() => dispatch({ type: 'sell_item', itemId: item.id, quantity: 1 })}>出售一次</button>}</div></div>)}</div> : <p className="muted">购买商品后，会在这里管理库存。</p>}</section>;
 }
 
 function ShopView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {

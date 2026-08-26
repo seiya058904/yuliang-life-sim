@@ -411,6 +411,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       state.inventory[action.itemId] -= action.quantity;
       state.cash += total;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: total, label: `出售${item.name}`, sourceType: 'item', sourceId: item.id });
+      addLifeRecord(state, { category: 'purchase', title: `出售${item.name}`, detail: action.quantity > 1 ? `数量 ${action.quantity}` : '已从库存出售', sourceId: item.id, amount: total });
       effects.push({ type: 'cash', amount: total, reason: '出售商品' });
       break;
     }

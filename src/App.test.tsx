@@ -43,6 +43,19 @@ describe('余量 app flow', () => {
     expect(screen.getByTestId('cash-value')).toHaveTextContent('¥62');
   });
 
+  it('manages an owned durable item from the reachable shop inventory', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, inventory: { ...game.inventory, 'item.seed-phone': 1 }, itemPurchasePrices: { ...game.itemPurchasePrices, 'item.seed-phone': 420 } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    expect(screen.getByRole('region', { name: '我的库存' })).toHaveTextContent('实用手机');
+    await user.click(screen.getByRole('button', { name: '出售一次' }));
+    expect(screen.getByTestId('cash-value')).toHaveTextContent('¥689');
+    expect(screen.getByRole('region', { name: '我的库存' })).toHaveTextContent('购买商品后，会在这里管理库存。');
+  });
+
   it('navigates from a rejected application hint and renders life history newest first', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

@@ -51,6 +51,19 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory.at(-1)).toMatchObject({ category: 'purchase', title: '使用现磨咖啡' });
   });
 
+  it('sells an owned item and records liquidation in life history', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.inventory['item.seed-phone'] = 1;
+    state.itemPurchasePrices['item.seed-phone'] = 420;
+    const result = dispatchGameAction(state, { type: 'sell_item', itemId: 'item.seed-phone', quantity: 1 }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.inventory['item.seed-phone']).toBe(0);
+    expect(result.state.cash).toBe(state.cash + 189);
+    expect(result.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'asset_liquidation', amount: 189 });
+    expect(result.state.lifeHistory?.at(-1)).toMatchObject({ title: '出售实用手机', category: 'purchase', amount: 189 });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);
