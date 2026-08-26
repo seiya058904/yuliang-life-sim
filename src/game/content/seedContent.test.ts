@@ -267,6 +267,7 @@ describe('seed content registry', () => {
       'storyline.warehouse-to-office',
       'storyline.first-real-project',
       'storyline.big-promotion',
+      'storyline.client-poach',
     ]);
     expect(contentRegistry.dialogues?.filter((dialogue) => dialogue.contentStatus === 'official').map((dialogue) => dialogue.id)).toEqual([
       'dialogue.remote-connection',
@@ -277,6 +278,7 @@ describe('seed content registry', () => {
       'dialogue.first-project-meeting',
       'dialogue.big-promotion-entry',
       'dialogue.big-promotion-finish',
+      'dialogue.client-poach-entry',
     ]);
   });
 

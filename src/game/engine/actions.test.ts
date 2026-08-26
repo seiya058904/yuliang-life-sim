@@ -713,6 +713,16 @@ describe('game action dispatcher', () => {
     expect(settled.state.flags.big_promotion_completed).toBe(true);
   });
 
+  it('turns a client poaching question into a time-limited referral opportunity', () => {
+    const initial = createInitialState(contentRegistry, balanceConfig, 13);
+    const state = { ...initial, currentJobId: 'job.business-analyst', employment: { ...initial.employment!, jobId: 'job.business-analyst', companyId: 'company.clearview-consulting' } };
+    const started = dispatchGameAction(state, { type: 'start_storyline', storylineId: 'storyline.client-poach' }, contentRegistry, balanceConfig);
+    const chosen = dispatchGameAction(started.state, { type: 'choose_storyline_branch', storylineId: 'storyline.client-poach', branchId: 'hear-terms' }, contentRegistry, balanceConfig);
+    expect(chosen.error).toBeUndefined();
+    expect(chosen.state.opportunities).toEqual(expect.arrayContaining([expect.objectContaining({ jobId: 'job.independent-consultant', source: '合作公司负责人私下邀请' })]));
+    expect(chosen.state.lifeHistory.at(-1)).toMatchObject({ title: '客户想把你挖走：听听条件' });
+  });
+
   it('completes a reached milestone with its reward, history, and monthly highlight', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 12), cash: 10_000 };
     const result = dispatchGameAction(state, { type: 'start_week' }, contentRegistry, balanceConfig);

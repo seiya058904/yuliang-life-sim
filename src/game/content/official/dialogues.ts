@@ -79,4 +79,12 @@ export const officialDialogues = [
     tags: ['career'],
     lines: [{ id: 'finish', speakerName: '项目负责人', text: '你这次留下的判断，已经不只是执行层面的经验了。' }],
   },
+  {
+    id: 'dialogue.client-poach-entry',
+    contentStatus: 'official',
+    name: '客户想把你挖走',
+    description: '合作公司的负责人私下问你有没有考虑过换个环境。',
+    tags: ['career'],
+    lines: [{ id: 'question', speakerName: '合作公司负责人', text: '你有没有考虑过换个环境？' }],
+  },
 ] satisfies readonly DialogueDefinition[];

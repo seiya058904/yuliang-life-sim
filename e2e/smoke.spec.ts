@@ -783,6 +783,30 @@ test('completes the ecommerce big-promotion storyline with a persisted career re
   await expect(page.getByText('大促：完成项目复盘')).toBeVisible();
 });
 
+test('turns a client poaching storyline into a persisted referral opportunity', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.currentJobId = 'job.business-analyst';
+    state.employment = { ...(state.employment ?? {}), jobId: 'job.business-analyst', companyId: 'company.clearview-consulting', startedDay: 1 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const storyline = page.getByRole('heading', { name: '客户想把你挖走' }).locator('..').locator('..');
+  await storyline.getByRole('button', { name: '开始故事' }).click();
+  await storyline.getByRole('button', { name: '听听条件' }).click();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '工作机会', exact: true }).click();
+  await expect(page.getByText('合作公司负责人私下邀请')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '工作机会', exact: true }).click();
+  await expect(page.getByText('合作公司负责人私下邀请')).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

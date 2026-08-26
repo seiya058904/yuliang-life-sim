@@ -120,4 +120,31 @@ export const officialStorylines = [
       { id: 'complete' },
     ],
   },
+  {
+    id: 'storyline.client-poach',
+    contentStatus: 'official',
+    name: '客户想把你挖走',
+    description: '一次合作关系中的私下邀请，把人物、职业和跳槽放在同一个选择里。',
+    tags: ['career'],
+    conditions: { type: 'any', conditions: [{ type: 'current_job', jobId: 'job.business-analyst' }, { type: 'current_job', jobId: 'job.independent-consultant' }] },
+    initialStageId: 'private-question',
+    stages: [
+      {
+        id: 'private-question',
+        dialogueId: 'dialogue.client-poach-entry',
+        branches: [
+          {
+            id: 'hear-terms',
+            text: '听听条件',
+            nextStageId: 'complete',
+            effects: [{ type: 'relation', characterId: 'character.guqing', amount: 2 }],
+            opportunity: { jobId: 'job.independent-consultant', companyId: 'company.xinghe', route: 'referral', source: '合作公司负责人私下邀请', expiresInDays: 21, salaryRange: [320, 360] },
+          },
+          { id: 'decline', text: '婉拒', nextStageId: 'complete', effects: [{ type: 'relation', characterId: 'character.guqing', amount: 4 }] },
+          { id: 'tell-supervisor', text: '告诉当前主管', nextStageId: 'complete', effects: [{ type: 'stat', stat: 'reputation', amount: 1 }, { type: 'modifier', modifier: { target: 'work_pay', mode: 'add', value: 30, tags: ['work'] } }, { type: 'set_flag', flag: 'client_poach_disclosed' }] },
+        ],
+      },
+      { id: 'complete' },
+    ],
+  },
 ] satisfies readonly StorylineDefinition[];
