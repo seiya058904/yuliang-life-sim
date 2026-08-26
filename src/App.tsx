@@ -125,7 +125,7 @@ function App() {
 function CityView({ game }: { game: GameState }) {
   const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
   const jobLocation = locationForCurrentJob(game, contentRegistry);
-  return <section className="city-section"><div className="section-heading compact"><div><span className="eyebrow">澄川市</span><h1>城市与地点</h1></div><p>地点会影响通勤反馈与每日交通费用；它不是新的玩家等级。</p></div><div className="item-grid">{locationSummary(contentRegistry).map((location) => <article className="item-card" key={location.id}><div className="job-card-head"><span className="job-kind">{location.region}</span><span className="muted">{location.id === home?.locationId ? '当前居住' : location.id === jobLocation?.id ? '当前工作' : '可发现'}</span></div><h2>{location.name}</h2><p>{location.description}</p><span className="muted">交通系数 ×{location.transportCostMultiplier.toFixed(2)}</span></article>)}</div></section>;
+  return <section className="city-section"><div className="section-heading compact"><div><span className="eyebrow">澄川市</span><h1>城市与地点</h1></div><p>地点会影响通勤反馈与每日交通费用；访问次数只是记录，不是新的玩家等级。</p></div><div className="item-grid">{locationSummary(contentRegistry).map((location) => <article className="item-card" key={location.id}><div className="job-card-head"><span className="job-kind">{location.region}</span><span className="muted">{location.id === home?.locationId ? '当前居住' : location.id === jobLocation?.id ? '当前工作' : '可发现'}</span></div><h2>{location.name}</h2><p>{location.description}</p><span className="muted">交通系数 ×{location.transportCostMultiplier.toFixed(2)} · 已访问 {game.locationVisits?.[location.id] ?? 0} 次</span></article>)}</div></section>;
 }
 
 function Metric({ label, value }: { label: string; value: number }) {

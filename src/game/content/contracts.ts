@@ -713,6 +713,7 @@ export interface GameState {
   unlockedBusinessIds: ContentId[];
   unlockedAssetIds: ContentId[];
   housing: HousingState;
+  locationVisits?: Record<ContentId, number>;
   relationships: Record<ContentId, number>;
   businesses: Record<ContentId, BusinessHolding>;
   assets: Record<ContentId, AssetHolding>;

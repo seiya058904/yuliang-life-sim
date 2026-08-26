@@ -18,3 +18,9 @@ export function commuteCostMultiplier(state: GameState, content: ContentRegistry
 }
 
 export function locationSummary(content: ContentRegistry): readonly LocationDefinition[] { return content.locations ?? []; }
+
+export function recordLocationVisit(state: GameState, locationId: string, content: ContentRegistry): void {
+  if (!content.locations?.some((location) => location.id === locationId)) return;
+  state.locationVisits ??= {};
+  state.locationVisits[locationId] = (state.locationVisits[locationId] ?? 0) + 1;
+}

@@ -5,6 +5,7 @@ import { calendarForDay } from './calendar';
 import { closeMonth } from './monthlySettlement';
 import { applyCareerExperience, careerRequirementsSatisfied } from './careerProgression';
 import { commuteCostMultiplier } from './locations';
+import { recordLocationVisit } from './locations';
 import { applyContentEffects, chooseAmbientEvent, chooseWeightedEvent, cloneGameState, modifierValue } from './effects';
 import { activityAtTime, defaultJobSchedule } from './schedule';
 import { advanceMinutes, absoluteMinute } from './time';
@@ -133,6 +134,7 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     state.cash -= option.cashCost;
     recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: definition.financialCategory ?? 'entertainment', amount: option.cashCost, label: `${definition.name} · ${option.label}`, sourceType: 'activity', sourceId: definition.id });
     applyContentEffects(state, option.effects ?? [], content, balance, output);
+    if (definition.locationId) recordLocationVisit(state, definition.locationId, content);
     state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: '活动已完成', sourceId: definition.id, amount: -option.cashCost });
     return;
   }

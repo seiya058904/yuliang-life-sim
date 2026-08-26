@@ -242,4 +242,17 @@ describe('余量 app flow', () => {
     expect(screen.getByText('第 1 年')).toBeInTheDocument();
     expect(screen.getByText(/收入 ¥900/)).toBeInTheDocument();
   });
+
+  it('shows persisted location visits in the city view', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, locationVisits: { 'location.central': 3 } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '城市' }));
+    expect(screen.getByRole('heading', { name: '城市与地点' })).toBeInTheDocument();
+    const central = screen.getByRole('heading', { name: '中央区' }).closest('article');
+    expect(central).not.toBeNull();
+    expect(central).toHaveTextContent('已访问 3 次');
+  });
 });

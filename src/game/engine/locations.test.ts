@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { contentRegistry } from '../content/registry';
 import { balanceConfig } from '../balance/config';
 import { createInitialState } from './initialState';
-import { commuteCostMultiplier, locationForCurrentJob, locationSummary } from './locations';
+import { commuteCostMultiplier, locationForCurrentJob, locationSummary, recordLocationVisit } from './locations';
 
 describe('city locations', () => {
   it('resolves stable locations and makes a cross-region commute visible', () => {
@@ -23,5 +23,15 @@ describe('city locations', () => {
     };
 
     expect(commuteCostMultiplier(withVehicle, contentRegistry)).toBeCloseTo(commuteCostMultiplier(withoutVehicle, contentRegistry) * 0.8);
+  });
+
+  it('records visits without introducing a player level', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+
+    recordLocationVisit(state, 'location.riverside', contentRegistry);
+    recordLocationVisit(state, 'location.riverside', contentRegistry);
+    recordLocationVisit(state, 'location.unknown', contentRegistry);
+
+    expect(state.locationVisits).toEqual({ 'location.riverside': 2 });
   });
 });

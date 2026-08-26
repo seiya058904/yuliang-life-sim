@@ -105,6 +105,15 @@ describe('game store persistence', () => {
     expect(restored.annualHistory).toEqual([{ year: 1, cashStart: 1000, cashEnd: 1200, netWorthStart: 1000, netWorthEnd: 1400, totalIncome: 500, totalConsumption: 300, months: 12 }]);
   });
 
+  it('keeps known location visits and removes unknown location ids during migration', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, locationVisits: { 'location.central': 2, 'location.unknown': 4, 'location.riverside': 0 } }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.locationVisits).toEqual({ 'location.central': 2 });
+  });
+
   it('does not persist animation-only effect data as authoritative state', () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
     const state = store.getState().game;

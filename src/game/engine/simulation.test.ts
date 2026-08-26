@@ -54,6 +54,7 @@ describe('automatic simulation', () => {
 
     expect(result.state.financialLedger?.entries.some((entry) => entry.sourceId === 'activity.seed-movie' && entry.amount === 68)).toBe(true);
     expect(result.state.lifeHistory?.some((entry) => entry.sourceId === 'activity.seed-movie' && entry.title === '看电影 · 普通影厅')).toBe(true);
+    expect(result.state.locationVisits?.['location.central']).toBe(1);
   });
 
   it('settles a scheduled course into qualification, career experience, ledger and life history', () => {
