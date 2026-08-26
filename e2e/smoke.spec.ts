@@ -68,3 +68,26 @@ test('settles a city development event and keeps the location change after reloa
   await page.getByRole('button', { name: '城市' }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 });
+
+test('turns a company expansion event into a visible internal career opportunity', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.time = { ...state.time, day: 1 };
+    state.currentJobId = 'job.category-operations-expert';
+    state.employment = { ...(state.employment ?? {}), jobId: 'job.category-operations-expert', companyId: 'company.xinghe', basePay: 720, salaryAdjustment: 0 };
+    state.reputation = 28;
+    state.pendingEventId = 'event.xinghe-expansion';
+    state.simulationMode = 'event';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await expect(page.getByRole('dialog')).toContainText('星河科技的业务扩展');
+  await page.getByRole('dialog').getByRole('button', { name: /参与前期项目/ }).click();
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '工作机会' }).click();
+  await expect(page.getByText('星河科技业务扩展')).toBeVisible();
+  await expect(page.getByText('独立项目顾问')).toBeVisible();
+});

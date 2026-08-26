@@ -288,6 +288,23 @@ describe('game action dispatcher', () => {
     expect(chosen.state.pendingReward?.lines).toContain('临江区发展 +2');
   });
 
+  it('turns a company expansion choice into an internal consultant opportunity', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.currentJobId = 'job.category-operations-expert';
+    state.employment = { ...state.employment!, jobId: 'job.category-operations-expert', companyId: 'company.xinghe', basePay: 720, salaryAdjustment: 0 };
+    state.reputation = 28;
+    state.pendingEventId = 'event.xinghe-expansion';
+    state.simulationMode = 'event';
+
+    const chosen = dispatchGameAction(state, { type: 'choose_event', eventId: 'event.xinghe-expansion', choiceId: 'join-project' }, contentRegistry, balanceConfig);
+
+    expect(chosen.error).toBeUndefined();
+    expect(chosen.state.opportunities).toEqual(expect.arrayContaining([
+      expect.objectContaining({ jobId: 'job.independent-consultant', companyId: 'company.xinghe', route: 'internal', expiresDay: 22 }),
+    ]));
+    expect(chosen.state.lifeHistory.at(-1)).toMatchObject({ category: 'event', title: '星河科技的业务扩展' });
+  });
+
   it('runs a requested month through the normal weekly and monthly settlement loop', () => {
     const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 1);
 

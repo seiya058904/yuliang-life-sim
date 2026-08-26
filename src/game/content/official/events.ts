@@ -2,6 +2,51 @@ import type { EventDefinition } from '../contracts';
 
 export const officialEvents = [
   {
+    "id": "event.xinghe-expansion",
+    "contentStatus": "official",
+    "name": "星河业务扩展",
+    "description": "星河科技正在扩展新的服务线，熟悉业务的人获得了一次内部项目机会。",
+    "title": "星河科技的业务扩展",
+    "body": "星河科技准备把现有的运营经验带进一条新服务线。内部团队希望找一位能独立推进项目的人参与前期工作。",
+    "category": "career",
+    "weight": 0.28,
+    "cooldownDays": 210,
+    "conditions": {
+      "type": "all",
+      "conditions": [
+        { "type": "current_job", "jobId": "job.category-operations-expert" },
+        { "type": "reputation_at_least", "amount": 28 },
+        { "type": "current_salary_at_least", "amount": 12000 }
+      ]
+    },
+    "choices": [
+      {
+        "id": "join-project",
+        "text": "参与前期项目",
+        "effects": [
+          { "type": "attribute", "attribute": "network", "amount": 1 },
+          { "type": "stat", "stat": "reputation", "amount": 2 }
+        ],
+        "opportunity": {
+          "jobId": "job.independent-consultant",
+          "companyId": "company.xinghe",
+          "route": "internal",
+          "source": "星河科技业务扩展",
+          "expiresInDays": 21,
+          "salaryRange": [268, 300]
+        }
+      },
+      {
+        "id": "stay-focused",
+        "text": "先把当前工作做好",
+        "effects": [
+          { "type": "attribute", "attribute": "professional", "amount": 1 }
+        ]
+      }
+    ],
+    "tags": ["career", "work"]
+  },
+  {
     "id": "event.city-transit-upgrade",
     "contentStatus": "official",
     "name": "临江区公共空间升级",

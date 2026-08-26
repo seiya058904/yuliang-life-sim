@@ -80,6 +80,13 @@ describe('seed content registry', () => {
     expect(event?.choices.find((choice) => choice.id === 'support')?.effects).toContainEqual({ type: 'location_development', locationId: 'location.riverside', amount: 1 });
   });
 
+  it('exposes a company expansion event that creates an internal career opportunity', () => {
+    const event = contentRegistry.events.find((entry) => entry.id === 'event.xinghe-expansion');
+    expect(event?.choices.find((choice) => choice.id === 'join-project')?.opportunity).toMatchObject({
+      jobId: 'job.independent-consultant', companyId: 'company.xinghe', route: 'internal', source: '星河科技业务扩展',
+    });
+  });
+
   it('exposes the official relationship storyline from the content registry', () => {
     expect(contentRegistry.storylines?.filter((storyline) => storyline.contentStatus === 'official').map((storyline) => storyline.id)).toEqual([
       'storyline.remote-connection',
