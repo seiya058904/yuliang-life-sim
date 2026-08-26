@@ -280,6 +280,7 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
   await page.evaluate(({ key, state }) => {
     state.housing = { housingId: 'housing.seed-room', mode: 'owned' };
+    state.cash = 7_650;
     state.mortgage = { housingId: 'housing.seed-room', remainingPrincipal: 4_350, monthlyPayment: 199, totalMonths: 24, paidMonths: 1 };
     state.housingHoldings = {
       'housing.seed-apartment': { housingId: 'housing.seed-apartment', purchasePrice: 12_800, currentValuation: 12_800, occupancy: 'rented' },
@@ -298,6 +299,8 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   await page.getByRole('button', { name: '财富', exact: true }).click();
   const summary = page.getByRole('region', { name: '财富组合摘要' });
   await expect(summary).toContainText('房产总值');
+  await expect(summary).toContainText('现金余额');
+  await expect(summary).toContainText('¥7,650');
   await expect(summary).toContainText('贷款余额');
   await expect(summary).toContainText('房产净值');
   await expect(summary).toContainText('本月净租金');

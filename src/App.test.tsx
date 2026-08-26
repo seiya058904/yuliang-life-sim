@@ -404,6 +404,7 @@ describe('余量 app flow', () => {
     const game = appStore.getState().game;
     appStore.setState({ game: {
       ...game,
+      cash: 7650,
       housing: { housingId: 'housing.seed-room', mode: 'owned' },
       mortgage: { housingId: 'housing.seed-room', remainingPrincipal: 4350, monthlyPayment: 199, totalMonths: 24, paidMonths: 1 },
       housingHoldings: { 'housing.seed-apartment': { housingId: 'housing.seed-apartment', purchasePrice: 12800, currentValuation: 12800, occupancy: 'rented' } },
@@ -415,6 +416,8 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '财富' }));
     const summary = screen.getByRole('region', { name: '财富组合摘要' });
     expect(summary).toHaveTextContent('房产总值');
+    expect(summary).toHaveTextContent('现金余额');
+    expect(summary).toHaveTextContent('¥7,650');
     expect(summary).toHaveTextContent('贷款余额');
     expect(summary).toHaveTextContent('房产净值');
     expect(summary).toHaveTextContent('本月净租金');
