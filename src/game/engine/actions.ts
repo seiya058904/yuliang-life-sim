@@ -558,6 +558,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (holding.listed) return fail(input, '这项企业已经上市');
       if ((holding.fundingRound ?? 0) < 2) return fail(input, '企业至少完成两轮融资后才能上市');
       holding.listed = true;
+      holding.listedDay = state.time.day;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: 0, label: `${business.name}完成上市`, sourceType: 'business', sourceId: business.id, cashDelta: 0 });
       addLifeRecord(state, { category: 'business', title: `${business.name}完成上市`, detail: '企业股权进入公开交易状态', sourceId: business.id });
       effects.push({ type: 'message', text: `${business.name}已完成上市，公开股权可以分批变现` });
@@ -569,6 +570,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const percent = Math.round(action.percent);
       if (!holding || !business) return fail(input, '还没有这项生意');
       if (!holding.listed) return fail(input, '企业尚未上市');
+      if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
       if (!Number.isInteger(action.percent) || percent <= 0 || percent >= (holding.equityPercent ?? 100)) return fail(input, '出售股权比例无效');
       const valuation = (holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio;
       const saleValue = Math.max(0, Math.round(valuation * percent / 100));

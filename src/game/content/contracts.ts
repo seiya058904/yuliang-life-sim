@@ -562,6 +562,7 @@ export interface BusinessHolding {
   fundingRaised?: number;
   fundingRound?: number;
   listed?: boolean;
+  listedDay?: number;
 }
 
 export interface AssetHolding {

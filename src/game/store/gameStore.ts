@@ -109,6 +109,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
       fundingRaised: Number.isFinite(value.fundingRaised) ? Math.max(0, Number(value.fundingRaised)) : 0,
       fundingRound: Number.isInteger(value.fundingRound) ? Math.max(0, Number(value.fundingRound)) : 0,
       listed: value.listed === true,
+      listedDay: Number.isInteger(value.listedDay) && Number(value.listedDay) > 0 ? Number(value.listedDay) : undefined,
     }];
   }));
   const businessProjectIds = new Set((content.activities ?? []).flatMap((activity) => activity.options.filter((option) => option.businessProject).map((option) => `${activity.id}.${option.id}`)));

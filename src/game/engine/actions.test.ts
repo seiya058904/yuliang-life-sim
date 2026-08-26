@@ -188,10 +188,14 @@ describe('game action dispatcher', () => {
     state.cash = 10000;
     state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, fundingRaised: 4800, fundingRound: 2, equityPercent: 65 };
     const listed = dispatchGameAction(state, { type: 'list_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
-    const sold = dispatchGameAction(listed.state, { type: 'sell_business_equity', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
+    const lockedSale = dispatchGameAction(listed.state, { type: 'sell_business_equity', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
+    const afterLock = { ...listed.state, time: { ...listed.state.time, day: 29 } };
+    const sold = dispatchGameAction(afterLock, { type: 'sell_business_equity', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
 
     expect(listed.error).toBeUndefined();
     expect(listed.state.businesses['business.seed-kiosk'].listed).toBe(true);
+    expect(listed.state.businesses['business.seed-kiosk'].listedDay).toBe(1);
+    expect(lockedSale.error).toBe('上市股权仍在锁定期内');
     expect(sold.error).toBeUndefined();
     expect(sold.state.businesses['business.seed-kiosk'].equityPercent).toBe(55);
     expect(sold.state.cash).toBe(10000 + 520);
