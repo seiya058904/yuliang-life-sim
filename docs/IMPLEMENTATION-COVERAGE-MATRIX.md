@@ -7,8 +7,8 @@ Scope: this matrix audits `docs/NEXT-UPDATE-FOUNDATION.md` as the sole product/c
 | Check | Result |
 | --- | --- |
 | Branch | `codex/yuliang-completion` |
-| Content validation | `npm run content:validate` passed: 40 jobs, 34 items, 9 services, 5 subscriptions, 6 housing, 7 characters, 36 events, 4 event chains, 4 businesses, 12 assets, 34 activities, 6 venues, 4 courses, 8 investments. |
-| Unit/component tests | `npm test` passed: 21 files, 285 tests. |
+| Content validation | `npm run content:validate` passed: 48 jobs, 34 items, 9 services, 5 subscriptions, 6 housing, 7 characters, 36 events, 4 event chains, 4 businesses, 12 assets, 34 activities, 6 venues, 4 courses, 8 investments. |
+| Unit/component tests | `npm test` passed: 22 files, 287 tests. |
 | Browser E2E | `npm run e2e` passed: 74 specs / 148 project runs (including staged controlling-stake entry, board decisions, and world-coupled NPC/company evolution on desktop and mobile), including named-city-venue, career, shop, dining/concert/home/cinema/fitness/travel/contact-specific activities, wealth, social, city, annual-review, asset, business, service/subscription, wishlist, diamond-pendant, camping-gear/weekend-camping, warehouse-to-office, first-real-project, big-promotion, client-poach, employee-purchase Storylines, independent-public-equity, and persistence flows on desktop and mobile. |
 | Production build | `npm run build` passed: content validation, TypeScript build, Vite build. |
 
@@ -18,7 +18,7 @@ Counts are separated by direct official content, seed content, and the composed 
 
 | Category | Official | Seed | Runtime registry | Notes |
 | --- | ---: | ---: | ---: | --- |
-| Jobs | 40 | 4 | 40 | Runtime jobs are 34 full-time, 4 repeatable side jobs, 2 gigs; management and technical categories are present for the high-tier routes, and the official logistics, education, consulting, travel, StarBridge e-commerce, Neworder automotive service, Frame Media, and Isle Lifestyle routes add stable entry-to-progression paths. |
+| Jobs | 48 | 4 | 48 | Runtime jobs are 34 full-time, 4 repeatable side jobs, 2 gigs; management and technical categories are present for the high-tier routes, and the official logistics, education, consulting, travel, StarBridge e-commerce, Neworder automotive service, Frame Media, and Isle Lifestyle routes add stable entry-to-progression paths. |
 | Items | 34 | 7 | 34 | Runtime categories: 3 consumable, 7 technology, 6 furniture, 4 clothing, 5 luxury, 4 collectible, 2 entertainment, and 4 leisure items including the official `item.camping-gear`. The official `item.smart-home-set` is the Isle Lifestyle technology anchor with a persisted +6 lifestyle effect, and `item.diamond-pendant` adds a bounded jewelry purchase/resale route with appearance feedback. Some items carry `sellable`/`resaleRatio` metadata; owned durable goods can be sold from the Shop inventory panel. |
 | Housing | 6 | 3 | 6 | Runtime modes: 1 rent-only, 5 both rent/buy. |
 | Characters | 7 | 2 | 7 | Relationship stages exist; 林晨 now has an authored, year-gated career history that is visible in Social and annual world snapshots. Broader NPC career branches remain incomplete. Runtime includes the official headhunter contact 许衡 and consulting project contact 顾清. |
@@ -33,7 +33,7 @@ Counts are separated by direct official content, seed content, and the composed 
 | Relationship interactions | 6 | 1 | 7 | Six official character-specific interactions and one seed interaction are composed into seven runtime interactions; preference-matched activity outcomes are covered for 林晨、徐可、何彦 and 周妍. |
 | Messages | 0 | 0 | Runtime-generated | Relationship interactions enqueue up to 30 persisted messages; reading a message writes a relationship history record. |
 | Storylines | 7 | 1 | 8 | One official relationship storyline, five official career storylines, and the first-fund investment storyline are discoverable in Social when their conditions are met, alongside one seed career fallback; stages and branch choices persist. |
-| Vacancy templates | 40 | 0 | 40 | Public market generation uses official templates, including two 环流物流 vacancies, four 青禾教育科技 vacancies, three 澄明商业咨询 vacancies, one 栖岸文旅 vacancy, four 星桥电商 vacancies, four 新序汽车服务 vacancies, three 映界传媒 vacancies, and four 一屿生活科技 vacancies. |
+| Vacancy templates | 48 | 0 | 48 | Public market generation uses official templates, including two 环流物流 vacancies, four 青禾教育科技 vacancies, three 澄明商业咨询 vacancies, one 栖岸文旅 vacancy, four 星桥电商 vacancies, four 新序汽车服务 vacancies, three 映界传媒 vacancies, and four 一屿生活科技 vacancies. |
 | Locations | 4 | 0 | 4 | 澄川市中央区、临江区、北部产业区、旧城文化区；稳定 location ID 已接入公司、企业、住房、人物和活动引用，内容校验会拒绝未知地点引用。 |
 | Venues | 6 | 0 | 6 | 云庭咖啡、衡川餐厅、北岸展馆、旧城影院、叶脉书店、临江夜市；每个场所绑定一个稳定地点和至少一个可执行活动。 |
 | Milestones | 9 | 2 | 9 | Official milestones replace seed overlap in runtime; first investment dividend is an authored persisted milestone. |
