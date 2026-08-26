@@ -56,6 +56,16 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('region', { name: '我的库存' })).toHaveTextContent('购买商品后，会在这里管理库存。');
   });
 
+  it('reaches an official character interaction and records the relationship outcome', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '社交' }));
+    await user.click(screen.getByRole('button', { name: /聊聊远程工作/ }));
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('和徐可聊设备 · 聊聊远程工作')).toBeInTheDocument();
+  });
+
   it('navigates from a rejected application hint and renders life history newest first', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

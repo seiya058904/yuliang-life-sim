@@ -16,6 +16,14 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes official character-specific interactions from the content registry', () => {
+    expect(contentRegistry.relationshipInteractions?.filter((interaction) => interaction.contentStatus === 'official').map((interaction) => interaction.id)).toEqual([
+      'interaction.coffee-with-recruiter',
+      'interaction.tech-coffee',
+      'interaction.dinner-with-agent',
+    ]);
+  });
+
   it('supports replacing one category while keeping the remaining Seed categories', () => {
     const result = composeContentRegistry({ jobs: [{ ...contentRegistry.jobs[0], id: 'job.seed-shop-clerk', contentStatus: 'official', name: '正式示例工作' }] });
     expect(result.jobs[0].id).toBe('job.seed-shop-clerk');
