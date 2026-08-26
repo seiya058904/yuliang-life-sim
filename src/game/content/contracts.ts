@@ -714,6 +714,7 @@ export interface WorldSnapshot {
   netWorth: number;
   businessCount: number;
   relationshipCount: number;
+  relationshipValues?: Record<ContentId, number>;
   visitedLocationCount: number;
   locationDevelopment?: Record<ContentId, number>;
   listedBusinessCount?: number;

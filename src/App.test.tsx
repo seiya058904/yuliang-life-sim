@@ -414,13 +414,14 @@ describe('余量 app flow', () => {
   it('shows persisted annual world snapshots alongside financial review', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
-    appStore.setState({ game: { ...game, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, listedBusinessCount: 1, publicFloatPercent: 35, currentJobId: game.currentJobId }] } });
+    appStore.setState({ game: { ...game, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, relationshipValues: { 'character.seed-zhou': 42 }, listedBusinessCount: 1, publicFloatPercent: 35, currentJobId: game.currentJobId }] } });
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
     expect(screen.getByRole('heading', { name: '世界记录' })).toBeInTheDocument();
     expect(screen.getByText(/第 1 年 · 经营 1 家企业/)).toBeInTheDocument();
     expect(screen.getByText(/访问 3 个地点/)).toBeInTheDocument();
+    expect(screen.getByText(/周妍 42/)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '年度公开股权记录' })).toHaveTextContent('公开流通 35%');
   });
 

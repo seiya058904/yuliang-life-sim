@@ -105,6 +105,7 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       netWorth: netWorthEnd,
       businessCount: Object.keys(state.businesses).length,
       relationshipCount: Object.values(state.relationships).filter((value) => value > 0).length,
+      relationshipValues: Object.fromEntries((content.characters ?? []).map((character) => [character.id, Math.min(100, Math.max(0, Math.round(state.relationships[character.id] ?? 0)))])),
       visitedLocationCount: Object.values(state.locationVisits ?? {}).filter((value) => value > 0).length,
       locationDevelopment: { ...development },
       listedBusinessCount: Object.values(state.businesses).filter((holding) => holding.listed).length,
