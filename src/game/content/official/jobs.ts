@@ -343,5 +343,62 @@ export const officialJobs = [
     "experienceTags": ["logistics", "operations"],
     "experienceRequired": { "logistics": 22 },
     "isLongTerm": true
+  },
+  {
+    "id": "job.course-operations-assistant",
+    "contentStatus": "official",
+    "name": "课程运营助理",
+    "description": "协助课程排期、学员反馈和资料整理，从办公室岗位进入在线教育运营。",
+    "tags": ["work", "office", "career", "education"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 238,
+    "careerXp": 3,
+    "experienceTags": ["office", "operations"],
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 15 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 12 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.learning-consultant",
+    "contentStatus": "official",
+    "name": "学习顾问",
+    "description": "理解学习需求并陪伴学员完成选择，连接沟通、知识与长期关系。",
+    "tags": ["work", "office", "career", "education"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 286,
+    "careerXp": 4,
+    "experienceTags": ["customer_service", "operations"],
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 25 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 20 },
+      { "type": "attribute_at_least", "attribute": "appearance", "amount": 12 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.course-operations-specialist",
+    "contentStatus": "official",
+    "name": "课程运营专员",
+    "description": "负责课程运营节奏、数据复盘和跨团队协作，把专业判断带进教育产品。",
+    "tags": ["work", "office", "career", "education"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 330,
+    "careerXp": 5,
+    "experienceTags": ["operations", "data", "project"],
+    "experienceRequired": { "operations": 21 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 28 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 28 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 22 }
+    ] },
+    "isLongTerm": true
   }
 ] satisfies readonly JobDefinition[];

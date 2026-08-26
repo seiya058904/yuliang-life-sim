@@ -37,6 +37,15 @@ describe('career market', () => {
     expect(vacancies.some((vacancy) => vacancy.jobId === 'job.huanliu-dispatch-coordinator')).toBe(true);
   });
 
+  it('keeps the entry course-operations route discoverable and exposes actionable attribute hints', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 31);
+    const vacancies = generateVacancies(state, contentRegistry, balanceConfig);
+    const job = contentRegistry.jobs.find((entry) => entry.id === 'job.course-operations-assistant')!;
+
+    expect(vacancies.some((vacancy) => vacancy.jobId === job.id && vacancy.companyId === 'company.greenfield-education')).toBe(true);
+    expect(requirementHints(job, state, contentRegistry, balanceConfig).map((hint) => hint.label)).toEqual(expect.arrayContaining(['提升知识', '提升沟通']));
+  });
+
   it('rates a referred, experienced candidate above a minimally qualified candidate without exposing a raw chance', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 7);
     const job = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!;

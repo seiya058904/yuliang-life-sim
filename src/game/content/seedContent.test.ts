@@ -105,6 +105,15 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes the official education company route and its public vacancies', () => {
+    expect(contentRegistry.companies?.find((company) => company.id === 'company.greenfield-education')).toMatchObject({
+      name: '青禾教育科技', locationId: 'location.central', jobIds: expect.arrayContaining(['job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist']),
+    });
+    expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.greenfield-education').map((vacancy) => vacancy.jobId)).toEqual([
+      'job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist',
+    ]);
+  });
+
   it('exposes the official headhunter contact and its opportunity-bearing choice', () => {
     expect(contentRegistry.characters.find((character) => character.id === 'character.xuheng')).toMatchObject({ identity: '资深招聘顾问 / 猎头' });
     expect(contentRegistry.events.find((event) => event.id === 'event.headhunter-contact')?.choices[0]).toMatchObject({

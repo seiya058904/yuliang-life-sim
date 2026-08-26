@@ -66,6 +66,32 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
   await expect(page.getByTestId('clock-value')).toHaveText(pausedClock);
 });
 
+test('discovers and applies to the official education operations route', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.attributes = { ...(state.attributes ?? {}), knowledge: 20, communication: 20, appearance: 12 };
+    state.ability = 20;
+    state.reputation = 10;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByLabel('搜索岗位或公司').fill('青禾');
+  const vacancy = page.getByRole('heading', { name: '课程运营助理' }).locator('xpath=ancestor::article[1]');
+  await expect(vacancy).toContainText('青禾教育科技');
+  await expect(vacancy).toContainText('符合条件');
+  await vacancy.getByRole('button', { name: '申请职位' }).click();
+  await page.getByRole('button', { name: '我的申请' }).click();
+  await expect(page.getByRole('heading', { name: '课程运营助理' })).toBeVisible();
+  await page.reload();
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '我的申请' }).click();
+  await expect(page.getByRole('heading', { name: '课程运营助理' })).toBeVisible();
+});
+
 test('enforces the persisted travel cooldown in the activity market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

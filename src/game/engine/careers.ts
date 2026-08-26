@@ -44,17 +44,28 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     'job.category-operations-expert',
     'job.huanliu-warehouse-assistant',
     'job.huanliu-dispatch-coordinator',
+    'job.course-operations-assistant',
   ];
-  const protectedJobIds = new Set([starterTemplate?.jobId, ...officeTemplates.map((template) => template.jobId), ...guaranteedRoutes]);
+  const protectedJobIds = new Set([starterTemplate?.jobId, ...officeTemplates.map((template) => template.jobId)]);
   for (const jobId of guaranteedRoutes) {
     const template = templates.find((entry) => entry.jobId === jobId);
-    if (!template || selected.some((entry) => entry.jobId === jobId)) continue;
-    const vacancy = vacancyFromTemplate(template, state.calendar.month, content, balance);
-    const replacementIndex = selected.findIndex((entry) => !protectedJobIds.has(entry.jobId));
-    if (replacementIndex >= 0) selected[replacementIndex] = vacancy;
-    else if (selected.length < maximum) selected.push(vacancy);
+    if (!template) continue;
+    if (!selected.some((entry) => entry.jobId === jobId)) {
+      const vacancy = vacancyFromTemplate(template, state.calendar.month, content, balance);
+      const replacementIndex = selected.findIndex((entry) => !protectedJobIds.has(entry.jobId));
+      if (replacementIndex >= 0) selected[replacementIndex] = vacancy;
+      else if (selected.length < maximum) selected.push(vacancy);
+    }
+    protectedJobIds.add(jobId);
   }
-  return selected.slice(0, Math.min(maximum, templates.length));
+  const prioritized = [
+    ...officeTemplates.map((template) => selected.find((entry) => entry.vacancyId === `vacancy.${template.id}.${state.calendar.month}`)),
+    selected.find((entry) => entry.jobId === starterTemplate?.jobId),
+    ...guaranteedRoutes.map((jobId) => selected.find((entry) => entry.jobId === jobId)),
+  ].filter((entry): entry is VacancyState => Boolean(entry));
+  const prioritizedIds = new Set(prioritized.map((entry) => entry.vacancyId));
+  const remainder = selected.filter((entry) => !prioritizedIds.has(entry.vacancyId));
+  return [...prioritized, ...remainder].slice(0, Math.min(maximum, templates.length));
 }
 
 export function evaluateApplicationCompetitiveness(job: JobDefinition, state: GameState, _content: ContentRegistry, balance: BalanceConfig, route: ApplicationRoute): CompetitivenessResult {
