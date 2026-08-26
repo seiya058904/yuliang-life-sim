@@ -162,6 +162,15 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes the isle lifestyle technology route with stable product content IDs', () => {
+    expect(contentRegistry.companies).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'company.isle-lifestyle', name: '一屿生活科技', jobIds: expect.arrayContaining(['job.customer-experience-assistant', 'job.product-support-specialist', 'job.user-research-assistant', 'job.lifestyle-product-operations']) }),
+    ]));
+    expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.isle-lifestyle').map((vacancy) => vacancy.jobId)).toEqual([
+      'job.customer-experience-assistant', 'job.product-support-specialist', 'job.user-research-assistant', 'job.lifestyle-product-operations',
+    ]);
+  });
+
   it('exposes the official headhunter contact and its opportunity-bearing choice', () => {
     expect(contentRegistry.characters.find((character) => character.id === 'character.xuheng')).toMatchObject({ identity: '资深招聘顾问 / 猎头' });
     expect(contentRegistry.events.find((event) => event.id === 'event.headhunter-contact')?.choices[0]).toMatchObject({

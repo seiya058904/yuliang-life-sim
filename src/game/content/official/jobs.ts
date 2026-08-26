@@ -724,5 +724,84 @@ export const officialJobs = [
       { "type": "attribute_at_least", "attribute": "communication", "amount": 20 }
     ] },
     "isLongTerm": true
+  },
+  {
+    "id": "job.customer-experience-assistant",
+    "contentStatus": "official",
+    "name": "客户体验助理",
+    "description": "记录用户反馈、协助产品体验和售后跟进，从真实使用场景进入消费科技团队。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 153,
+    "careerXp": 3,
+    "experienceTags": ["customer_service", "office"],
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 12 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 12 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.product-support-specialist",
+    "contentStatus": "official",
+    "name": "产品支持专员",
+    "description": "把设备问题、用户反馈和产品资料整理成可执行的支持方案。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 200,
+    "careerXp": 4,
+    "experienceTags": ["customer_service", "operations"],
+    "experienceRequired": { "customer_service": 20 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 22 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 22 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 18 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.user-research-assistant",
+    "contentStatus": "official",
+    "name": "用户研究助理",
+    "description": "整理访谈记录、观察用户行为并协助验证智能家居产品的真实需求。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 193,
+    "careerXp": 4,
+    "experienceTags": ["data", "office", "customer_service"],
+    "experienceRequired": { "office": 24 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 28 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 24 },
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 18 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.lifestyle-product-operations",
+    "contentStatus": "official",
+    "name": "产品运营",
+    "description": "连接产品发布、用户反馈和运营数据，参与消费科技产品的持续迭代。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 240,
+    "careerXp": 5,
+    "experienceTags": ["operations", "data", "project"],
+    "experienceRequired": { "operations": 42 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 36 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 32 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 28 },
+      { "type": "reputation_at_least", "amount": 18 }
+    ] },
+    "isLongTerm": true
   }
 ] satisfies readonly JobDefinition[];
