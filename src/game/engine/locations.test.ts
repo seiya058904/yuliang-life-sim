@@ -9,7 +9,7 @@ describe('city locations', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 3);
     expect(locationForCurrentJob(state, contentRegistry)?.id).toBe('location.industrial');
     expect(commuteCostMultiplier(state, contentRegistry)).toBeGreaterThan(1);
-    expect(locationSummary(contentRegistry)).toHaveLength(4);
+    expect(locationSummary(contentRegistry)).toHaveLength(6);
   });
 
   it('applies a vehicle convenience factor to commute cost', () => {

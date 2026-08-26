@@ -1881,3 +1881,22 @@ test('starts the old-photo storyline with song-yuran and persists its branch', a
   const albumAfterReload = page.locator('.item-row').filter({ hasText: '旧相册' }).first();
   await expect(albumAfterReload).toContainText('已完成');
 });
+test('discovers the new districts and reaches their venue activities', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 5_000;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '城市', exact: true }).click();
+  await expect(page.locator('.item-card', { hasText: '南岸居住区' }).first()).toBeVisible();
+
+  // Reach the tech-park venue card and jump into its bound activity.
+  const lectureVenue = page.locator('article.item-card').filter({ hasText: '科技园路演厅' });
+  await expect(lectureVenue).toContainText('园区公开课');
+  await page.getByRole('button', { name: '去安排活动' }).last().click();
+  await expect(page.locator('.activity-card', { hasText: '园区公开课' })).toBeVisible();
+});

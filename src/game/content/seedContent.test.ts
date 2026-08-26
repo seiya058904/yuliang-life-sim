@@ -43,6 +43,8 @@ describe('seed content registry', () => {
       'activity.dinner-with-friend',
       'activity.exhibition-with-contact',
       'activity.brand-film-project',
+      'activity.riverside-stretch',
+      'activity.park-open-class',
     ]);
   });
 
@@ -416,7 +418,8 @@ describe('seed content registry', () => {
   });
 
   it('exposes official venues that bind to real locations and activities', () => {
-    expect(contentRegistry.venues?.filter((venue) => venue.contentStatus === 'official')).toHaveLength(6);
+    expect(contentRegistry.venues?.filter((venue) => venue.contentStatus === 'official')).toHaveLength(10);
+    expect(contentRegistry.locations?.filter((location) => location.contentStatus === 'official')).toHaveLength(6);
     expect(contentRegistry.venues?.every((venue) => venue.activityIds.every((id) => contentRegistry.activities?.some((activity) => activity.id === id)))).toBe(true);
   });
 
