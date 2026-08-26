@@ -167,4 +167,32 @@ export const officialStorylines = [
       { id: 'complete' },
     ],
   },
+  {
+    id: 'storyline.first-fund-purchase',
+    contentStatus: 'official',
+    name: '第一次买基金',
+    description: '第一次让现金进入投资市场，先学会看懂自己的选择。',
+    tags: ['investment', 'relationship'],
+    conditions: { type: 'any', conditions: [{ type: 'owns_investment', investmentId: 'investment.flexible-savings' }, { type: 'owns_investment', investmentId: 'investment.stable-money-market' }, { type: 'owns_investment', investmentId: 'investment.broad-market-index' }] },
+    initialStageId: 'notice',
+    stages: [
+      {
+        id: 'notice',
+        dialogueId: 'dialogue.first-fund-purchase',
+        branches: [
+          { id: 'steady', text: '先从低风险开始', nextStageId: 'reflection', effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] },
+          { id: 'observe', text: '先观察一段时间', nextStageId: 'reflection', effects: [{ type: 'attribute', attribute: 'professional', amount: 1 }] },
+          { id: 'understand', text: '先把组合看懂', nextStageId: 'reflection', effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }, { type: 'relation', characterId: 'character.chenyu', amount: 2 }] },
+        ],
+      },
+      {
+        id: 'reflection',
+        branches: [
+          { id: 'keep-plan', text: '把投资留在生活计划里', nextStageId: 'complete', effects: [{ type: 'relation', characterId: 'character.chenyu', amount: 2 }] },
+          { id: 'pause-plan', text: '先不增加投入', nextStageId: 'complete', effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] },
+        ],
+      },
+      { id: 'complete' },
+    ],
+  },
 ] satisfies readonly StorylineDefinition[];

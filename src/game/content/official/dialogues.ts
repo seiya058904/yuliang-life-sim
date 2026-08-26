@@ -95,4 +95,15 @@ export const officialDialogues = [
     tags: ['career'],
     lines: [{ id: 'notice', speakerName: '一屿产品团队', text: '新一批产品内部体验计划开放了，你可以选择折扣购买，或者先试用一套。' }],
   },
+  {
+    id: 'dialogue.first-fund-purchase',
+    contentStatus: 'official',
+    name: '第一次买基金',
+    description: '陈宇提醒你，投资是给现金安排去处，而不是寻找一个永远上涨的答案。',
+    tags: ['investment', 'relationship'],
+    lines: [
+      { id: 'opening', speakerId: 'character.chenyu', text: '你已经开始把钱放进投资里了。先不用急着研究哪个公司会涨。' },
+      { id: 'reminder', speakerId: 'character.chenyu', text: '看清楚风险、投入和现金流，再决定下一步就好。' },
+    ],
+  },
 ] satisfies readonly DialogueDefinition[];

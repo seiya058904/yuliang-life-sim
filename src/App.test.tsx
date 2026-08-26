@@ -444,6 +444,22 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('region', { name: '年度公开股权记录' })).toHaveTextContent('公开流通 35%');
   });
 
+  it('starts and completes the investment storyline after entering the fund market', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, investments: { 'investment.broad-market-index': { investmentId: 'investment.broad-market-index', units: 1, averageCost: 108, currentValuation: 108, lastValuationDay: 1 } } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '社交' }));
+    const storyline = screen.getByRole('heading', { name: '第一次买基金' }).closest('.item-row') as HTMLElement;
+    await user.click(within(storyline).getByRole('button', { name: '开始故事' }));
+    expect(storyline).toHaveTextContent('你已经开始把钱放进投资里了');
+    await user.click(within(storyline).getByRole('button', { name: '先从低风险开始' }));
+    await user.click(within(storyline).getByRole('button', { name: '把投资留在生活计划里' }));
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('第一次买基金：把投资留在生活计划里')).toBeInTheDocument();
+  });
+
   it('shows annual public business equity positions in world history', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

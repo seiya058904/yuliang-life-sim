@@ -848,6 +848,29 @@ test('reads and persists the official storyline dialogue', async ({ page }) => {
   await expect(page.getByText('远程连接：约个时间聊聊')).toBeVisible();
 });
 
+test('completes the first fund investment storyline after entering the market', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.investments = { ...(state.investments ?? {}), 'investment.broad-market-index': { investmentId: 'investment.broad-market-index', units: 1, averageCost: 108, currentValuation: 108, lastValuationDay: 1 } };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const storyline = page.getByRole('heading', { name: '第一次买基金' }).locator('..').locator('..');
+  await storyline.getByRole('button', { name: '开始故事' }).click();
+  await expect(storyline).toContainText('你已经开始把钱放进投资里了');
+  await storyline.getByRole('button', { name: '先从低风险开始' }).click();
+  await storyline.getByRole('button', { name: '把投资留在生活计划里' }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('第一次买基金：把投资留在生活计划里')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('第一次买基金：把投资留在生活计划里')).toBeVisible();
+});
+
 test('unlocks the warehouse-to-office career storyline opportunity', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
