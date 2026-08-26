@@ -407,6 +407,19 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/周末短途旅行 · 慢慢走走/)).toBeInTheDocument();
   });
 
+  it('shows an actionable acquisition hint for a gated activity', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 5000 } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const hints = screen.getByRole('region', { name: '活动获取提示' });
+    expect(hints).toHaveTextContent('城市摄影练习 · 街区取景');
+    expect(hints).toHaveTextContent('需要商品 复古相机');
+    expect(within(hints).getByRole('button', { name: '购买 复古相机' })).toBeEnabled();
+  });
+
   it('shows and enforces the travel cooldown in the activity market', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

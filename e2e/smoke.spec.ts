@@ -127,6 +127,7 @@ test('discovers and plans the friend-specific cafe activity', async ({ page }) =
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await expect(page.getByRole('region', { name: '活动获取提示' })).toContainText('需要商品 复古相机');
   const outing = page.locator('article').filter({ hasText: '和陈宇坐坐' });
   await expect(outing).toContainText('和陈宇坐坐');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
