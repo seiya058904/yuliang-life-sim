@@ -417,5 +417,71 @@ export const officialJobs = [
     "experienceTags": ["office", "customer_service"],
     "qualificationRequired": ["qualification.workplace-basics"],
     "isLongTerm": false
+  },
+  {
+    "id": "job.research-assistant",
+    "contentStatus": "official",
+    "name": "研究助理",
+    "description": "整理行业资料、核对访谈记录，为客户研究提供可靠的基础。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 275,
+    "abilityRequired": 20,
+    "reputationRequired": 8,
+    "careerXp": 4,
+    "experienceTags": ["office", "data"],
+    "requiredItems": ["item.seed-laptop"],
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 26 },
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 20 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 15 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.business-analysis-assistant",
+    "contentStatus": "official",
+    "name": "商业分析助理",
+    "description": "把客户问题拆成可验证的数据与假设，开始承担完整分析环节。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 338,
+    "abilityRequired": 30,
+    "reputationRequired": 12,
+    "careerXp": 5,
+    "experienceTags": ["office", "data", "project"],
+    "experienceRequired": { "office": 40 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 30 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 32 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 20 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.business-analyst",
+    "contentStatus": "official",
+    "name": "商业分析师",
+    "description": "独立完成研究与分析交付，在客户会议中解释判断和建议。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 438,
+    "abilityRequired": 42,
+    "reputationRequired": 20,
+    "careerXp": 6,
+    "experienceTags": ["office", "data", "project"],
+    "experienceRequired": { "operations": 60 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 42 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 42 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 30 }
+    ] },
+    "isLongTerm": true
   }
 ] satisfies readonly JobDefinition[];

@@ -33,6 +33,11 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     const vacancy = vacancyFromTemplate(template, state.calendar.month, content, balance);
     if (!selected.some((entry) => entry.vacancyId === vacancy.vacancyId)) selected.unshift(vacancy);
   }
+  const currentJobTemplate = state.currentJobId ? templates.find((template) => template.jobId === state.currentJobId) : undefined;
+  if (currentJobTemplate) {
+    const vacancy = vacancyFromTemplate(currentJobTemplate, state.calendar.month, content, balance);
+    if (!selected.some((entry) => entry.vacancyId === vacancy.vacancyId)) selected.unshift(vacancy);
+  }
   const starterTemplate = templates.find((template) => template.jobId === 'job.seed-warehouse')
     ?? templates.find((template) => content.jobs.find((job) => job.id === template.jobId)?.tags?.includes('starter'));
   if (starterTemplate) {
@@ -46,8 +51,9 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     'job.huanliu-dispatch-coordinator',
     'job.course-operations-assistant',
     'job.course-teaching-assistant',
+    'job.research-assistant',
   ];
-  const protectedJobIds = new Set([starterTemplate?.jobId, ...officeTemplates.map((template) => template.jobId)]);
+  const protectedJobIds = new Set([currentJobTemplate?.jobId, starterTemplate?.jobId, ...officeTemplates.map((template) => template.jobId)]);
   for (const jobId of guaranteedRoutes) {
     const template = templates.find((entry) => entry.jobId === jobId);
     if (!template) continue;
@@ -61,12 +67,14 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
   }
   const prioritized = [
     ...officeTemplates.map((template) => selected.find((entry) => entry.vacancyId === `vacancy.${template.id}.${state.calendar.month}`)),
+    currentJobTemplate ? selected.find((entry) => entry.vacancyId === `vacancy.${currentJobTemplate.id}.${state.calendar.month}`) : undefined,
     selected.find((entry) => entry.jobId === starterTemplate?.jobId),
     ...guaranteedRoutes.map((jobId) => selected.find((entry) => entry.jobId === jobId)),
   ].filter((entry): entry is VacancyState => Boolean(entry));
-  const prioritizedIds = new Set(prioritized.map((entry) => entry.vacancyId));
+  const uniquePrioritized = prioritized.filter((entry, index) => prioritized.findIndex((candidate) => candidate.vacancyId === entry.vacancyId) === index);
+  const prioritizedIds = new Set(uniquePrioritized.map((entry) => entry.vacancyId));
   const remainder = selected.filter((entry) => !prioritizedIds.has(entry.vacancyId));
-  return [...prioritized, ...remainder].slice(0, Math.min(maximum, templates.length));
+  return [...uniquePrioritized, ...remainder].slice(0, Math.min(maximum, templates.length));
 }
 
 export function evaluateApplicationCompetitiveness(job: JobDefinition, state: GameState, _content: ContentRegistry, balance: BalanceConfig, route: ApplicationRoute): CompetitivenessResult {

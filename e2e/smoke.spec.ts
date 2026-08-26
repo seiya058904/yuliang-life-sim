@@ -124,6 +124,30 @@ test('turns the education course qualification into a persistent teaching assist
   await expect(page.getByRole('heading', { name: '线上课程助教' })).toBeVisible();
 });
 
+test('discovers the consulting research route and shows its real acquisition gate', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.attributes = { ...(state.attributes ?? {}), professional: 26, knowledge: 26, communication: 26, fitness: 26 };
+    state.ability = 26;
+    state.reputation = 8;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByLabel('搜索岗位或公司').fill('澄明');
+  const vacancy = page.getByRole('heading', { name: '研究助理' }).locator('xpath=ancestor::article[1]');
+  await expect(vacancy).toContainText('澄明商业咨询');
+  await expect(vacancy).toContainText('获得轻薄笔记本电脑');
+  await expect(vacancy.getByRole('button', { name: '申请职位' })).toBeDisabled();
+  await page.reload();
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByLabel('搜索岗位或公司').fill('澄明');
+  await expect(page.getByRole('heading', { name: '研究助理' })).toBeVisible();
+});
+
 test('enforces the persisted travel cooldown in the activity market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

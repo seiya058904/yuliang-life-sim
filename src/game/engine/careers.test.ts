@@ -57,6 +57,15 @@ describe('career market', () => {
     expect(after).toEqual([]);
   });
 
+  it('surfaces the consulting route requirements and treats the laptop as a real gate', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 31);
+    const job = contentRegistry.jobs.find((entry) => entry.id === 'job.research-assistant')!;
+    const prepared = { ...state, ability: 26, reputation: 8, attributes: { ...state.attributes!, professional: 26, knowledge: 26, communication: 26 } };
+
+    expect(requirementHints(job, prepared, contentRegistry, balanceConfig).map((hint) => hint.requirementId)).toContain('item:item.seed-laptop');
+    expect(requirementHints(job, { ...prepared, inventory: { ...state.inventory, 'item.seed-laptop': 1 } }, contentRegistry, balanceConfig)).toEqual([]);
+  });
+
   it('rates a referred, experienced candidate above a minimally qualified candidate without exposing a raw chance', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 7);
     const job = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!;

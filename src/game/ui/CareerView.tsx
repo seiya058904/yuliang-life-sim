@@ -3,7 +3,8 @@ import type { GameAction, GameState, JobDefinition, ViewId } from '../content/co
 import { employmentKind, requirementHints } from '../engine/careers';
 import { contentRegistry } from '../content/registry';
 import { balanceConfig } from '../balance/config';
-import { careerExperienceLabel, careerExperienceStage, careerRequirementsSatisfied, requirementForJob } from '../engine/careerProgression';
+import { evaluateCondition } from '../engine/conditions';
+import { careerExperienceLabel, careerExperienceStage, careerRequirementsSatisfied } from '../engine/careerProgression';
 
 const categories = ['全部', '基础岗位', '办公室', '技术', '销售', '服务', '管理', '兼职'] as const;
 const states = ['全部', '符合条件', '接近条件', '已申请', '冷却中'] as const;
@@ -12,6 +13,12 @@ const categoryMap: Record<string, string> = { 基础岗位: 'basic', 办公室: 
 
 const money = (amount: number) => '¥' + Math.round(amount).toLocaleString('zh-CN');
 const companyName = (id: string) => contentRegistry.companies?.find((company) => company.id === id)?.name ?? id.replace('company.', '').replaceAll('.', ' · ');
+const isJobEligible = (job: JobDefinition, game: GameState) => (job.abilityRequired ?? 0) <= game.ability
+  && (job.reputationRequired ?? 0) <= game.reputation
+  && careerRequirementsSatisfied(job, game)
+  && (!job.requirements || evaluateCondition(job.requirements, game, contentRegistry, balanceConfig))
+  && !(job.requiredItems ?? []).some((itemId) => (game.inventory[itemId] ?? 0) < 1)
+  && !(job.requiredCapabilities ?? []).some((capability) => !game.unlockedCapabilities.includes(capability));
 
 export function CareerView({ game, dispatch, jobs, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; jobs: readonly JobDefinition[]; onNavigate?: (view: ViewId) => void }) {
   const [tab, setTab] = useState<'current' | 'market' | 'opportunities' | 'applications' | 'side-jobs' | 'history'>('market');
@@ -48,7 +55,7 @@ function VacancyMarket({ game, jobs, dispatch }: { game: GameState; jobs: readon
   const rows = useMemo(() => (game.vacancies ?? []).map((vacancy) => ({ vacancy, job: jobs.find((job) => job.id === vacancy.jobId) })).filter((row) => row.job).filter((row) => {
     const job = row.job!;
     const application = game.applications?.find((entry) => entry.vacancyId === row.vacancy.vacancyId);
-    const eligible = (job.abilityRequired ?? 0) <= game.ability && (job.reputationRequired ?? 0) <= game.reputation && careerRequirementsSatisfied(job, game);
+    const eligible = isJobEligible(job, game);
     const close = !eligible && (job.abilityRequired ?? 0) - game.ability <= 5 && (job.reputationRequired ?? 0) - game.reputation <= 5;
     const cooldown = game.applications?.some((entry) => entry.jobId === job.id && entry.companyId === row.vacancy.companyId && (entry.nextEligibleDay ?? 0) > game.time.day);
     const categoryMatches = category === '全部' || (category === '兼职' ? employmentKind(job) !== 'full_time' : job.category === categoryMap[category]);
@@ -61,8 +68,8 @@ function VacancyMarket({ game, jobs, dispatch }: { game: GameState; jobs: readon
 function VacancyCard({ game, vacancy, job, dispatch }: { game: GameState; vacancy: any; job: any; dispatch: (action: GameAction) => void }) {
   const application = game.applications?.find((entry) => entry.vacancyId === vacancy.vacancyId);
   const acquired = game.acquiredSideJobs?.[job.id];
-  const eligible = (job.abilityRequired ?? 0) <= game.ability && (job.reputationRequired ?? 0) <= game.reputation && careerRequirementsSatisfied(job, game);
-  const hints = requirementForJob(job, game);
+  const eligible = isJobEligible(job, game);
+  const hints = requirementHints(job, game, contentRegistry, balanceConfig);
   return <article className="job-card"><div className="job-card-head"><span className="job-kind">{job.category ?? '岗位'}</span><span className="muted">{companyName(vacancy.companyId)}</span></div><h2>{job.name}</h2><p>{job.description}</p><div className="job-facts"><span>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])} / 班</span><span>第 {vacancy.expiresDay} 天截止</span></div>{hints.length > 0 && <div className="requirement-box"><strong>还需准备</strong>{hints.map((hint) => <span key={hint.requirementId}>{hint.label}{hint.currentValue !== undefined ? ` ${hint.currentValue}/${hint.requiredValue}` : ''}</span>)}</div>}<div className="requirement-box"><strong>{eligible ? '符合条件' : '接近条件或仍需准备'}</strong><span>{acquired ? '✓ 已获得' : application?.status ?? '可申请'}</span></div>{acquired ? <button className="secondary-button" disabled>安排到本周</button> : <button className="primary-button" disabled={!eligible || Boolean(application)} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{application ? '已申请' : '申请职位'}</button>}</article>;
 }
 
