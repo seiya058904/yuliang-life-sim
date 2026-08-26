@@ -2,6 +2,7 @@ import type { BalanceConfig } from '../balance/config';
 import type { ContentRegistry, GameState, PlannedActivity, WeeklyPlan } from '../content/contracts';
 import { calculateLifestyle } from './economy';
 import { employmentKind } from './careers';
+import { activityCashCost } from './activities';
 
 export interface WeeklyPlanForecast {
   income: number;
@@ -72,7 +73,7 @@ function applyPlanned(activity: PlannedActivity, state: GameState, content: Cont
   const option = definition?.options.find((entry) => entry.id === activity.optionId);
   if (!option) return;
   result.hours.leisure += option.durationMinutes / 60;
-  result.expense += option.cashCost;
+  result.expense += definition ? activityCashCost(state, definition, option, content) : option.cashCost;
   for (const effect of option.effects ?? []) {
     if (effect.type === 'attribute') result.attributes[effect.attribute] = (result.attributes[effect.attribute] ?? 0) + effect.amount;
     if (effect.type === 'relation') result.relationships[effect.characterId] = (result.relationships[effect.characterId] ?? 0) + effect.amount;

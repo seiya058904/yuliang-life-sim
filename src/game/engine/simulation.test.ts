@@ -57,6 +57,19 @@ describe('automatic simulation', () => {
     expect(result.state.locationVisits?.['location.central']).toBe(1);
   });
 
+  it('applies a vehicle travel discount and records the self-drive feedback', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 23);
+    initial.assets['asset.used-compact'] = { assetId: 'asset.used-compact', purchasePrice: 4800, purchaseDay: 1, currentValuation: 4800 };
+    const plan = structuredClone(initial.weeklyPlan);
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.weekend-getaway', optionId: 'standard' };
+    const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: false, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 6 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.financialLedger?.entries.some((entry) => entry.sourceId === 'activity.weekend-getaway' && entry.amount === 288)).toBe(true);
+    expect(result.state.lifeHistory?.some((entry) => entry.sourceId === 'activity.weekend-getaway' && entry.detail === '自驾出行，交通费用有所减少')).toBe(true);
+  });
+
   it('settles an owned business project as one-time equity-proportional profit', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 23);

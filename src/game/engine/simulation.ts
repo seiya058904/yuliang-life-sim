@@ -13,7 +13,7 @@ import { evaluateCondition } from './conditions';
 import { applyAttributeDelta } from './attributes';
 import { recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
 import { updateInvestmentValuations } from './investments';
-import { getActivityDefinition, getActivityOption } from './activities';
+import { activityCashCost, getActivityDefinition, getActivityOption } from './activities';
 import { advanceCareerLifecycle, generateVacancies } from './careers';
 import { appendLifeRecord } from './lifeHistory';
 
@@ -127,7 +127,8 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
   if (activity.kind === 'activity') {
     const definition = activity.activityId ? getActivityDefinition(content, activity.activityId) : undefined;
     const option = definition && activity.optionId ? getActivityOption(definition, activity.optionId) : undefined;
-    if (!definition || !option || state.cash < option.cashCost) {
+    const cost = definition && option ? activityCashCost(state, definition, option, content) : undefined;
+    if (!definition || !option || cost === undefined || state.cash < cost) {
       output.push({ type: 'message', text: option ? `现金不足，未能完成${definition?.name ?? '活动'}` : '活动选项已失效' });
       return;
     }
@@ -154,11 +155,11 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
       output.push({ type: 'cash', amount: profit, reason: `${definition.name}利润分配` });
       return;
     }
-    state.cash -= option.cashCost;
-    recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: definition.financialCategory ?? 'entertainment', amount: option.cashCost, label: `${definition.name} · ${option.label}`, sourceType: 'activity', sourceId: definition.id });
+    state.cash -= cost;
+    recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: definition.financialCategory ?? 'entertainment', amount: cost, label: `${definition.name} · ${option.label}`, sourceType: 'activity', sourceId: definition.id });
     applyContentEffects(state, option.effects ?? [], content, balance, output);
     if (definition.locationId) recordLocationVisit(state, definition.locationId, content);
-    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: '活动已完成', sourceId: definition.id, amount: -option.cashCost });
+    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: cost < option.cashCost ? '自驾出行，交通费用有所减少' : '活动已完成', sourceId: definition.id, amount: -cost });
     return;
   }
   if (activity.kind === 'study') {
