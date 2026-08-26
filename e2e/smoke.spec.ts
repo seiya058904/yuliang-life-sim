@@ -22,6 +22,7 @@ test('discovers the bookstore venue and reaches its knowledge activity', async (
   await venue.getByRole('button', { name: '去安排活动' }).click();
   await expect(page.getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeVisible();
   await expect(page.getByRole('heading', { name: '周末逛书店 · 和周妍一起逛' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeVisible();
 });
 
 test('discovers the riverside night market venue and reaches its activity entry', async ({ page }) => {

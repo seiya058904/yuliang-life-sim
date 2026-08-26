@@ -111,7 +111,7 @@ export const officialActivities = [
     category: 'hobby',
     financialCategory: 'entertainment',
     locationId: 'location.old-town',
-    options: [{ id: 'browse', label: '随便逛逛', durationMinutes: 120, cashCost: 55, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] }, { id: 'with-zhou', label: '和周妍一起逛', durationMinutes: 120, cashCost: 110, requiredCharacterId: 'character.seed-zhou', tags: ['culture', 'social'], requirements: { type: 'relationship_at_least', characterId: 'character.seed-zhou', amount: 5 }, effects: [{ type: 'relation', characterId: 'character.seed-zhou', amount: 2 }, { type: 'attribute', attribute: 'knowledge', amount: 1 }] }],
+    options: [{ id: 'browse', label: '随便逛逛', durationMinutes: 120, cashCost: 55, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] }, { id: 'with-zhou', label: '和周妍一起逛', durationMinutes: 120, cashCost: 110, requiredCharacterId: 'character.seed-zhou', tags: ['culture', 'social'], requirements: { type: 'relationship_at_least', characterId: 'character.seed-zhou', amount: 5 }, effects: [{ type: 'relation', characterId: 'character.seed-zhou', amount: 2 }, { type: 'attribute', attribute: 'knowledge', amount: 1 }] }, { id: 'with-lin', label: '和林晨一起逛', durationMinutes: 120, cashCost: 110, requiredCharacterId: 'character.seed-lin', tags: ['culture', 'hobby', 'social'], requirements: { type: 'relationship_at_least', characterId: 'character.seed-lin', amount: 5 }, effects: [{ type: 'relation', characterId: 'character.seed-lin', amount: 2 }, { type: 'attribute', attribute: 'knowledge', amount: 1 }] }],
   },
   {
     id: 'activity.city-photography',

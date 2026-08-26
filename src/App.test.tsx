@@ -491,6 +491,7 @@ describe('余量 app flow', () => {
     await user.click(within(venue).getByRole('button', { name: '去安排活动' }));
     expect(screen.getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '周末逛书店 · 和周妍一起逛' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeInTheDocument();
   });
 
   it('discovers and schedules the official short trip activity', async () => {

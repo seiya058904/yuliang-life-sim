@@ -12,6 +12,7 @@ export const officialCharacters = [
     ],
     "identity": "同事",
     "preferredGiftTags": ["dessert", "flower"],
+    "preferredActivityTags": ["culture", "hobby"],
     "initialRelationship": 8,
     "careerHistory": [
       { "startYear": 1, "title": "门店员工", "companyId": "company.yuanwang" },
