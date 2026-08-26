@@ -38,14 +38,52 @@ function roundMoney(value: number): number {
   return Math.round(value);
 }
 
+export type BusinessOwnershipTier = 'minority' | 'strategic' | 'controlling' | 'wholly_owned';
+
+export interface OwnershipTierInfo {
+  tier: BusinessOwnershipTier;
+  name: string;
+  description: string;
+}
+
+const ownershipTiers: readonly { minPercent: number; info: OwnershipTierInfo }[] = [
+  { minPercent: 100, info: { tier: 'wholly_owned', name: '全资企业', description: '这家企业完全属于你，所有经营与董事会决策都由你决定。' } },
+  { minPercent: 50, info: { tier: 'controlling', name: '控股企业', description: '你掌握经营决策权，可以推进董事会层面的调整。' } },
+  { minPercent: 20, info: { tier: 'strategic', name: '战略持股', description: '你有重要话语权并按持股分享利润，重大经营调整仍需要控股。' } },
+  { minPercent: 0, info: { tier: 'minority', name: '少数股权投资', description: '按持股比例分享利润；可以继续增持，也可以减持变现。' } },
+];
+
+export function ownershipTierForEquity(percent: number): OwnershipTierInfo {
+  const clamped = Math.min(100, Math.max(0, Math.round(percent)));
+  return (ownershipTiers.find((entry) => clamped >= entry.minPercent) ?? ownershipTiers.at(-1)!).info;
+}
+
+export function ownershipTierForHolding(holding: Pick<BusinessHolding, 'equityPercent'>): OwnershipTierInfo {
+  return ownershipTierForEquity(holding.equityPercent ?? 100);
+}
+
+/** Controlling (>=50%) or wholly owned holdings may direct operations and board decisions. */
+export function canDirectBusinessOperations(holding: Pick<BusinessHolding, 'equityPercent'> | undefined): boolean {
+  if (!holding) return false;
+  const tier = ownershipTierForHolding(holding).tier;
+  return tier === 'controlling' || tier === 'wholly_owned';
+}
+
+/** Location that should receive visits and city context for this holding. */
+export function effectiveBusinessLocationId(holding: Pick<BusinessHolding, 'relocatedLocationId'>, definition: Pick<BusinessDefinition, 'locationId'>): string | undefined {
+  return holding.relocatedLocationId ?? definition.locationId;
+}
+
 export function calculateDailyBusinessProfit(holding: BusinessHolding, definition: BusinessDefinition): BusinessProfitBreakdown {
   const priceMultiplier = definition.priceLevels[holding.priceLevel] ?? 1;
   const wageMultiplier = definition.wageLevels[holding.wageLevel] ?? 1;
   const inventoryMultiplier = definition.inventoryLevels[holding.inventoryLevel] ?? 1;
+  // Board-level restructuring reduces recurring wage and rent costs; it never inflates revenue.
+  const bonus = Math.min(25, Math.max(0, holding.operatingBonusPercent ?? 0)) / 100;
   const revenue = roundMoney(definition.baseRevenue * priceMultiplier * inventoryMultiplier);
   const goodsCost = roundMoney(definition.baseGoodsCost * inventoryMultiplier);
-  const wage = roundMoney(definition.baseWage * wageMultiplier);
-  const rent = roundMoney(definition.baseRent);
+  const wage = roundMoney(definition.baseWage * wageMultiplier * (1 - bonus));
+  const rent = roundMoney(definition.baseRent * (1 - bonus));
   return { revenue, goodsCost, wage, rent, profit: revenue - goodsCost - wage - rent };
 }
 

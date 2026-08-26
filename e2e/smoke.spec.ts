@@ -1722,3 +1722,44 @@ test('settles Guqing consulting review interaction with preference feedback', as
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByRole('region', { name: '关系历史' })).toContainText('和顾清复盘项目');
 });
+
+
+test('builds a controlling stake through staged entry and persists board decisions', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 30000;
+    state.ability = 18;
+    state.attributes = { ...(state.attributes ?? {}), professional: 18, knowledge: 18, communication: 18, fitness: 18, appearance: 10, network: 0, mood: 50 };
+    state.unlockedCapabilities = ['business_license'];
+    state.unlockedBusinessIds = ['business.seed-kiosk'];
+    state.majorEventsThisMonth = 3;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByRole('region', { name: '企业组合' })).toHaveCount(0);
+  await page.getByRole('button', { name: /入股 30%/ }).click();
+  const group = page.getByRole('region', { name: '企业组合' });
+  await expect(group).toBeVisible();
+  await expect(group).toContainText('战略 / 少数股权');
+  // Minority holders cannot touch daily operations until they cross the 50% boundary.
+  await expect(page.getByRole('button', { name: /增持 10%/ })).toBeVisible();
+
+  await page.getByRole('button', { name: /增持 10%/ }).click();
+  await page.getByRole('button', { name: /增持 10%/ }).click();
+  await expect(page.getByText('控股企业 · 持股 50%').first()).toBeVisible();
+  await page.getByRole('button', { name: /精简组织/ }).click();
+  await expect(page.getByText(/重组效率 \+5%/).first()).toBeVisible();
+
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('入股早餐与咖啡档')).toBeVisible();
+  await expect(page.getByText('早餐与咖啡档完成组织精简')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByRole('region', { name: '企业组合' })).toContainText('组合归母估值');
+  await expect(page.getByText(/重组效率 \+5%/).first()).toBeVisible();
+});

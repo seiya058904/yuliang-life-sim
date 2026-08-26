@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateDailyBusinessProfit, calculateDailyPassiveIncome, calculateDailyPublicBusinessDividend, calculateLifestyle, calculateNetWorth, wealthTierForNetWorth } from './economy';
+import { calculateDailyBusinessProfit, calculateDailyPassiveIncome, calculateDailyPublicBusinessDividend, calculateLifestyle, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity, wealthTierForNetWorth } from './economy';
 import type { ContentRegistry, GameState } from '../content/contracts';
 import { balanceConfig } from '../balance/config';
 
@@ -58,5 +58,37 @@ describe('economy calculations', () => {
     };
     expect(calculateDailyPublicBusinessDividend(listed, content)).toBe(15);
     expect(calculateNetWorth(listed, content, balanceConfig)).toBe(Math.round(100 + 1200 + 650 * 0.65 + 65 + 550 + 100));
+  });
+});
+
+describe('business ownership tiers', () => {
+  const holding = (equityPercent: number) => ({ businessId: 'business.kiosk', priceLevel: 1, wageLevel: 0, inventoryLevel: 2, purchasePrice: 1000, equityPercent });
+
+  it('classifies equity stakes into minority, strategic, controlling and wholly owned levels', () => {
+    expect(ownershipTierForEquity(10).tier).toBe('minority');
+    expect(ownershipTierForEquity(19).tier).toBe('minority');
+    expect(ownershipTierForEquity(20).name).toBe('战略持股');
+    expect(ownershipTierForEquity(49).name).toBe('战略持股');
+    expect(ownershipTierForEquity(50).name).toBe('控股企业');
+    expect(ownershipTierForEquity(99).name).toBe('控股企业');
+    expect(ownershipTierForEquity(100).name).toBe('全资企业');
+    expect(ownershipTierForEquity(-5).tier).toBe('minority');
+  });
+
+  it('only lets controlling or wholly owned holdings direct operations', () => {
+    expect(canDirectBusinessOperations(undefined)).toBe(false);
+    expect(canDirectBusinessOperations(holding(10))).toBe(false);
+    expect(canDirectBusinessOperations(holding(30))).toBe(false);
+    expect(canDirectBusinessOperations(holding(50))).toBe(true);
+    expect(canDirectBusinessOperations(holding(100))).toBe(true);
+  });
+
+  it('applies board restructuring as wage and rent relief instead of fake revenue', () => {
+    const plain = calculateDailyBusinessProfit(state.businesses['business.kiosk'], content.businesses[0]);
+    const restructured = calculateDailyBusinessProfit({ ...state.businesses['business.kiosk'], operatingBonusPercent: 10 }, content.businesses[0]);
+    expect(restructured.revenue).toBe(plain.revenue);
+    expect(restructured.wage).toBe(Math.round(plain.wage * 0.9));
+    expect(restructured.rent).toBe(Math.round(plain.rent * 0.9));
+    expect(restructured.profit).toBeGreaterThan(plain.profit);
   });
 });

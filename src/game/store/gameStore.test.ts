@@ -144,6 +144,24 @@ describe('game store persistence', () => {
     expect(loadGameState(contentRegistry, balanceConfig).businesses['business.seed-kiosk'].partnerCharacterId).toBeUndefined();
   });
 
+  it('migrates control-era business fields and backfills legacy cost basis', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 7, businesses: {
+      // Legacy stake-style holding without any control-era fields.
+      'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 30 },
+      // Holding that already used the staged control fields plus an unknown relocation target.
+      'business.online-store': { businessId: 'business.online-store', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 7800, equityPercent: 60, playerCostBasis: 5200, operatingBonusPercent: 40, relocatedLocationId: 'location.nowhere', acquiredDay: 12, acquiredFromBusinessId: 'business.unknown' },
+    } }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.businesses['business.seed-kiosk']).toMatchObject({ playerCostBasis: Math.round(3200 * 0.3), equityPercent: 30 });
+    expect(restored.businesses['business.online-store']).toMatchObject({ playerCostBasis: 5200, operatingBonusPercent: 25, acquiredDay: 12 });
+    expect(restored.businesses['business.online-store'].relocatedLocationId).toBeUndefined();
+    expect(restored.businesses['business.online-store'].acquiredFromBusinessId).toBeUndefined();
+    expect(restored.version).toBe(balanceConfig.saveVersion);
+  });
+
   it('migrates and filters separate public business equity holdings', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 6, businesses: {

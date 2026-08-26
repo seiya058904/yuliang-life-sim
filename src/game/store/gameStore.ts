@@ -180,20 +180,30 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.completedMilestones = (candidate.completedMilestones ?? []).filter((id) => knownIds(content, 'milestones').has(id));
   candidate.businesses = Object.fromEntries(Object.entries(candidate.businesses ?? {}).filter(([id]) => knownIds(content, 'businesses').has(id)).map(([id, holding]) => {
     const value: Record<string, unknown> = isRecord(holding) ? holding : {};
+    const locationIdsForBusiness = new Set((content.locations ?? []).map((entry) => entry.id));
+    const migratedEquity = Number.isFinite(value.equityPercent) ? Math.min(100, Math.max(0, Number(value.equityPercent))) : 100;
+    const migratedPurchasePrice = Number.isFinite(value.purchasePrice) ? Math.max(0, Number(value.purchasePrice)) : 0;
     return [id, {
       businessId: id,
       priceLevel: Number.isInteger(value.priceLevel) ? Math.max(0, Number(value.priceLevel)) : 1,
       wageLevel: Number.isInteger(value.wageLevel) ? Math.max(0, Number(value.wageLevel)) : 1,
       inventoryLevel: Number.isInteger(value.inventoryLevel) ? Math.max(0, Number(value.inventoryLevel)) : 1,
-      purchasePrice: Number.isFinite(value.purchasePrice) ? Math.max(0, Number(value.purchasePrice)) : 0,
+      purchasePrice: migratedPurchasePrice,
       capitalInvested: Number.isFinite(value.capitalInvested) ? Math.max(0, Number(value.capitalInvested)) : 0,
-      equityPercent: Number.isFinite(value.equityPercent) ? Math.min(100, Math.max(0, Number(value.equityPercent))) : 100,
+      equityPercent: migratedEquity,
       publicFloatPercent: Number.isFinite(value.publicFloatPercent) ? Math.min(100, Math.max(0, Number(value.publicFloatPercent))) : Math.max(0, 100 - (Number.isFinite(value.equityPercent) ? Number(value.equityPercent) : 100)),
       fundingRaised: Number.isFinite(value.fundingRaised) ? Math.max(0, Number(value.fundingRaised)) : 0,
       fundingRound: Number.isInteger(value.fundingRound) ? Math.max(0, Number(value.fundingRound)) : 0,
       partnerCharacterId: typeof value.partnerCharacterId === 'string' && content.characters.some((character) => character.id === value.partnerCharacterId) ? value.partnerCharacterId : undefined,
       listed: value.listed === true,
       listedDay: Number.isInteger(value.listedDay) && Number(value.listedDay) > 0 ? Number(value.listedDay) : undefined,
+      acquiredDay: Number.isInteger(value.acquiredDay) && Number(value.acquiredDay) > 0 ? Number(value.acquiredDay) : undefined,
+      acquiredFromBusinessId: typeof value.acquiredFromBusinessId === 'string' && knownIds(content, 'businesses').has(value.acquiredFromBusinessId) ? value.acquiredFromBusinessId : undefined,
+      playerCostBasis: Number.isFinite(value.playerCostBasis) && Number(value.playerCostBasis) >= 0
+        ? Number(value.playerCostBasis)
+        : Math.round(migratedPurchasePrice * migratedEquity / 100),
+      operatingBonusPercent: Number.isFinite(value.operatingBonusPercent) ? Math.min(25, Math.max(0, Number(value.operatingBonusPercent))) : undefined,
+      relocatedLocationId: typeof value.relocatedLocationId === 'string' && locationIdsForBusiness.has(value.relocatedLocationId) ? value.relocatedLocationId : undefined,
     }];
   }));
   const businessIds = knownIds(content, 'businesses');

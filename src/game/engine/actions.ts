@@ -1,7 +1,7 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity } from '../content/contracts';
 import { evaluateCondition, explainCondition } from './conditions';
-import { businessValuation, calculateNetWorth } from './economy';
+import { businessValuation, calculateDailyBusinessProfit, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity } from './economy';
 import { applyContentEffects, applyReachedMilestones, cloneGameState, itemCost, refreshUnlocks } from './effects';
 import { advanceSimulation } from './simulation';
 import { activityAtTime, defaultJobSchedule, validateWeeklyPlan } from './schedule';
@@ -665,7 +665,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!hasRequirements(state, business.requirements, content, balance)) return fail(input, '经营条件还不满足');
       if (state.cash - business.price < reserveRequired(state, content)) return fail(input, '现金不足以购买这项生意');
       state.cash -= business.price;
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0 };
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: business.price };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: business.price, label: `购买${business.name}`, sourceType: 'business', sourceId: business.id });
       addLifeRecord(state, { category: 'business', title: `买入${business.name}`, sourceId: business.id, amount: -business.price });
@@ -680,7 +680,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!hasRequirements(state, business.requirements, content, balance) || !hasRequirements(state, partnership.requirements, content, balance)) return fail(input, '当前合伙条件还不满足');
       if (state.cash - partnership.entryPrice < reserveRequired(state, content)) return fail(input, '现金不足以加入合伙');
       state.cash -= partnership.entryPrice;
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: partnership.entryPrice, capitalInvested: 0, equityPercent: partnership.playerEquityPercent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, partnerCharacterId: partnership.characterId };
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: partnership.entryPrice, capitalInvested: 0, equityPercent: partnership.playerEquityPercent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, partnerCharacterId: partnership.characterId, playerCostBasis: partnership.entryPrice };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       const partner = content.characters.find((character) => character.id === partnership.characterId);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: partnership.entryPrice, label: `加入${business.name}合伙`, sourceType: 'business', sourceId: business.id, cashDelta: -partnership.entryPrice });
@@ -698,17 +698,127 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!hasRequirements(state, business.requirements, content, balance)) return fail(input, '并购条件还不满足');
       if (state.cash - acquisitionPrice < reserveRequired(state, content)) return fail(input, '现金不足以完成并购');
       state.cash -= acquisitionPrice;
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: acquisitionPrice, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, acquiredDay: state.time.day, acquiredFromBusinessId: parentBusinessId };
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: acquisitionPrice, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, acquiredDay: state.time.day, acquiredFromBusinessId: parentBusinessId, playerCostBasis: acquisitionPrice };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: acquisitionPrice, label: `并购${business.name}`, sourceType: 'business', sourceId: business.id, cashDelta: -acquisitionPrice });
       addLifeRecord(state, { category: 'business', title: `并购${business.name}`, detail: `纳入${content.businesses.find((entry) => entry.id === parentBusinessId)?.name ?? parentBusinessId}企业组合`, sourceId: business.id, amount: -acquisitionPrice });
       effects.push({ type: 'cash', amount: -acquisitionPrice, reason: '企业并购' });
       break;
     }
+    case 'buy_business_stake': {
+      const business = find(content.businesses, action.businessId);
+      const percent = Math.round(action.percent);
+      if (!business || !state.unlockedBusinessIds.includes(action.businessId)) return fail(input, '这项生意还没有解锁');
+      if (state.businesses[action.businessId]) return fail(input, '这项企业已经在你的企业组合中');
+      if (!hasRequirements(state, business.requirements, content, balance)) return fail(input, '当前条件还不满足');
+      if (!Number.isInteger(action.percent) || percent < 10 || percent > 49 || percent % 10 !== 0) return fail(input, '入股比例无效：可在 10%～49% 之间按 10% 选择');
+      const stakeCost = Math.round(business.price * percent / 100);
+      if (state.cash - stakeCost < reserveRequired(state, content)) return fail(input, '现金不足以完成入股');
+      state.cash -= stakeCost;
+      // purchasePrice stays the whole-company fair value so valuation/net worth scale by real equity.
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: percent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: stakeCost };
+      if (business.locationId) recordLocationVisit(state, business.locationId, content);
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: stakeCost, label: `入股${business.name} ${percent}%`, sourceType: 'business', sourceId: business.id, cashDelta: -stakeCost });
+      addLifeRecord(state, { category: 'business', title: `入股${business.name}`, detail: `以少数股权投资者身份买入 ${percent}%，当前身份：${ownershipTierForEquity(percent).name}`, sourceId: business.id, amount: -stakeCost });
+      effects.push({ type: 'cash', amount: -stakeCost, reason: `入股${business.name}` });
+      effects.push({ type: 'message', text: `已持有${business.name} ${percent}%：${ownershipTierForEquity(percent).description}` });
+      break;
+    }
+    case 'increase_business_stake': {
+      const holding = state.businesses[action.businessId];
+      const business = find(content.businesses, action.businessId);
+      const percent = Math.round(action.percent);
+      if (!holding || !business) return fail(input, '还没有这项生意');
+      if (holding.listed) return fail(input, '已上市企业请通过公开市场回购调整持股');
+      const previousEquity = Math.min(100, Math.max(0, holding.equityPercent ?? 100));
+      if (!Number.isInteger(action.percent) || percent <= 0 || percent % 10 !== 0 || previousEquity + percent > 100) return fail(input, '增持比例无效');
+      if (!hasRequirements(state, business.requirements, content, balance)) return fail(input, '当前条件还不满足');
+      const impliedValue = businessValuation(holding, balance);
+      // Increasing influence pays a strategic premium over the current implied company value.
+      const cost = Math.max(0, Math.round(impliedValue * percent / 100 * 1.15));
+      if (state.cash - cost < reserveRequired(state, content)) return fail(input, '现金不足以完成增持');
+      const nextEquity = previousEquity + percent;
+      const tierBefore = ownershipTierForEquity(previousEquity).tier;
+      const tierAfter = ownershipTierForEquity(nextEquity).tier;
+      state.cash -= cost;
+      holding.equityPercent = nextEquity;
+      holding.playerCostBasis = Math.max(0, Math.round((holding.playerCostBasis ?? Math.round(holding.purchasePrice * previousEquity / 100)) + cost));
+      if (business.locationId ?? holding.relocatedLocationId) recordLocationVisit(state, holding.relocatedLocationId ?? business.locationId!, content);
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_allocation', category: 'business_transfer', amount: cost, label: `增持${business.name} ${percent}%`, sourceType: 'business', sourceId: business.id, cashDelta: -cost });
+      const controlNote = tierBefore !== tierAfter && (tierAfter === 'controlling' || tierAfter === 'wholly_owned') ? `，晋升为${ownershipTierForEquity(nextEquity).name}` : '';
+      addLifeRecord(state, { category: 'business', title: `增持${business.name}至 ${nextEquity}%`, detail: `战略溢价 15% 完成 ${percent}% 增持${controlNote}`, sourceId: business.id, amount: -cost });
+      effects.push({ type: 'cash', amount: -cost, reason: `增持${business.name}` });
+      break;
+    }
+    case 'sell_business_stake': {
+      const holding = state.businesses[action.businessId];
+      const business = find(content.businesses, action.businessId);
+      const percent = Math.round(action.percent);
+      if (!holding || !business) return fail(input, '还没有这项生意');
+      if (holding.listed) return fail(input, '已上市企业请在公开市场出售股权');
+      const previousEquity = Math.min(100, Math.max(0, holding.equityPercent ?? 100));
+      if (!Number.isInteger(action.percent) || percent < 10 || percent % 10 !== 0 || percent >= previousEquity) return fail(input, '减持比例无效：减持后需至少保留 10% 持股');
+      const impliedValue = businessValuation(holding, balance);
+      const proceeds = Math.max(0, Math.round(impliedValue * percent / 100));
+      const basis = holding.playerCostBasis ?? Math.round(holding.purchasePrice * previousEquity / 100);
+      const basisShare = Math.min(basis, Math.round(basis * percent / previousEquity));
+      const realized = proceeds - basisShare;
+      state.cash += proceeds;
+      holding.equityPercent = previousEquity - percent;
+      holding.playerCostBasis = Math.max(0, basis - basisShare);
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: proceeds, label: `减持${business.name} ${percent}%股权`, sourceType: 'business', sourceId: business.id, cashDelta: proceeds });
+      if (realized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: realized, cashDelta: 0, label: `已实现收益 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
+      if (realized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized, cashDelta: 0, label: `已实现亏损 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
+      addLifeRecord(state, { category: 'business', title: `减持${business.name} ${percent}% 股权`, detail: `剩余持股 ${holding.equityPercent}% · 身份：${ownershipTierForEquity(holding.equityPercent).name}`, sourceId: business.id, amount: proceeds });
+      effects.push({ type: 'cash', amount: proceeds, reason: `减持${business.name}` });
+      break;
+    }
+    case 'make_control_decision': {
+      const holding = state.businesses[action.businessId];
+      const business = find(content.businesses, action.businessId);
+      if (!holding || !business) return fail(input, '还没有这项生意');
+      if (!canDirectBusinessOperations(holding)) return fail(input, '需要至少控股 50% 才能进行董事会层面的决策');
+      if (action.decisionId === 'streamline_operations') {
+        const flagKey = `${business.id}.decision.streamline`;
+        if (state.flags[flagKey]) return fail(input, '这项董事会决策已经执行过');
+        const profitNow = calculateDailyBusinessProfit(holding, business);
+        const cost = Math.max(2000, Math.round(profitNow.wage * 6));
+        if (state.cash - cost < reserveRequired(state, content)) return fail(input, '现金不足以完成重组');
+        state.cash -= cost;
+        holding.operatingBonusPercent = Math.min(25, (holding.operatingBonusPercent ?? 0) + 5);
+        state.flags[flagKey] = true;
+        recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'business_cost', amount: cost, label: `${business.name}重组费用`, sourceType: 'business', sourceId: business.id, cashDelta: -cost });
+        addLifeRecord(state, { category: 'business', title: `${business.name}完成组织精简`, detail: `一次性支出 ¥${cost.toLocaleString('zh-CN')}，日常人员与场地成本约下降 5%`, sourceId: business.id, amount: -cost });
+        effects.push({ type: 'cash', amount: -cost, reason: `${business.name}重组` });
+        effects.push({ type: 'message', text: `${business.name}的日常经营成本已经降低，效果会体现在每天的净利里。` });
+        break;
+      }
+      if (action.decisionId === 'relocate_operations') {
+        const flagKey = `${business.id}.decision.relocate`;
+        if (state.flags[flagKey]) return fail(input, '这家企业已经完成过搬迁');
+        const targetId = action.targetLocationId;
+        const targetLocation = targetId ? content.locations?.find((location) => location.id === targetId) : undefined;
+        if (!targetLocation || !targetId) return fail(input, '请选择一个有效的城市地点');
+        if (targetId === (holding.relocatedLocationId ?? business.locationId)) return fail(input, '企业已经在这个地点经营');
+        const cost = 2000;
+        if (state.cash - cost < reserveRequired(state, content)) return fail(input, '现金不足以完成搬迁');
+        state.cash -= cost;
+        holding.relocatedLocationId = targetId;
+        state.flags[flagKey] = true;
+        recordLocationVisit(state, targetId, content);
+        recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'business_cost', amount: cost, label: `${business.name}搬迁费用`, sourceType: 'business', sourceId: business.id, cashDelta: -cost });
+        addLifeRecord(state, { category: 'business', title: `${business.name}迁入${targetLocation.name}`, detail: `经董事会决定搬离原址，一次性支出 ¥${cost.toLocaleString('zh-CN')}`, sourceId: business.id, amount: -cost });
+        effects.push({ type: 'cash', amount: -cost, reason: `${business.name}搬迁` });
+        effects.push({ type: 'message', text: `${business.name}的新址已落在${targetLocation.name}。` });
+        break;
+      }
+      return fail(input, '未知的董事会决策');
+    }
     case 'update_business': {
       const holding = state.businesses[action.businessId];
       const business = find(content.businesses, action.businessId);
       if (!holding || !business) return fail(input, '还没有这项生意');
+      if (!canDirectBusinessOperations(holding)) return fail(input, '需要至少控股 50% 才能调整日常经营');
       if (![action.priceLevel, action.wageLevel, action.inventoryLevel].every(Number.isInteger)) return fail(input, '经营参数无效');
       if (action.priceLevel < 0 || action.priceLevel >= business.priceLevels.length || action.wageLevel < 0 || action.wageLevel >= business.wageLevels.length || action.inventoryLevel < 0 || action.inventoryLevel >= business.inventoryLevels.length) return fail(input, '经营参数超出范围');
       holding.priceLevel = action.priceLevel;
@@ -723,6 +833,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const business = find(content.businesses, action.businessId);
       const amount = Math.round(action.amount);
       if (!holding || !business) return fail(input, '还没有这项生意');
+      if (!canDirectBusinessOperations(holding)) return fail(input, '需要至少控股 50% 才能投入企业资本');
       if (!Number.isFinite(amount) || amount <= 0) return fail(input, '投入资本必须为正数');
       if (state.cash - amount < reserveRequired(state, content)) return fail(input, '现金不足以投入企业资本');
       state.cash -= amount;
@@ -736,6 +847,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const holding = state.businesses[action.businessId];
       const business = find(content.businesses, action.businessId);
       if (!holding || !business) return fail(input, '还没有这项生意');
+      if (!canDirectBusinessOperations(holding)) return fail(input, '需要至少控股 50% 才能发起融资');
       const fundingRound = holding.fundingRound ?? 0;
       if (fundingRound >= 3) return fail(input, '这项企业已达到融资轮次上限');
       const amount = Math.max(1000, Math.round(business.price * [0.75, 1, 1.5][fundingRound]));
@@ -755,6 +867,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const holding = state.businesses[action.businessId];
       const business = find(content.businesses, action.businessId);
       if (!holding || !business) return fail(input, '还没有这项生意');
+      if (!canDirectBusinessOperations(holding)) return fail(input, '需要至少控股 50% 才能推动企业上市');
       if (holding.listed) return fail(input, '这项企业已经上市');
       if ((holding.fundingRound ?? 0) < 2) return fail(input, '企业至少完成两轮融资后才能上市');
       holding.listed = true;
@@ -775,10 +888,17 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!Number.isInteger(action.percent) || percent <= 0 || percent >= (holding.equityPercent ?? 100)) return fail(input, '出售股权比例无效');
       const valuation = (holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio;
       const saleValue = Math.max(0, Math.round(valuation * percent / 100));
-      holding.equityPercent = Math.max(0, (holding.equityPercent ?? 100) - percent);
-      holding.publicFloatPercent = Math.min(100, (holding.publicFloatPercent ?? (100 - (holding.equityPercent ?? 100) - percent)) + percent);
+      const previousEquity = holding.equityPercent ?? 100;
+      const basisTotal = holding.playerCostBasis ?? Math.round(holding.purchasePrice * previousEquity / 100);
+      const basisShare = Math.min(basisTotal, Math.round(basisTotal * percent / previousEquity));
+      holding.equityPercent = Math.max(0, previousEquity - percent);
+      holding.playerCostBasis = Math.max(0, basisTotal - basisShare);
+      holding.publicFloatPercent = Math.min(100, (holding.publicFloatPercent ?? (100 - previousEquity - percent)) + percent);
       state.cash += saleValue;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: saleValue, label: `出售${business.name} ${percent}%股权`, sourceType: 'business', sourceId: business.id, cashDelta: saleValue });
+      const equityRealized = saleValue - basisShare;
+      if (equityRealized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: equityRealized, cashDelta: 0, label: `已实现收益 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
+      if (equityRealized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -equityRealized, cashDelta: 0, label: `已实现亏损 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
       addLifeRecord(state, { category: 'business', title: `出售${business.name} ${percent}% 股权`, detail: `上市后部分变现，剩余持股 ${holding.equityPercent}%`, sourceId: business.id, amount: saleValue });
       effects.push({ type: 'cash', amount: saleValue, reason: '出售公开股权' });
       break;
@@ -798,6 +918,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const purchaseValue = Math.max(0, Math.round(valuation * percent / 100));
       if (state.cash - purchaseValue < reserveRequired(state, content)) return fail(input, '现金不足以回购企业股权');
       holding.equityPercent = Math.min(100, currentEquity + percent);
+      holding.playerCostBasis = Math.max(0, Math.round((holding.playerCostBasis ?? Math.round(holding.purchasePrice * currentEquity / 100)) + purchaseValue));
       holding.publicFloatPercent = Math.max(0, publicFloat - percent);
       state.cash -= purchaseValue;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_allocation', category: 'business_transfer', amount: purchaseValue, label: `回购${business.name} ${percent}%股权`, sourceType: 'business', sourceId: business.id, cashDelta: -purchaseValue });
@@ -855,12 +976,16 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const business = find(content.businesses, action.businessId);
       if (!holding || !business) return fail(input, '还没有这项生意');
       if (state.publicBusinessEquities?.[action.businessId]) return fail(input, '请先出售这项企业的公开股权');
-      const equity = Math.min(100, Math.max(0, holding.equityPercent ?? 100)) / 100;
-      const saleValue = Math.max(0, Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio * equity));
+      const equityPercent = Math.min(100, Math.max(0, holding.equityPercent ?? 100));
+      const saleValue = Math.max(0, Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio * equityPercent / 100));
+      const basis = Math.min(holding.playerCostBasis ?? Math.round(holding.purchasePrice * equityPercent / 100), saleValue);
       delete state.businesses[action.businessId];
       state.cash += saleValue;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: saleValue, label: `退出${business.name}`, sourceType: 'business', sourceId: business.id, cashDelta: saleValue });
-      addLifeRecord(state, { category: 'business', title: `退出${business.name}`, detail: `按持股 ${Math.round(equity * 100)}% 变现`, sourceId: business.id, amount: saleValue });
+      const exitRealized = saleValue - basis;
+      if (exitRealized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: exitRealized, cashDelta: 0, label: `已实现收益 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basis });
+      if (exitRealized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -exitRealized, cashDelta: 0, label: `已实现亏损 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basis });
+      addLifeRecord(state, { category: 'business', title: `退出${business.name}`, detail: `按持股 ${equityPercent}% 变现`, sourceId: business.id, amount: saleValue });
       effects.push({ type: 'cash', amount: saleValue, reason: '企业退出变现' });
       break;
     }

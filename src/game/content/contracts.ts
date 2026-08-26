@@ -626,6 +626,12 @@ export interface BusinessHolding {
   acquiredDay?: number;
   acquiredFromBusinessId?: ContentId;
   partnerCharacterId?: ContentId;
+  /** Actual cash the player paid for the current stake, including acquisition premiums. */
+  playerCostBasis?: number;
+  /** One-time board-level efficiency bonus from a controlling-stake decision (0-25). */
+  operatingBonusPercent?: number;
+  /** Location override recorded by an authored board relocation decision. */
+  relocatedLocationId?: ContentId;
 }
 
 export interface BusinessPublicEquityHolding {
@@ -765,6 +771,7 @@ export interface WorldSnapshot {
   publicFloatPercent?: number;
   publicBusinessEquities?: Record<ContentId, WorldPublicBusinessEquitySnapshot>;
   currentJobId?: ContentId;
+  controlledBusinessCount?: number;
 }
 export interface PendingMonthlySummary { month: number; summary: MonthlySummary; financial?: MonthlyFinancialSummary; resumeMode: 'running' | 'planning' | 'paused'; highlights: MonthlyHighlight[]; }
 
@@ -925,6 +932,10 @@ export type GameAction =
   | { type: 'buy_business'; businessId: ContentId }
   | { type: 'join_business_partnership'; businessId: ContentId }
   | { type: 'acquire_business'; businessId: ContentId }
+  | { type: 'buy_business_stake'; businessId: ContentId; percent: number }
+  | { type: 'increase_business_stake'; businessId: ContentId; percent: number }
+  | { type: 'sell_business_stake'; businessId: ContentId; percent: number }
+  | { type: 'make_control_decision'; businessId: ContentId; decisionId: 'streamline_operations' | 'relocate_operations'; targetLocationId?: ContentId }
   | { type: 'update_business'; businessId: ContentId; priceLevel: number; wageLevel: number; inventoryLevel: number }
   | { type: 'inject_business_capital'; businessId: ContentId; amount: number }
   | { type: 'raise_business_funding'; businessId: ContentId }

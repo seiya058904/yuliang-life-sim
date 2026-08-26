@@ -482,7 +482,11 @@ describe('game action dispatcher', () => {
     expect(sold.state.businesses['business.seed-kiosk'].equityPercent).toBe(55);
     expect(sold.state.businesses['business.seed-kiosk'].publicFloatPercent).toBe(45);
     expect(sold.state.cash).toBe(10000 + 520);
-    expect(sold.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 520, cashDelta: 520 });
+    const soldEntries = sold.state.financialLedger?.entries.slice(-2) ?? [];
+    expect(soldEntries[0]).toMatchObject({ category: 'business_transfer', group: 'asset_liquidation', amount: 520, cashDelta: 520 });
+    // External funding lifted the implied company value above the proportional legacy basis, so
+    // selling 10% records a genuine realized gain instead of a plain liquidation.
+    expect(soldEntries[1]).toMatchObject({ category: 'realized_gain', amount: 200, cashDelta: 0, costBasis: 320 });
     expect(sold.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '出售早餐与咖啡档 10% 股权' });
 
     const bought = dispatchGameAction(sold.state, { type: 'buy_business_equity', businessId: 'business.seed-kiosk', percent: 5 }, contentRegistry, balanceConfig);
@@ -859,5 +863,109 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory.at(-1)).toMatchObject({ category: 'event', sourceId: 'milestone.cash-10000', title: '达成里程碑：第一万现金' });
     expect(result.state.monthlyHighlights).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'attribute_milestone', sourceId: 'milestone.cash-10000' })]));
     expect(result.effects).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'message', text: '达成里程碑：第一万现金' })]));
+  });
+});
+
+describe('enterprise control and holding group', () => {
+  const stakeableState = () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 20000;
+    state.unlockedCapabilities.push('business_license', 'remote_work');
+    state.unlockedBusinessIds.push('business.seed-kiosk');
+    return state;
+  };
+
+  it('enters an unlocked business as a minority stakeholder without operational control', () => {
+    const staked = dispatchGameAction(stakeableState(), { type: 'buy_business_stake', businessId: 'business.seed-kiosk', percent: 30 }, contentRegistry, balanceConfig);
+    expect(staked.error).toBeUndefined();
+    expect(staked.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 30, purchasePrice: 3200, playerCostBasis: 960 });
+    expect(staked.state.cash).toBe(20000 - 960);
+    expect(staked.state.locationVisits?.['location.central']).toBe(1);
+    expect(staked.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 960, cashDelta: -960 });
+    expect(staked.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '入股早餐与咖啡档' });
+
+    const blockedUpdate = dispatchGameAction(staked.state, { type: 'update_business', businessId: 'business.seed-kiosk', priceLevel: 2, wageLevel: 1, inventoryLevel: 1 }, contentRegistry, balanceConfig);
+    expect(blockedUpdate.error).toBe('需要至少控股 50% 才能调整日常经营');
+    const blockedFunding = dispatchGameAction(staked.state, { type: 'raise_business_funding', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    expect(blockedFunding.error).toBe('需要至少控股 50% 才能发起融资');
+    const blockedListing = dispatchGameAction(staked.state, { type: 'list_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    expect(blockedListing.error).toBe('需要至少控股 50% 才能推动企业上市');
+
+    const invalidPercent = dispatchGameAction(stakeableState(), { type: 'buy_business_stake', businessId: 'business.seed-kiosk', percent: 55 }, contentRegistry, balanceConfig);
+    expect(invalidPercent.error).toContain('入股比例无效');
+  });
+
+  it('raises a stake across the controlling boundary with a strategic premium', () => {
+    const entered = dispatchGameAction(stakeableState(), { type: 'buy_business_stake', businessId: 'business.seed-kiosk', percent: 30 }, contentRegistry, balanceConfig);
+    // Implied company value from books: (3200 + 0 + 0) * 0.65 = 2080; +20% costs round(2080*0.2*1.15) = 478.
+    const raised = dispatchGameAction(entered.state, { type: 'increase_business_stake', businessId: 'business.seed-kiosk', percent: 20 }, contentRegistry, balanceConfig);
+    expect(raised.error).toBeUndefined();
+    expect(raised.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 50, playerCostBasis: 960 + 478 });
+    expect(raised.state.financialLedger?.entries.at(-1)).toMatchObject({ group: 'asset_allocation', category: 'business_transfer', amount: 478, cashDelta: -478 });
+    expect(raised.state.lifeHistory.at(-1)).toMatchObject({ title: '增持早餐与咖啡档至 50%' });
+
+    const directed = dispatchGameAction(raised.state, { type: 'update_business', businessId: 'business.seed-kiosk', priceLevel: 2, wageLevel: 1, inventoryLevel: 1 }, contentRegistry, balanceConfig);
+    expect(directed.error).toBeUndefined();
+    expect(directed.state.businesses['business.seed-kiosk'].priceLevel).toBe(2);
+
+    const listedHolder = stakeableState();
+    listedHolder.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 65, publicFloatPercent: 35, listed: true, listedDay: 1 };
+    const viaPublic = dispatchGameAction(listedHolder, { type: 'increase_business_stake', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
+    expect(viaPublic.error).toBe('已上市企业请通过公开市场回购调整持股');
+    const viaSellStake = dispatchGameAction(listedHolder, { type: 'sell_business_stake', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
+    expect(viaSellStake.error).toBe('已上市企业请在公开市场出售股权');
+  });
+
+  it('sells down part of a private stake with proportional basis and realized gain', () => {
+    const state = stakeableState();
+    state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, fundingRaised: 4800, fundingRound: 1, equityPercent: 50 };
+    // Implied value (3200+4800)*0.65 = 5200; legacy basis 3200*0.5 = 1600.
+    const reduced = dispatchGameAction(state, { type: 'sell_business_stake', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
+    expect(reduced.error).toBeUndefined();
+    expect(reduced.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 40, playerCostBasis: 1280 });
+    expect(reduced.state.cash).toBe(20000 + 520);
+    const entries = reduced.state.financialLedger?.entries.slice(-2) ?? [];
+    expect(entries[0]).toMatchObject({ group: 'asset_liquidation', category: 'business_transfer', amount: 520, cashDelta: 520 });
+    expect(entries[1]).toMatchObject({ category: 'realized_gain', amount: 200, costBasis: 320 });
+    expect(reduced.state.lifeHistory.at(-1)).toMatchObject({ title: '减持早餐与咖啡档 10% 股权' });
+
+    const invalidReduction = dispatchGameAction(reduced.state, { type: 'sell_business_stake', businessId: 'business.seed-kiosk', percent: 40 }, contentRegistry, balanceConfig);
+    expect(invalidReduction.error).toContain('减持比例无效');
+  });
+
+  it('runs one-time board decisions under controlling stakes and records them', () => {
+    const entered = dispatchGameAction(stakeableState(), { type: 'buy_business_stake', businessId: 'business.seed-kiosk', percent: 30 }, contentRegistry, balanceConfig);
+    const raised = dispatchGameAction(entered.state, { type: 'increase_business_stake', businessId: 'business.seed-kiosk', percent: 20 }, contentRegistry, balanceConfig);
+    const decisionBlocked = dispatchGameAction(entered.state, { type: 'make_control_decision', businessId: 'business.seed-kiosk', decisionId: 'streamline_operations' }, contentRegistry, balanceConfig);
+    expect(decisionBlocked.error).toBe('需要至少控股 50% 才能进行董事会层面的决策');
+
+    const streamlined = dispatchGameAction(raised.state, { type: 'make_control_decision', businessId: 'business.seed-kiosk', decisionId: 'streamline_operations' }, contentRegistry, balanceConfig);
+    expect(streamlined.error).toBeUndefined();
+    expect(streamlined.state.businesses['business.seed-kiosk'].operatingBonusPercent).toBe(5);
+    expect(streamlined.state.flags['business.seed-kiosk.decision.streamline']).toBe(true);
+    expect(streamlined.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_cost', direction: 'expense', cashDelta: -2000 });
+    expect(streamlined.state.lifeHistory.at(-1)).toMatchObject({ title: '早餐与咖啡档完成组织精简' });
+    const repeated = dispatchGameAction(streamlined.state, { type: 'make_control_decision', businessId: 'business.seed-kiosk', decisionId: 'streamline_operations' }, contentRegistry, balanceConfig);
+    expect(repeated.error).toBe('这项董事会决策已经执行过');
+
+    const relocated = dispatchGameAction(streamlined.state, { type: 'make_control_decision', businessId: 'business.seed-kiosk', decisionId: 'relocate_operations', targetLocationId: 'location.old-town' }, contentRegistry, balanceConfig);
+    expect(relocated.error).toBeUndefined();
+    expect(relocated.state.businesses['business.seed-kiosk'].relocatedLocationId).toBe('location.old-town');
+    expect(relocated.state.locationVisits?.['location.old-town']).toBe(1);
+    expect(relocated.state.lifeHistory.at(-1)).toMatchObject({ title: '早餐与咖啡档迁入旧城文化区' });
+    const again = dispatchGameAction(relocated.state, { type: 'make_control_decision', businessId: 'business.seed-kiosk', decisionId: 'relocate_operations', targetLocationId: 'location.riverside' }, contentRegistry, balanceConfig);
+    expect(again.error).toBe('这家企业已经完成过搬迁');
+  });
+
+  it('values a staged-stake exit at equity-adjusted valuation', () => {
+    const entered = dispatchGameAction(stakeableState(), { type: 'buy_business_stake', businessId: 'business.seed-kiosk', percent: 30 }, contentRegistry, balanceConfig);
+    const exited = dispatchGameAction(entered.state, { type: 'sell_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    expect(exited.error).toBeUndefined();
+    expect(exited.state.businesses['business.seed-kiosk']).toBeUndefined();
+    // Proceeds: implied value (3200 * 0.65) * 30% = 624.
+    expect(exited.state.cash).toBe(20000 - 960 + 624);
+    const exitEntry = exited.state.financialLedger?.entries.at(-1) ?? {};
+    expect(exitEntry).toMatchObject({ group: 'asset_liquidation', category: 'business_transfer', amount: 624, cashDelta: 624 });
+    expect(exited.state.lifeHistory.at(-1)).toMatchObject({ title: '退出早餐与咖啡档' });
   });
 });

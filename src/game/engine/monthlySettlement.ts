@@ -1,6 +1,6 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary, WorldSnapshot } from '../content/contracts';
-import { businessValuation, calculateNetWorth, wealthTierForNetWorth } from './economy';
+import { businessValuation, calculateNetWorth, ownershipTierForEquity, wealthTierForNetWorth } from './economy';
 import { emptyFinancialLedger, projectLegacyMonthlyLedger, recordStateFinancialEntry, summarizeFinancialLedger } from './financialLedger';
 import { appendLifeRecord } from './lifeHistory';
 import { housingPrice, housingRentPerDay } from './locations';
@@ -120,6 +120,7 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       visitedLocationCount: Object.values(state.locationVisits ?? {}).filter((value) => value > 0).length,
       locationDevelopment: { ...development },
       listedBusinessCount: Object.values(state.businesses).filter((holding) => holding.listed).length,
+      controlledBusinessCount: Object.values(state.businesses).filter((holding) => ['controlling', 'wholly_owned'].includes(ownershipTierForEquity(holding.equityPercent ?? 100).tier)).length,
       publicFloatPercent: Object.values(state.businesses).reduce((total, holding) => total + (holding.publicFloatPercent ?? (100 - (holding.equityPercent ?? 100))), 0),
       publicBusinessEquities: Object.fromEntries(Object.entries(state.publicBusinessEquities ?? {}).flatMap(([businessId, publicHolding]) => {
         const business = state.businesses[businessId];
