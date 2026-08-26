@@ -1126,6 +1126,7 @@ test('archives and restores annual public equity history in the profile', async 
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
   await page.evaluate(({ key, state }) => {
+    state.annualHistory = [{ year: 1, cashStart: 10_000, cashEnd: 40_000, netWorthStart: 10_000, netWorthEnd: 42_000, totalIncome: 35_000, totalConsumption: 5_000, months: 12 }];
     state.worldHistory = [{ year: 1, day: 337, netWorth: 42_000, businessCount: 1, relationshipCount: 2, relationshipValues: { 'character.seed-zhou': 42 }, visitedLocationCount: 3, listedBusinessCount: 1, publicFloatPercent: 35 }];
     state.simulationMode = 'paused';
     localStorage.setItem(key, JSON.stringify(state));
@@ -1138,10 +1139,12 @@ test('archives and restores annual public equity history in the profile', async 
   await expect(equityHistory).toContainText('上市企业 1 家');
   await expect(equityHistory).toContainText('公开流通 35%');
   await expect(page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]')).toContainText('周妍 42');
+  await expect(page.getByRole('heading', { name: '年度回顾' }).locator('xpath=ancestor::section[1]')).toContainText('周妍 42');
   await page.reload();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByRole('region', { name: '年度公开股权记录' })).toContainText('公开流通 35%');
   await expect(page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]')).toContainText('周妍 42');
+  await expect(page.getByRole('heading', { name: '年度回顾' }).locator('xpath=ancestor::section[1]')).toContainText('周妍 42');
 });
 
 test('finances a home and restores the mortgage state after reload', async ({ page }) => {

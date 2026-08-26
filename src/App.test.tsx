@@ -386,7 +386,7 @@ describe('余量 app flow', () => {
   it('shows persisted annual records in the profile view', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
-    appStore.setState({ game: { ...game, annualHistory: [{ year: 1, cashStart: 1000, cashEnd: 1400, netWorthStart: 1000, netWorthEnd: 1800, totalIncome: 900, totalConsumption: 500, months: 12 }], worldHistory: [{ year: 1, day: 337, netWorth: 1800, businessCount: 0, relationshipCount: 2, visitedLocationCount: 1 }] } });
+    appStore.setState({ game: { ...game, annualHistory: [{ year: 1, cashStart: 1000, cashEnd: 1400, netWorthStart: 1000, netWorthEnd: 1800, totalIncome: 900, totalConsumption: 500, months: 12 }], worldHistory: [{ year: 1, day: 337, netWorth: 1800, businessCount: 0, relationshipCount: 2, relationshipValues: { 'character.seed-zhou': 42 }, visitedLocationCount: 1 }] } });
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
@@ -394,6 +394,7 @@ describe('余量 app flow', () => {
     expect(screen.getByText('第 1 年')).toBeInTheDocument();
     expect(screen.getByText(/收入 ¥900/)).toBeInTheDocument();
     expect(within(screen.getByRole('heading', { name: '年度回顾' }).closest('section') as HTMLElement).getByText(/联系人 2 人/)).toBeInTheDocument();
+    expect(within(screen.getByRole('heading', { name: '年度回顾' }).closest('section') as HTMLElement).getByText(/周妍 42/)).toBeInTheDocument();
   });
 
   it('switches the annual review between three-year and five-year spans', async () => {
