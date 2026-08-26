@@ -94,4 +94,30 @@ export const officialStorylines = [
       { id: 'complete' },
     ],
   },
+  {
+    id: 'storyline.big-promotion',
+    contentStatus: 'official',
+    name: '大促',
+    description: '在星桥电商的促销项目中选择投入方向，并把一次忙碌变成职业成长。',
+    tags: ['career'],
+    conditions: { type: 'any', conditions: [{ type: 'current_job', jobId: 'job.order-operations-assistant' }, { type: 'current_job', jobId: 'job.ecommerce-operations-assistant' }] },
+    initialStageId: 'announcement',
+    stages: [
+      {
+        id: 'announcement',
+        dialogueId: 'dialogue.big-promotion-entry',
+        branches: [
+          { id: 'core', text: '加入核心项目', nextStageId: 'finish', effects: [{ type: 'attribute', attribute: 'professional', amount: 2 }] },
+          { id: 'routine', text: '负责常规工作', nextStageId: 'finish', effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] },
+          { id: '商品', text: '帮助商品团队', nextStageId: 'finish', effects: [{ type: 'attribute', attribute: 'network', amount: 2 }] },
+        ],
+      },
+      {
+        id: 'finish',
+        dialogueId: 'dialogue.big-promotion-finish',
+        branches: [{ id: 'close', text: '完成项目复盘', nextStageId: 'complete', effects: [{ type: 'stat', stat: 'reputation', amount: 2 }, { type: 'cash', amount: 500 }, { type: 'unlock_job', jobId: 'job.growth-operations' }, { type: 'set_flag', flag: 'big_promotion_completed' }] }],
+      },
+      { id: 'complete' },
+    ],
+  },
 ] satisfies readonly StorylineDefinition[];

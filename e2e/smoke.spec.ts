@@ -760,6 +760,29 @@ test('completes the first real consulting project storyline with a persisted out
   await expect(page.getByText('第一次真正的项目：根据现有数据给出初步判断')).toBeVisible();
 });
 
+test('completes the ecommerce big-promotion storyline with a persisted career reward', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.currentJobId = 'job.order-operations-assistant';
+    state.employment = { ...(state.employment ?? {}), jobId: 'job.order-operations-assistant', companyId: 'company.starbridge-ecommerce', startedDay: 1 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const storyline = page.getByRole('heading', { name: '大促' }).locator('..').locator('..');
+  await storyline.getByRole('button', { name: '开始故事' }).click();
+  await storyline.getByRole('button', { name: '加入核心项目' }).click();
+  await storyline.getByRole('button', { name: '完成项目复盘' }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('大促：完成项目复盘')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('大促：完成项目复盘')).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

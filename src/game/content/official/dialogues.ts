@@ -60,4 +60,23 @@ export const officialDialogues = [
     tags: ['career'],
     lines: [{ id: 'meeting', speakerName: '顾清', text: '先别急着给结论，听听你会怎么回应。' }],
   },
+  {
+    id: 'dialogue.big-promotion-entry',
+    contentStatus: 'official',
+    name: '大促',
+    description: '星桥电商宣布大型促销项目，运营团队开始重新分配工作。',
+    tags: ['career'],
+    lines: [
+      { id: 'announcement', speakerName: '项目负责人', text: '这次大促不只是多做几张活动页，整个商品和订单节奏都会变。' },
+      { id: 'choice', speakerName: '项目负责人', text: '你想加入核心项目，还是先把常规工作做好？' },
+    ],
+  },
+  {
+    id: 'dialogue.big-promotion-finish',
+    contentStatus: 'official',
+    name: '大促结束',
+    description: '项目结束后，团队复盘这次促销带来的变化。',
+    tags: ['career'],
+    lines: [{ id: 'finish', speakerName: '项目负责人', text: '你这次留下的判断，已经不只是执行层面的经验了。' }],
+  },
 ] satisfies readonly DialogueDefinition[];

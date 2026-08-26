@@ -701,6 +701,18 @@ describe('game action dispatcher', () => {
     expect(settled.state.lifeHistory.at(-1)).toMatchObject({ title: '第一次真正的项目：根据现有数据给出初步判断' });
   });
 
+  it('settles the ecommerce big-promotion storyline and unlocks its growth route', () => {
+    const initial = createInitialState(contentRegistry, balanceConfig, 11);
+    const state = { ...initial, currentJobId: 'job.order-operations-assistant', employment: { ...initial.employment!, jobId: 'job.order-operations-assistant', companyId: 'company.starbridge-ecommerce' } };
+    const started = dispatchGameAction(state, { type: 'start_storyline', storylineId: 'storyline.big-promotion' }, contentRegistry, balanceConfig);
+    const joined = dispatchGameAction(started.state, { type: 'choose_storyline_branch', storylineId: 'storyline.big-promotion', branchId: 'core' }, contentRegistry, balanceConfig);
+    const settled = dispatchGameAction(joined.state, { type: 'choose_storyline_branch', storylineId: 'storyline.big-promotion', branchId: 'close' }, contentRegistry, balanceConfig);
+    expect(settled.error).toBeUndefined();
+    expect(settled.state.cash).toBe(balanceConfig.initialCash + 500);
+    expect(settled.state.unlockedJobIds).toContain('job.growth-operations');
+    expect(settled.state.flags.big_promotion_completed).toBe(true);
+  });
+
   it('completes a reached milestone with its reward, history, and monthly highlight', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 12), cash: 10_000 };
     const result = dispatchGameAction(state, { type: 'start_week' }, contentRegistry, balanceConfig);
