@@ -105,6 +105,7 @@ export function deterministicApplicationDecision(seed: number, applicationId: st
 }
 
 const attributeNames: Record<string, string> = { professional: '专业', knowledge: '知识', communication: '沟通', fitness: '体能', appearance: '形象', network: '人脉', mood: '心情' };
+const interestNames: Record<string, string> = { film: '电影', photography: '摄影', music: '音乐', cooking: '烹饪', cycling: '骑行', game: '游戏', travel: '旅行' };
 const capabilityNames: Record<string, string> = { remote_work: '远程工作', home_workspace: '居家办公', business_license: '经营资格', market_insight: '市场洞察' };
 
 export function requirementHints(job: JobDefinition, state: GameState, content?: ContentRegistry, balance?: BalanceConfig): AcquisitionHint[] {
@@ -156,7 +157,7 @@ function conditionHints(condition: ConditionDefinition, state: GameState, conten
     }
     case 'interest_familiarity_at_least': {
       const current = state.interestFamiliarity?.[condition.tag] ?? 0;
-      return current >= condition.amount ? [] : [numericHint(`interest:${condition.tag}`, `提升${condition.tag}兴趣熟练度`, '安排相关活动', 'shop', current, condition.amount)];
+      return current >= condition.amount ? [] : [numericHint(`interest:${condition.tag}`, `提升${interestNames[condition.tag] ?? condition.tag}兴趣熟练度`, '安排相关活动', 'shop', current, condition.amount)];
     }
     case 'owns_item':
       return (state.inventory[condition.itemId] ?? 0) >= (condition.quantity ?? 1) ? [] : [itemHint(condition.itemId, state, content, condition.quantity ?? 1)];

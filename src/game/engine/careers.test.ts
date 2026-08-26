@@ -48,6 +48,19 @@ describe('career market', () => {
     expect(requirementHints(job, state, contentRegistry, balanceConfig).some((hint) => hint.requirementId === 'interest:photography')).toBe(false);
   });
 
+  it('creates the photography gig only after its item and familiarity requirements are met', () => {
+    const content = { ...contentRegistry, jobs: contentRegistry.jobs.filter((entry) => entry.id !== 'job.delivery-shift') };
+    const state = createInitialState(content, balanceConfig, 31);
+    state.ability = 18;
+    state.reputation = 4;
+    state.inventory['item.vintage-camera'] = 1;
+    state.interestFamiliarity = { photography: 2 };
+
+    advanceCareerLifecycle(state, 1, content, balanceConfig);
+
+    expect(state.gigs?.some((gig) => gig.jobId === 'job.photography-assistant-gig')).toBe(true);
+  });
+
   it('keeps a submitted application snapshot after its vacancy expires', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 19);
     const vacancy = state.vacancies!.find((entry) => entry.jobId === 'job.seed-warehouse')!;

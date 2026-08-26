@@ -45,6 +45,12 @@ describe('phase 3 additive systems', () => {
     expect(explainCondition(condition, state, contentRegistry, balanceConfig)).toMatch(/还需要/);
   });
 
+  it('explains an interest gate with a player-facing label', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    const condition = { type: 'interest_familiarity_at_least', tag: 'photography', amount: 2 } as const;
+    expect(explainCondition(condition, state, contentRegistry, balanceConfig)).toMatch(/摄影兴趣熟练度/);
+  });
+
   it('records income, consumption, and asset allocation as different cash-flow groups', () => {
     let ledger = emptyFinancialLedger(1);
     ledger = recordFinancialEntry(ledger, { day: 1, direction: 'income', category: 'wage', amount: 620, label: '工资' });

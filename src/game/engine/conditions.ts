@@ -49,6 +49,7 @@ export function evaluateCondition(condition: ConditionDefinition, state: GameSta
 const attributeLabels: Record<string, string> = {
   professional: '专业', knowledge: '知识', communication: '沟通', fitness: '体能', appearance: '形象', network: '人脉', mood: '心情',
 };
+const interestLabels: Record<string, string> = { film: '电影', photography: '摄影', music: '音乐', cooking: '烹饪', cycling: '骑行', game: '游戏', travel: '旅行' };
 const capabilityLabels: Record<string, string> = { remote_work: '远程工作', home_workspace: '居家办公', business_license: '经营资格', market_insight: '市场洞察' };
 
 export function explainCondition(condition: ConditionDefinition, state: GameState, content: ContentRegistry, balance: BalanceConfig): string {
@@ -66,7 +67,7 @@ export function explainCondition(condition: ConditionDefinition, state: GameStat
     case 'lifestyle_at_least': return state.lifestyle >= condition.amount ? `✓ 生活品质 ≥ ${condition.amount}` : `✕ 生活品质 ≥ ${condition.amount}（当前 ${state.lifestyle}）`;
     case 'has_capability': return state.unlockedCapabilities.includes(condition.capability) ? `✓ 已拥有能力 ${capabilityLabels[condition.capability] ?? condition.capability}` : `✕ 需要能力 ${capabilityLabels[condition.capability] ?? condition.capability}`;
     case 'owns_item': { const itemName = content.items.find((entry) => entry.id === condition.itemId)?.name ?? condition.itemId; return (state.inventory[condition.itemId] ?? 0) >= (condition.quantity ?? 1) ? `✓ 已拥有${itemName}` : `✕ 需要商品 ${itemName}`; }
-    case 'interest_familiarity_at_least': return (state.interestFamiliarity?.[condition.tag] ?? 0) >= condition.amount ? `✓ ${condition.tag}兴趣熟练度 ≥ ${condition.amount}` : `✕ ${condition.tag}兴趣熟练度 ≥ ${condition.amount}（当前 ${state.interestFamiliarity?.[condition.tag] ?? 0}）`;
+    case 'interest_familiarity_at_least': { const label = interestLabels[condition.tag] ?? condition.tag; const current = state.interestFamiliarity?.[condition.tag] ?? 0; return current >= condition.amount ? `✓ ${label}兴趣熟练度 ≥ ${condition.amount}` : `✕ ${label}兴趣熟练度 ≥ ${condition.amount}（当前 ${current}）`; }
     default: return evaluateCondition(condition, state, content, balance) ? '✓ 已满足条件' : '✕ 当前条件未满足';
   }
 }
