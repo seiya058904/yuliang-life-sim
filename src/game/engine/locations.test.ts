@@ -11,4 +11,17 @@ describe('city locations', () => {
     expect(commuteCostMultiplier(state, contentRegistry)).toBeGreaterThan(1);
     expect(locationSummary(contentRegistry)).toHaveLength(3);
   });
+
+  it('applies a vehicle convenience factor to commute cost', () => {
+    const withoutVehicle = createInitialState(contentRegistry, balanceConfig, 3);
+    const withVehicle = structuredClone(withoutVehicle);
+    withVehicle.assets['asset.used-compact'] = {
+      assetId: 'asset.used-compact',
+      purchasePrice: 35000,
+      purchaseDay: 1,
+      currentValuation: 35000,
+    };
+
+    expect(commuteCostMultiplier(withVehicle, contentRegistry)).toBeCloseTo(commuteCostMultiplier(withoutVehicle, contentRegistry) * 0.8);
+  });
 });

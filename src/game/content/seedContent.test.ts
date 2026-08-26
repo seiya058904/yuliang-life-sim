@@ -33,6 +33,14 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes official vehicle assets from the content registry', () => {
+    expect(contentRegistry.assets.filter((asset) => asset.contentStatus === 'official' && asset.kind === 'vehicle').map((asset) => asset.id)).toEqual([
+      'asset.used-compact',
+      'asset.city-sedan',
+      'asset.city-ev',
+    ]);
+  });
+
   it('supports replacing one category while keeping the remaining Seed categories', () => {
     const result = composeContentRegistry({ jobs: [{ ...contentRegistry.jobs[0], id: 'job.seed-shop-clerk', contentStatus: 'official', name: '正式示例工作' }] });
     expect(result.jobs[0].id).toBe('job.seed-shop-clerk');

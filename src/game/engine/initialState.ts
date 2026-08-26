@@ -48,7 +48,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     unlockedJobIds: starterJobs,
     unlockedHousingIds: starterHousing,
     unlockedBusinessIds: [],
-    unlockedAssetIds: [],
+    unlockedAssetIds: content.assets.filter((asset) => asset.kind === 'vehicle').map((asset) => asset.id),
     housing: { housingId: startHousing?.id ?? '', mode: balance.startingHousingMode },
     relationships: startingCharacters,
     businesses: {},

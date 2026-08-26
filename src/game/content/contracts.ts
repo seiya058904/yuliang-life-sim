@@ -258,11 +258,13 @@ export interface BusinessDefinition extends ContentMeta {
 }
 
 export interface AssetDefinition extends ContentMeta {
-  kind: 'investment' | 'rental' | 'collectible';
+  kind: 'investment' | 'rental' | 'collectible' | 'vehicle';
   price: number;
   valuation: number;
   dailyIncome: number;
   volatility: number;
+  monthlyCost?: number;
+  depreciationRate?: number;
   requirements?: ConditionDefinition;
   effects?: readonly EffectDefinition[];
 }

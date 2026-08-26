@@ -112,6 +112,23 @@ describe('余量 app flow', () => {
     expect(screen.getByText('愿望清单完成：新款手机')).toBeInTheDocument();
   });
 
+  it('buys and sells a vehicle from the reachable wealth market', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 50000 } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    const vehicleRow = screen.getByRole('heading', { name: '实用二手小车' }).closest('.item-row');
+    expect(vehicleRow).not.toBeNull();
+    await user.click(within(vehicleRow as HTMLElement).getByRole('button', { name: '买入 ¥35,000' }));
+    expect(within(vehicleRow as HTMLElement).getByRole('button', { name: /出售/ })).toBeInTheDocument();
+    await user.click(within(vehicleRow as HTMLElement).getByRole('button', { name: /出售/ }));
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('买入实用二手小车')).toBeInTheDocument();
+    expect(screen.getByText('出售实用二手小车')).toBeInTheDocument();
+  });
+
   it('navigates from a rejected application hint and renders life history newest first', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

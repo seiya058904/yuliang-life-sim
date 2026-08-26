@@ -518,10 +518,14 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
     case 'sell_asset': {
       const holding = state.assets[action.assetId];
       if (!holding) return fail(input, '还没有这项资产');
+      const asset = content.assets.find((entry) => entry.id === action.assetId);
       state.cash += holding.currentValuation;
       delete state.assets[action.assetId];
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: holding.currentValuation, label: `出售资产`, sourceType: 'asset', sourceId: action.assetId });
-      addLifeRecord(state, { category: 'asset', title: `出售${content.assets.find((entry) => entry.id === action.assetId)?.name ?? '资产'}`, sourceId: action.assetId, amount: holding.currentValuation });
+      const realized = holding.currentValuation - holding.purchasePrice;
+      if (realized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: realized, cashDelta: 0, label: `已实现收益 · ${asset?.name ?? '资产'}`, sourceType: 'asset', sourceId: action.assetId, costBasis: holding.purchasePrice });
+      if (realized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized, cashDelta: 0, label: `已实现亏损 · ${asset?.name ?? '资产'}`, sourceType: 'asset', sourceId: action.assetId, costBasis: holding.purchasePrice });
+      addLifeRecord(state, { category: 'asset', title: `出售${asset?.name ?? '资产'}`, sourceId: action.assetId, amount: holding.currentValuation });
       effects.push({ type: 'cash', amount: holding.currentValuation, reason: '出售资产' });
       break;
     }

@@ -170,13 +170,25 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
   const transport = Math.round(balance.dailyTransportCost * (1 + lifestyleFactor / 2) * commuteCostMultiplier(state, content));
   const homeFixed = Math.round((home?.fixedMonthlyCost ?? 0) / 28);
   const communication = day % 28 === 1 ? balance.monthlyCommunicationCost : 0;
+  let vehicleCost = 0;
+  for (const [assetId, holding] of Object.entries(state.assets)) {
+    const vehicle = content.assets.find((asset) => asset.id === assetId);
+    if (vehicle?.kind !== 'vehicle') continue;
+    const dailyVehicleCost = Math.round((vehicle.monthlyCost ?? 0) / 28);
+    vehicleCost += dailyVehicleCost;
+    const previousValue = holding.currentValuation;
+    const depreciation = Math.max(1, Math.round(previousValue * (vehicle.depreciationRate ?? 0) / 28));
+    holding.currentValuation = Math.max(Math.round(vehicle.price * 0.45), previousValue - depreciation);
+    if (holding.currentValuation < previousValue) recordStateFinancialEntry(state, { day, direction: 'expense', group: 'asset_liquidation', category: 'valuation_change', amount: previousValue - holding.currentValuation, cashDelta: 0, label: `${vehicle.name}估值变化`, sourceType: 'vehicle', sourceId: vehicle.id });
+    if (dailyVehicleCost > 0) recordStateFinancialEntry(state, { day, direction: 'expense', category: 'maintenance', amount: dailyVehicleCost, label: `${vehicle.name}车辆成本`, sourceType: 'vehicle', sourceId: vehicle.id });
+  }
   const propertyIncome = Object.keys(state.assets).reduce((total, assetId) => {
     const asset = content.assets.find((entry) => entry.id === assetId);
     return total + (asset?.kind === 'rental' ? asset.dailyIncome : 0);
   }, 0);
   const otherAssetIncome = passive.assetIncome - propertyIncome;
   const income = passive.profit + passive.assetIncome + investmentDividend;
-  const totalExpense = rent + living + transport + communication + homeFixed;
+  const totalExpense = rent + living + transport + communication + homeFixed + vehicleCost;
   state.cash += income - totalExpense;
   if (passive.profit >= 0) recordStateFinancialEntry(state, { day, direction: 'income', category: 'business_income', amount: passive.profit, label: '企业利润', sourceType: 'business' });
   else recordStateFinancialEntry(state, { day, direction: 'expense', category: 'business_cost', amount: -passive.profit, label: '企业经营成本', sourceType: 'business' });
@@ -196,6 +208,7 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
     { label: '生活支出', amount: -living },
     { label: '交通', amount: -transport },
     ...(communication ? [{ label: '通讯', amount: -communication }] : []),
+    ...(vehicleCost ? [{ label: '车辆成本', amount: -vehicleCost }] : []),
   ] });
   syncLegacyMonthlyLedger(state, content, balance);
 }

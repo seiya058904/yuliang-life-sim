@@ -73,6 +73,15 @@ describe('game store persistence', () => {
     expect(restored.wishlist).toEqual(['item.seed-phone']);
   });
 
+  it('adds newly official vehicles to the discoverable asset list when loading an old save', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 1, unlockedAssetIds: ['asset.unknown'] }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.unlockedAssetIds).toEqual(['asset.used-compact', 'asset.city-sedan', 'asset.city-ev']);
+  });
+
   it('does not persist animation-only effect data as authoritative state', () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
     const state = store.getState().game;

@@ -98,6 +98,17 @@ describe('game action dispatcher', () => {
     expect(purchased.state.lifeHistory?.at(-1)).toMatchObject({ title: '愿望清单完成：实用手机' });
   });
 
+  it('buys a reachable vehicle as an asset and records the vehicle purchase', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 50000;
+    state.unlockedAssetIds.push('asset.used-compact');
+    const result = dispatchGameAction(state, { type: 'buy_asset', assetId: 'asset.used-compact' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.assets['asset.used-compact']).toMatchObject({ purchasePrice: 35000, currentValuation: 35000 });
+    expect(result.state.lifeHistory?.at(-1)).toMatchObject({ title: '买入实用二手小车', category: 'asset' });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);

@@ -86,4 +86,17 @@ describe('automatic simulation', () => {
     expect(result.state.lastFinancialSummary?.consumption.categories.service).toBe(39);
     expect(result.state.lifeHistory.some((entry) => entry.title === '基础通信套餐月度扣费')).toBe(true);
   });
+
+  it('applies gentle vehicle depreciation and a monthly vehicle cost without treating depreciation as consumption', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 31);
+    initial.cash = 50000;
+    initial.assets['asset.used-compact'] = { assetId: 'asset.used-compact', purchasePrice: 35000, purchaseDay: 1, currentValuation: 35000 };
+    const running = { ...initial, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 24 * 60, contentRegistry, balance);
+
+    expect(result.state.assets['asset.used-compact'].currentValuation).toBeLessThan(35000);
+    expect(result.state.financialLedger?.entries.some((entry) => entry.category === 'valuation_change' && entry.cashDelta === 0)).toBe(true);
+    expect(result.state.financialLedger?.entries.some((entry) => entry.category === 'maintenance' && entry.amount > 0)).toBe(true);
+  });
 });

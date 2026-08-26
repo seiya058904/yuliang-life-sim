@@ -90,7 +90,10 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.unlockedJobIds = (candidate.unlockedJobIds ?? []).filter((id) => jobIds.has(id));
   candidate.unlockedHousingIds = (candidate.unlockedHousingIds ?? []).filter((id) => housingIds.has(id));
   candidate.unlockedBusinessIds = (candidate.unlockedBusinessIds ?? []).filter((id) => knownIds(content, 'businesses').has(id));
-  candidate.unlockedAssetIds = (candidate.unlockedAssetIds ?? []).filter((id) => knownIds(content, 'assets').has(id));
+  candidate.unlockedAssetIds = [...new Set([
+    ...(candidate.unlockedAssetIds ?? []).filter((id) => knownIds(content, 'assets').has(id)),
+    ...content.assets.filter((asset) => asset.kind === 'vehicle').map((asset) => asset.id),
+  ])];
   candidate.completedEvents = (candidate.completedEvents ?? []).filter((id) => knownIds(content, 'events').has(id));
   candidate.completedMilestones = (candidate.completedMilestones ?? []).filter((id) => knownIds(content, 'milestones').has(id));
   candidate.businesses = Object.fromEntries(Object.entries(candidate.businesses ?? {}).filter(([id]) => knownIds(content, 'businesses').has(id)));

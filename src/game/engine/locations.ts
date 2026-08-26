@@ -9,10 +9,12 @@ export function locationForCurrentJob(state: GameState, content: ContentRegistry
 }
 
 export function commuteCostMultiplier(state: GameState, content: ContentRegistry): number {
+  const hasVehicle = Object.keys(state.assets).some((assetId) => content.assets.some((asset) => asset.id === assetId && asset.kind === 'vehicle'));
+  const vehicleFactor = hasVehicle ? 0.8 : 1;
   const homeId = content.housing.find((home) => home.id === state.housing.housingId)?.locationId;
   const jobLocation = locationForCurrentJob(state, content);
-  if (!jobLocation || !homeId || homeId === jobLocation.id) return 1;
-  return Math.max(1, jobLocation.transportCostMultiplier);
+  if (!jobLocation || !homeId || homeId === jobLocation.id) return vehicleFactor;
+  return Math.max(1, jobLocation.transportCostMultiplier) * vehicleFactor;
 }
 
 export function locationSummary(content: ContentRegistry): readonly LocationDefinition[] { return content.locations ?? []; }
