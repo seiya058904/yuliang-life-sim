@@ -432,6 +432,7 @@ export interface StorylineBranch {
   condition?: ConditionDefinition;
   nextStageId?: string;
   effects?: readonly EffectDefinition[];
+  opportunity?: { jobId: ContentId; companyId: ContentId; route: Exclude<ApplicationRoute, 'market'>; source: string; expiresInDays: number; salaryRange: readonly [number, number] };
 }
 
 export interface StorylineStageDefinition {

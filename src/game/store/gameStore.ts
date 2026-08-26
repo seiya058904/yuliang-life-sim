@@ -159,7 +159,20 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     }
   }
   candidate.applications = Array.isArray(candidate.applications) ? candidate.applications.filter((entry) => jobIds.has(entry.jobId)) : [];
-  candidate.opportunities = Array.isArray(candidate.opportunities) ? candidate.opportunities.filter((entry) => jobIds.has(entry.jobId)) : [];
+  const companyIds = new Set((content.companies ?? []).map((entry) => entry.id));
+  candidate.opportunities = Array.isArray(candidate.opportunities)
+    ? candidate.opportunities.filter((entry) => isRecord(entry)
+      && typeof entry.id === 'string'
+      && jobIds.has(String(entry.jobId))
+      && companyIds.has(String(entry.companyId))
+      && ['referral', 'headhunter', 'internal', 'storyline'].includes(String(entry.route))
+      && typeof entry.source === 'string'
+      && Number.isInteger(entry.expiresDay)
+      && Number(entry.expiresDay) >= candidate.time.day
+      && Array.isArray(entry.salaryRange)
+      && entry.salaryRange.length === 2
+      && entry.salaryRange.every((value) => Number.isFinite(value))).slice(-20) as GameState['opportunities']
+    : [];
   candidate.gigs = Array.isArray(candidate.gigs) ? candidate.gigs.filter((entry) => jobIds.has(entry.jobId) && entry.expiresDay >= candidate.time.day) : [];
   candidate.employmentHistory = Array.isArray(candidate.employmentHistory) ? candidate.employmentHistory.filter((entry) => jobIds.has(entry.jobId)) : [];
   candidate.monthlyHighlights = Array.isArray(candidate.monthlyHighlights) ? candidate.monthlyHighlights : [];

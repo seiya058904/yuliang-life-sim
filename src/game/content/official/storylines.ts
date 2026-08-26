@@ -12,7 +12,7 @@ export const officialStorylines = [
       {
         id: 'invite',
         branches: [
-          { id: 'meet', text: '约个时间聊聊', nextStageId: 'follow-up', effects: [{ type: 'relation', characterId: 'character.xuke', amount: 6 }, { type: 'attribute', attribute: 'network', amount: 1 }] },
+          { id: 'meet', text: '约个时间聊聊', nextStageId: 'follow-up', effects: [{ type: 'relation', characterId: 'character.xuke', amount: 6 }, { type: 'attribute', attribute: 'network', amount: 1 }], opportunity: { jobId: 'job.delivery-shift', companyId: 'company.qiming', route: 'referral', source: '徐可的朋友推荐', expiresInDays: 14, salaryRange: [76, 76] } },
           { id: 'wait', text: '先放一放', nextStageId: 'follow-up', effects: [{ type: 'relation', characterId: 'character.xuke', amount: 2 }] },
         ],
       },

@@ -90,6 +90,10 @@ describe('余量 app flow', () => {
     await user.click(within(storyline as HTMLElement).getByRole('button', { name: '开始故事' }));
     await user.click(within(storyline as HTMLElement).getByRole('button', { name: '约个时间聊聊' }));
     expect(screen.getByText('进行中')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '职业' }));
+    await user.click(screen.getByRole('button', { name: '工作机会' }));
+    expect(screen.getByText('徐可的朋友推荐')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '申请机会' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '我的' }));
     expect(screen.getByText(/远程连接：约个时间聊聊/)).toBeInTheDocument();
   });

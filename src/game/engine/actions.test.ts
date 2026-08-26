@@ -294,6 +294,7 @@ describe('game action dispatcher', () => {
     expect(advanced.error).toBeUndefined();
     expect(advanced.state.storylineStages?.['storyline.remote-connection']).toBe('follow-up');
     expect(advanced.state.relationships['character.xuke']).toBeGreaterThan(state.relationships['character.xuke']);
+    expect(advanced.state.opportunities).toEqual(expect.arrayContaining([expect.objectContaining({ jobId: 'job.delivery-shift', source: '徐可的朋友推荐' })]));
     expect(advanced.state.lifeHistory.at(-1)).toMatchObject({ category: 'relationship', sourceId: 'storyline.remote-connection' });
   });
 });

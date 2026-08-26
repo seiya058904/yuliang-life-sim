@@ -655,6 +655,11 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (branch.condition && !hasRequirements(state, branch.condition, content, balance)) return fail(input, '当前条件还不满足');
       if (!advanceStorylineStage(state, content, storyline.id, branch.nextStageId)) return fail(input, '故事阶段已失效');
       applyContentEffects(state, branch.effects ?? [], content, balance, effects);
+      if (branch.opportunity) {
+        const opportunityId = `opportunity.${storyline.id}.${branch.id}.${state.time.day}`;
+        const { expiresInDays, ...opportunity } = branch.opportunity;
+        state.opportunities = [...(state.opportunities ?? []).filter((entry) => entry.id !== opportunityId), { id: opportunityId, ...opportunity, expiresDay: state.time.day + Math.max(1, expiresInDays) }].slice(-20);
+      }
       addLifeRecord(state, { category: 'relationship', title: `${storyline.name}：${branch.text ?? '作出选择'}`, detail: `进入阶段 ${branch.nextStageId}`, sourceId: storyline.id });
       effects.push({ type: 'message', text: `${storyline.name}进入下一段` });
       break;
