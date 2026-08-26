@@ -300,6 +300,21 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/收入 ¥900/)).toBeInTheDocument();
   });
 
+  it('switches the annual review between three-year and five-year spans', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    const annualHistory = [1, 2, 3, 4, 5].map((year) => ({ year, cashStart: year * 1000, cashEnd: year * 1200, netWorthStart: year * 1000, netWorthEnd: year * 1500, totalIncome: 900, totalConsumption: 500, months: 12 }));
+    appStore.setState({ game: { ...game, annualHistory } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('近 5 年净资产变化')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '近 3 年' }));
+    expect(screen.getByText('近 3 年净资产变化')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '第 3 年' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '第 1 年' })).not.toBeInTheDocument();
+  });
+
   it('shows persisted location visits in the city view', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
