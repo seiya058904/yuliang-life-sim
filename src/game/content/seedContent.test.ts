@@ -138,9 +138,23 @@ describe('seed content registry', () => {
   it('exposes official investment products from the content registry', () => {
     expect(contentRegistry.investments?.filter((investment) => investment.contentStatus === 'official').map((investment) => investment.id)).toEqual([
       'investment.flexible-savings',
+      'investment.fixed-deposit-3m',
+      'investment.stable-money-market',
+      'investment.city-bond-fund',
       'investment.broad-market-index',
       'investment.technology-growth',
+      'investment.growth-index',
+      'investment.consumer-retail-fund',
+      'investment.travel-leisure-fund',
+      'investment.gold-account',
       'investment.commercial-reit',
+      'investment.residential-reit',
+      'investment.matrix-cloud-equity',
+      'investment.yuanwang-retail-equity',
+      'investment.starbridge-ecommerce-equity',
+      'investment.isle-lifestyle-equity',
+      'investment.luhai-manufacturing-equity',
+      'investment.harbor-travel-equity',
       'investment.qiming-equity',
       'investment.citylife-private-equity',
     ]);
