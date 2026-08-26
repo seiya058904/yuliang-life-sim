@@ -3,6 +3,7 @@ import type { ContentRegistry, GameState, PlannedActivity, WeeklyPlan } from '..
 import { calculateLifestyle } from './economy';
 import { employmentKind } from './careers';
 import { activityCashCost } from './activities';
+import { housingRentPerDay } from './locations';
 
 export interface WeeklyPlanForecast {
   income: number;
@@ -39,7 +40,7 @@ function fixedWeeklyExpense(state: GameState, content: ContentRegistry, balance:
   const home = content.housing.find((entry) => entry.id === state.housing.housingId);
   const score = calculateLifestyle(state, content);
   const factor = Math.min(balance.lifestyleCostFactorCap, Math.max(0, score * balance.lifestyleCostFactor));
-  const daily = (state.housing.mode === 'rent' ? home?.rentPerDay ?? 0 : 0)
+  const daily = (state.housing.mode === 'rent' && home ? housingRentPerDay(state, home) : 0)
     + Math.round(balance.dailyLivingCost * (1 + factor))
     + Math.round(balance.dailyTransportCost * (1 + factor / 2))
     + Math.round((home?.fixedMonthlyCost ?? 0) / 28);

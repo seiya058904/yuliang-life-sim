@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { contentRegistry } from '../content/registry';
 import { balanceConfig } from '../balance/config';
 import { createInitialState } from './initialState';
-import { commuteCostMultiplier, locationForCurrentJob, locationSummary, recordLocationVisit } from './locations';
+import { commuteCostMultiplier, housingPrice, housingRentPerDay, locationForCurrentJob, locationSummary, recordLocationVisit } from './locations';
 
 describe('city locations', () => {
   it('resolves stable locations and makes a cross-region commute visible', () => {
@@ -33,5 +33,14 @@ describe('city locations', () => {
     recordLocationVisit(state, 'location.unknown', contentRegistry);
 
     expect(state.locationVisits).toEqual({ 'location.riverside': 2 });
+  });
+
+  it('applies the persisted location development level consistently to housing prices and rent', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    state.locationDevelopment = { 'location.central': 3 };
+    const home = contentRegistry.housing.find((entry) => entry.id === 'housing.city-condo')!;
+
+    expect(housingRentPerDay(state, home)).toBe(Math.round(home.rentPerDay * 1.06));
+    expect(housingPrice(state, home)).toBe(Math.round(home.price! * 1.09));
   });
 });

@@ -8,7 +8,7 @@ Scope: this matrix audits `docs/NEXT-UPDATE-FOUNDATION.md` as the sole product/c
 | --- | --- |
 | Branch | `codex/yuliang-completion` |
 | Content validation | `npm run content:validate` passed: 12 jobs, 28 items, 3 services, 3 subscriptions, 6 housing, 5 characters, 29 events, 4 event chains, 3 businesses, 7 assets, 6 activities, 3 courses, 7 investments. |
-| Unit/component tests | `npm test` passed: 20 files, 138 tests. |
+| Unit/component tests | `npm test` passed: 20 files, 139 tests. |
 | Browser E2E | `npm run e2e` passed: 2 tests, desktop and mobile smoke flow. |
 | Production build | `npm run build` passed: content validation, TypeScript build, Vite build. |
 
@@ -100,6 +100,7 @@ Allowed statuses: `IMPLEMENTED`, `IMPLEMENTED VIA EQUIVALENT EXISTING SYSTEM`, `
 | Long-term wealth tier | Profile → current net worth → wealth tier and world-level reflection → continue to Life | `src/game/engine/economy.ts` (`wealthTierForNetWorth`), `src/App.tsx`, `src/game/engine/economy.test.ts`, `src/App.test.tsx`; targeted test passes | Derived from current net worth only; milestone history, company/world effects and strategy comparison remain incomplete. |
 | Annual world snapshot | Run through a full year → annual settlement → persist business/job/relationship/location/net-worth snapshot → Profile → 世界记录 | `src/game/engine/monthlySettlement.ts`, `src/game/store/gameStore.ts`, `src/App.tsx` (`WorldHistoryView`), `src/game/engine/simulation.test.ts`, `src/game/store/gameStore.test.ts`, `src/App.test.tsx`; targeted tests and full gate pass | Snapshot is an annual summary of current state; dynamic company events, NPC career histories, city evolution, and world-level wealth effects remain incomplete. |
 | Annual location development | Run through a full year → derive development from real business/visit activity → persist location level → City → inspect development | `src/game/engine/monthlySettlement.ts`, `src/game/store/gameStore.ts`, `src/App.tsx` (`CityView`), `src/game/engine/monthlySettlement.test.ts`, `src/game/store/gameStore.test.ts`, `src/App.test.tsx`; targeted tests and full gate pass | Five-level development is a lightweight annual indicator; it does not yet alter prices, venues, company dynamics, or authored city events. |
+| Location development pricing | City annual development → housing market/forecast → development-adjusted rent and purchase price → actual housing settlement/purchase | `src/game/engine/locations.ts` (`housingRentPerDay`, `housingPrice`), `src/game/engine/actions.ts`, `src/game/engine/simulation.ts`, `src/game/engine/forecast.ts`, `src/App.tsx` (`LifeView`, `HousingView`), `src/game/engine/locations.test.ts`; targeted tests and full gate pass | Development affects housing rent by 2% and purchase price by 3% per level; other city services and authored world events remain incomplete. |
 
 ## Self-Review Evidence
 

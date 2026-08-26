@@ -13,7 +13,7 @@ import { appendLifeRecord } from './lifeHistory';
 import { advanceStorylineStage, getStoryline, getStorylineStage } from './storylines';
 import { careerRequirementsSatisfied } from './careerProgression';
 import { applyCareerExperience } from './careerProgression';
-import { recordLocationVisit } from './locations';
+import { housingPrice, housingRentPerDay, recordLocationVisit } from './locations';
 import { absoluteMinute } from './time';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
@@ -43,7 +43,7 @@ function recruiterForJob(job: JobDefinition, content: ContentRegistry): ContentI
 
 function reserveRequired(state: GameState, content: ContentRegistry): number {
   const home = find(content.housing, state.housing.housingId);
-  return state.housing.mode === 'rent' ? home?.rentPerDay ?? 0 : 0;
+  return state.housing.mode === 'rent' && home ? housingRentPerDay(state, home) : 0;
 }
 
 function addLifeRecord(state: GameState, record: Omit<LifeRecordEntry, 'id' | 'day'> & { id?: string; day?: number }): void {
@@ -512,7 +512,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (home.mode !== 'both' && home.mode !== action.mode) return fail(input, '这套住房不支持该方式');
       if (!state.unlockedHousingIds.includes(home.id) && home.id !== state.housing.housingId) return fail(input, '这套住房还没有解锁');
       if (!hasRequirements(state, home.requirements, content, balance)) return fail(input, '当前条件还不满足');
-      const price = action.mode === 'owned' ? (home.price ?? Number.MAX_SAFE_INTEGER) : 0;
+      const price = action.mode === 'owned' ? (housingPrice(state, home) ?? Number.MAX_SAFE_INTEGER) : 0;
       if (state.cash - price < reserveRequired(state, content)) return fail(input, '现金不足以负担住房变更');
       state.cash -= price;
       state.housing = { housingId: home.id, mode: action.mode };
