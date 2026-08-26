@@ -151,6 +151,10 @@ export const officialMilestones = [
         "businessId": "business.service-studio"
       },
       {
+        "type": "unlock_business",
+        "businessId": "business.consulting-studio"
+      },
+      {
         "type": "unlock_housing",
         "housingId": "housing.city-condo"
       }

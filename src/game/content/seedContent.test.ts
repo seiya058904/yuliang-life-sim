@@ -226,6 +226,13 @@ describe('seed content registry', () => {
     });
   });
 
+  it('exposes the consulting studio business route with real operating economics', () => {
+    expect(contentRegistry.businesses.find((business) => business.id === 'business.consulting-studio')).toMatchObject({
+      name: '咨询工作室', price: 24000, baseRevenue: 2100, locationId: 'location.central',
+      requirements: { type: 'all' },
+    });
+  });
+
   it('exposes the neworder automotive service route with a progression ladder', () => {
     expect(contentRegistry.companies).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'company.neworder-auto', name: '新序汽车服务', jobIds: expect.arrayContaining(['job.auto-service-assistant', 'job.sales-consultant-assistant', 'job.auto-sales-consultant', 'job.auto-customer-operations']) }),

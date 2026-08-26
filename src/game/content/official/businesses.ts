@@ -142,5 +142,53 @@ export const officialBusinesses = [
         }
       ]
     }
+  },
+  {
+    "id": "business.consulting-studio",
+    "contentStatus": "official",
+    "name": "咨询工作室",
+    "description": "把研究、分析和客户项目变成可持续经营的专业服务企业。",
+    "tags": [
+      "business",
+      "career"
+    ],
+    "locationId": "location.central",
+    "price": 24000,
+    "baseRevenue": 2100,
+    "baseGoodsCost": 180,
+    "baseWage": 620,
+    "baseRent": 220,
+    "priceLevels": [
+      0.94,
+      1,
+      1.1
+    ],
+    "wageLevels": [
+      0.9,
+      1,
+      1.12
+    ],
+    "inventoryLevels": [
+      0.9,
+      1,
+      1.1
+    ],
+    "requirements": {
+      "type": "all",
+      "conditions": [
+        {
+          "type": "has_capability",
+          "capability": "business_license"
+        },
+        {
+          "type": "ability_at_least",
+          "amount": 28
+        },
+        {
+          "type": "reputation_at_least",
+          "amount": 20
+        }
+      ]
+    }
   }
 ] satisfies readonly BusinessDefinition[];

@@ -354,6 +354,23 @@ describe('game action dispatcher', () => {
     expect(joined.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '加入线上小店合伙', amount: -4200 });
   });
 
+  it('buys the unlocked consulting studio and records its operating location', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 30_000;
+    state.ability = 28;
+    state.reputation = 20;
+    state.unlockedCapabilities.push('business_license');
+    state.unlockedBusinessIds.push('business.consulting-studio');
+
+    const bought = dispatchGameAction(state, { type: 'buy_business', businessId: 'business.consulting-studio' }, contentRegistry, balanceConfig);
+
+    expect(bought.error).toBeUndefined();
+    expect(bought.state.businesses['business.consulting-studio']).toMatchObject({ purchasePrice: 24000, equityPercent: 100 });
+    expect(bought.state.locationVisits?.['location.central']).toBe(1);
+    expect(bought.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 24000 });
+    expect(bought.state.lifeHistory.at(-1)).toMatchObject({ title: '买入咨询工作室', category: 'business' });
+  });
+
   it('keeps business capital separate and records one dilutive funding round', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 10000;
