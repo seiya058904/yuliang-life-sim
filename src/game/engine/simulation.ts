@@ -132,6 +132,10 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
       output.push({ type: 'message', text: `当前条件未满足，未能完成${definition.name}` });
       return;
     }
+    if (definition && option?.requiredCharacterId && !content.characters.some((character) => character.id === option.requiredCharacterId)) {
+      output.push({ type: 'message', text: '这次活动的同行联系人已不可用' });
+      return;
+    }
     if (!definition || !option || cost === undefined || state.cash < cost) {
       output.push({ type: 'message', text: option ? `现金不足，未能完成${definition?.name ?? '活动'}` : '活动选项已失效' });
       return;
@@ -165,7 +169,9 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     if (definition.locationId) recordLocationVisit(state, definition.locationId, content);
     const discountLabel = activityDiscountLabel(state, definition, content);
     const familiarity = applyActivityFamiliarity(state, definition);
-    const detail = discountLabel === '自驾优惠' ? '自驾出行，交通费用有所减少' : discountLabel === '地点发展优惠' ? '地点发展使活动更便利' : '活动已完成';
+    const companion = option.requiredCharacterId ? content.characters.find((character) => character.id === option.requiredCharacterId) : undefined;
+    const baseDetail = discountLabel === '自驾优惠' ? '自驾出行，交通费用有所减少' : discountLabel === '地点发展优惠' ? '地点发展使活动更便利' : '活动已完成';
+    const detail = companion ? `和${companion.name}一起，${baseDetail}` : baseDetail;
     state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: familiarity.length ? `${detail} · ${familiarity.join('、')}熟练度提升` : detail, sourceId: definition.id, amount: -cost });
     return;
   }

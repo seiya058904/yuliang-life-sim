@@ -76,6 +76,7 @@ export function explainCondition(condition: ConditionDefinition, state: GameStat
     case 'has_capability': return state.unlockedCapabilities.includes(condition.capability) ? `✓ 已拥有能力 ${capabilityLabels[condition.capability] ?? condition.capability}` : `✕ 需要能力 ${capabilityLabels[condition.capability] ?? condition.capability}`;
     case 'owns_item': { const itemName = content.items.find((entry) => entry.id === condition.itemId)?.name ?? condition.itemId; return (state.inventory[condition.itemId] ?? 0) >= (condition.quantity ?? 1) ? `✓ 已拥有${itemName}` : `✕ 需要商品 ${itemName}`; }
     case 'interest_familiarity_at_least': { const label = interestLabels[condition.tag] ?? condition.tag; const current = state.interestFamiliarity?.[condition.tag] ?? 0; return current >= condition.amount ? `✓ ${label}兴趣熟练度 ≥ ${condition.amount}` : `✕ ${label}兴趣熟练度 ≥ ${condition.amount}（当前 ${current}）`; }
+    case 'relationship_at_least': { const current = state.relationships[condition.characterId] ?? 0; const character = content.characters.find((entry) => entry.id === condition.characterId); const label = character?.name ?? condition.characterId; return current >= condition.amount ? `✓ 与${label}的关系 ≥ ${condition.amount}` : `✕ 与${label}的关系 ≥ ${condition.amount}（当前 ${current}，还需要 ${condition.amount - current}）`; }
     default: return evaluateCondition(condition, state, content, balance) ? '✓ 已满足条件' : '✕ 当前条件未满足';
   }
 }

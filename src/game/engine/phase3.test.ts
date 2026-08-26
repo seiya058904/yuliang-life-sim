@@ -90,6 +90,20 @@ describe('phase 3 additive systems', () => {
     expect(result.state.weeklyPlan.days[2].evening).toEqual({ kind: 'free' });
   });
 
+  it('opens a friend-specific activity only after the relationship requirement and records the companion', () => {
+    const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 3);
+    state.weeklyPlan.days[1].evening = { kind: 'free' };
+    const locked = dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity: { kind: 'activity', activityId: 'activity.cafe-break', optionId: 'with-chenyu' } }, contentRegistry, balanceConfig);
+    expect(locked.error).toMatch(/与陈宇的关系 ≥ 4.*当前 0/);
+    state.relationships['character.chenyu'] = 4;
+    const planned = dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity: { kind: 'activity', activityId: 'activity.cafe-break', optionId: 'with-chenyu' } }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    expect(planned.error).toBeUndefined();
+    const started = dispatchGameAction(planned.state, { type: 'start_week' }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    const settled = dispatchGameAction(started.state, { type: 'advance_simulation', minutes: 24 * 60 }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    expect(settled.state.lifeHistory).toContainEqual(expect.objectContaining({ title: '去咖啡馆坐一会 · 和陈宇坐坐', detail: expect.stringContaining('和陈宇一起') }));
+    expect(settled.state.relationships['character.chenyu']).toBeGreaterThan(4);
+  });
+
   it('records income, consumption, and asset allocation as different cash-flow groups', () => {
     let ledger = emptyFinancialLedger(1);
     ledger = recordFinancialEntry(ledger, { day: 1, direction: 'income', category: 'wage', amount: 620, label: '工资' });

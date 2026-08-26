@@ -36,7 +36,10 @@ export const officialActivities = [
     category: 'hobby',
     financialCategory: 'social',
     locationId: 'location.riverside',
-    options: [{ id: 'rest', label: '只是休息', durationMinutes: 60, cashCost: 38, effects: [{ type: 'attribute', attribute: 'mood', amount: 2 }] }],
+    options: [
+      { id: 'rest', label: '只是休息', durationMinutes: 60, cashCost: 38, effects: [{ type: 'attribute', attribute: 'mood', amount: 2 }] },
+      { id: 'with-chenyu', label: '和陈宇坐坐', durationMinutes: 120, cashCost: 120, requiredCharacterId: 'character.chenyu', requirements: { type: 'relationship_at_least', characterId: 'character.chenyu', amount: 4 }, effects: [{ type: 'relation', characterId: 'character.chenyu', amount: 3 }, { type: 'attribute', attribute: 'mood', amount: 3 }] },
+    ],
   },
   {
     id: 'activity.weekend-getaway',

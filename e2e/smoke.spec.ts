@@ -115,6 +115,26 @@ test('shows persisted ambient city sightings in the city view', async ({ page })
   await expect(page.getByRole('region', { name: '城市见闻' })).toContainText('夜间公交延长');
 });
 
+test('discovers and plans the friend-specific cafe activity', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 500;
+    state.relationships = { ...(state.relationships ?? {}), 'character.chenyu': 4 };
+    state.simulationMode = 'planning';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const outing = page.locator('article').filter({ hasText: '和陈宇坐坐' });
+  await expect(outing).toContainText('和陈宇坐坐');
+  await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
+  await expect(page.getByRole('button', { name: '职业', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await expect(page.getByText('去咖啡馆坐一会 · with-chenyu')).toBeVisible();
+});
+
 test('settles a city development event and keeps the location change after reload', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
