@@ -170,13 +170,13 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   await page.getByRole('button', { name: '财富', exact: true }).click();
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await page.getByRole('button', { name: '出售 10% 股权' }).click();
-  await expect(page.getByText('持股 70%')).toBeVisible();
+  await expect(page.getByText('持股 70% · 已投入资本 ¥0 · 融资 ¥0')).toBeVisible();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByText('出售早餐与咖啡档 10% 股权')).toBeVisible();
 
   await page.reload();
   await page.getByRole('button', { name: '财富', exact: true }).click();
-  await expect(page.getByText('持股 70%')).toBeVisible();
+  await expect(page.getByRole('region', { name: '公开股权' })).toContainText('你的持股 70% · 外部公开流通 30%');
 });
 
 test('applies the industrial hub city event and persists its development', async ({ page }) => {

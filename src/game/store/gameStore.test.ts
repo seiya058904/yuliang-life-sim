@@ -97,7 +97,12 @@ describe('game store persistence', () => {
 
     const restored = loadGameState(contentRegistry, balanceConfig);
 
-    expect(restored.businesses['business.seed-kiosk']).toMatchObject({ capitalInvested: 0, equityPercent: 100, fundingRaised: 0, fundingRound: 0 });
+    expect(restored.businesses['business.seed-kiosk']).toMatchObject({ capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0 });
+
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, businesses: {
+      'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 65, listed: true, listedDay: 8 },
+    } }));
+    expect(loadGameState(contentRegistry, balanceConfig).businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 65, publicFloatPercent: 35, listed: true, listedDay: 8 });
   });
 
   it('filters completed business projects against current activity content', () => {

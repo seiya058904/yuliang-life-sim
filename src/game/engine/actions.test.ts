@@ -343,9 +343,11 @@ describe('game action dispatcher', () => {
     expect(listed.error).toBeUndefined();
     expect(listed.state.businesses['business.seed-kiosk'].listed).toBe(true);
     expect(listed.state.businesses['business.seed-kiosk'].listedDay).toBe(1);
+    expect(listed.state.businesses['business.seed-kiosk'].publicFloatPercent).toBe(35);
     expect(lockedSale.error).toBe('上市股权仍在锁定期内');
     expect(sold.error).toBeUndefined();
     expect(sold.state.businesses['business.seed-kiosk'].equityPercent).toBe(55);
+    expect(sold.state.businesses['business.seed-kiosk'].publicFloatPercent).toBe(45);
     expect(sold.state.cash).toBe(10000 + 520);
     expect(sold.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 520, cashDelta: 520 });
     expect(sold.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '出售早餐与咖啡档 10% 股权' });
@@ -353,6 +355,7 @@ describe('game action dispatcher', () => {
     const bought = dispatchGameAction(sold.state, { type: 'buy_business_equity', businessId: 'business.seed-kiosk', percent: 5 }, contentRegistry, balanceConfig);
     expect(bought.error).toBeUndefined();
     expect(bought.state.businesses['business.seed-kiosk'].equityPercent).toBe(60);
+    expect(bought.state.businesses['business.seed-kiosk'].publicFloatPercent).toBe(40);
     expect(bought.state.cash).toBe(10000 + 520 - 260);
     expect(bought.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', group: 'asset_allocation', amount: 260, cashDelta: -260 });
     expect(bought.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '回购早餐与咖啡档 5% 股权' });

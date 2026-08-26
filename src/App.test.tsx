@@ -199,6 +199,7 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/持股 65%/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '申请上市' }));
     expect(screen.getByRole('button', { name: '已上市' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '公开股权' })).toHaveTextContent('外部公开流通 35%');
     expect(screen.getAllByRole('button', { name: '锁定至第 29 天' })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: '锁定至第 29 天' })[0]).toBeDisabled();
   });

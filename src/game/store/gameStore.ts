@@ -129,6 +129,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
       purchasePrice: Number.isFinite(value.purchasePrice) ? Math.max(0, Number(value.purchasePrice)) : 0,
       capitalInvested: Number.isFinite(value.capitalInvested) ? Math.max(0, Number(value.capitalInvested)) : 0,
       equityPercent: Number.isFinite(value.equityPercent) ? Math.min(100, Math.max(0, Number(value.equityPercent))) : 100,
+      publicFloatPercent: Number.isFinite(value.publicFloatPercent) ? Math.min(100, Math.max(0, Number(value.publicFloatPercent))) : Math.max(0, 100 - (Number.isFinite(value.equityPercent) ? Number(value.equityPercent) : 100)),
       fundingRaised: Number.isFinite(value.fundingRaised) ? Math.max(0, Number(value.fundingRaised)) : 0,
       fundingRound: Number.isInteger(value.fundingRound) ? Math.max(0, Number(value.fundingRound)) : 0,
       listed: value.listed === true,

@@ -77,6 +77,8 @@ Allowed statuses: `IMPLEMENTED`, `IMPLEMENTED VIA EQUIVALENT EXISTING SYSTEM`, `
 
 ## Self-Review
 
+| Public equity float state | 上市 → 公开流通比例持久化 → 出售增加流通量 → 回购减少流通量 → 刷新后保留并进入企业经营/历史 | `src/game/content/contracts.ts` (`BusinessHolding.publicFloatPercent`); `src/game/store/gameStore.ts`; `src/game/engine/actions.ts`; `src/App.tsx` (`BusinessPublicFloatView`); `src/game/store/gameStore.test.ts`; `src/game/engine/actions.test.ts`; `e2e/smoke.spec.ts` | Explicit public float state now tracks funding dilution and listed-market sale/repurchase; old saves default it from player equity, and Wealth displays the independent state. Separate external-holder portfolios, dividend distributions, and controlling-stake decisions remain Phase 7 extensions. |
+
 ## Latest Vertical Slice Evidence
 
 | Slice | Reachable loop | Evidence | Remaining gap |

@@ -589,6 +589,8 @@ export interface BusinessHolding {
   capitalInvested?: number;
   /** Player ownership after external funding; ordinary investments never use this field. */
   equityPercent?: number;
+  /** Publicly tradable percentage held outside the player's business holding. */
+  publicFloatPercent?: number;
   fundingRaised?: number;
   fundingRound?: number;
   listed?: boolean;
