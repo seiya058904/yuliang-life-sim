@@ -43,3 +43,28 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
   await expect(page.getByTestId('cash-value')).toHaveText(persistedCash);
   await expect(page.getByTestId('clock-value')).toHaveText(pausedClock);
 });
+
+test('settles a city development event and keeps the location change after reload', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.time = { ...state.time, day: 90 };
+    state.calendar = { ...state.calendar, month: 4 };
+    state.pendingEventId = 'event.city-transit-upgrade';
+    state.simulationMode = 'event';
+    state.locationDevelopment = { ...(state.locationDevelopment ?? {}), 'location.riverside': 0 };
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await expect(page.getByRole('dialog')).toContainText('临江区的变化');
+  await page.getByRole('dialog').getByRole('button', { name: /支持这项建设/ }).click();
+  await expect(page.getByRole('dialog')).toContainText('临江区发展 +1');
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '城市' }).click();
+  await expect(page.getByText('发展阶段 1/5')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '城市' }).click();
+  await expect(page.getByText('发展阶段 1/5')).toBeVisible();
+});

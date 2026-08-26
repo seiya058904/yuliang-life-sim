@@ -271,6 +271,23 @@ describe('game action dispatcher', () => {
     expect(chosen.state.applications).toHaveLength(0);
   });
 
+  it('settles a city development event into persisted location state and event history', () => {
+    const event = {
+      id: 'event.test-city-development', contentStatus: 'seed' as const, name: '城市建设', description: '测试城市建设。',
+      title: '城市建设', body: '临江区的公共空间正在升级。', category: 'life' as const, weight: 1, cooldownDays: 99,
+      choices: [{ id: 'support', text: '支持建设', effects: [{ type: 'location_development' as const, locationId: 'location.riverside', amount: 2 }] }],
+    };
+    const content = { ...contentRegistry, events: [...contentRegistry.events, event] };
+    const state = { ...createInitialState(content, balanceConfig, 1), pendingEventId: event.id, simulationMode: 'event' as const };
+
+    const chosen = dispatchGameAction(state, { type: 'choose_event', eventId: event.id, choiceId: 'support' }, content, balanceConfig);
+
+    expect(chosen.error).toBeUndefined();
+    expect(chosen.state.locationDevelopment?.['location.riverside']).toBe(2);
+    expect(chosen.state.lifeHistory.at(-1)).toMatchObject({ category: 'event', title: '城市建设' });
+    expect(chosen.state.pendingReward?.lines).toContain('临江区发展 +2');
+  });
+
   it('runs a requested month through the normal weekly and monthly settlement loop', () => {
     const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 1);
 

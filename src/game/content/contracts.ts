@@ -90,6 +90,7 @@ export type EffectDefinition =
   | { type: 'discount'; percent: number; tags?: readonly ContentTag[] }
   | { type: 'modifier'; modifier: PermanentModifierDefinition }
   | { type: 'advance_time'; hours: number }
+  | { type: 'location_development'; locationId: ContentId; amount: number }
   | { type: 'set_flag'; flag: string }
   | { type: 'advance_chain'; chainId: ContentId; stage: number };
 

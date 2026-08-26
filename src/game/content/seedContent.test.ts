@@ -75,6 +75,11 @@ describe('seed content registry', () => {
     });
   });
 
+  it('exposes the official city development event with a real location effect', () => {
+    const event = contentRegistry.events.find((entry) => entry.id === 'event.city-transit-upgrade');
+    expect(event?.choices.find((choice) => choice.id === 'support')?.effects).toContainEqual({ type: 'location_development', locationId: 'location.riverside', amount: 1 });
+  });
+
   it('exposes the official relationship storyline from the content registry', () => {
     expect(contentRegistry.storylines?.filter((storyline) => storyline.contentStatus === 'official').map((storyline) => storyline.id)).toEqual([
       'storyline.remote-connection',

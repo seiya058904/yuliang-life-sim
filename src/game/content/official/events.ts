@@ -2,6 +2,35 @@ import type { EventDefinition } from '../contracts';
 
 export const officialEvents = [
   {
+    "id": "event.city-transit-upgrade",
+    "contentStatus": "official",
+    "name": "临江区公共空间升级",
+    "description": "一项公共空间改造计划正在改变临江区的生活便利度。",
+    "title": "临江区的变化",
+    "body": "临江区开始进行公共空间升级。你可以投入一点时间支持，也可以把精力留给自己的安排。",
+    "category": "life",
+    "weight": 0.3,
+    "cooldownDays": 240,
+    "conditions": { "type": "day_at_least", "day": 90 },
+    "choices": [
+      {
+        "id": "support",
+        "text": "支持这项建设",
+        "effects": [
+          { "type": "location_development", "locationId": "location.riverside", "amount": 1 }
+        ]
+      },
+      {
+        "id": "observe",
+        "text": "先观察变化",
+        "effects": [
+          { "type": "stat", "stat": "lifestyle", "amount": 1 }
+        ]
+      }
+    ],
+    "tags": ["life", "city"]
+  },
+  {
     "id": "event.seed-bonus",
     "contentStatus": "official",
     "name": "临时订单",

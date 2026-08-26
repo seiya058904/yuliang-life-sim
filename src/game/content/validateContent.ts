@@ -47,6 +47,7 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     investments: new Set((registry.investments ?? []).map((entry) => entry.id)),
     companies: new Set((registry.companies ?? []).map((entry) => entry.id)),
     dialogues: new Set((registry.dialogues ?? []).map((entry) => entry.id)),
+    locations: new Set((registry.locations ?? []).map((entry) => entry.id)),
   };
 
   for (const [category, collection] of collections) {
@@ -146,6 +147,7 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
   const effectIsPositive = (effect: EffectDefinition): boolean => {
     if (effect.type === 'cash') return effect.amount > 0;
     if (effect.type === 'stat' || effect.type === 'attribute' || effect.type === 'relation') return effect.amount > 0;
+    if (effect.type === 'location_development') return effect.amount > 0;
     if (effect.type === 'item') return effect.quantity > 0;
     if (effect.type === 'discount') return effect.percent > 0;
     if (effect.type === 'unlock_capability' || effect.type.startsWith('unlock_') || effect.type === 'advance_chain') return true;
@@ -164,6 +166,8 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     if (effect.type === 'unlock_event' && !known.events.has(effect.eventId)) errors.push(`${owner} 引用了未知事件: ${effect.eventId}`);
     if (effect.type === 'unlock_housing' && !known.housing.has(effect.housingId)) errors.push(`${owner} 引用了未知住房: ${effect.housingId}`);
     if (effect.type === 'unlock_business' && !known.businesses.has(effect.businessId)) errors.push(`${owner} 引用了未知企业: ${effect.businessId}`);
+    if (effect.type === 'location_development' && !known.locations.has(effect.locationId)) errors.push(`${owner} 引用了未知地点: ${effect.locationId}`);
+    if (effect.type === 'location_development' && (!Number.isFinite(effect.amount) || effect.amount === 0)) errors.push(`${owner} 的地点发展效果数值无效`);
     if (effect.type === 'unlock_asset' && !known.assets.has(effect.assetId)) errors.push(`${owner} 引用了未知资产: ${effect.assetId}`);
     if (effect.type === 'unlock_capability' && !registry.vocabulary.capabilities.includes(effect.capability)) errors.push(`${owner} 引用了未知 Capability: ${effect.capability}`);
     if (effect.type === 'advance_chain' && !known.eventChains.has(effect.chainId)) errors.push(`${owner} 引用了未知事件链: ${effect.chainId}`);

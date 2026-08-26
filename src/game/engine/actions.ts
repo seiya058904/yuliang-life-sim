@@ -851,6 +851,7 @@ function describeRewardEffect(effect: EffectDefinition, content: ContentRegistry
   if (effect.type === 'modifier') return '获得永久成长加成';
   if (effect.type === 'advance_chain') return '故事进入下一阶段';
   if (effect.type === 'advance_time') return `安排提前 ${effect.hours} 小时完成`;
+  if (effect.type === 'location_development') return `${content.locations?.find((location) => location.id === effect.locationId)?.name ?? effect.locationId}发展 ${effect.amount >= 0 ? '+' : ''}${effect.amount}`;
   if (effect.type === 'set_flag') return '留下了一项长期进展';
   return '生活有了新的进展';
 }

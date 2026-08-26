@@ -8,7 +8,7 @@
 
 ## Effect
 
-`cash`（可选 `rewardTier`）、`stat`（`ability` / `reputation` / `lifestyle`）、`relation`、`item`、`unlock_capability`、`unlock_job`、`unlock_event`、`unlock_housing`、`unlock_business`、`unlock_asset`、`discount`、`modifier`、`advance_time`、`set_flag`、`advance_chain`。
+`cash`（可选 `rewardTier`）、`stat`（`ability` / `reputation` / `lifestyle`）、`relation`、`item`、`unlock_capability`、`unlock_job`、`unlock_event`、`unlock_housing`、`unlock_business`、`unlock_asset`、`discount`、`modifier`、`advance_time`、`location_development`、`set_flag`、`advance_chain`。
 
 ## Modifier
 
@@ -27,7 +27,7 @@
 
 ## Tag
 
-当前 Tag：`work`、`office`、`remote`、`starter`、`technology`、`clothing`、`furniture`、`luxury`、`collectible`、`housing`、`business`、`project`、`asset`、`relationship`、`life`、`luck`、`career`、`shopping`、`social`、`leisure`、`travel`、`investment`、`low-risk`、`growth`、`hobby`、`photography`、`gig`、`management`、`expert`、`education`、`headhunter`。
+当前 Tag：`work`、`office`、`remote`、`starter`、`technology`、`clothing`、`furniture`、`luxury`、`collectible`、`housing`、`business`、`project`、`asset`、`relationship`、`life`、`city`、`luck`、`career`、`shopping`、`social`、`leisure`、`travel`、`investment`、`low-risk`、`growth`、`hobby`、`photography`、`gig`、`management`、`expert`、`education`、`headhunter`。
 
 Tag 用于内容筛选、折扣和 modifier 适用范围。新增 Tag 必须注册后使用。
 

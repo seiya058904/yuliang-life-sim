@@ -103,6 +103,15 @@ export function applyContentEffects(
       case 'discount': state.discounts.push({ percent: effect.percent, tags: [...(effect.tags ?? [])], expiresDay: state.time.day + 7 }); break;
       case 'modifier': state.modifiers.push(effect.modifier); break;
       case 'advance_time': onAdvanceHours?.(effect.hours); break;
+      case 'location_development': {
+        if (!content.locations?.some((location) => location.id === effect.locationId)) break;
+        const before = Math.min(5, Math.max(0, state.locationDevelopment?.[effect.locationId] ?? 0));
+        const after = Math.min(5, Math.max(0, before + Math.round(effect.amount)));
+        state.locationDevelopment ??= {};
+        state.locationDevelopment[effect.locationId] = after;
+        output.push({ type: 'message', text: `${content.locations.find((location) => location.id === effect.locationId)?.name ?? effect.locationId}发展 ${after - before >= 0 ? '+' : ''}${after - before}` });
+        break;
+      }
       case 'set_flag': state.flags[effect.flag] = true; break;
       case 'advance_chain': state.chainStages[effect.chainId] = Math.max(state.chainStages[effect.chainId] ?? 0, effect.stage); break;
     }
