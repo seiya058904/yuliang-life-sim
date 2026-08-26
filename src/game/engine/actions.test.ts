@@ -376,7 +376,7 @@ describe('game action dispatcher', () => {
     state.cash = 15_000;
     state.ability = 28;
     state.reputation = 20;
-    state.attributes = { ...state.attributes, professional: 28, knowledge: 28, communication: 28 };
+    state.attributes = { appearance: 10, fitness: 28, mood: 50, network: 0, knowledge: 28, professional: 28, communication: 28 };
     state.unlockedCapabilities.push('business_license');
     state.unlockedBusinessIds.push('business.consulting-studio');
     state.relationships['character.guqing'] = 40;
