@@ -464,6 +464,26 @@ test('shows persisted wealth milestones in the profile on desktop and mobile', a
   await expect(page.getByRole('region', { name: '财富阶段记录' })).toContainText('稳定');
 });
 
+test('archives and restores annual public equity history in the profile', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.worldHistory = [{ year: 1, day: 337, netWorth: 42_000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, listedBusinessCount: 1, publicFloatPercent: 35 }];
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  const equityHistory = page.getByRole('region', { name: '年度公开股权记录' });
+  await expect(equityHistory).toContainText('第 1 年');
+  await expect(equityHistory).toContainText('上市企业 1 家');
+  await expect(equityHistory).toContainText('公开流通 35%');
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('region', { name: '年度公开股权记录' })).toContainText('公开流通 35%');
+});
+
 test('finances a home and restores the mortgage state after reload', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
