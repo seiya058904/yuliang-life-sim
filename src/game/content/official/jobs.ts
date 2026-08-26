@@ -15,6 +15,7 @@ export const officialJobs = [
     "hours": 8,
     "basePay": 96,
     "careerXp": 1,
+    "experienceTags": ["retail", "customer_service"],
     "isLongTerm": true
   },
   {
@@ -32,6 +33,7 @@ export const officialJobs = [
     "basePay": 128,
     "abilityRequired": 10,
     "careerXp": 2,
+    "experienceTags": ["logistics"],
     "isLongTerm": true
   },
   {
@@ -67,6 +69,7 @@ export const officialJobs = [
     "abilityRequired": 11,
     "reputationRequired": 1,
     "careerXp": 2,
+    "experienceTags": ["customer_service"],
     "rewards": [
       {
         "type": "stat",
@@ -93,6 +96,7 @@ export const officialJobs = [
     "abilityRequired": 14,
     "reputationRequired": 3,
     "careerXp": 3,
+    "experienceTags": ["office", "operations"],
     "isLongTerm": true
   },
   {
@@ -112,6 +116,7 @@ export const officialJobs = [
     "abilityRequired": 16,
     "reputationRequired": 6,
     "careerXp": 3,
+    "experienceTags": ["customer_service"],
     "rewards": [
       {
         "type": "stat",
@@ -181,6 +186,9 @@ export const officialJobs = [
     "abilityRequired": 20,
     "reputationRequired": 10,
     "careerXp": 4,
+    "experienceTags": ["operations", "office"],
+    "experienceRequired": { "operations": 21 },
+    "qualificationRequired": ["operations_foundation"],
     "isLongTerm": true
   },
   {

@@ -3,6 +3,7 @@ import type { GameAction, GameState, JobDefinition, ViewId } from '../content/co
 import { employmentKind, requirementHints } from '../engine/careers';
 import { contentRegistry } from '../content/registry';
 import { balanceConfig } from '../balance/config';
+import { careerExperienceLabel, careerExperienceStage, careerRequirementsSatisfied, requirementForJob } from '../engine/careerProgression';
 
 const categories = ['全部', '基础岗位', '办公室', '技术', '销售', '服务', '管理', '兼职'] as const;
 const states = ['全部', '符合条件', '接近条件', '已申请', '冷却中'] as const;
@@ -18,7 +19,7 @@ export function CareerView({ game, dispatch, jobs, onNavigate }: { game: GameSta
   return <section className="career-section">
     <div className="section-heading compact"><div><span className="eyebrow">职业</span><h1>{labels[tab]}</h1></div><p>公开招聘和特殊机会分开；所有申请、Offer 与兼职资格都有明确状态。</p></div>
     <div className="filter-row" aria-label="职业导航">{Object.entries(labels).map(([id, label]) => <button key={id} className={tab === id ? 'filter-button selected' : 'filter-button'} onClick={() => setTab(id as typeof tab)}>{label}</button>)}</div>
-    {tab === 'current' && <CurrentEmployment game={game} jobs={jobs} dispatch={dispatch} />}
+    {tab === 'current' && <><CareerProgress game={game} /><CurrentEmployment game={game} jobs={jobs} dispatch={dispatch} /></>}
     {tab === 'market' && <VacancyMarket game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'opportunities' && <OpportunityList game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'applications' && <ApplicationList game={game} jobs={jobs} dispatch={dispatch} onNavigate={onNavigate} />}
@@ -34,6 +35,11 @@ function CurrentEmployment({ game, jobs, dispatch }: { game: GameState; jobs: re
   return <div className="detail-panel"><h2>{job.name}</h2><p>{job.description}</p><div className="finance-columns"><div><span>基础工资</span><strong>{money(pay)} / 班</strong></div><div><span>个人调整</span><strong>+{money(game.employment?.salaryAdjustment ?? 0)}</strong></div><div><span>谈薪阶段</span><strong>{game.employment?.negotiationStage ?? 0} / 2</strong></div></div><button className="secondary-button" onClick={() => dispatch({ type: 'start_resignation' })}>离开当前工作</button></div>;
 }
 
+function CareerProgress({ game }: { game: GameState }) {
+  const entries = Object.entries(game.careerExperience ?? {});
+  return <section className="detail-panel" aria-label="职业经验与资格"><h2>职业经验与资格</h2>{entries.length ? <div className="item-list">{entries.map(([id, value]) => <div className="item-row" key={id}><div><strong>{careerExperienceLabel(id as Parameters<typeof careerExperienceLabel>[0])}</strong><p>{value} 天 · {careerExperienceStage(value)}</p></div></div>)}</div> : <p className="muted">完成实际工作后，会在这里积累可迁移的职业经验。</p>}<p className="muted">已获得资格：{game.qualifications?.length ? game.qualifications.join('、') : '暂无'}</p></section>;
+}
+
 function VacancyMarket({ game, jobs, dispatch }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<(typeof categories)[number]>('全部');
@@ -42,7 +48,7 @@ function VacancyMarket({ game, jobs, dispatch }: { game: GameState; jobs: readon
   const rows = useMemo(() => (game.vacancies ?? []).map((vacancy) => ({ vacancy, job: jobs.find((job) => job.id === vacancy.jobId) })).filter((row) => row.job).filter((row) => {
     const job = row.job!;
     const application = game.applications?.find((entry) => entry.vacancyId === row.vacancy.vacancyId);
-    const eligible = (job.abilityRequired ?? 0) <= game.ability && (job.reputationRequired ?? 0) <= game.reputation;
+    const eligible = (job.abilityRequired ?? 0) <= game.ability && (job.reputationRequired ?? 0) <= game.reputation && careerRequirementsSatisfied(job, game);
     const close = !eligible && (job.abilityRequired ?? 0) - game.ability <= 5 && (job.reputationRequired ?? 0) - game.reputation <= 5;
     const cooldown = game.applications?.some((entry) => entry.jobId === job.id && entry.companyId === row.vacancy.companyId && (entry.nextEligibleDay ?? 0) > game.time.day);
     const categoryMatches = category === '全部' || (category === '兼职' ? employmentKind(job) !== 'full_time' : job.category === categoryMap[category]);
@@ -55,8 +61,9 @@ function VacancyMarket({ game, jobs, dispatch }: { game: GameState; jobs: readon
 function VacancyCard({ game, vacancy, job, dispatch }: { game: GameState; vacancy: any; job: any; dispatch: (action: GameAction) => void }) {
   const application = game.applications?.find((entry) => entry.vacancyId === vacancy.vacancyId);
   const acquired = game.acquiredSideJobs?.[job.id];
-  const eligible = (job.abilityRequired ?? 0) <= game.ability && (job.reputationRequired ?? 0) <= game.reputation;
-  return <article className="job-card"><div className="job-card-head"><span className="job-kind">{job.category ?? '岗位'}</span><span className="muted">{companyName(vacancy.companyId)}</span></div><h2>{job.name}</h2><p>{job.description}</p><div className="job-facts"><span>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])} / 班</span><span>第 {vacancy.expiresDay} 天截止</span></div><div className="requirement-box"><strong>{eligible ? '符合条件' : '接近条件或仍需准备'}</strong><span>{acquired ? '✓ 已获得' : application?.status ?? '可申请'}</span></div>{acquired ? <button className="secondary-button" disabled>安排到本周</button> : <button className="primary-button" disabled={!eligible || Boolean(application)} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{application ? '已申请' : '申请职位'}</button>}</article>;
+  const eligible = (job.abilityRequired ?? 0) <= game.ability && (job.reputationRequired ?? 0) <= game.reputation && careerRequirementsSatisfied(job, game);
+  const hints = requirementForJob(job, game);
+  return <article className="job-card"><div className="job-card-head"><span className="job-kind">{job.category ?? '岗位'}</span><span className="muted">{companyName(vacancy.companyId)}</span></div><h2>{job.name}</h2><p>{job.description}</p><div className="job-facts"><span>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])} / 班</span><span>第 {vacancy.expiresDay} 天截止</span></div>{hints.length > 0 && <div className="requirement-box"><strong>还需准备</strong>{hints.map((hint) => <span key={hint.requirementId}>{hint.label}{hint.currentValue !== undefined ? ` ${hint.currentValue}/${hint.requiredValue}` : ''}</span>)}</div>}<div className="requirement-box"><strong>{eligible ? '符合条件' : '接近条件或仍需准备'}</strong><span>{acquired ? '✓ 已获得' : application?.status ?? '可申请'}</span></div>{acquired ? <button className="secondary-button" disabled>安排到本周</button> : <button className="primary-button" disabled={!eligible || Boolean(application)} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{application ? '已申请' : '申请职位'}</button>}</article>;
 }
 
 function OpportunityList({ game, jobs, dispatch }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void }) {

@@ -2,6 +2,7 @@ import type { BalanceConfig } from '../balance/config';
 import type { AcquisitionHint, ApplicationRoute, ConditionDefinition, ContentId, ContentRegistry, GameState, JobDefinition, VacancyState, VacancyTemplate, ViewId } from '../content/contracts';
 import { getAttribute } from './attributes';
 import { getPlayerStage } from './conditions';
+import { requirementForJob } from './careerProgression';
 
 export interface CompetitivenessResult {
   tier: 'minimum' | 'competitive' | 'strong' | 'exceptional';
@@ -51,6 +52,7 @@ export function evaluateApplicationCompetitiveness(job: JobDefinition, state: Ga
   const reputationSurplus = Math.max(0, state.reputation - reputationRequired);
   const communication = state.attributes?.communication ?? 0;
   const experience = state.jobExperience[job.id] ?? 0;
+  const taggedRequirements = requirementForJob(job, state);
   let score = balance.competitiveness.minimum;
 
   if (abilitySurplus > 0 || reputationSurplus > 0) {
@@ -64,6 +66,11 @@ export function evaluateApplicationCompetitiveness(job: JobDefinition, state: Ga
   } else if (experience === 0 && job.category && job.category !== 'basic') {
     weaknesses.push('行业经验不足');
   }
+  if (taggedRequirements.length === 0 && (job.experienceRequired || job.qualificationRequired?.length)) {
+    factors.push('经验与资格匹配');
+    strengths.push('已具备岗位经验与资格');
+    score += 0.08;
+  } else if (taggedRequirements.length) weaknesses.push('岗位经验或资格仍需积累');
   if (communication >= 25) {
     factors.push('沟通表现');
     strengths.push('沟通表现突出');
@@ -102,6 +109,7 @@ const capabilityNames: Record<string, string> = { remote_work: '远程工作', h
 
 export function requirementHints(job: JobDefinition, state: GameState, content?: ContentRegistry, balance?: BalanceConfig): AcquisitionHint[] {
   const hints: AcquisitionHint[] = [];
+  hints.push(...requirementForJob(job, state));
   if ((job.abilityRequired ?? 0) > state.ability) hints.push(numericHint('ability', '提升职业能力', '安排学习或基础工作', 'work', state.ability, job.abilityRequired!));
   if ((job.reputationRequired ?? 0) > state.reputation) hints.push(numericHint('reputation', '积累声誉与相关经验', '查看入门岗位', 'work', state.reputation, job.reputationRequired!));
   for (const itemId of job.requiredItems ?? []) {

@@ -10,6 +10,7 @@ import { investmentUnitValue } from './investments';
 import { applyAttributeDelta } from './attributes';
 import { deterministicApplicationDecision, employmentKind, evaluateApplicationCompetitiveness } from './careers';
 import { appendLifeRecord } from './lifeHistory';
+import { careerRequirementsSatisfied } from './careerProgression';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
 const find = <T extends { id: string }>(entries: readonly T[], id: string): T | undefined => entries.find((entry) => entry.id === id);
@@ -23,6 +24,7 @@ function canAcceptJob(state: GameState, job: JobDefinition, content: ContentRegi
   if (job.abilityRequired !== undefined && state.ability < job.abilityRequired) return `需要能力 ${job.abilityRequired}`;
   if (job.reputationRequired !== undefined && state.reputation < job.reputationRequired) return `需要声誉 ${job.reputationRequired}`;
   if (!hasRequirements(state, job.requirements, content, balance)) return '当前条件还不满足';
+  if (!careerRequirementsSatisfied(job, state)) return '岗位经验或资格还不满足';
   if (job.requiredItems?.some((itemId) => (state.inventory[itemId] ?? 0) < 1)) return '缺少必要商品';
   if (job.requiredCapabilities?.some((capability) => !state.unlockedCapabilities.includes(capability))) return '缺少必要能力';
   return undefined;
@@ -141,6 +143,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (job.abilityRequired !== undefined && state.ability < job.abilityRequired) return fail(input, '需要能力 ' + job.abilityRequired);
       if (job.reputationRequired !== undefined && state.reputation < job.reputationRequired) return fail(input, '需要声誉 ' + job.reputationRequired);
       if (!hasRequirements(state, job.requirements, content, balance)) return fail(input, '当前条件还不满足');
+      if (!careerRequirementsSatisfied(job, state)) return fail(input, '岗位经验或资格还不满足');
       if (job.requiredItems?.some((itemId) => (state.inventory[itemId] ?? 0) < 1) || job.requiredCapabilities?.some((capability) => !state.unlockedCapabilities.includes(capability))) return fail(input, '缺少岗位需要的物品或能力');
       if ((vacancy && state.time.day > vacancy.expiresDay) || (opportunity && state.time.day > opportunity.expiresDay)) return fail(input, '这项机会已经过期');
       const applications = state.applications ?? [];

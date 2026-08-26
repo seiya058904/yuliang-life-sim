@@ -8,6 +8,8 @@ export type RewardTier = 'small' | 'normal' | 'large' | 'milestone';
 export type StatName = 'ability' | 'reputation' | 'lifestyle';
 export type AttributeId = 'professional' | 'knowledge' | 'communication' | 'fitness' | 'appearance' | 'network' | 'mood';
 export type AttributeValues = Record<AttributeId, number>;
+export type CareerExperienceId = 'office' | 'operations' | 'customer_service' | 'retail' | 'logistics' | 'data' | 'project' | 'management' | 'media' | 'finance';
+export type CareerExperienceStage = '暂无' | '基础' | '熟悉' | '扎实' | '丰富';
 export type PlayerStage = 'start' | 'growing' | 'stable' | 'wealthy';
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type PlanSlot = 'day' | 'evening';
@@ -109,6 +111,9 @@ export interface JobDefinition extends ContentMeta {
   isLongTerm: boolean;
   /** Phase 4 content must set this explicitly; legacy kind is read only for migration. */
   employmentKind: EmploymentKind;
+  experienceTags?: readonly CareerExperienceId[];
+  experienceRequired?: Partial<Record<CareerExperienceId, number>>;
+  qualificationRequired?: readonly ContentId[];
 }
 
 export type EmploymentKind = 'full_time' | 'repeatable_side_job' | 'gig';
@@ -637,6 +642,8 @@ export interface GameState {
   lastFinancialSummary?: MonthlyFinancialSummary;
   pendingMonthlySummary?: PendingMonthlySummary;
   jobExperience: Record<ContentId, number>;
+  careerExperience?: Partial<Record<CareerExperienceId, number>>;
+  qualifications?: ContentId[];
   inventory: Record<ContentId, number>;
   itemPurchasePrices: Record<ContentId, number>;
   unlockedCapabilities: CapabilityId[];

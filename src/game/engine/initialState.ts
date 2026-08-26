@@ -39,6 +39,8 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     financialLedger: emptyFinancialLedger(calendar.month, balance.initialCash, balance.initialCash),
     financialHistory: [],
     jobExperience: {},
+    careerExperience: {},
+    qualifications: [],
     inventory: {},
     itemPurchasePrices: {},
     unlockedCapabilities: [...balance.startingCapabilities],

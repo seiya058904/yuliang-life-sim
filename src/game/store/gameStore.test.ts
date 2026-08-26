@@ -41,6 +41,16 @@ describe('game store persistence', () => {
     expect(restored.lifeHistory).toEqual([]);
   });
 
+  it('migrates tagged career progress and removes unknown progression ids', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 1, time: { day: 11, hour: 9, minute: 17 }, simulationMode: 'running', careerExperience: { office: 21, hacked: 999 }, qualifications: ['office_basics', 'unknown'] }));
+    const restored = loadGameState(contentRegistry, balanceConfig);
+    expect(restored.time).toEqual({ day: 11, hour: 9, minute: 17 });
+    expect(restored.simulationMode).toBe('paused');
+    expect(restored.careerExperience).toEqual({ office: 21 });
+    expect(restored.qualifications).toEqual(['office_basics']);
+  });
+
   it('does not persist animation-only effect data as authoritative state', () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
     const state = store.getState().game;

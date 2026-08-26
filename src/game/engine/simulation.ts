@@ -3,6 +3,7 @@ import type { ContentRegistry, GameEffect, GameResult, GameState, JobDefinition,
 import { calculateDailyPassiveIncome, calculateLifestyle, calculateNetWorth } from './economy';
 import { calendarForDay } from './calendar';
 import { closeMonth } from './monthlySettlement';
+import { applyCareerExperience, careerRequirementsSatisfied } from './careerProgression';
 import { applyContentEffects, chooseAmbientEvent, chooseWeightedEvent, cloneGameState, modifierValue } from './effects';
 import { activityAtTime, defaultJobSchedule } from './schedule';
 import { advanceMinutes, absoluteMinute } from './time';
@@ -148,6 +149,7 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
   const pay = Math.round(modifierValue(state, 'work_pay', contractedPay, job.tags));
   state.cash += pay;
   state.jobExperience[job.id] = (state.jobExperience[job.id] ?? 0) + job.careerXp;
+  applyCareerExperience(state, job.experienceTags ?? [], job.careerXp);
   recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: activity.kind === 'side_job' ? 'side_job' : 'wage', amount: pay, label: `${job.name}工资`, sourceType: 'job', sourceId: job.id });
   output.push({ type: 'cash', amount: pay, reason: `${job.name}工资结算` });
   applyContentEffects(state, job.rewards ?? [], content, balance, output);
@@ -199,6 +201,7 @@ function jobAvailable(state: GameState, job: JobDefinition, content: ContentRegi
   if (job.abilityRequired !== undefined && state.ability < job.abilityRequired) return false;
   if (job.reputationRequired !== undefined && state.reputation < job.reputationRequired) return false;
   if (job.requirements && !evaluateCondition(job.requirements, state, content, balance)) return false;
+  if (!careerRequirementsSatisfied(job, state)) return false;
   if (job.requiredItems?.some((itemId) => (state.inventory[itemId] ?? 0) < 1)) return false;
   if (job.requiredCapabilities?.some((capability) => !state.unlockedCapabilities.includes(capability))) return false;
   return true;

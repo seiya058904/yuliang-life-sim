@@ -12,6 +12,8 @@ describe('automatic simulation', () => {
 
     expect(result.state.cash).toBeGreaterThan(initial.cash);
     expect(result.state.jobExperience[running.currentJobId!]).toBe(5);
+    expect(result.state.careerExperience?.retail).toBe(5);
+    expect(result.state.monthlyHighlights?.some((entry) => entry.sourceId === 'retail')).toBe(true);
     expect(result.state.calendar.week).toBe(2);
     expect(result.state.simulationMode).toBe('planning');
   });

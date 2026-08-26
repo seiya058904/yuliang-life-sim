@@ -97,6 +97,8 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   const investmentIds = new Set((content.investments ?? []).map((entry) => entry.id));
   candidate.investments = Object.fromEntries(Object.entries(candidate.investments ?? {}).filter(([id]) => investmentIds.has(id)));
   candidate.jobExperience = candidate.jobExperience ?? {};
+  candidate.careerExperience = Object.fromEntries(Object.entries(candidate.careerExperience ?? {}).filter(([id, value]) => ['office', 'operations', 'customer_service', 'retail', 'logistics', 'data', 'project', 'management', 'media', 'finance'].includes(id) && Number.isFinite(value) && Number(value) >= 0).map(([id, value]) => [id, Number(value)]));
+  candidate.qualifications = [...new Set((candidate.qualifications ?? []).filter((id) => typeof id === 'string' && ['office_basics', 'operations_foundation', 'client_service_experience', 'retail_operations_experience', 'logistics_experience', 'data_analysis_foundation', 'project_coordination', 'people_management_basics', 'media_production_experience', 'investment_basics'].includes(id)))];
   candidate.relationships = candidate.relationships ?? {};
   candidate.attributes = migrateAttributes(candidate.attributes, candidate.ability, candidate.lifestyle, candidate.relationships);
   syncLegacyAbility(candidate);
