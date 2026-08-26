@@ -589,5 +589,82 @@ export const officialJobs = [
       { "type": "attribute_at_least", "attribute": "communication", "amount": 30 }
     ] },
     "isLongTerm": true
+  },
+  {
+    "id": "job.auto-service-assistant",
+    "contentStatus": "official",
+    "name": "门店服务助理",
+    "description": "协助接待、车辆资料整理和门店日常服务，从汽车服务现场开始积累客户经验。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 145,
+    "careerXp": 3,
+    "experienceTags": ["customer_service", "office"],
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 10 },
+      { "type": "attribute_at_least", "attribute": "appearance", "amount": 8 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.sales-consultant-assistant",
+    "contentStatus": "official",
+    "name": "销售顾问助理",
+    "description": "协助试驾预约、客户资料和交付准备，把门店服务经验连接到销售协作。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 167,
+    "careerXp": 4,
+    "experienceTags": ["customer_service", "operations"],
+    "experienceRequired": { "customer_service": 20 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 18 },
+      { "type": "attribute_at_least", "attribute": "appearance", "amount": 15 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.auto-sales-consultant",
+    "contentStatus": "official",
+    "name": "汽车销售顾问",
+    "description": "理解客户的出行需求并完成车辆建议，稳定的销售奖金通过低频职业事件体现。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 200,
+    "careerXp": 5,
+    "experienceTags": ["customer_service", "operations"],
+    "experienceRequired": { "customer_service": 35 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 32 },
+      { "type": "attribute_at_least", "attribute": "appearance", "amount": 28 },
+      { "type": "attribute_at_least", "attribute": "network", "amount": 16 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.auto-customer-operations",
+    "contentStatus": "official",
+    "name": "客户运营专员",
+    "description": "维护车主关系、跟进服务反馈并连接门店资源，把销售后的关系做成长期运营。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 220,
+    "careerXp": 5,
+    "experienceTags": ["customer_service", "operations"],
+    "experienceRequired": { "customer_service": 45 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 28 },
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 24 },
+      { "type": "attribute_at_least", "attribute": "network", "amount": 18 }
+    ] },
+    "isLongTerm": true
   }
 ] satisfies readonly JobDefinition[];

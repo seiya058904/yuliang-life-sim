@@ -178,7 +178,7 @@ test('discovers the low-barrier ecommerce operations route in the public market'
     state.attributes = { ...(state.attributes ?? {}), professional: 12, knowledge: 12, communication: 12, fitness: 12 };
     state.ability = 12;
     state.reputation = 2;
-    state.rng = { ...(state.rng ?? {}), seed: 26 };
+    state.rng = { ...(state.rng ?? {}), seed: 37 };
     state.simulationMode = 'paused';
     localStorage.setItem(key, JSON.stringify(state));
   }, { key: saveKey, state: initial });
@@ -192,6 +192,29 @@ test('discovers the low-barrier ecommerce operations route in the public market'
   await vacancy.getByRole('button', { name: '申请职位' }).click();
   await page.getByRole('button', { name: '我的申请' }).click();
   await expect(page.getByRole('heading', { name: '订单运营助理' })).toBeVisible();
+});
+
+test('discovers the neworder automotive service route in the public market', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.attributes = { ...(state.attributes ?? {}), professional: 12, knowledge: 12, communication: 10, fitness: 12, appearance: 8, network: 4 };
+    state.ability = 12;
+    state.reputation = 2;
+    state.rng = { ...(state.rng ?? {}), seed: 29 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByLabel('搜索岗位或公司').fill('新序');
+  const vacancy = page.getByRole('heading', { name: '门店服务助理' }).locator('xpath=ancestor::article[1]');
+  await expect(vacancy).toContainText('新序汽车服务');
+  await expect(vacancy).toContainText('符合条件');
+  await vacancy.getByRole('button', { name: '申请职位' }).click();
+  await page.getByRole('button', { name: '我的申请' }).click();
+  await expect(page.getByRole('heading', { name: '门店服务助理' })).toBeVisible();
 });
 
 test('enforces the persisted travel cooldown in the activity market', async ({ page }) => {
