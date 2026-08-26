@@ -2117,6 +2117,54 @@ export const officialEvents = [
     "tags": ["investment", "business", "private-equity", "relationship"]
   },
   {
+    "id": "event.local-restaurant-exit-offer",
+    "contentStatus": "official",
+    "name": "餐饮项目退出机会",
+    "description": "小店进入新的经营阶段，有人愿意接手你的合伙份额。",
+    "title": "这份合伙份额可以退出了",
+    "body": "店里最近来了新的经营者。对方愿意按当前估值接手你的份额，你也可以继续留下来分享后续利润。",
+    "category": "investment",
+    "weight": 0.12,
+    "cooldownDays": 365,
+    "conditions": {
+      "type": "all",
+      "conditions": [
+        { "type": "day_at_least", "day": 150 },
+        { "type": "owns_investment", "investmentId": "investment.local-restaurant-share" },
+        { "type": "not", "condition": { "type": "flag", "flag": "local_restaurant_exit_offer" } }
+      ]
+    },
+    "choices": [
+      { "id": "accept", "text": "接受退出报价", "effects": [{ "type": "set_flag", "flag": "local_restaurant_exit_offer" }, { "type": "attribute", "attribute": "knowledge", "amount": 1 }] },
+      { "id": "hold", "text": "继续持有", "effects": [{ "type": "set_flag", "flag": "local_restaurant_exit_offer" }, { "type": "attribute", "attribute": "network", "amount": 1 }] }
+    ],
+    "tags": ["investment", "business", "private-equity", "story"]
+  },
+  {
+    "id": "event.creative-studio-exit-offer",
+    "contentStatus": "official",
+    "name": "创意工作室退出机会",
+    "description": "工作室获得新的合作方，早期投资者可以选择退出。",
+    "title": "工作室给了你一个选择",
+    "body": "工作室拿到了一份更大的客户合同。新的合作方愿意接手早期份额，你可以兑现这次投入，也可以继续观察项目成长。",
+    "category": "investment",
+    "weight": 0.1,
+    "cooldownDays": 365,
+    "conditions": {
+      "type": "all",
+      "conditions": [
+        { "type": "day_at_least", "day": 180 },
+        { "type": "owns_investment", "investmentId": "investment.creative-studio-share" },
+        { "type": "not", "condition": { "type": "flag", "flag": "creative_studio_exit_offer" } }
+      ]
+    },
+    "choices": [
+      { "id": "accept", "text": "接受退出报价", "effects": [{ "type": "set_flag", "flag": "creative_studio_exit_offer" }, { "type": "attribute", "attribute": "knowledge", "amount": 1 }] },
+      { "id": "hold", "text": "继续持有", "effects": [{ "type": "set_flag", "flag": "creative_studio_exit_offer" }, { "type": "attribute", "attribute": "network", "amount": 1 }] }
+    ],
+    "tags": ["investment", "business", "private-equity", "story"]
+  },
+  {
     "id": "event.business-equipment-failure",
     "contentStatus": "official",
     "name": "设备突然故障",

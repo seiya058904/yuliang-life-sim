@@ -297,8 +297,8 @@ describe('game action dispatcher', () => {
 
   it('unlocks and trades both authored private investment projects through their event gates', () => {
     const cases = [
-      { eventId: 'event.local-restaurant-investment', flag: 'local_restaurant_access', characterId: 'character.seed-zhou', investmentId: 'investment.local-restaurant-share', cash: 10_000, day: 60 },
-      { eventId: 'event.creative-studio-investment', flag: 'creative_studio_access', characterId: 'character.guqing', investmentId: 'investment.creative-studio-share', cash: 20_000, day: 90 },
+      { eventId: 'event.local-restaurant-investment', flag: 'local_restaurant_access', characterId: 'character.seed-zhou', investmentId: 'investment.local-restaurant-share', exitEventId: 'event.local-restaurant-exit-offer', exitFlag: 'local_restaurant_exit_offer', cash: 10_000, day: 60 },
+      { eventId: 'event.creative-studio-investment', flag: 'creative_studio_access', characterId: 'character.guqing', investmentId: 'investment.creative-studio-share', exitEventId: 'event.creative-studio-exit-offer', exitFlag: 'creative_studio_exit_offer', cash: 20_000, day: 90 },
     ] as const;
     for (const entry of cases) {
       const state = createInitialState(contentRegistry, balanceConfig, 1);
@@ -316,7 +316,12 @@ describe('game action dispatcher', () => {
       expect(bought.error).toBeUndefined();
       expect(bought.state.investments?.[entry.investmentId]).toMatchObject({ units: 1 });
       expect(bought.state.lifeHistory.at(-1)).toMatchObject({ category: 'investment', sourceId: entry.investmentId });
-      const sold = dispatchGameAction({ ...bought.state, time: { day: entry.day + 90, hour: 8, minute: 0 } }, { type: 'sell_investment', investmentId: entry.investmentId, units: 1 }, contentRegistry, balanceConfig);
+      const offered = { ...bought.state, time: { day: entry.day + 90, hour: 8, minute: 0 }, pendingEventId: entry.exitEventId, simulationMode: 'event' as const };
+      const exitEvent = dispatchGameAction(offered, { type: 'choose_event', eventId: entry.exitEventId, choiceId: 'accept' }, contentRegistry, balanceConfig);
+      expect(exitEvent.error).toBeUndefined();
+      expect(exitEvent.state.flags[entry.exitFlag]).toBe(true);
+      const acknowledgedExit = dispatchGameAction(exitEvent.state, { type: 'claim_reward', resume: true }, contentRegistry, balanceConfig);
+      const sold = dispatchGameAction(acknowledgedExit.state, { type: 'sell_investment', investmentId: entry.investmentId, units: 1 }, contentRegistry, balanceConfig);
       expect(sold.error).toBeUndefined();
       expect(sold.state.investments?.[entry.investmentId]).toBeUndefined();
     }

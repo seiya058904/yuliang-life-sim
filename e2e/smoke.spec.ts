@@ -1444,10 +1444,14 @@ test('unlocks and trades the authored local restaurant investment opportunity', 
   await page.evaluate(({ key }) => {
     const state = JSON.parse(localStorage.getItem(key) ?? '{}');
     state.time = { ...state.time, day: 150 };
-    state.simulationMode = 'paused';
+    state.pendingEventId = 'event.local-restaurant-exit-offer';
+    state.simulationMode = 'event';
     localStorage.setItem(key, JSON.stringify(state));
   }, { key: saveKey });
   await page.reload();
+  await expect(page.getByRole('dialog')).toContainText('这份合伙份额可以退出了');
+  await page.getByRole('dialog').getByRole('button', { name: '接受退出报价' }).click();
+  await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByRole('button', { name: '财富', exact: true }).click();
   const matureInvestment = page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..');
   await matureInvestment.getByRole('button', { name: '卖出 1 份' }).click();

@@ -172,6 +172,17 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('registers authored entry and exit events for all private investment projects', () => {
+    expect(contentRegistry.events.filter((event) => event.tags?.includes('private-equity')).map((event) => event.id)).toEqual([
+      'event.private-equity-introduction',
+      'event.private-equity-exit-offer',
+      'event.local-restaurant-investment',
+      'event.creative-studio-investment',
+      'event.local-restaurant-exit-offer',
+      'event.creative-studio-exit-offer',
+    ]);
+  });
+
   it('exposes official vehicle assets from the content registry', () => {
     expect(contentRegistry.assets.filter((asset) => asset.contentStatus === 'official' && asset.kind === 'vehicle').map((asset) => asset.id)).toEqual([
       'asset.used-compact',
