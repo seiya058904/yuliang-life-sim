@@ -255,4 +255,15 @@ describe('余量 app flow', () => {
     expect(central).not.toBeNull();
     expect(central).toHaveTextContent('已访问 3 次');
   });
+
+  it('discovers and schedules the official short trip activity', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const getaway = screen.getByRole('heading', { name: '周末短途旅行 · 慢慢走走' }).closest('article');
+    expect(getaway).not.toBeNull();
+    await user.click(within(getaway as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
+    expect(screen.getByText(/周末短途旅行 · 慢慢走走/)).toBeInTheDocument();
+  });
 });

@@ -13,6 +13,7 @@ describe('seed content registry', () => {
       'activity.casual-meal',
       'activity.cinema',
       'activity.cafe-break',
+      'activity.weekend-getaway',
     ]);
   });
 

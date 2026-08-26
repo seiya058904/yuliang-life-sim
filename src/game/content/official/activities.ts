@@ -37,4 +37,15 @@ export const officialActivities = [
     locationId: 'location.riverside',
     options: [{ id: 'rest', label: '只是休息', durationMinutes: 60, cashCost: 38, effects: [{ type: 'attribute', attribute: 'mood', amount: 2 }] }],
   },
+  {
+    id: 'activity.weekend-getaway',
+    contentStatus: 'official',
+    name: '周末短途旅行',
+    description: '去临江区住一晚，把熟悉的生活暂时放到身后。',
+    tags: ['life', 'travel', 'leisure'],
+    category: 'travel',
+    financialCategory: 'travel',
+    locationId: 'location.riverside',
+    options: [{ id: 'standard', label: '慢慢走走', durationMinutes: 240, cashCost: 360, effects: [{ type: 'attribute', attribute: 'mood', amount: 8 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] }],
+  },
 ] satisfies readonly ActivityDefinition[];
