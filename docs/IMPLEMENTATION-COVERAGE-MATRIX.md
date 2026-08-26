@@ -9,7 +9,7 @@ Scope: this matrix audits `docs/NEXT-UPDATE-FOUNDATION.md` as the sole product/c
 | Branch | `codex/yuliang-completion` |
 | Content validation | `npm run content:validate` passed: 40 jobs, 34 items, 9 services, 5 subscriptions, 6 housing, 6 characters, 36 events, 4 event chains, 3 businesses, 12 assets, 13 activities, 6 venues, 4 courses, 8 investments. |
 | Unit/component tests | `npm test` passed: 20 files, 232 tests. |
-| Browser E2E | `npm run e2e` passed: 56 specs / 112 project runs, including named-city-venue, career, shop, wealth, social, city, annual-review, asset, business, service/subscription, wishlist, diamond-pendant, camping-gear/weekend-camping, and persistence flows on desktop and mobile. |
+| Browser E2E | `npm run e2e` passed: 57 specs / 114 project runs, including named-city-venue, career, shop, wealth, social, city, annual-review, asset, business, service/subscription, wishlist, diamond-pendant, camping-gear/weekend-camping, warehouse-to-office Storyline, and persistence flows on desktop and mobile. |
 | Production build | `npm run build` passed: content validation, TypeScript build, Vite build. |
 
 ## Content Counts
@@ -29,10 +29,10 @@ Counts are separated by direct official content, seed content, and the composed 
 | Activities | 12 | 1 | 13 | Twelve official activities, including four travel destinations, an owned-business project, camera-gated city photography, relationship-gated friend-specific cinema/café/bookstore options, a riverside night market, a bookstore visit, a riverside park ride, a northern industrial design exhibition, and item-gated weekend camping, plus one seed fallback are schedulable and settle through the weekly plan; vehicle ownership changes travel cost and feedback. Runtime contains 19 activity options. |
 | Investments | 6 | 2 | 8 | Six official products, including a company-equity holding and one relationship-gated private-equity holding, plus two seed fallback funds are reachable in the Wealth market. |
 | Companies | 11 | 1 | 11 | Official companies cover logistics, education operations, research-to-analysis, travel-product, e-commerce, automotive service, media production, lifestyle technology, and the core starter routes; the seed company remains a fallback with an overlapping ID. |
-| Dialogues | 1 | 1 | 2 | One official storyline dialogue and one seed recruitment dialogue are reachable; the official dialogue is rendered in Social and the seed dialogue remains a fallback recruitment asset. |
+| Dialogues | 3 | 1 | 4 | Three official storyline dialogues and one seed recruitment dialogue are reachable; official dialogues are rendered in Social and the seed dialogue remains a fallback recruitment asset. |
 | Relationship interactions | 4 | 1 | 4 | Four official character-specific interactions and one seed interaction are composed into four runtime interactions. |
 | Messages | 0 | 0 | Runtime-generated | Relationship interactions enqueue up to 30 persisted messages; reading a message writes a relationship history record. |
-| Storylines | 1 | 1 | 2 | One official relationship storyline and one seed career storyline are discoverable in Social; stages and branch choices persist. |
+| Storylines | 2 | 1 | 3 | One official relationship storyline and one official career storyline are discoverable in Social when their conditions are met, alongside one seed career fallback; stages and branch choices persist. |
 | Vacancy templates | 40 | 0 | 40 | Public market generation uses official templates, including two 环流物流 vacancies, four 青禾教育科技 vacancies, three 澄明商业咨询 vacancies, one 栖岸文旅 vacancy, four 星桥电商 vacancies, four 新序汽车服务 vacancies, three 映界传媒 vacancies, and four 一屿生活科技 vacancies. |
 | Locations | 4 | 0 | 4 | 澄川市中央区、临江区、北部产业区、旧城文化区；稳定 location ID 已接入公司、企业、住房、人物和活动引用，内容校验会拒绝未知地点引用。 |
 | Venues | 6 | 0 | 6 | 云庭咖啡、衡川餐厅、北岸展馆、旧城影院、叶脉书店、临江夜市；每个场所绑定一个稳定地点和至少一个可执行活动。 |
@@ -67,6 +67,8 @@ Latest verification note: the current baseline is 55 specs / 110 desktop-mobile 
 Current content-count override for the goods row below: official/runtime items are 34 (not 33), with six furniture items including `item.smart-home-set`; the smart-home, diamond-pendant, camping-gear, wishlist, and wealth acquisition-route slices are covered by the current desktop/mobile E2E baseline.
 
 Current asset-count override for the wealth rows below: official/runtime assets are 12 (not 11), including six non-vehicle assets and six vehicle tiers; the `asset.fine-jewelry` purchase/sale slice is covered by the existing desktop/mobile high-value collectible flow.
+
+Current storyline-count override: official/runtime storylines are now 2/3 and official/runtime dialogues are 3/4; the warehouse-to-office career storyline is gated by the current logistics job, creates an internal dispatch opportunity, and is covered by desktop/mobile E2E.
 
 Current long-run simulation override: `npm run content:simulate` runs all 9 fixed-seed strategies through day 1825 (the fifth year boundary), producing 5 annual records and 0 errors per strategy; the five-year browser strategy matrix remains verification work.
 

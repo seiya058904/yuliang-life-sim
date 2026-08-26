@@ -708,6 +708,34 @@ test('reads and persists the official storyline dialogue', async ({ page }) => {
   await expect(page.getByText('远程连接：约个时间聊聊')).toBeVisible();
 });
 
+test('unlocks the warehouse-to-office career storyline opportunity', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.currentJobId = 'job.huanliu-warehouse-assistant';
+    state.employment = { ...(state.employment ?? {}), jobId: 'job.huanliu-warehouse-assistant', companyId: 'company.huanliu', startedDay: 1 };
+    state.careerExperience = { ...(state.careerExperience ?? {}), logistics: 22 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const storyline = page.getByRole('heading', { name: '从仓库走进办公室' }).locator('..').locator('..');
+  await storyline.getByRole('button', { name: '开始故事' }).click();
+  await expect(storyline).toContainText('有没有想过以后做调度');
+  await storyline.getByRole('button', { name: '有兴趣' }).click();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '工作机会', exact: true }).click();
+  const opportunity = page.getByRole('heading', { name: '环流物流协调员' }).locator('..');
+  await expect(opportunity).toContainText('环流物流内部调度机会');
+  await expect(opportunity.getByRole('button', { name: '申请机会' })).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '工作机会', exact: true }).click();
+  await expect(page.getByText('环流物流内部调度机会')).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

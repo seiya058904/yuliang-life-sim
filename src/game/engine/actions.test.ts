@@ -677,6 +677,18 @@ describe('game action dispatcher', () => {
     expect(advanced.state.lifeHistory.at(-1)).toMatchObject({ category: 'relationship', sourceId: 'storyline.remote-connection' });
   });
 
+  it('gates the warehouse career storyline and creates its internal opportunity', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 9);
+    const locked = dispatchGameAction(state, { type: 'start_storyline', storylineId: 'storyline.warehouse-to-office' }, contentRegistry, balanceConfig);
+    expect(locked.error).toContain('条件');
+    const eligible = { ...state, currentJobId: 'job.huanliu-warehouse-assistant', employment: { ...state.employment!, jobId: 'job.huanliu-warehouse-assistant', companyId: 'company.huanliu' } };
+    const started = dispatchGameAction(eligible, { type: 'start_storyline', storylineId: 'storyline.warehouse-to-office' }, contentRegistry, balanceConfig);
+    const chosen = dispatchGameAction(started.state, { type: 'choose_storyline_branch', storylineId: 'storyline.warehouse-to-office', branchId: 'interested' }, contentRegistry, balanceConfig);
+    expect(chosen.error).toBeUndefined();
+    expect(chosen.state.opportunities).toEqual(expect.arrayContaining([expect.objectContaining({ jobId: 'job.huanliu-dispatch-coordinator', source: '环流物流内部调度机会' })]));
+    expect(chosen.state.lifeHistory.at(-1)).toMatchObject({ title: '从仓库走进办公室：有兴趣' });
+  });
+
   it('completes a reached milestone with its reward, history, and monthly highlight', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 12), cash: 10_000 };
     const result = dispatchGameAction(state, { type: 'start_week' }, contentRegistry, balanceConfig);

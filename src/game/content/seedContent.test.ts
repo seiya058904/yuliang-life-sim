@@ -264,9 +264,12 @@ describe('seed content registry', () => {
   it('exposes the official relationship storyline from the content registry', () => {
     expect(contentRegistry.storylines?.filter((storyline) => storyline.contentStatus === 'official').map((storyline) => storyline.id)).toEqual([
       'storyline.remote-connection',
+      'storyline.warehouse-to-office',
     ]);
     expect(contentRegistry.dialogues?.filter((dialogue) => dialogue.contentStatus === 'official').map((dialogue) => dialogue.id)).toEqual([
       'dialogue.remote-connection',
+      'dialogue.warehouse-office-entry',
+      'dialogue.warehouse-office-follow-up',
     ]);
   });
 

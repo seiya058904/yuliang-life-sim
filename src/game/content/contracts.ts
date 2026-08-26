@@ -478,6 +478,7 @@ export interface StorylineStageDefinition {
 export interface StorylineDefinition extends ContentMeta {
   stages: readonly StorylineStageDefinition[];
   initialStageId: string;
+  conditions?: ConditionDefinition;
 }
 
 export interface MilestoneDefinition extends ContentMeta {

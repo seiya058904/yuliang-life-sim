@@ -896,6 +896,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
     case 'start_storyline': {
       const storyline = getStoryline(content, action.storylineId);
       if (!storyline) return fail(input, '找不到这段故事');
+      if (storyline.conditions && !hasRequirements(state, storyline.conditions, content, balance)) return fail(input, '当前还没有进入这段故事的条件');
       const current = state.storylineStages?.[storyline.id];
       if (current) return fail(input, '这段故事已经开始');
       state.storylineStages ??= {};

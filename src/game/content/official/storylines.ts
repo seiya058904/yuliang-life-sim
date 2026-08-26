@@ -24,4 +24,36 @@ export const officialStorylines = [
       { id: 'complete' },
     ],
   },
+  {
+    id: 'storyline.warehouse-to-office',
+    contentStatus: 'official',
+    name: '从仓库走进办公室',
+    description: '从环流物流的一线工作开始，逐步接触调度与办公室岗位。',
+    tags: ['career', 'logistics'],
+    conditions: { type: 'current_job', jobId: 'job.huanliu-warehouse-assistant' },
+    initialStageId: 'conversation',
+    stages: [
+      {
+        id: 'conversation',
+        dialogueId: 'dialogue.warehouse-office-entry',
+        branches: [
+          {
+            id: 'interested',
+            text: '有兴趣',
+            nextStageId: 'internal-contact',
+            effects: [{ type: 'relation', characterId: 'character.chenyu', amount: 4 }, { type: 'attribute', attribute: 'professional', amount: 1 }, { type: 'attribute', attribute: 'knowledge', amount: 1 }],
+            opportunity: { jobId: 'job.huanliu-dispatch-coordinator', companyId: 'company.huanliu', route: 'internal', source: '环流物流内部调度机会', expiresInDays: 28, salaryRange: [269, 315] },
+          },
+          { id: 'not-now', text: '暂时没有', nextStageId: 'complete', effects: [{ type: 'relation', characterId: 'character.chenyu', amount: 1 }] },
+          { id: 'learn-more', text: '我想了解工作内容', nextStageId: 'internal-contact', effects: [{ type: 'relation', characterId: 'character.chenyu', amount: 2 }] },
+        ],
+      },
+      {
+        id: 'internal-contact',
+        dialogueId: 'dialogue.warehouse-office-follow-up',
+        branches: [{ id: 'keep-learning', text: '先从数据整理开始', nextStageId: 'complete', effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] }],
+      },
+      { id: 'complete' },
+    ],
+  },
 ] satisfies readonly StorylineDefinition[];
