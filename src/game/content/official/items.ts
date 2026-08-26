@@ -595,5 +595,23 @@ export const officialItems = [
     "lifestyleDelta": 0,
     "giftable": true,
     "giftTags": ["coffee"]
+  },
+  {
+    "id": "item.smart-home-set",
+    "contentStatus": "official",
+    "name": "智能家居套装",
+    "description": "把灯光、温度和日常起居交给一套不打扰你的系统，让房间更像真正的生活基地。",
+    "tags": ["furniture", "technology", "life"],
+    "category": "furniture",
+    "price": 5999,
+    "consumable": false,
+    "sellable": true,
+    "resaleRatio": 0.55,
+    "lifestyleDelta": 0,
+    "statEffects": { "lifestyle": 6 },
+    "requirements": {
+      "type": "not",
+      "condition": { "type": "owns_item", "itemId": "item.smart-home-set" }
+    }
   }
 ] satisfies readonly ItemDefinition[];

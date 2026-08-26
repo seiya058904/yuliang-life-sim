@@ -451,6 +451,34 @@ test('executes an offered gig and persists its income and career history', async
   await expect(page.getByRole('heading', { name: '同城配送' })).not.toBeVisible();
 });
 
+test('buys and persists the Isle lifestyle technology smart-home set', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 10_000;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  const beforePurchase = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const item = page.locator('article.item-card').filter({ hasText: '智能家居套装' });
+  await expect(item).toContainText('¥5,999');
+  await item.getByRole('button', { name: '加入购物袋：智能家居套装' }).click();
+  await page.getByRole('button', { name: '一次购买' }).click();
+  await expect(page.getByRole('heading', { name: '智能家居套装' }).first()).toBeVisible();
+  const settled = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  expect(settled.cash).toBe(4_001);
+  expect(settled.lifestyle - (beforePurchase.lifestyle ?? 10)).toBe(6);
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('购买智能家居套装')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await expect(page.getByText('库存 ×1')).toBeVisible();
+});
+
 test('applies the industrial hub city event and persists its development', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

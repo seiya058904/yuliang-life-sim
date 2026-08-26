@@ -23,6 +23,17 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes the smart-home set as the lifestyle technology anchor item', () => {
+    expect(contentRegistry.items.find((item) => item.id === 'item.smart-home-set')).toMatchObject({
+      contentStatus: 'official',
+      name: '智能家居套装',
+      price: 5999,
+      category: 'furniture',
+      lifestyleDelta: 0,
+      statEffects: { lifestyle: 6 },
+    });
+  });
+
   it('exposes official services with repeat-use cooldown metadata', () => {
     expect(contentRegistry.services?.filter((service) => service.contentStatus === 'official')).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'service.haircut-basic', cooldownDays: 14 }),
