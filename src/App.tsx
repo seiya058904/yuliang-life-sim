@@ -107,7 +107,7 @@ function App() {
         {activeView === 'life' && <LifeView game={game} dispatch={dispatch} />}
         {activeView === 'work' && <><CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={setView} /><section className="planning-section"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><CourseMarket game={game} dispatch={dispatch} /><ForecastPanel game={game} /></>}
         {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><WishlistPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></>}
-        {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /></>}
+        {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /></>}
         {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></>}
         {activeView === 'city' && <CityView game={game} />}
         {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><WealthMilestoneView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /></>}
@@ -129,6 +129,22 @@ function CityView({ game }: { game: GameState }) {
   const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
   const jobLocation = locationForCurrentJob(game, contentRegistry);
   return <section className="city-section"><div className="section-heading compact"><div><span className="eyebrow">澄川市</span><h1>城市与地点</h1></div><p>地点会影响通勤反馈与每日交通费用；访问次数只是记录，不是新的玩家等级。</p></div><div className="item-grid">{locationSummary(contentRegistry).map((location) => <article className="item-card" key={location.id}><div className="job-card-head"><span className="job-kind">{location.region}</span><span className="muted">{location.id === home?.locationId ? '当前居住' : location.id === jobLocation?.id ? '当前工作' : '可发现'}</span></div><h2>{location.name}</h2><p>{location.description}</p><span className="muted">发展阶段 {game.locationDevelopment?.[location.id] ?? 0}/5 · 交通系数 ×{location.transportCostMultiplier.toFixed(2)} · 已访问 {game.locationVisits?.[location.id] ?? 0} 次</span></article>)}</div></section>;
+}
+
+function PortfolioSummary({ game }: { game: GameState }) {
+  const currentHome = contentRegistry.housing.find((home) => home.id === game.housing.housingId);
+  const currentHomeValue = game.housing.mode === 'owned' && currentHome ? (housingPrice(game, currentHome) ?? currentHome.valuation ?? 0) : 0;
+  const holdingValue = Object.values(game.housingHoldings ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
+  const propertyValue = currentHomeValue + holdingValue;
+  const mortgage = game.mortgage?.remainingPrincipal ?? 0;
+  const rentalCashFlow = Object.values(game.housingHoldings ?? {}).reduce((total, holding) => {
+    if (holding.occupancy !== 'rented') return total;
+    const home = contentRegistry.housing.find((entry) => entry.id === holding.housingId);
+    return total + (home ? Math.round(housingRentPerDay(game, home) * 28 * 0.88) : 0);
+  }, 0);
+  const investmentValue = Object.values(game.investments ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
+  const vehicleAndCollectibleValue = Object.values(game.assets).reduce((total, holding) => total + holding.currentValuation, 0);
+  return <section className="detail-panel" aria-label="财富组合摘要"><div className="section-heading compact"><div><span className="eyebrow">资产结构</span><h2>我的财富组合</h2></div><p>把现金流、资产估值和贷款余额分开看；估值变化不是现金收入。</p></div><div className="profile-grid"><div className="info-panel"><span>房产总值</span><strong>{money(propertyValue)}</strong></div><div className="info-panel"><span>贷款余额</span><strong>{money(mortgage)}</strong></div><div className="info-panel"><span>房产净值</span><strong>{money(propertyValue - mortgage)}</strong></div><div className="info-panel"><span>本月净租金</span><strong>{rentalCashFlow >= 0 ? '+' : '-'}{money(Math.abs(rentalCashFlow))}</strong></div><div className="info-panel"><span>投资资产</span><strong>{money(investmentValue)}</strong></div><div className="info-panel"><span>车辆与收藏</span><strong>{money(vehicleAndCollectibleValue)}</strong></div></div></section>;
 }
 
 function Metric({ label, value }: { label: string; value: number }) {

@@ -398,4 +398,29 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('heading', { name: '人物偏好' })).toBeInTheDocument();
     expect(screen.getAllByText('偏好：吃饭')).toHaveLength(2);
   });
+
+  it('shows the real wealth portfolio summary from homes, debt, investments and rentals', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: {
+      ...game,
+      housing: { housingId: 'housing.seed-room', mode: 'owned' },
+      mortgage: { housingId: 'housing.seed-room', remainingPrincipal: 4350, monthlyPayment: 199, totalMonths: 24, paidMonths: 1 },
+      housingHoldings: { 'housing.seed-apartment': { housingId: 'housing.seed-apartment', purchasePrice: 12800, currentValuation: 12800, occupancy: 'rented' } },
+      investments: { 'investment.flexible-savings': { investmentId: 'investment.flexible-savings', units: 10, averageCost: 1000, currentValuation: 1100, lastValuationDay: 1 } },
+      assets: { 'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 1200, purchaseDay: 1, currentValuation: 1000 } },
+    } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    const summary = screen.getByRole('region', { name: '财富组合摘要' });
+    expect(summary).toHaveTextContent('房产总值');
+    expect(summary).toHaveTextContent('贷款余额');
+    expect(summary).toHaveTextContent('房产净值');
+    expect(summary).toHaveTextContent('本月净租金');
+    expect(summary).toHaveTextContent('投资资产');
+    expect(summary).toHaveTextContent('¥1,100');
+    expect(summary).toHaveTextContent('车辆与收藏');
+    expect(summary).toHaveTextContent('¥1,000');
+  });
 });

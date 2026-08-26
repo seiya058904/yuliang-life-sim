@@ -274,3 +274,39 @@ test('settles the authored private-equity exit opportunity', async ({ page }) =>
   await expect(investment).not.toContainText('持有 1 份');
   await expect(investment).toContainText('买入 1 份');
 });
+
+test('shows the persisted wealth portfolio summary across the wealth flow', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.housing = { housingId: 'housing.seed-room', mode: 'owned' };
+    state.mortgage = { housingId: 'housing.seed-room', remainingPrincipal: 4_350, monthlyPayment: 199, totalMonths: 24, paidMonths: 1 };
+    state.housingHoldings = {
+      'housing.seed-apartment': { housingId: 'housing.seed-apartment', purchasePrice: 12_800, currentValuation: 12_800, occupancy: 'rented' },
+    };
+    state.investments = {
+      'investment.flexible-savings': { investmentId: 'investment.flexible-savings', units: 10, averageCost: 1_000, currentValuation: 1_100, lastValuationDay: 1 },
+    };
+    state.assets = {
+      'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 1_200, purchaseDay: 1, currentValuation: 1_000 },
+    };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  const summary = page.getByRole('region', { name: '财富组合摘要' });
+  await expect(summary).toContainText('房产总值');
+  await expect(summary).toContainText('贷款余额');
+  await expect(summary).toContainText('房产净值');
+  await expect(summary).toContainText('本月净租金');
+  await expect(summary).toContainText('投资资产');
+  await expect(summary).toContainText('¥1,100');
+  await expect(summary).toContainText('车辆与收藏');
+  await expect(summary).toContainText('¥1,000');
+
+  await page.reload();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByRole('region', { name: '财富组合摘要' })).toContainText('房产净值');
+});
