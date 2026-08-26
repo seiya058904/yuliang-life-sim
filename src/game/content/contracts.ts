@@ -602,6 +602,13 @@ export interface HousingState {
   housingId: ContentId;
   mode: 'rent' | 'owned';
 }
+export interface MortgageState {
+  housingId: ContentId;
+  remainingPrincipal: number;
+  monthlyPayment: number;
+  totalMonths: number;
+  paidMonths: number;
+}
 
 export interface CalendarState {
   week: number;
@@ -753,6 +760,7 @@ export interface GameState {
   unlockedBusinessIds: ContentId[];
   unlockedAssetIds: ContentId[];
   housing: HousingState;
+  mortgage?: MortgageState;
   locationVisits?: Record<ContentId, number>;
   locationDevelopment?: Record<ContentId, number>;
   interestFamiliarity?: Record<string, number>;
@@ -833,6 +841,7 @@ export type GameAction =
   | { type: 'use_service'; serviceId: ContentId }
   | { type: 'manage_subscription'; subscriptionId: ContentId; enabled: boolean }
   | { type: 'move_housing'; housingId: ContentId; mode: 'rent' | 'owned' }
+  | { type: 'finance_housing'; housingId: ContentId }
   | { type: 'sell_housing' }
   | { type: 'buy_business'; businessId: ContentId }
   | { type: 'acquire_business'; businessId: ContentId }

@@ -74,7 +74,8 @@ export function calculateNetWorth(state: GameState, content: ContentRegistry, ba
     return total + (holding.currentValuation || definition?.valuation || 0);
   }, 0);
   const investmentValue = Object.values(state.investments ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
-  return roundMoney(cash + housingValue + itemValue + businessValue + assetValue + investmentValue);
+  const mortgageBalance = state.mortgage?.remainingPrincipal ?? 0;
+  return roundMoney(cash + housingValue + itemValue + businessValue + assetValue + investmentValue - mortgageBalance);
 }
 
 export function calculateDailyPassiveIncome(state: GameState, content: ContentRegistry): BusinessProfitBreakdown & { assetIncome: number } {

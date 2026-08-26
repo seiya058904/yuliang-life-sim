@@ -12,6 +12,21 @@ export function housingPrice(state: GameState, home: HousingDefinition): number 
   return home.price === undefined ? undefined : Math.round(home.price * (1 + developmentLevel(state, home.locationId) * 0.03));
 }
 
+export interface HousingMortgageTerms {
+  downPayment: number;
+  principal: number;
+  monthlyPayment: number;
+  totalMonths: number;
+}
+
+export function housingMortgageTerms(state: GameState, home: HousingDefinition): HousingMortgageTerms | undefined {
+  const price = housingPrice(state, home);
+  if (price === undefined) return undefined;
+  const downPayment = Math.ceil(price * 0.25);
+  const principal = price - downPayment;
+  return { downPayment, principal, monthlyPayment: Math.ceil(principal / 24 + principal * 0.004), totalMonths: 24 };
+}
+
 export function locationForCurrentJob(state: GameState, content: ContentRegistry): LocationDefinition | undefined {
   const jobId = state.employment?.jobId ?? state.currentJobId;
   const job = content.jobs.find((entry) => entry.id === jobId);

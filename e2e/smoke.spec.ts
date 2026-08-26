@@ -170,3 +170,30 @@ test('shows persisted wealth milestones in the profile on desktop and mobile', a
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByRole('region', { name: '财富阶段记录' })).toContainText('稳定');
 });
+
+test('finances a home and restores the mortgage state after reload', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 10_000;
+    state.unlockedHousingIds = [...new Set([...(state.unlockedHousingIds ?? []), 'housing.seed-room'])];
+    state.housing = { housingId: 'housing.shared-room', mode: 'rent' };
+    state.mortgage = undefined;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+  const homeRow = page.getByRole('heading', { name: '独立单间' }).locator('..').locator('..');
+  await expect(homeRow).toContainText('首付');
+  await homeRow.getByRole('button', { name: '分期购买' }).click();
+  await expect(page.getByText('分期中')).toBeVisible();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('分期买下独立单间')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+  await expect(page.getByText('分期中')).toBeVisible();
+  await expect(page.getByText('住房分期还款')).toHaveCount(0);
+});

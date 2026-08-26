@@ -25,6 +25,22 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
     recordSubscriptionFee(state, subscription.id, subscription.name, subscription.monthlyFee);
     state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.service.subscription-fee.${subscription.id}.${month}`, day: state.time.day, category: 'service', title: `${subscription.name}月度扣费`, sourceId: subscription.id, amount: -subscription.monthlyFee });
   }
+  const mortgage = state.mortgage;
+  if (mortgage) {
+    state.financialLedger ??= emptyFinancialLedger(month, state.cash, state.monthlyLedger.netWorthStart);
+    if (state.cash >= mortgage.monthlyPayment) {
+      const interest = Math.round(mortgage.remainingPrincipal * 0.004);
+      const principalPaid = Math.min(mortgage.remainingPrincipal, Math.max(0, mortgage.monthlyPayment - interest));
+      state.cash -= mortgage.monthlyPayment;
+      mortgage.remainingPrincipal -= principalPaid;
+      mortgage.paidMonths += 1;
+      recordMortgagePayment(state, mortgage.monthlyPayment, mortgage.housingId);
+      state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.housing.mortgage.${mortgage.housingId}.${mortgage.paidMonths}`, day: state.time.day, category: 'housing', title: '住房分期还款', detail: `偿还本金 ¥${principalPaid.toLocaleString('zh-CN')} · 利息 ¥${interest.toLocaleString('zh-CN')}`, sourceId: mortgage.housingId, amount: -mortgage.monthlyPayment });
+      if (mortgage.remainingPrincipal <= 0 || mortgage.paidMonths >= mortgage.totalMonths) delete state.mortgage;
+    } else {
+      output.push({ type: 'message', text: '现金不足，本月住房分期未扣款' });
+    }
+  }
   const financialLedger = state.financialLedger ?? emptyFinancialLedger(month, state.monthlyLedger.netWorthStart, state.monthlyLedger.netWorthStart);
   const netWorthEnd = calculateNetWorth(state, content, balance);
   const financialSummary = summarizeFinancialLedger(financialLedger, financialLedger.cashStart ?? state.monthlyLedger.netWorthStart, state.cash, financialLedger.netWorthStart ?? state.monthlyLedger.netWorthStart, netWorthEnd);
@@ -92,4 +108,11 @@ function recordSubscriptionFee(state: GameState, subscriptionId: string, name: s
   if (!ledger) return;
   const sequence = ledger.nextSequence++;
   ledger.entries.push({ id: `ledger.${ledger.month}.${sequence}`, day: state.time.day, direction: 'expense', group: 'consumption', category: 'service', amount, cashDelta: -amount, sourceType: 'subscription', sourceId: subscriptionId, label: `${name}月度订阅` });
+}
+
+function recordMortgagePayment(state: GameState, amount: number, housingId: string): void {
+  const ledger = state.financialLedger;
+  if (!ledger) return;
+  const sequence = ledger.nextSequence++;
+  ledger.entries.push({ id: `ledger.${ledger.month}.${sequence}`, day: state.time.day, direction: 'expense', group: 'consumption', category: 'housing', amount, cashDelta: -amount, sourceType: 'housing', sourceId: housingId, label: '住房分期还款' });
 }

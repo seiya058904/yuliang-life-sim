@@ -135,6 +135,16 @@ describe('game store persistence', () => {
     expect(restored.wealthMilestones).toEqual([{ id: 'savings', day: 28, netWorth: 12000 }]);
   });
 
+  it('keeps a valid mortgage only for the owned current home and removes stale debt', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    const validMortgage = { housingId: 'housing.seed-room', remainingPrincipal: 4350, monthlyPayment: 199, totalMonths: 24, paidMonths: 2 };
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, housing: { housingId: 'housing.seed-room', mode: 'owned' }, mortgage: validMortgage }));
+    expect(loadGameState(contentRegistry, balanceConfig).mortgage).toEqual(validMortgage);
+
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, mortgage: { ...validMortgage, housingId: 'housing.unknown' } }));
+    expect(loadGameState(contentRegistry, balanceConfig).mortgage).toBeUndefined();
+  });
+
   it('keeps valid world snapshots and removes malformed or unknown-job entries during migration', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, worldHistory: [

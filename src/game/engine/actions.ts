@@ -13,7 +13,7 @@ import { appendLifeRecord } from './lifeHistory';
 import { advanceStorylineStage, getStoryline, getStorylineStage } from './storylines';
 import { careerRequirementsSatisfied } from './careerProgression';
 import { applyCareerExperience } from './careerProgression';
-import { housingPrice, housingRentPerDay, recordLocationVisit } from './locations';
+import { housingMortgageTerms, housingPrice, housingRentPerDay, recordLocationVisit } from './locations';
 import { absoluteMinute } from './time';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
@@ -514,6 +514,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
     case 'move_housing': {
       const home = find(content.housing, action.housingId);
       if (!home) return fail(input, '找不到这套住房');
+      if (state.mortgage) return fail(input, '当前有未结清的住房分期');
       if (home.mode !== 'both' && home.mode !== action.mode) return fail(input, '这套住房不支持该方式');
       if (!state.unlockedHousingIds.includes(home.id) && home.id !== state.housing.housingId) return fail(input, '这套住房还没有解锁');
       if (!hasRequirements(state, home.requirements, content, balance)) return fail(input, '当前条件还不满足');
@@ -527,17 +528,37 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       addLifeRecord(state, { category: 'housing', title: action.mode === 'owned' ? `买下${home.name}` : `搬到${home.name}`, detail: action.mode === 'owned' ? '自有住房' : '租住', sourceId: home.id, amount: price ? -price : undefined });
       break;
     }
+    case 'finance_housing': {
+      const home = find(content.housing, action.housingId);
+      if (!home || home.mode !== 'both' || !home.price) return fail(input, '这套住房不支持分期购买');
+      if (!state.unlockedHousingIds.includes(home.id) && home.id !== state.housing.housingId) return fail(input, '这套住房还没有解锁');
+      if (!hasRequirements(state, home.requirements, content, balance)) return fail(input, '当前条件还不满足');
+      if (state.housing.mode === 'owned' || state.mortgage) return fail(input, '当前已有自有住房或未结清分期');
+      const terms = housingMortgageTerms(state, home)!;
+      if (state.cash - terms.downPayment < reserveRequired(state, content)) return fail(input, '现金不足以支付首付并保留生活余量');
+      state.cash -= terms.downPayment;
+      state.housing = { housingId: home.id, mode: 'owned' };
+      state.mortgage = { housingId: home.id, remainingPrincipal: terms.principal, monthlyPayment: terms.monthlyPayment, totalMonths: terms.totalMonths, paidMonths: 0 };
+      if (!state.unlockedHousingIds.includes(home.id)) state.unlockedHousingIds.push(home.id);
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'property_transfer', amount: terms.downPayment, label: `支付${home.name}首付`, sourceType: 'housing', sourceId: home.id });
+      addLifeRecord(state, { category: 'housing', title: `分期买下${home.name}`, detail: `首付 ¥${terms.downPayment.toLocaleString('zh-CN')} · 剩余本金 ¥${terms.principal.toLocaleString('zh-CN')} · 每月约 ¥${terms.monthlyPayment.toLocaleString('zh-CN')}`, sourceId: home.id, amount: -terms.downPayment });
+      effects.push({ type: 'cash', amount: -terms.downPayment, reason: '住房首付' });
+      break;
+    }
     case 'sell_housing': {
       const currentHome = find(content.housing, state.housing.housingId);
       if (!currentHome || state.housing.mode !== 'owned' || !currentHome.price) return fail(input, '当前没有可出售的自有住房');
       const saleValue = currentHome.valuation || currentHome.price;
       const fallback = content.housing.find((home) => home.id === balance.startingHousingId && (home.mode === 'rent' || home.mode === 'both')) ?? content.housing.find((home) => home.mode === 'rent' || home.mode === 'both');
       if (!fallback) return fail(input, '出售后找不到可租住的住房');
-      state.cash += saleValue;
+      const mortgageBalance = state.mortgage?.housingId === currentHome.id ? state.mortgage.remainingPrincipal : 0;
+      const netSaleValue = Math.max(0, saleValue - mortgageBalance);
+      state.cash += netSaleValue;
       state.housing = { housingId: fallback.id, mode: 'rent' };
-      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: saleValue, label: `出售${currentHome.name}`, sourceType: 'housing', sourceId: currentHome.id, costBasis: currentHome.price });
-      addLifeRecord(state, { category: 'housing', title: `出售${currentHome.name}`, detail: `搬回${fallback.name}租住`, sourceId: currentHome.id, amount: saleValue });
-      effects.push({ type: 'cash', amount: saleValue, reason: '出售住房' });
+      delete state.mortgage;
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: netSaleValue, label: `出售${currentHome.name}`, sourceType: 'housing', sourceId: currentHome.id, costBasis: currentHome.price });
+      addLifeRecord(state, { category: 'housing', title: `出售${currentHome.name}`, detail: `偿还剩余本金 ¥${mortgageBalance.toLocaleString('zh-CN')} · 搬回${fallback.name}租住`, sourceId: currentHome.id, amount: netSaleValue });
+      effects.push({ type: 'cash', amount: netSaleValue, reason: '出售住房' });
       break;
     }
     case 'buy_business': {

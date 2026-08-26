@@ -142,6 +142,20 @@ describe('game action dispatcher', () => {
     expect(sold.state.lifeHistory?.at(-1)).toMatchObject({ title: '出售独立单间', category: 'housing' });
   });
 
+  it('buys a home with a down payment and persists the remaining mortgage', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 10000;
+    state.unlockedHousingIds.push('housing.seed-room');
+    const result = dispatchGameAction(state, { type: 'finance_housing', housingId: 'housing.seed-room' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.cash).toBe(8550);
+    expect(result.state.housing).toEqual({ housingId: 'housing.seed-room', mode: 'owned' });
+    expect(result.state.mortgage).toMatchObject({ housingId: 'housing.seed-room', remainingPrincipal: 4350, monthlyPayment: 199, totalMonths: 24, paidMonths: 0 });
+    expect(result.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'property_transfer', amount: 1450 });
+    expect(result.state.lifeHistory?.at(-1)).toMatchObject({ title: '分期买下独立单间', category: 'housing' });
+  });
+
   it('updates owned business operating levers and records the decision in life history', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 5000;

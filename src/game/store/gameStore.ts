@@ -87,6 +87,17 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.wishlist = [...new Set((candidate.wishlist ?? []).filter((id) => itemIds.has(id) && (candidate.inventory[id] ?? 0) === 0))];
   const housingIds = knownIds(content, 'housing');
   if (!housingIds.has(candidate.housing?.housingId)) candidate.housing = initial.housing;
+  const rawMortgage = isRecord(candidate.mortgage) ? candidate.mortgage : undefined;
+  candidate.mortgage = rawMortgage
+    && candidate.housing.mode === 'owned'
+    && rawMortgage.housingId === candidate.housing.housingId
+    && housingIds.has(String(rawMortgage.housingId))
+    && Number.isFinite(rawMortgage.remainingPrincipal) && Number(rawMortgage.remainingPrincipal) > 0
+    && Number.isFinite(rawMortgage.monthlyPayment) && Number(rawMortgage.monthlyPayment) > 0
+    && Number.isInteger(rawMortgage.totalMonths) && Number(rawMortgage.totalMonths) > 0
+    && Number.isInteger(rawMortgage.paidMonths) && Number(rawMortgage.paidMonths) >= 0 && Number(rawMortgage.paidMonths) < Number(rawMortgage.totalMonths)
+    ? { housingId: String(rawMortgage.housingId), remainingPrincipal: Number(rawMortgage.remainingPrincipal), monthlyPayment: Number(rawMortgage.monthlyPayment), totalMonths: Number(rawMortgage.totalMonths), paidMonths: Number(rawMortgage.paidMonths) }
+    : undefined;
   const jobIds = knownIds(content, 'jobs');
   if (candidate.currentJobId && !jobIds.has(candidate.currentJobId)) candidate.currentJobId = initial.currentJobId;
   candidate.unlockedJobIds = (candidate.unlockedJobIds ?? []).filter((id) => jobIds.has(id));
