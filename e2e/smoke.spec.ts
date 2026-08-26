@@ -282,7 +282,7 @@ test('discovers and plans the friend-specific cafe activity', async ({ page }) =
   await expect(outing).toContainText('和陈宇坐坐');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
   await expect(page.getByRole('button', { name: '职业', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
   await expect(page.getByText('去咖啡馆坐一会 · with-chenyu')).toBeVisible();
 });
 
@@ -377,7 +377,7 @@ test('turns a company expansion event into a visible internal career opportunity
   await expect(page.getByRole('dialog')).toContainText('星河科技的业务扩展');
   await page.getByRole('dialog').getByRole('button', { name: /参与前期项目/ }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
-  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
   await page.getByRole('button', { name: '工作机会' }).click();
   await expect(page.getByText('星河科技业务扩展')).toBeVisible();
   await expect(page.getByText('独立项目顾问')).toBeVisible();
@@ -719,6 +719,34 @@ test('records the first investment dividend as a milestone after monthly settlem
   await page.reload();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一笔投资分红');
+});
+
+test('completes and persists an official course through the weekly plan', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 2_000;
+    state.majorEventsThisMonth = 3;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  const course = page.getByRole('heading', { name: '职场基础课' }).locator('xpath=ancestor::div[contains(@class, "item-row")]');
+  await expect(course).toContainText('¥180');
+  await course.getByRole('button', { name: '安排课程' }).click();
+  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await expect(page.getByRole('dialog')).toContainText('第 1 月');
+  await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
+
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('完成课程：职场基础课')).toBeVisible();
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '职场基础课' }).locator('xpath=ancestor::div[contains(@class, "item-row")]')).toContainText('已完成');
+  await page.reload();
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '职场基础课' }).locator('xpath=ancestor::div[contains(@class, "item-row")]')).toContainText('已完成');
 });
 
 test('settles Zhou business interaction and persists the follow-up message', async ({ page }) => {
