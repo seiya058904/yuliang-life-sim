@@ -1763,3 +1763,46 @@ test('builds a controlling stake through staged entry and persists board decisio
   await expect(page.getByRole('region', { name: '企业组合' })).toContainText('组合归母估值');
   await expect(page.getByText(/重组效率 \+5%/).first()).toBeVisible();
 });
+test('evolves NPC and company timelines from world state and archives them', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 20_000;
+    state.time = { day: 1300, hour: 9, minute: 0 };
+    state.completedEvents = ['event.industrial-hub-upgrade', 'event.city-transit-upgrade'];
+    state.flags = { ...(state.flags ?? {}), xinghe_service_line_launched: true };
+    state.majorEventsThisMonth = 3;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  // Live evolution: the social timeline reshapes from persisted world state.
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const linCard = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '林晨', exact: true }) });
+  await expect(linCard).toContainText('临江内容工作室 · 联合创始人');
+  await expect(linCard).not.toContainText('电商运营助理');
+  const xukeCard = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '徐可', exact: true }) });
+  await expect(xukeCard).toContainText('星河企业服务线 · 技术合伙人');
+
+  // Archived evolution: a completed annual snapshot renders its branched company and NPC states after reload.
+  const seeded = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.worldHistory = [{ year: 4, day: 1344, netWorth: 24_000, businessCount: 0, relationshipCount: 1, visitedLocationCount: 1, listedBusinessCount: 0, controlledBusinessCount: 1,
+      characterCareerStates: { 'character.seed-lin': '临江内容工作室 · 联合创始人' },
+      companyStates: { 'company.greenfield-education': '北部转岗培训中心', 'company.xinghe': '企业服务线并购整合' } }];
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: seeded });
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  const worldRecords = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
+  await expect(worldRecords).toContainText('北部转岗培训中心');
+  await expect(worldRecords).toContainText('企业服务线并购整合');
+  await expect(worldRecords).toContainText('临江内容工作室 · 联合创始人');
+
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  const worldAfterReload = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
+  await expect(worldAfterReload).toContainText('北部转岗培训中心');
+});

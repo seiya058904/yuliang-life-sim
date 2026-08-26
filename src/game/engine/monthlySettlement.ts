@@ -1,6 +1,7 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary, WorldSnapshot } from '../content/contracts';
 import { businessValuation, calculateNetWorth, ownershipTierForEquity, wealthTierForNetWorth } from './economy';
+import { characterCareerAt, companyStageAt, makeWorldBranchEvaluator } from './worldEvolution';
 import { emptyFinancialLedger, projectLegacyMonthlyLedger, recordStateFinancialEntry, summarizeFinancialLedger } from './financialLedger';
 import { appendLifeRecord } from './lifeHistory';
 import { housingPrice, housingRentPerDay } from './locations';
@@ -99,6 +100,7 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       development[location.id] = Math.min(5, Math.max(0, development[location.id] ?? 0) + growth);
     }
     state.locationDevelopment = development;
+    const worldBranches = makeWorldBranchEvaluator(state, content, balance);
     const snapshot: WorldSnapshot = {
       year: annual.year,
       day: state.time.day,
@@ -107,15 +109,15 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       relationshipCount: Object.values(state.relationships).filter((value) => value > 0).length,
       relationshipValues: Object.fromEntries((content.characters ?? []).map((character) => [character.id, Math.min(100, Math.max(0, Math.round(state.relationships[character.id] ?? 0)))])),
       characterCareerStates: Object.fromEntries((content.characters ?? []).flatMap((character) => {
-        const entry = [...(character.careerHistory ?? [])].filter((career) => career.startYear <= annual.year).sort((a, b) => b.startYear - a.startYear)[0];
+        const entry = characterCareerAt(character, annual.year, worldBranches);
         if (!entry) return [];
         const company = entry.companyId ? content.companies?.find((candidate) => candidate.id === entry.companyId)?.name : undefined;
         return [[character.id, company ? `${company} · ${entry.title}` : entry.title]];
       })),
       companyStates: Object.fromEntries((content.companies ?? []).flatMap((company) => {
-        const entry = [...(company.history ?? [])].filter((history) => history.startYear <= annual.year).sort((a, b) => b.startYear - a.startYear)[0];
+        const stage = companyStageAt(company, annual.year, worldBranches);
         const dynamicState = (company.dynamicStates ?? []).find((candidate) => state.flags[candidate.flag]);
-        return entry || dynamicState ? [[company.id, dynamicState?.title ?? entry!.title]] : [];
+        return stage || dynamicState ? [[company.id, dynamicState?.title ?? stage!.title]] : [];
       })),
       visitedLocationCount: Object.values(state.locationVisits ?? {}).filter((value) => value > 0).length,
       locationDevelopment: { ...development },

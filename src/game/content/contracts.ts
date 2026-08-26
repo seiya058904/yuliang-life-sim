@@ -361,6 +361,8 @@ export interface CompanyDefinition extends ContentMeta {
 export interface CompanyHistoryEntry {
   startYear: number;
   title: string;
+  /** World-coupled alternative stage; replaces the base stage at the same year when its condition passes. */
+  branchCondition?: ConditionDefinition;
 }
 
 export interface CompanyDynamicState {
@@ -436,6 +438,8 @@ export interface CharacterCareerEntry {
   startYear: number;
   title: string;
   companyId?: ContentId;
+  /** Branch alternative based on world/player state; replaces the base entry at the same year when the condition passes. */
+  branchCondition?: ConditionDefinition;
 }
 
 export interface EventOpportunityDefinition {

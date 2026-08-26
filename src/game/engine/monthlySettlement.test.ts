@@ -87,4 +87,24 @@ describe('annual world snapshots', () => {
 
     expect(state.worldHistory?.[0]?.companyStates?.['company.xinghe']).toBe('企业服务线提前启动（玩家参与）');
   });
+
+  it('archives world-coupled branch stages for companies and characters when conditions pass', () => {
+    const state = createInitialState(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 7);
+    state.time = { day: 1344, hour: 8, minute: 0 };
+    state.completedEvents = ['event.industrial-hub-upgrade', 'event.city-transit-upgrade'];
+    state.flags.xinghe_service_line_launched = true;
+    const effects: GameEffect[] = [];
+
+    closeMonth(state, 48, contentRegistry, balanceConfig, effects);
+
+    expect(state.worldHistory?.[0]?.year).toBe(4);
+    expect(state.worldHistory?.[0]?.companyStates?.['company.greenfield-education']).toBe('北部转岗培训中心');
+    expect(state.worldHistory?.[0]?.characterCareerStates?.['character.seed-lin']).toBe('临江内容工作室 · 联合创始人');
+
+    const plainState = createInitialState(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 7);
+    plainState.time = { day: 1344, hour: 8, minute: 0 };
+    closeMonth(plainState, 48, contentRegistry, balanceConfig, effects);
+    expect(plainState.worldHistory?.[0]?.companyStates?.['company.greenfield-education']).toBe('职业培训线扩展');
+    expect(plainState.worldHistory?.[0]?.characterCareerStates?.['character.seed-lin']).toBe('星桥电商 · 电商运营助理');
+  });
 });

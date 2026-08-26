@@ -17,8 +17,9 @@ export const officialCharacters = [
     "initialRelationship": 8,
     "careerHistory": [
       { "startYear": 1, "title": "门店员工", "companyId": "company.yuanwang" },
-      { "startYear": 3, "title": "电商运营助理", "companyId": "company.starbridge" },
-      { "startYear": 6, "title": "高级运营", "companyId": "company.starbridge" },
+      { "startYear": 3, "title": "电商运营助理", "companyId": "company.starbridge-ecommerce" },
+      { "startYear": 3, "title": "临江内容工作室 · 联合创始人", "branchCondition": { "type": "completed_event", "eventId": "event.city-transit-upgrade" } },
+      { "startYear": 6, "title": "高级运营", "companyId": "company.starbridge-ecommerce" },
       { "startYear": 10, "title": "区域运营主管" }
     ],
     "locationId": "location.central",
@@ -63,6 +64,7 @@ export const officialCharacters = [
     "careerHistory": [
       { "startYear": 1, "title": "社区运营专员", "companyId": "company.yuanwang" },
       { "startYear": 4, "title": "城市生活项目负责人", "companyId": "company.yuanwang" },
+      { "startYear": 4, "title": "临江买手店主理人", "branchCondition": { "type": "completed_event", "eventId": "event.city-transit-upgrade" } },
       { "startYear": 8, "title": "独立生活顾问" }
     ],
     "locationId": "location.riverside",
@@ -145,6 +147,7 @@ export const officialCharacters = [
     "careerHistory": [
       { "startYear": 1, "title": "技术支持", "companyId": "company.xinghe" },
       { "startYear": 4, "title": "数码店主" },
+      { "startYear": 4, "title": "星河企业服务线 · 技术合伙人", "branchCondition": { "type": "flag", "flag": "xinghe_service_line_launched" } },
       { "startYear": 8, "title": "远程项目合伙人" }
     ],
     "locationId": "location.central",
@@ -227,7 +230,8 @@ export const officialCharacters = [
     "initialRelationship": 0,
     "careerHistory": [
       { "startYear": 1, "title": "招聘顾问", "companyId": "company.clearview-consulting" },
-      { "startYear": 7, "title": "资深猎头" }
+      { "startYear": 7, "title": "资深猎头" },
+      { "startYear": 7, "title": "自营高管寻访工作室", "branchCondition": { "type": "flag", "flag": "xinghe_service_line_launched" } }
     ],
     "locationId": "location.central",
     "stages": [

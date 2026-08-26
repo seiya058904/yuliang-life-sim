@@ -220,10 +220,12 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
   registry.companies?.forEach((company) => {
     let previousYear = 0;
     for (const entry of company.history ?? []) {
-      if (!Number.isInteger(entry.startYear) || entry.startYear < 1 || entry.startYear <= previousYear || !entry.title.trim()) {
+      const isBranchTie = Boolean(entry.branchCondition) && entry.startYear === previousYear;
+      if (!Number.isInteger(entry.startYear) || entry.startYear < 1 || entry.startYear < previousYear || (!isBranchTie && entry.startYear === previousYear) || !entry.title.trim()) {
         errors.push(`公司 ${company.id} 的历史阶段无效`);
       }
-      previousYear = entry.startYear;
+      if (entry.branchCondition) checkCondition(entry.branchCondition, `公司 ${company.id} 的分支阶段 ${entry.title}`);
+      previousYear = Math.max(previousYear, entry.startYear);
     }
     const dynamicFlags = new Set<string>();
     for (const dynamicState of company.dynamicStates ?? []) {
@@ -233,6 +235,18 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
   });
   registry.assets.forEach((asset) => { if (asset.price < 0 || asset.valuation < 0 || asset.volatility < 0) errors.push(`资产 ${asset.id} 的数值无效`); checkCondition(asset.requirements, `资产 ${asset.id}`); checkEffects(asset.effects, `资产 ${asset.id}`); });
   registry.characters.forEach((character) => { if (character.initialRelationship < 0 || character.initialRelationship > 100) errors.push(`人物 ${character.id} 的初始关系无效`); });
+  registry.characters.forEach((character) => {
+    let characterPreviousYear = 0;
+    for (const entry of character.careerHistory ?? []) {
+      const isBranchTie = Boolean(entry.branchCondition) && entry.startYear === characterPreviousYear;
+      if (!Number.isInteger(entry.startYear) || entry.startYear < 1 || entry.startYear < characterPreviousYear || !entry.title.trim() || (!isBranchTie && entry.startYear === characterPreviousYear)) {
+        errors.push(`人物 ${character.id} 的职业阶段无效: ${entry.title}`);
+      }
+      if (entry.companyId && !known.companies.has(entry.companyId)) errors.push(`人物 ${character.id} 引用了未知公司: ${entry.companyId}`);
+      if (entry.branchCondition) checkCondition(entry.branchCondition, `人物 ${character.id} 的分支职业阶段 ${entry.title}`);
+      characterPreviousYear = Math.max(characterPreviousYear, entry.startYear);
+    }
+  });
   registry.events.forEach((event) => {
     if (event.weight < 0 || event.cooldownDays < 0 || event.choices.length < 2) errors.push(`事件 ${event.id} 至少需要两个选项`);
     checkCondition(event.conditions, `事件 ${event.id}`);
