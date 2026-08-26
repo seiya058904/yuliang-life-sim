@@ -460,6 +460,31 @@ test('acquires an unlocked business and persists the holding history', async ({ 
   await expect(page.getByText('并购线上小店')).toBeVisible();
 });
 
+test('completes a wishlist purchase goal and persists its history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 2_000;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('button', { name: '加入愿望清单：新款手机' }).click();
+  const wishlist = page.getByRole('region', { name: '愿望清单' });
+  await expect(wishlist).toContainText('新款手机');
+  await expect(wishlist).toContainText('现在可以买');
+  await wishlist.getByRole('button', { name: '买下' }).click();
+  await expect(page.getByTestId('cash-value')).toHaveText('现金 ¥820');
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('愿望清单完成：新款手机')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('愿望清单完成：新款手机')).toBeVisible();
+});
+
 test('executes an offered gig and persists its income and career history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
