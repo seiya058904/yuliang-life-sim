@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateDailyBusinessProfit, calculateDailyPassiveIncome, calculateLifestyle, calculateNetWorth } from './economy';
+import { calculateDailyBusinessProfit, calculateDailyPassiveIncome, calculateLifestyle, calculateNetWorth, wealthTierForNetWorth } from './economy';
 import type { ContentRegistry, GameState } from '../content/contracts';
 import { balanceConfig } from '../balance/config';
 
@@ -19,6 +19,13 @@ const content = {
 } as unknown as ContentRegistry;
 
 describe('economy calculations', () => {
+  it('maps long-term net worth to the documented wealth ladder', () => {
+    expect(wealthTierForNetWorth(999_999).id).toBe('stable');
+    expect(wealthTierForNetWorth(1_000_000).id).toBe('abundant');
+    expect(wealthTierForNetWorth(100_000_000_000).id).toBe('world');
+    expect(wealthTierForNetWorth(1_000_000_000_000).id).toBe('global');
+  });
+
   it('explains net worth from cash, housing, business, assets and sellable items', () => {
     expect(calculateNetWorth(state, content, balanceConfig)).toBe(100 + 1200 + 650 + 550 + 100);
   });

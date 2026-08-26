@@ -9,6 +9,31 @@ export interface BusinessProfitBreakdown {
   profit: number;
 }
 
+export type WealthTierId = 'start' | 'savings' | 'stable' | 'abundant' | 'high_net_worth' | 'entrepreneur' | 'billionaire' | 'super_wealth' | 'world' | 'global';
+
+export interface WealthTier {
+  id: WealthTierId;
+  name: string;
+  description: string;
+}
+
+const wealthTiers: readonly { threshold: number; tier: WealthTier }[] = [
+  { threshold: 1_000_000_000_000, tier: { id: 'global', name: '全球顶级', description: '你拥有的选择已经接近现实世界最顶级个人财富。' } },
+  { threshold: 100_000_000_000, tier: { id: 'world', name: '世界级财富', description: '你的财富变化已经开始影响公司、行业甚至整个城市和世界。' } },
+  { threshold: 10_000_000_000, tier: { id: 'super_wealth', name: '超级财富', description: '资本与企业组合已经拥有行业级影响力。' } },
+  { threshold: 1_000_000_000, tier: { id: 'billionaire', name: '亿万级', description: '多家公司、资本与并购成为财富增长的主要来源。' } },
+  { threshold: 100_000_000, tier: { id: 'entrepreneur', name: '企业家', description: '企业价值开始主导财富，工资不再是主要变量。' } },
+  { threshold: 10_000_000, tier: { id: 'high_net_worth', name: '高净值', description: '工资逐渐失去主导地位，资产配置变得更重要。' } },
+  { threshold: 1_000_000, tier: { id: 'abundant', name: '富足', description: '房产、企业和股权开始成为财富的主角。' } },
+  { threshold: 100_000, tier: { id: 'stable', name: '稳定', description: '你可以承担投资和更大的生活决定。' } },
+  { threshold: 10_000, tier: { id: 'savings', name: '有积蓄', description: '你开始拥有更多选择。' } },
+  { threshold: 0, tier: { id: 'start', name: '起步', description: '钱几乎决定每个选择。' } },
+];
+
+export function wealthTierForNetWorth(netWorth: number): WealthTier {
+  return wealthTiers.find((entry) => netWorth >= entry.threshold)?.tier ?? wealthTiers.at(-1)!.tier;
+}
+
 function roundMoney(value: number): number {
   return Math.round(value);
 }

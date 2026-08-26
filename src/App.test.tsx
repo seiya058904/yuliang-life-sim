@@ -315,6 +315,18 @@ describe('余量 app flow', () => {
     expect(screen.queryByRole('heading', { name: '第 1 年' })).not.toBeInTheDocument();
   });
 
+  it('shows the long-term wealth tier without ending the life simulation', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 100_000_000_000 } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getAllByText('世界级财富')).toHaveLength(2);
+    expect(screen.getByText('世界级财富阶段已达成 · 继续生活')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '生活' })).toBeInTheDocument();
+  });
+
   it('shows persisted location visits in the city view', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
