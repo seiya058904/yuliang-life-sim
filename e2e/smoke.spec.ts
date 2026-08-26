@@ -387,6 +387,41 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   await expect(page.getByRole('region', { name: '公开股权' })).toContainText('你的持股 70% · 外部公开流通 30%');
 });
 
+test('runs a business from purchase through funding, listing, daily profit and persistence', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 50_000;
+    state.unlockedCapabilities = [...new Set([...(state.unlockedCapabilities ?? []), 'business_license'])];
+    state.unlockedBusinessIds = ['business.seed-kiosk'];
+    state.majorEventsThisMonth = 3;
+    state.simulationMode = 'paused';
+    state.rng = { ...(state.rng ?? {}), seed: 41, cursor: 0 };
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await page.getByRole('button', { name: '买入 ¥3,200' }).click();
+  await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
+  await page.getByRole('button', { name: '投入 ¥1,000' }).click();
+  await page.getByRole('button', { name: '发起融资' }).click();
+  await page.getByRole('button', { name: '继续融资' }).click();
+  await page.getByRole('button', { name: '申请上市' }).click();
+  await expect(page.getByRole('button', { name: '已上市' })).toBeVisible();
+  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toContainText('企业收入');
+  await page.getByRole('button', { name: '进入下个月' }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '早餐与咖啡档完成融资' }).first()).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByRole('button', { name: '已上市' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '公开股权' })).toContainText('早餐与咖啡档');
+});
+
 test('applies the industrial hub city event and persists its development', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
