@@ -113,6 +113,16 @@ test('discovers the expanded daily services and subscriptions', async ({ page })
   await expect(video.getByRole('button', { name: '取消订阅' })).toBeVisible();
 });
 
+test('uses the basic fitness assessment service and keeps its history', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const fitness = page.getByRole('heading', { name: '基础体能评估' }).locator('..').locator('..');
+  await fitness.getByRole('button', { name: '使用服务' }).click();
+  await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础体能评估');
+  await page.reload();
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础体能评估');
+});
+
 test('discovers the riverside night market activity', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   const market = page.locator('article.activity-card').filter({ hasText: '河畔夜市 · 逛一圈' });

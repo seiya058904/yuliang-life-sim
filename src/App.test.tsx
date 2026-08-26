@@ -235,6 +235,8 @@ describe('余量 app flow', () => {
 
   it('discovers the expanded daily service and subscription content', async () => {
     const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 1000 } });
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
@@ -242,6 +244,9 @@ describe('余量 app flow', () => {
     expect(styling).not.toBeNull();
     await user.click(within(styling as HTMLElement).getByRole('button', { name: '使用服务' }));
     expect(screen.getByRole('region', { name: '服务记录' })).toHaveTextContent('专业形象咨询');
+    const fitness = screen.getByRole('heading', { name: '基础体能评估' }).closest('.item-row') as HTMLElement;
+    await user.click(within(fitness).getByRole('button', { name: '使用服务' }));
+    expect(screen.getByRole('region', { name: '服务记录' })).toHaveTextContent('基础体能评估');
 
     const video = screen.getByRole('heading', { name: '视频会员' }).closest('.item-row');
     expect(video).not.toBeNull();
