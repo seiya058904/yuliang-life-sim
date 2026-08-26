@@ -58,6 +58,27 @@ describe('automatic simulation', () => {
     expect(result.state.locationVisits?.['location.central']).toBe(1);
   });
 
+  it('settles a two-day travel activity once after crossing midnight and preserves its history', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 23);
+    initial.time = { day: 6, hour: 8, minute: 0 };
+    initial.calendar = { ...initial.calendar, week: 1, weekday: 6 };
+    initial.currentJobId = undefined;
+    initial.employment = undefined;
+    initial.cash = 5000;
+    const plan = structuredClone(initial.weeklyPlan);
+    plan.autoRepeat = true;
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.premium-weekend', optionId: 'premium-stay' };
+    const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: true, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 3 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.financialLedger?.entries.filter((entry) => entry.sourceId === 'activity.premium-weekend')).toHaveLength(1);
+    expect(result.state.financialLedger?.entries.find((entry) => entry.sourceId === 'activity.premium-weekend')?.amount).toBe(2200);
+    expect(result.state.lifeHistory?.filter((entry) => entry.sourceId === 'activity.premium-weekend')).toHaveLength(1);
+    expect(result.state.locationVisits?.['location.riverside']).toBe(1);
+    expect(result.state.cash).toBeLessThan(2800);
+  });
+
   it('applies a vehicle travel discount and records the self-drive feedback', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 23);

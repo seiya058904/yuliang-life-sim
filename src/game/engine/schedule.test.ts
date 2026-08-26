@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ContentRegistry, EmploymentState, JobDefinition, WeeklyPlan } from '../content/contracts';
-import { createDefaultWeeklyPlan, defaultJobSchedule, deriveActivityProgress, getDailyActivities, validateWeeklyPlan } from './schedule';
+import { activityAtTime, createDefaultWeeklyPlan, defaultJobSchedule, deriveActivityProgress, getDailyActivities, validateWeeklyPlan } from './schedule';
 
 const job: JobDefinition = {
   id: 'job.test-regular', contentStatus: 'seed', name: '测试工作', description: '测试', tags: ['work'],
@@ -9,6 +9,10 @@ const job: JobDefinition = {
 const sideJob: JobDefinition = { ...job, id: 'job.test-side', kind: 'temporary', employmentKind: 'gig', hours: 4, isLongTerm: false };
 const content = { jobs: [job, sideJob], items: [], housing: [], businesses: [], assets: [], characters: [], events: [], eventChains: [], milestones: [], vocabulary: { capabilities: [], tags: ['work'] } } as unknown as ContentRegistry;
 const employment: EmploymentState = { jobId: job.id, schedule: defaultJobSchedule(job), effectiveWeek: 1 };
+const travelContent = {
+  ...content,
+  activities: [{ id: 'activity.test-weekend', contentStatus: 'official', name: '测试周末旅行', description: '测试', tags: ['travel'], category: 'travel', options: [{ id: 'stay', label: '连续两天', durationMinutes: 2880, cashCost: 100 }] }],
+} as unknown as ContentRegistry;
 
 describe('weekly schedule', () => {
   it('keeps formal employment out of the editable plan while supporting timed study and side jobs', () => {
@@ -33,6 +37,17 @@ describe('weekly schedule', () => {
     expect(activity).toBeDefined();
     expect('progress' in (activity ?? {})).toBe(false);
     expect(deriveActivityProgress(activity!, { day: 1, hour: 20, minute: 0 })).toBe(0.5);
+  });
+
+  it('keeps a two-day activity active across midnight and restores free time after it ends', () => {
+    const plan = createDefaultWeeklyPlan();
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay' };
+
+    expect(validateWeeklyPlan(plan, undefined, travelContent)).toEqual([]);
+    expect(activityAtTime({ day: 6, hour: 10, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
+    expect(activityAtTime({ day: 7, hour: 14, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
+    expect(activityAtTime({ day: 8, hour: 8, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
+    expect(activityAtTime({ day: 8, hour: 10, minute: 0 }, plan, undefined, travelContent).kind).toBe('free');
   });
 });
 

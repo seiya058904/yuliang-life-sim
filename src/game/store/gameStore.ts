@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { BalanceConfig } from '../balance/config';
-import type { ContentRegistry, GameAction, GameEffect, GameState, JobSchedule, LifeRecordEntry, ViewId, WorldSnapshot } from '../content/contracts';
+import type { ActivityDuration, ContentRegistry, GameAction, GameEffect, GameState, JobSchedule, LifeRecordEntry, PlannedActivity, ViewId, WorldSnapshot } from '../content/contracts';
 import { calendarForDay } from '../engine/calendar';
 import { dispatchGameAction } from '../engine/actions';
 import { createInitialState } from '../engine/initialState';
@@ -38,9 +38,53 @@ function isWeeklyPlan(value: unknown): value is GameState['weeklyPlan'] {
   return [1, 2, 3, 4, 5, 6, 7].every((weekday) => {
     const day = days[String(weekday)];
     return isRecord(day) && isRecord(day.day) && isRecord(day.evening)
-      && ['study', 'side_job', 'free'].includes(String(day.day.kind))
-      && ['study', 'side_job', 'free'].includes(String(day.evening.kind));
+      && ['study', 'side_job', 'free', 'course', 'activity'].includes(String(day.day.kind))
+      && ['study', 'side_job', 'free', 'course', 'activity'].includes(String(day.evening.kind));
   });
+}
+
+function normalizePlannedActivity(value: unknown, content: ContentRegistry): PlannedActivity {
+  if (!isRecord(value)) return { kind: 'free' };
+  switch (value.kind) {
+    case 'study':
+    case 'side_job': {
+      const duration = value.durationMinutes;
+      if (![60, 120, 180, 240].includes(Number(duration))) return { kind: 'free' };
+      if (value.kind === 'side_job') {
+        const job = content.jobs.find((entry) => entry.id === value.jobId);
+        if (!job || job.kind === 'regular') return { kind: 'free' };
+        return { kind: 'side_job', jobId: job.id, durationMinutes: Number(duration) as ActivityDuration };
+      }
+      return { kind: 'study', durationMinutes: Number(duration) as ActivityDuration };
+    }
+    case 'course':
+      return content.courses?.some((course) => course.id === value.courseId)
+        ? { kind: 'course', courseId: String(value.courseId) }
+        : { kind: 'free' };
+    case 'activity': {
+      const activity = content.activities?.find((entry) => entry.id === value.activityId);
+      const option = activity?.options.find((entry) => entry.id === value.optionId);
+      return activity && option
+        ? { kind: 'activity', activityId: activity.id, optionId: option.id }
+        : { kind: 'free' };
+    }
+    case 'free':
+    default:
+      return { kind: 'free' };
+  }
+}
+
+function normalizeWeeklyPlan(value: unknown, content: ContentRegistry): GameState['weeklyPlan'] {
+  if (!isWeeklyPlan(value)) return createDefaultWeeklyPlan();
+  const days = {} as GameState['weeklyPlan']['days'];
+  for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) {
+    const source = value.days[weekday];
+    days[weekday] = {
+      day: normalizePlannedActivity(source.day, content),
+      evening: normalizePlannedActivity(source.evening, content),
+    };
+  }
+  return { days, autoRepeat: Boolean(value.autoRepeat ?? true) };
 }
 
 function isLifeRecordEntry(value: unknown): value is LifeRecordEntry {
@@ -82,9 +126,10 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.version = balance.saveVersion;
   candidate.contentVersion = balance.contentVersion;
   candidate.calendar = calendarForDay(candidate.time.day);
-  candidate.weeklyPlan = isWeeklyPlan(candidate.weeklyPlan) ? candidate.weeklyPlan : createDefaultWeeklyPlan();
-  candidate.weeklyPlan.autoRepeat = Boolean(candidate.weeklyPlan.autoRepeat ?? true);
-  candidate.previousWeeklyPlan = isWeeklyPlan(candidate.previousWeeklyPlan) ? candidate.previousWeeklyPlan : structuredClone(candidate.weeklyPlan);
+  candidate.weeklyPlan = normalizeWeeklyPlan(candidate.weeklyPlan, content);
+  candidate.previousWeeklyPlan = isWeeklyPlan(candidate.previousWeeklyPlan)
+    ? normalizeWeeklyPlan(candidate.previousWeeklyPlan, content)
+    : structuredClone(candidate.weeklyPlan);
   candidate.autoRepeatPlan = Boolean(candidate.autoRepeatPlan ?? candidate.weeklyPlan.autoRepeat);
   candidate.simulationSpeed = candidate.simulationSpeed === 2 || candidate.simulationSpeed === 4 ? candidate.simulationSpeed : 1;
   candidate.simulationMode = candidate.pendingEventId ? 'event' : candidate.simulationMode === 'planning' ? 'planning' : 'paused';
@@ -194,6 +239,10 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.discounts = candidate.discounts ?? [];
   candidate.rng = candidate.rng ?? initial.rng;
   candidate.marketJobIds = candidate.marketJobIds?.filter((id) => jobIds.has(id)) ?? initial.marketJobIds;
+  if (!candidate.currentJobId) {
+    candidate.currentJobId = undefined;
+    candidate.employment = undefined;
+  }
   candidate.lastSettledDay = Number.isInteger(candidate.lastSettledDay) ? candidate.lastSettledDay : initial.lastSettledDay;
   candidate.eventDay = Number.isInteger(candidate.eventDay) ? candidate.eventDay : candidate.time.day;
   candidate.eventsToday = Number.isInteger(candidate.eventsToday) ? candidate.eventsToday : 0;

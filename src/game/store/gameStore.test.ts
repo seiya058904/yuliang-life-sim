@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
-import { createGameStore, loadGameState, saveGameState } from './gameStore';
+import { createGameStore, loadGameState, migrateGameState, saveGameState } from './gameStore';
 
 describe('game store persistence', () => {
   beforeEach(() => localStorage.clear());
@@ -25,6 +25,27 @@ describe('game store persistence', () => {
     expect(restored.time).toEqual({ day: 3, hour: 14, minute: 0 });
     expect(restored.calendar.week).toBe(1);
     expect(restored.weeklyPlan.days[3]).toBeDefined();
+  });
+
+  it('persists activity and course plans while clearing unknown plan content during migration', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    const raw = {
+      ...state,
+      weeklyPlan: {
+        ...state.weeklyPlan,
+        days: {
+          ...state.weeklyPlan.days,
+          6: { day: { kind: 'activity', activityId: 'activity.premium-weekend', optionId: 'premium-stay' }, evening: { kind: 'course', courseId: 'course.workplace-basics' } },
+          7: { day: { kind: 'activity', activityId: 'activity.unknown', optionId: 'unknown' }, evening: { kind: 'free' } },
+        },
+      },
+    };
+
+    const restored = migrateGameState(raw, contentRegistry, balanceConfig);
+
+    expect(restored.weeklyPlan.days[6].day).toEqual({ kind: 'activity', activityId: 'activity.premium-weekend', optionId: 'premium-stay' });
+    expect(restored.weeklyPlan.days[6].evening).toEqual({ kind: 'course', courseId: 'course.workplace-basics' });
+    expect(restored.weeklyPlan.days[7].day).toEqual({ kind: 'free' });
   });
 
   it('migrates an old save without life history to the current version while preserving time and pausing', () => {

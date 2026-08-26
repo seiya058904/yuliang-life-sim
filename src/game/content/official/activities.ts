@@ -322,7 +322,7 @@ export const officialActivities = [
     financialCategory: 'travel',
     locationId: 'location.riverside',
     familiarityTags: ['travel'],
-    options: [{ id: 'premium-stay', label: '安排品质周末', durationMinutes: 240, cashCost: 2200, cooldownDays: 60, effects: [{ type: 'attribute', attribute: 'mood', amount: 20 }, { type: 'stat', stat: 'lifestyle', amount: 3 }] }],
+    options: [{ id: 'premium-stay', label: '安排品质周末', durationMinutes: 2880, cashCost: 2200, cooldownDays: 60, effects: [{ type: 'attribute', attribute: 'mood', amount: 20 }, { type: 'stat', stat: 'lifestyle', amount: 3 }] }],
   },
   {
     id: 'activity.domestic-standard',

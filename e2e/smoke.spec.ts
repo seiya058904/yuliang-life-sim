@@ -480,6 +480,13 @@ test('discovers the expanded home, cinema, and fitness activities', async ({ pag
 });
 
 test('discovers the expanded travel tiers and schedules a premium weekend', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  initial.currentJobId = null;
+  initial.employment = null;
+  initial.cash = 5000;
+  await page.evaluate(({ key, nextState }) => localStorage.setItem(key, JSON.stringify(nextState)), { key: saveKey, nextState: initial });
+  await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
   const dayTrip = page.locator('article.activity-card').filter({ hasText: '城郊一日游 · 安排一日出行' });
   await expect(dayTrip).toContainText('¥280');
@@ -492,7 +499,7 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
   await expect(luxury).toContainText('¥18,000');
   await premiumWeekend.getByRole('button', { name: '安排到本周自由时间' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '品质周末旅行 · premium-stay' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '周一白天计划' })).toContainText('品质周末旅行 · premium-stay');
 });
 
 test('discovers a contact-specific activity and schedules it with its relationship gate', async ({ page }) => {
