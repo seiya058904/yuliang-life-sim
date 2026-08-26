@@ -91,3 +91,30 @@ test('turns a company expansion event into a visible internal career opportunity
   await expect(page.getByText('星河科技业务扩展')).toBeVisible();
   await expect(page.getByText('独立项目顾问')).toBeVisible();
 });
+
+test('turns a qualifying manager state into a persisted headhunter opportunity', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.currentJobId = 'job.regional-operations-manager';
+    state.employment = { ...(state.employment ?? {}), jobId: 'job.regional-operations-manager', companyId: 'company.yuanwang', basePay: 620, salaryAdjustment: 0 };
+    state.reputation = 30;
+    state.pendingEventId = 'event.headhunter-contact';
+    state.simulationMode = 'event';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await expect(page.getByRole('dialog')).toContainText('有猎头看过你的经历');
+  await page.getByRole('dialog').getByRole('button', { name: '听听看' }).click();
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '工作机会' }).click();
+  await expect(page.getByText('许衡主动联系')).toBeVisible();
+  await expect(page.getByText('品类运营专家')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '工作机会' }).click();
+  await expect(page.getByText('许衡主动联系')).toBeVisible();
+});
