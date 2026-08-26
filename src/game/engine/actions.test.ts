@@ -89,6 +89,18 @@ describe('game action dispatcher', () => {
     expect(ready.state.lifeHistory?.filter((record) => record.sourceId === 'service.haircut-basic')).toHaveLength(2);
   });
 
+  it('settles the nutrition coaching service with a real attribute effect', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const before = state.attributes?.fitness ?? 0;
+    const result = dispatchGameAction(state, { type: 'use_service', serviceId: 'service.nutrition-coaching' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.cash).toBe(state.cash - 160);
+    expect(result.state.attributes?.fitness).toBe(before + 1);
+    expect(result.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'service', amount: 160 });
+    expect(result.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '营养餐计划', sourceId: 'service.nutrition-coaching' });
+  });
+
   it('uses the vehicle annual service only when a vehicle is owned', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 1000;

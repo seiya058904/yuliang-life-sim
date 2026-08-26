@@ -114,10 +114,19 @@ test('applies and persists a cooldown after using a repeatable service', async (
 });
 
 test('discovers the expanded daily services and subscriptions', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  state.cash = 1000;
+  state.simulationMode = 'paused';
+  await page.evaluate(({ key, nextState }) => localStorage.setItem(key, JSON.stringify(nextState)), { key: saveKey, nextState: state });
+  await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
   const styling = page.getByRole('heading', { name: '专业形象咨询' }).locator('..').locator('..');
   await styling.getByRole('button', { name: '使用服务' }).click();
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('专业形象咨询');
+  const nutrition = page.getByRole('heading', { name: '营养餐计划' }).locator('..').locator('..');
+  await nutrition.getByRole('button', { name: '使用服务' }).click();
+  await expect(page.getByRole('region', { name: '服务记录' })).toContainText('营养餐计划');
   const video = page.getByRole('heading', { name: '视频会员' }).locator('..').locator('..');
   await video.getByRole('button', { name: '开通订阅' }).click();
   await expect(video.getByRole('button', { name: '取消订阅' })).toBeVisible();

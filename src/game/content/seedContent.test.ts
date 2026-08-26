@@ -28,6 +28,7 @@ describe('seed content registry', () => {
       expect.objectContaining({ id: 'service.haircut-basic', cooldownDays: 14 }),
       expect.objectContaining({ id: 'service.laundry', cooldownDays: 7 }),
       expect.objectContaining({ id: 'service.fitness-assessment', cooldownDays: 60 }),
+      expect.objectContaining({ id: 'service.nutrition-coaching', cooldownDays: 45, price: 160 }),
     ]));
   });
 

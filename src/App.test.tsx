@@ -244,6 +244,9 @@ describe('余量 app flow', () => {
     expect(styling).not.toBeNull();
     await user.click(within(styling as HTMLElement).getByRole('button', { name: '使用服务' }));
     expect(screen.getByRole('region', { name: '服务记录' })).toHaveTextContent('专业形象咨询');
+    const nutrition = screen.getByRole('heading', { name: '营养餐计划' }).closest('.item-row') as HTMLElement;
+    await user.click(within(nutrition).getByRole('button', { name: '使用服务' }));
+    expect(screen.getByRole('region', { name: '服务记录' })).toHaveTextContent('营养餐计划');
     const fitness = screen.getByRole('heading', { name: '基础体能评估' }).closest('.item-row') as HTMLElement;
     await user.click(within(fitness).getByRole('button', { name: '使用服务' }));
     expect(screen.getByRole('region', { name: '服务记录' })).toHaveTextContent('基础体能评估');
