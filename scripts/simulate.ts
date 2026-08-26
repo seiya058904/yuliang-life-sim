@@ -10,6 +10,7 @@ type Strategy = 'career' | 'consumer' | 'relationship' | 'investor';
 function chooseAction(state: GameState, strategy: Strategy): GameAction {
   if (state.pendingReward) return { type: 'claim_reward' };
   if (state.pendingEventId) return { type: 'choose_event', eventId: state.pendingEventId, choiceId: contentRegistry.events.find((event) => event.id === state.pendingEventId)?.choices[0]?.id ?? '' };
+  if (state.simulationMode === 'monthly_summary') return { type: 'acknowledge_monthly_summary' };
   if (state.simulationMode === 'event') return { type: 'continue_after_event' };
   if (state.simulationMode === 'planning') return { type: 'start_week' };
   if (strategy === 'consumer' && state.simulationMode === 'paused' && state.cash > 450 && !(state.inventory['item.seed-phone'] ?? 0)) return { type: 'purchase_items', items: { 'item.seed-phone': 1 } };
@@ -19,12 +20,12 @@ function chooseAction(state: GameState, strategy: Strategy): GameAction {
   return { type: 'advance_simulation', minutes: 60 };
 }
 
-function run(strategy: Strategy): { strategy: Strategy; day: number; cash: number; netWorth: number; errors: number; majorEventDays: number[]; eventIntervals: number[]; monthlyMajorEvents: number[] } {
+function run(strategy: Strategy): { strategy: Strategy; day: number; cash: number; netWorth: number; errors: number; annualRecords: number; majorEventCount: number; firstMajorEventDays: number[]; lastMajorEventDays: number[]; eventIntervalRange: [number, number] | null; monthlyMajorEventRange: [number, number] | null } {
   let state = createInitialState(contentRegistry, balanceConfig, 20260825);
   let errors = 0;
   const majorEventDays: number[] = [];
   let guard = 0;
-  while (state.time.day <= 60 && guard < 5000) {
+  while (state.time.day <= 1681 && guard < 250000) {
     const action = chooseAction(state, strategy);
     const result = dispatchGameAction(state, action, contentRegistry, balanceConfig);
     if (result.error) {
@@ -40,7 +41,19 @@ function run(strategy: Strategy): { strategy: Strategy; day: number; cash: numbe
   }
   const eventIntervals = majorEventDays.slice(1).map((day, index) => day - majorEventDays[index]);
   const monthlyMajorEvents = Array.from({ length: Math.ceil(state.time.day / 28) }, (_, index) => majorEventDays.filter((day) => Math.floor((day - 1) / 28) === index).length);
-  return { strategy, day: state.time.day, cash: state.cash, netWorth: calculateNetWorth(state, contentRegistry, balanceConfig), errors, majorEventDays, eventIntervals, monthlyMajorEvents };
+  return {
+    strategy,
+    day: state.time.day,
+    cash: state.cash,
+    netWorth: calculateNetWorth(state, contentRegistry, balanceConfig),
+    errors,
+    annualRecords: state.annualHistory?.length ?? 0,
+    majorEventCount: majorEventDays.length,
+    firstMajorEventDays: majorEventDays.slice(0, 3),
+    lastMajorEventDays: majorEventDays.slice(-3),
+    eventIntervalRange: eventIntervals.length ? [Math.min(...eventIntervals), Math.max(...eventIntervals)] : null,
+    monthlyMajorEventRange: monthlyMajorEvents.length ? [Math.min(...monthlyMajorEvents), Math.max(...monthlyMajorEvents)] : null,
+  };
 }
 
 for (const strategy of ['career', 'consumer', 'relationship', 'investor'] as const) console.log(JSON.stringify(run(strategy)));
