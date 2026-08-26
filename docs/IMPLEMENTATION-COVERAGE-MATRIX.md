@@ -8,7 +8,7 @@ Scope: this matrix audits `docs/NEXT-UPDATE-FOUNDATION.md` as the sole product/c
 | --- | --- |
 | Branch | `codex/yuliang-completion` |
 | Content validation | `npm run content:validate` passed: 17 jobs, 31 items, 4 services, 3 subscriptions, 6 housing, 6 characters, 34 events, 4 event chains, 3 businesses, 11 assets, 7 activities, 4 courses, 8 investments. |
-| Unit/component tests | `npm test -- --run` passed: 20 files, 190 tests. |
+| Unit/component tests | `npm test` passed: 20 files, 194 tests. |
 | Browser E2E | `npm run e2e` passed: 29 specs / 44 project runs, desktop and mobile smoke plus city-development, company-expansion, qualifying-manager headhunter, high-value-asset, persisted-wealth-milestone, housing-mortgage, second-home-rental, private-equity purchase, private-equity exit, wealth-portfolio-summary/history, travel-cooldown, service-history, vehicle-maintenance-history, vehicle-annual-service, ambient-city-sightings, friend-specific-cafe, friend-specific-cinema, preference-matching-gift, milestone-profile, first-investment-dividend, and Zhou-business-interaction flows. |
 | Production build | `npm run build` passed: content validation, TypeScript build, Vite build. |
 
