@@ -44,7 +44,9 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     const vacancy = vacancyFromTemplate(starterTemplate, state.calendar.month, content, balance);
     if (!selected.some((entry) => entry.vacancyId === vacancy.vacancyId)) selected.unshift(vacancy);
   }
-  const guaranteedRoutes = [
+  // Ladder doors stay reachable every single week; senior specialists rotate on a slower
+  // cycle so the market keeps fresh faces without dropping any progression path.
+  const fixedWeeklyRoutes = [
     'job.regional-operations-manager',
     'job.category-operations-expert',
     'job.huanliu-warehouse-assistant',
@@ -52,29 +54,45 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     'job.course-operations-assistant',
     'job.research-assistant',
     'job.travel-product-assistant',
+    'job.order-operations-assistant',
+    'job.auto-service-assistant',
+    'job.customer-experience-assistant',
+    'job.production-assistant',
+    'job.course-teaching-assistant',
   ];
-  const protectedJobIds = new Set([currentJobTemplate?.jobId, starterTemplate?.jobId, ...officeTemplates.map((template) => template.jobId)]);
-  for (const jobId of guaranteedRoutes) {
-    const template = templates.find((entry) => entry.jobId === jobId);
-    if (!template) continue;
-    if (!selected.some((entry) => entry.jobId === jobId)) {
-      const vacancy = vacancyFromTemplate(template, state.calendar.month, content, balance);
-      const replacementIndex = selected.findIndex((entry) => !protectedJobIds.has(entry.jobId));
-      if (replacementIndex >= 0) selected[replacementIndex] = vacancy;
-      else if (selected.length < maximum) selected.push(vacancy);
-    }
-    protectedJobIds.add(jobId);
-  }
-  const prioritized = [
-    ...officeTemplates.map((template) => selected.find((entry) => entry.vacancyId === `vacancy.${template.id}.${state.calendar.month}`)),
-    currentJobTemplate ? selected.find((entry) => entry.vacancyId === `vacancy.${currentJobTemplate.id}.${state.calendar.month}`) : undefined,
-    selected.find((entry) => entry.jobId === starterTemplate?.jobId),
-    ...guaranteedRoutes.map((jobId) => selected.find((entry) => entry.jobId === jobId)),
-  ].filter((entry): entry is VacancyState => Boolean(entry));
-  const uniquePrioritized = prioritized.filter((entry, index) => prioritized.findIndex((candidate) => candidate.vacancyId === entry.vacancyId) === index);
-  const prioritizedIds = new Set(uniquePrioritized.map((entry) => entry.vacancyId));
-  const remainder = selected.filter((entry) => !prioritizedIds.has(entry.vacancyId));
-  return [...uniquePrioritized, ...remainder].slice(0, Math.min(maximum, templates.length));
+  const seniorRotationPool = [
+    'job.city-dispatch-manager',
+    'job.principal-analyst',
+    'job.starbridge-growth-director',
+    'job.learning-product-lead',
+    'job.media-producer-lead',
+    'job.travel-experience-designer',
+    'job.lifestyle-product-expert',
+    'job.auto-regional-trainer',
+  ];
+  const rotationPhase = (state.calendar.month - 1) % seniorRotationPool.length;
+  const pickedSeniors = [
+    seniorRotationPool[rotationPhase],
+    seniorRotationPool[(rotationPhase + Math.floor(seniorRotationPool.length / 2)) % seniorRotationPool.length],
+  ];
+  const guaranteedRoutes = [...fixedWeeklyRoutes, ...pickedSeniors];
+  // Required vacancies are built first so weekly capacity can never silently drop a ladder route;
+  // the weighted pool only fills the remaining slots.
+  const requiredTemplates: VacancyTemplate[] = [
+    ...officeTemplates,
+    ...(currentJobTemplate ? [currentJobTemplate] : []),
+    ...(starterTemplate ? [starterTemplate] : []),
+    ...guaranteedRoutes
+      .map((jobId) => templates.find((entry) => entry.jobId === jobId))
+      .filter((entry): entry is VacancyTemplate => Boolean(entry)),
+  ].filter((template, index, list) => list.findIndex((entry) => entry.id === template.id) === index);
+  const requiredJobIds = new Set(requiredTemplates.map((template) => template.jobId));
+  const coreVacancies = requiredTemplates.map((template) => vacancyFromTemplate(template, state.calendar.month, content, balance));
+  // Weekly size stays inside the configured range: guaranteed routes may exceed it slightly,
+  // but never crowd out more than the range allows once optional variety fills the rest.
+  const weeklyCap = Math.min(Math.max(maximum, coreVacancies.length), templates.length);
+  const optionalPool = selected.filter((entry) => !requiredJobIds.has(entry.jobId)).slice(0, Math.max(0, weeklyCap - coreVacancies.length));
+  return [...coreVacancies, ...optionalPool];
 }
 
 export function evaluateApplicationCompetitiveness(job: JobDefinition, state: GameState, _content: ContentRegistry, balance: BalanceConfig, route: ApplicationRoute): CompetitivenessResult {

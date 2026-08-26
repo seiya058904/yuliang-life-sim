@@ -1985,6 +1985,57 @@ export const officialEvents = [
     ]
   },
   {
+    "id": "event.headhunter-senior",
+    "contentStatus": "official",
+    "name": "猎头再联系",
+    "description": "知识、声誉与收入都到了专家级别的门槛，许衡带着一个高级专家职位回来了。",
+    "title": "许衡这次想聊的是一支团队的领航人",
+    "body": "又是一条来自许衡的消息：这次是澄明商业咨询的首席分析专家位置。他们看过你的项目背景，希望你能去聊聊。",
+    "category": "career",
+    "weight": 0.4,
+    "cooldownDays": 240,
+    "conditions": {
+      "type": "all",
+      "conditions": [
+        { "type": "attribute_at_least", "attribute": "knowledge", "amount": 55 },
+        { "type": "reputation_at_least", "amount": 38 },
+        { "type": "current_salary_at_least", "amount": 14000 }
+      ]
+    },
+    "choices": [
+      {
+        "id": "listen",
+        "text": "听听看",
+        "effects": [
+          { "type": "relation", "characterId": "character.xuheng", "amount": 5 },
+          { "type": "attribute", "attribute": "network", "amount": 1 }
+        ],
+        "opportunity": {
+          "jobId": "job.principal-analyst",
+          "companyId": "company.clearview-consulting",
+          "route": "headhunter",
+          "source": "许衡的专家引荐",
+          "expiresInDays": 14,
+          "salaryRange": [800, 920]
+        }
+      },
+      {
+        "id": "keep-in-touch",
+        "text": "先保持联系",
+        "effects": [
+          { "type": "relation", "characterId": "character.xuheng", "amount": 2 }
+        ]
+      },
+      {
+        "id": "decline",
+        "text": "目前没兴趣",
+        "effects": [
+          { "type": "attribute", "attribute": "professional", "amount": 1 }
+        ]
+      }
+    ]
+  },
+  {
     "id": "event.private-equity-introduction",
     "contentStatus": "official",
     "name": "早期项目引荐",

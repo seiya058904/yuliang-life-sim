@@ -5,6 +5,7 @@ import { contentRegistry } from '../content/registry';
 import { balanceConfig } from '../balance/config';
 import { evaluateCondition } from '../engine/conditions';
 import { careerExperienceLabel, careerExperienceStage, careerRequirementsSatisfied } from '../engine/careerProgression';
+import { buildMobilityEntries } from '../engine/mobility';
 
 const categories = ['全部', '基础岗位', '办公室', '技术', '销售', '服务', '管理', '兼职'] as const;
 const states = ['全部', '符合条件', '接近条件', '已申请', '冷却中'] as const;
@@ -21,8 +22,8 @@ const isJobEligible = (job: JobDefinition, game: GameState) => (job.abilityRequi
   && !(job.requiredCapabilities ?? []).some((capability) => !game.unlockedCapabilities.includes(capability));
 
 export function CareerView({ game, dispatch, jobs, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; jobs: readonly JobDefinition[]; onNavigate?: (view: ViewId) => void }) {
-  const [tab, setTab] = useState<'current' | 'market' | 'opportunities' | 'applications' | 'side-jobs' | 'history'>('market');
-  const labels = { current: '当前工作', market: '招聘市场', opportunities: '工作机会', applications: '我的申请', 'side-jobs': '我的兼职', history: '职业履历' } as const;
+  const [tab, setTab] = useState<'current' | 'market' | 'opportunities' | 'applications' | 'side-jobs' | 'history' | 'mobility'>('market');
+  const labels = { current: '当前工作', market: '招聘市场', opportunities: '工作机会', applications: '我的申请', 'side-jobs': '我的兼职', history: '职业履历', mobility: '跨行业' } as const;
   return <section className="career-section">
     <div className="section-heading compact"><div><span className="eyebrow">职业</span><h1>{labels[tab]}</h1></div><p>公开招聘和特殊机会分开；所有申请、Offer 与兼职资格都有明确状态。</p></div>
     <div className="filter-row" aria-label="职业导航">{Object.entries(labels).map(([id, label]) => <button key={id} className={tab === id ? 'filter-button selected' : 'filter-button'} onClick={() => setTab(id as typeof tab)}>{label}</button>)}</div>
@@ -32,7 +33,13 @@ export function CareerView({ game, dispatch, jobs, onNavigate }: { game: GameSta
     {tab === 'applications' && <ApplicationList game={game} jobs={jobs} dispatch={dispatch} onNavigate={onNavigate} />}
     {tab === 'side-jobs' && <SideJobList game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'history' && <HistoryList game={game} jobs={jobs} />}
+    {tab === 'mobility' && <MobilityPanel game={game} jobs={jobs} onNavigate={onNavigate} />}
   </section>;
+}
+
+function MobilityPanel({ game, jobs, onNavigate }: { game: GameState; jobs: readonly JobDefinition[]; onNavigate?: (view: ViewId) => void }) {
+  const entries = buildMobilityEntries({ jobs }, game, 6);
+  return <section className="detail-panel" aria-label="跨行业流动"><div className="section-heading compact"><div><span className="eyebrow">跨行业流动 · 不设硬性壁垒</span><h2>换行业的距离</h2></div><p>这里如实列出你与若干其他行业岗位之间的差距，以及你已经带走的经验；不同行业的经历不会清零，积累会一直有效。</p></div>{entries.length === 0 ? <p className="muted">当前条件已经覆盖大多数公开岗位。</p> : <div className="item-list">{entries.map(({ job, experienceGaps, statGaps, transferableStrengths }) => <div className="item-row" key={job.id}><div><h3>{job.name}</h3>{transferableStrengths.length > 0 && <p className="muted">可迁移基础：{transferableStrengths.join('、')}</p>}<div className="requirement-box">{[...experienceGaps.map((hint) => hint.label + (hint.currentValue !== undefined && hint.requiredValue !== undefined ? `（${hint.currentValue}/${hint.requiredValue}）` : '')), ...statGaps].map((label) => <strong key={label}>还差 · {label}</strong>)}</div></div><div className="button-pair"><button className="text-button" onClick={() => onNavigate?.('work')}>去工作积累</button></div></div>)}</div>}</section>;
 }
 
 function CurrentEmployment({ game, jobs, dispatch }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void }) {

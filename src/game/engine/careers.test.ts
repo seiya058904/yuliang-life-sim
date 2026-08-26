@@ -15,8 +15,9 @@ describe('career market', () => {
     const repeated = generateVacancies(state, contentRegistry, balance);
 
     expect(first).toEqual(repeated);
-    expect(first.length).toBeGreaterThanOrEqual(8);
-    expect(first.length).toBeLessThanOrEqual(12);
+    expect(first.length).toBeGreaterThanOrEqual(10);
+    // Ladder anchors may exceed the nominal maximum by a couple of slots.
+    expect(first.length).toBeLessThanOrEqual(18);
     expect(first.some((vacancy) => vacancy.jobId === 'job.seed-office' && vacancy.companyId === 'company.xinghe')).toBe(true);
     expect(first.some((vacancy) => vacancy.jobId === 'job.seed-office' && vacancy.companyId === 'company.yuanwang')).toBe(true);
   });
@@ -48,6 +49,8 @@ describe('career market', () => {
 
   it('connects the education course qualification to the long-term teaching assistant route', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 24);
+    state.calendar = { ...state.calendar, month: 2 };
+    state.time = { ...state.time, day: 40 };
     const job = contentRegistry.jobs.find((entry) => entry.id === 'job.course-teaching-assistant')!;
     const before = requirementHints(job, state, contentRegistry, balanceConfig);
     const after = requirementHints(job, { ...state, ability: 14, reputation: 3, qualifications: ['qualification.workplace-basics'] }, contentRegistry, balanceConfig);

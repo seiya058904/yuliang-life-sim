@@ -73,7 +73,7 @@ export const balanceConfig: BalanceConfig = {
   rewardTiers: { small: 0.55, normal: 1, large: 1.8, milestone: 3 },
   relationshipStageThresholds: [0, 25, 50, 75],
   stageThresholds: { start: 0, growing: 2500, stable: 10000, wealthy: 50000 },
-  vacancyCountRange: [8, 12],
+  vacancyCountRange: [10, 18],
   vacancyDurationDays: 28,
   applicationCooldownDays: 28,
   applicationOfferDurationRange: [7, 14],

@@ -1806,3 +1806,49 @@ test('evolves NPC and company timelines from world state and archives them', asy
   const worldAfterReload = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
   await expect(worldAfterReload).toContainText('北部转岗培训中心');
 });
+test('shows cross-industry mobility distance and a senior expert ladder', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 20_000;
+    state.ability = 45;
+    state.careerExperience = { retail: 60, customer_service: 40, operations: 30, data: 152, office: 138, project: 58 };
+    state.qualifications = [];
+    state.vacancies = [];
+    state.marketJobIds = [];
+    // The boundary regenerates under the NEXT month's rotation phase: this seed lands on a
+    // senior-rotation week featuring the 首席分析专家 anchor.
+    state.time = { day: 25, hour: 9, minute: 0 };
+    state.lastSettledDay = 24;
+    state.majorEventsThisMonth = 3;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '运行 1 个月' }).first().click();
+  await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
+  await page.getByRole('button', { name: '进入下个月' }).click();
+
+  // Dedicated tab keeps the market list untouched while framing movement between industries.
+  await page.getByRole('button', { name: /招聘市场|当前工作|工作机会/ }).first().click();
+  await page.getByRole('button', { name: '跨行业', exact: true }).click();
+  const mobility = page.locator('section[aria-label="跨行业流动"]');
+  await expect(mobility).toContainText('换行业的距离');
+  await expect(mobility).toContainText('还差');
+  await expect(mobility).toContainText('可迁移基础');
+
+  // Senior anchors remain reachable in the regenerated public market with real hints.
+  await page.getByRole('button', { name: '招聘市场', exact: true }).first().click();
+  await page.getByLabel('搜索岗位或公司').fill('首席分析专家');
+  const seniorCard = page.locator('.job-card', { hasText: '首席分析专家' });
+  await expect(seniorCard).toBeVisible();
+  await expect(seniorCard).toContainText('还需准备');
+  await expect(seniorCard.getByRole('button', { name: '申请职位' })).toBeDisabled();
+
+  await page.reload();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '跨行业', exact: true }).click();
+  await expect(page.locator('section[aria-label="跨行业流动"]')).toContainText('换行业的距离');
+});

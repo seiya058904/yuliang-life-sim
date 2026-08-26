@@ -248,15 +248,16 @@ describe('seed content registry', () => {
     expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.huanliu').map((vacancy) => vacancy.jobId)).toEqual([
       'job.huanliu-warehouse-assistant',
       'job.huanliu-dispatch-coordinator',
+      'job.city-dispatch-manager',
     ]);
   });
 
   it('exposes the official education company route and its public vacancies', () => {
     expect(contentRegistry.companies?.find((company) => company.id === 'company.greenfield-education')).toMatchObject({
-      name: '青禾教育科技', locationId: 'location.central', jobIds: expect.arrayContaining(['job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist', 'job.course-teaching-assistant']),
+      name: '青禾教育科技', locationId: 'location.central', jobIds: expect.arrayContaining(['job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist', 'job.course-teaching-assistant', 'job.learning-product-lead']),
     });
     expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.greenfield-education').map((vacancy) => vacancy.jobId)).toEqual([
-      'job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist', 'job.course-teaching-assistant',
+      'job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist', 'job.course-teaching-assistant', 'job.learning-product-lead',
     ]);
   });
 
@@ -273,7 +274,7 @@ describe('seed content registry', () => {
 
   it('exposes the first travel career route with a reachable public vacancy', () => {
     expect(contentRegistry.companies).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'company.harbor-travel', name: '栖岸文旅', jobIds: ['job.travel-product-assistant'] }),
+      expect.objectContaining({ id: 'company.harbor-travel', name: '栖岸文旅', jobIds: expect.arrayContaining(['job.travel-product-assistant', 'job.travel-experience-designer']) }),
     ]));
     expect(contentRegistry.vacancyTemplates).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'vacancy-template.travel-assistant-harbor', jobId: 'job.travel-product-assistant', companyId: 'company.harbor-travel' }),
@@ -282,10 +283,10 @@ describe('seed content registry', () => {
 
   it('exposes the low-barrier ecommerce operations route with a progression ladder', () => {
     expect(contentRegistry.companies).toEqual(expect.arrayContaining([
-      expect.objectContaining({ id: 'company.starbridge-ecommerce', name: '星桥电商', jobIds: expect.arrayContaining(['job.order-operations-assistant', 'job.ecommerce-operations-assistant', 'job.ecommerce-operations-specialist', 'job.growth-operations']) }),
+      expect.objectContaining({ id: 'company.starbridge-ecommerce', name: '星桥电商', jobIds: expect.arrayContaining(['job.order-operations-assistant', 'job.ecommerce-operations-assistant', 'job.ecommerce-operations-specialist', 'job.growth-operations', 'job.starbridge-growth-director']) }),
     ]));
     expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.starbridge-ecommerce').map((vacancy) => vacancy.jobId)).toEqual([
-      'job.order-operations-assistant', 'job.ecommerce-operations-assistant', 'job.ecommerce-operations-specialist', 'job.growth-operations',
+      'job.order-operations-assistant', 'job.ecommerce-operations-assistant', 'job.ecommerce-operations-specialist', 'job.growth-operations', 'job.starbridge-growth-director',
     ]);
   });
 
@@ -324,7 +325,7 @@ describe('seed content registry', () => {
       expect.objectContaining({ id: 'company.neworder-auto', name: '新序汽车服务', jobIds: expect.arrayContaining(['job.auto-service-assistant', 'job.sales-consultant-assistant', 'job.auto-sales-consultant', 'job.auto-customer-operations']) }),
     ]));
     expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.neworder-auto').map((vacancy) => vacancy.jobId)).toEqual([
-      'job.auto-service-assistant', 'job.sales-consultant-assistant', 'job.auto-sales-consultant', 'job.auto-customer-operations',
+      'job.auto-service-assistant', 'job.sales-consultant-assistant', 'job.auto-sales-consultant', 'job.auto-customer-operations', 'job.auto-regional-trainer',
     ]);
   });
 
@@ -333,7 +334,7 @@ describe('seed content registry', () => {
       expect.objectContaining({ id: 'company.frame-media', name: '映界传媒', jobIds: expect.arrayContaining(['job.production-assistant', 'job.content-editor', 'job.video-operations']) }),
     ]));
     expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.frame-media').map((vacancy) => vacancy.jobId)).toEqual([
-      'job.production-assistant', 'job.content-editor', 'job.video-operations',
+      'job.production-assistant', 'job.content-editor', 'job.video-operations', 'job.media-producer-lead',
     ]);
   });
 
@@ -342,7 +343,7 @@ describe('seed content registry', () => {
       expect.objectContaining({ id: 'company.isle-lifestyle', name: '一屿生活科技', jobIds: expect.arrayContaining(['job.customer-experience-assistant', 'job.product-support-specialist', 'job.user-research-assistant', 'job.lifestyle-product-operations']) }),
     ]));
     expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.isle-lifestyle').map((vacancy) => vacancy.jobId)).toEqual([
-      'job.customer-experience-assistant', 'job.product-support-specialist', 'job.user-research-assistant', 'job.lifestyle-product-operations',
+      'job.customer-experience-assistant', 'job.product-support-specialist', 'job.user-research-assistant', 'job.lifestyle-product-operations', 'job.lifestyle-product-expert',
     ]);
   });
 
