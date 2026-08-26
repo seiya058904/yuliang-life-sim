@@ -10,6 +10,7 @@ export const officialBusinesses = [
       "business",
       "starter"
     ],
+    "locationId": "location.central",
     "price": 3200,
     "baseRevenue": 420,
     "baseGoodsCost": 140,
@@ -45,6 +46,7 @@ export const officialBusinesses = [
       "remote",
       "technology"
     ],
+    "locationId": "location.industrial",
     "price": 7800,
     "baseRevenue": 840,
     "baseGoodsCost": 350,
@@ -92,6 +94,7 @@ export const officialBusinesses = [
       "business",
       "career"
     ],
+    "locationId": "location.riverside",
     "price": 14500,
     "baseRevenue": 1320,
     "baseGoodsCost": 320,
@@ -131,4 +134,3 @@ export const officialBusinesses = [
     }
   }
 ] satisfies readonly BusinessDefinition[];
-

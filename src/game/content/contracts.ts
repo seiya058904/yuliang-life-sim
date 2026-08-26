@@ -257,6 +257,7 @@ export interface BusinessDefinition extends ContentMeta {
   inventoryLevels: readonly number[];
   requirements?: ConditionDefinition;
   effects?: readonly EffectDefinition[];
+  locationId?: ContentId;
 }
 
 export interface AssetDefinition extends ContentMeta {

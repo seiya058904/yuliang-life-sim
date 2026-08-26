@@ -141,6 +141,18 @@ describe('game action dispatcher', () => {
     expect(updated.state.lifeHistory?.at(-1)).toMatchObject({ title: '调整早餐与咖啡档经营', category: 'business' });
   });
 
+  it('records the business location when a business is purchased', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 5000;
+    state.unlockedCapabilities.push('business_license');
+    state.unlockedBusinessIds.push('business.seed-kiosk');
+
+    const bought = dispatchGameAction(state, { type: 'buy_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+
+    expect(bought.error).toBeUndefined();
+    expect(bought.state.locationVisits?.['location.central']).toBe(1);
+  });
+
   it('keeps business capital separate and records one dilutive funding round', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 10000;

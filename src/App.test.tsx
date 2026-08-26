@@ -136,6 +136,9 @@ describe('余量 app flow', () => {
 
     await user.click(screen.getByRole('button', { name: '财富' }));
     expect(screen.getByRole('heading', { name: '企业经营' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '经营地点' })).toBeInTheDocument();
+    expect(screen.getByText(/中央区 · 澄川市/)).toBeInTheDocument();
+    expect(screen.getByText('已访问 0 次')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '调整定价' }));
     expect(screen.getByText(/定价 3/)).toBeInTheDocument();
   });

@@ -13,6 +13,7 @@ import { appendLifeRecord } from './lifeHistory';
 import { advanceStorylineStage, getStoryline, getStorylineStage } from './storylines';
 import { careerRequirementsSatisfied } from './careerProgression';
 import { applyCareerExperience } from './careerProgression';
+import { recordLocationVisit } from './locations';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
 const find = <T extends { id: string }>(entries: readonly T[], id: string): T | undefined => entries.find((entry) => entry.id === id);
@@ -501,6 +502,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (state.cash - business.price < reserveRequired(state, content)) return fail(input, '现金不足以购买这项生意');
       state.cash -= business.price;
       state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: 100, fundingRaised: 0, fundingRound: 0 };
+      if (business.locationId) recordLocationVisit(state, business.locationId, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: business.price, label: `购买${business.name}`, sourceType: 'business', sourceId: business.id });
       addLifeRecord(state, { category: 'business', title: `买入${business.name}`, sourceId: business.id, amount: -business.price });
       effects.push({ type: 'cash', amount: -business.price, reason: '购买生意' });
