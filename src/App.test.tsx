@@ -22,6 +22,15 @@ describe('余量 app flow', () => {
     expect(screen.getByText('已暂停')).toBeInTheDocument();
   });
 
+  it('discovers an official course and schedules it into a free planning slot', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: '职场基础课' })).toBeInTheDocument();
+    await user.click(screen.getAllByRole('button', { name: '安排课程' })[0]);
+    expect(screen.getByText('课程 · 职场基础课')).toBeInTheDocument();
+  });
+
   it('submits a public-market application without reopening the legacy recruitment dialog', async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -14,6 +14,7 @@ const DURATIONS: readonly ActivityDuration[] = [60, 120, 240];
 export interface ScheduleValidationContent {
   jobs: readonly JobDefinition[];
   activities?: ContentRegistry['activities'];
+  courses?: ContentRegistry['courses'];
 }
 
 export function createDefaultWeeklyPlan(): WeeklyPlan {
@@ -39,8 +40,8 @@ export function validateWeeklyPlan(plan: WeeklyPlan, employment: EmploymentState
     const dayPlan = plan.days[weekday];
     const slots: readonly [PlanSlotName, PlannedActivity][] = [['day', dayPlan.day], ['evening', dayPlan.evening]];
     for (const [slot, activity] of slots) {
-      const duration = activity.kind === 'free' ? undefined : activity.kind === 'activity' ? undefined : activity.durationMinutes;
-      if (activity.kind !== 'free' && activity.kind !== 'activity' && !DURATIONS.includes(activity.durationMinutes)) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}时长无效`);
+      const duration = activity.kind === 'free' ? undefined : activity.kind === 'activity' ? undefined : activity.kind === 'course' ? content.courses?.find((course) => course.id === activity.courseId)?.durationMinutes : activity.durationMinutes;
+      if ((activity.kind === 'study' || activity.kind === 'side_job') && !DURATIONS.includes(activity.durationMinutes)) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}时长无效`);
       if (activity.kind === 'side_job') {
         const job = content.jobs.find((entry) => entry.id === activity.jobId);
         if (!job) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}兼职不存在`);
@@ -52,6 +53,11 @@ export function validateWeeklyPlan(plan: WeeklyPlan, employment: EmploymentState
         if (!option) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}活动选项不存在`);
         else if (slot === 'day' && option.durationMinutes > DAY_END - DAY_START) errors.push(`周${weekday}白天活动时长超出可规划时间`);
         else if (slot === 'evening' && option.durationMinutes > EVENING_END - EVENING_START) errors.push(`周${weekday}晚间活动时长超出可规划时间`);
+      } else if (activity.kind === 'course') {
+        const course = content.courses?.find((entry) => entry.id === activity.courseId);
+        if (!course) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}课程不存在`);
+        if (slot === 'day' && duration !== undefined && duration > DAY_END - DAY_START) errors.push(`周${weekday}白天课程时长超出可规划时间`);
+        if (slot === 'evening' && duration !== undefined && duration > EVENING_END - EVENING_START) errors.push(`周${weekday}晚间课程时长超出可规划时间`);
       } else {
         if (slot === 'day' && activity.kind !== 'free' && duration! > DAY_END - DAY_START) errors.push(`周${weekday}白天时长超出可规划时间`);
         if (slot === 'evening' && activity.kind !== 'free' && duration! > EVENING_END - EVENING_START) errors.push(`周${weekday}晚间时长超出可规划时间`);
@@ -100,6 +106,7 @@ export function activityAtTime(time: GameTime, plan: WeeklyPlan, employment: Emp
 function durationOf(activity: PlannedActivity, content: ContentRegistry): number {
   if (activity.kind === 'free') return 0;
   if (activity.kind === 'activity') return getActivityOption(getActivityDefinition(content, activity.activityId)!, activity.optionId)?.durationMinutes ?? 0;
+  if (activity.kind === 'course') return content.courses?.find((course) => course.id === activity.courseId)?.durationMinutes ?? 0;
   return activity.durationMinutes;
 }
 
@@ -108,6 +115,7 @@ function plannedActivity(day: number, startMinute: number, planned: Exclude<Plan
   return {
     ...activity(day, startMinute, startMinute + duration, planned.kind === 'activity' ? 'activity' : planned.kind, planned.kind === 'side_job' ? planned.jobId : undefined),
     ...(planned.kind === 'activity' ? { activityId: planned.activityId, optionId: planned.optionId } : {}),
+    ...(planned.kind === 'course' ? { courseId: planned.courseId } : {}),
   };
 }
 

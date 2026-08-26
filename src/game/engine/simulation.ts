@@ -143,6 +143,38 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     output.push({ type: 'stat', stat: 'ability', amount });
     return;
   }
+  if (activity.kind === 'course') {
+    const course = content.courses?.find((entry) => entry.id === activity.courseId);
+    if (!course) {
+      output.push({ type: 'message', text: '课程已下架，未能完成本次安排' });
+      return;
+    }
+    const completed = state.courseProgress?.[course.id] ?? 0;
+    const lastCompletedDay = [...(state.lifeHistory ?? [])].reverse().find((entry) => entry.sourceId === course.id)?.day;
+    const cooldownReady = lastCompletedDay === undefined || state.time.day - lastCompletedDay >= (course.cooldownDays ?? 0);
+    const maxReady = course.maxCompletions === undefined || completed < course.maxCompletions;
+    if (!cooldownReady || !maxReady || (course.requirements && !evaluateCondition(course.requirements, state, content, balance))) {
+      output.push({ type: 'message', text: maxReady ? '当前条件还不适合完成这门课程' : '这门课程已经完成过了' });
+      return;
+    }
+    if (state.cash < course.cashCost) {
+      output.push({ type: 'message', text: `现金不足，未能完成${course.name}` });
+      return;
+    }
+    state.cash -= course.cashCost;
+    recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'education', amount: course.cashCost, label: `课程 · ${course.name}`, sourceType: 'course', sourceId: course.id });
+    state.courseProgress ??= {};
+    state.courseProgress[course.id] = completed + 1;
+    for (const tag of course.experienceTags ?? []) {
+      state.careerExperience ??= {};
+      state.careerExperience[tag] = (state.careerExperience[tag] ?? 0) + (course.experienceGain ?? 0);
+    }
+    if (course.qualificationId && !state.qualifications?.includes(course.qualificationId)) state.qualifications = [...(state.qualifications ?? []), course.qualificationId];
+    applyContentEffects(state, course.effects ?? [], content, balance, output);
+    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.course.${course.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `完成课程：${course.name}`, detail: course.qualificationId ? `获得资格：${course.qualificationId}` : '课程已完成', sourceId: course.id, amount: -course.cashCost });
+    output.push({ type: 'message', text: `${course.name}已完成` });
+    return;
+  }
   if (activity.kind !== 'work' && activity.kind !== 'side_job') return;
   const job = content.jobs.find((entry) => entry.id === activity.jobId);
   if (!job || !jobAvailable(state, job, content, balance)) return;

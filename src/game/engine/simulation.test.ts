@@ -54,6 +54,22 @@ describe('automatic simulation', () => {
     expect(result.state.lifeHistory?.some((entry) => entry.sourceId === 'activity.seed-movie' && entry.title === '看电影 · 普通影厅')).toBe(true);
   });
 
+  it('settles a scheduled course into qualification, career experience, ledger and life history', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 23);
+    initial.cash = 1000;
+    const plan = structuredClone(initial.weeklyPlan);
+    plan.days[6].day = { kind: 'course', courseId: 'course.workplace-basics' };
+    const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: false, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 6 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.courseProgress?.['course.workplace-basics']).toBe(1);
+    expect(result.state.qualifications).toContain('qualification.workplace-basics');
+    expect(result.state.careerExperience?.office).toBe(2);
+    expect(result.state.financialLedger?.entries.some((entry) => entry.sourceId === 'course.workplace-basics' && entry.category === 'education')).toBe(true);
+    expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'course.workplace-basics' && entry.title === '完成课程：职场基础课')).toBe(true);
+  });
+
   it('closes a month after four weeks without requiring a confirmation action', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 17);

@@ -16,6 +16,7 @@ export type PlanSlot = 'day' | 'evening';
 export type ActivityDuration = 60 | 120 | 180 | 240 | 2880;
 export type PlannedActivity =
   | { kind: 'study'; durationMinutes: ActivityDuration }
+  | { kind: 'course'; courseId: ContentId }
   | { kind: 'side_job'; jobId: ContentId; durationMinutes: ActivityDuration }
   | { kind: 'activity'; activityId: ContentId; optionId: string }
   | { kind: 'free'; durationMinutes?: ActivityDuration };
@@ -288,6 +289,18 @@ export interface ActivityDefinition extends ContentMeta {
   locationId?: ContentId;
 }
 
+export interface CourseDefinition extends ContentMeta {
+  durationMinutes: 60 | 120 | 180 | 240;
+  cashCost: number;
+  effects?: readonly EffectDefinition[];
+  experienceTags?: readonly CareerExperienceId[];
+  experienceGain?: number;
+  qualificationId?: ContentId;
+  cooldownDays?: number;
+  maxCompletions?: number;
+  requirements?: ConditionDefinition;
+}
+
 export interface RelationshipInteractionDefinition extends ContentMeta {
   characterId: ContentId;
   category: 'meal' | 'work' | 'outing' | 'travel' | 'gift' | 'business';
@@ -520,6 +533,7 @@ export interface ContentRegistry {
   milestones: readonly MilestoneDefinition[];
   vocabulary: VocabularyDefinition;
   activities?: readonly ActivityDefinition[];
+  courses?: readonly CourseDefinition[];
   investments?: readonly InvestmentDefinition[];
   companies?: readonly CompanyDefinition[];
   dialogues?: readonly DialogueDefinition[];
@@ -587,13 +601,14 @@ export interface EmploymentState {
   lastNegotiationDay?: number;
 }
 
-export type ActivityKind = 'sleep' | 'life' | 'work' | 'study' | 'side_job' | 'activity' | 'free';
+export type ActivityKind = 'sleep' | 'life' | 'work' | 'study' | 'course' | 'side_job' | 'activity' | 'free';
 
 export interface ActivityState {
   kind: ActivityKind;
   start: GameTime;
   end: GameTime;
   jobId?: ContentId;
+  courseId?: ContentId;
   activityId?: ContentId;
   optionId?: string;
 }
@@ -669,6 +684,7 @@ export interface GameState {
   lastFinancialSummary?: MonthlyFinancialSummary;
   pendingMonthlySummary?: PendingMonthlySummary;
   jobExperience: Record<ContentId, number>;
+  courseProgress?: Record<ContentId, number>;
   careerExperience?: Partial<Record<CareerExperienceId, number>>;
   qualifications?: ContentId[];
   inventory: Record<ContentId, number>;

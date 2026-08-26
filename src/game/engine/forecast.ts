@@ -52,6 +52,15 @@ function applyPlanned(activity: PlannedActivity, state: GameState, content: Cont
     result.attributes.knowledge = (result.attributes.knowledge ?? 0) + Math.max(1, Math.floor(activity.durationMinutes / 120));
     return;
   }
+  if (activity.kind === 'course') {
+    const course = content.courses?.find((entry) => entry.id === activity.courseId);
+    if (!course) return;
+    result.hours.study += course.durationMinutes / 60;
+    result.expense += course.cashCost;
+    const knowledgeGain = (course.effects ?? []).reduce((sum, effect) => effect.type === 'attribute' && effect.attribute === 'knowledge' ? sum + effect.amount : sum, 0);
+    result.attributes.knowledge = (result.attributes.knowledge ?? 0) + knowledgeGain;
+    return;
+  }
   if (activity.kind === 'side_job') {
     const job = content.jobs.find((entry) => entry.id === activity.jobId);
     if (!job || employmentKind(job) === 'gig' || !state.acquiredSideJobs?.[job.id]) return;
