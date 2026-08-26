@@ -8,7 +8,7 @@ Scope: this matrix audits `docs/NEXT-UPDATE-FOUNDATION.md` as the sole product/c
 | --- | --- |
 | Branch | `codex/yuliang-completion` |
 | Content validation | `npm run content:validate` passed: 12 jobs, 28 items, 6 housing, 5 characters, 29 events, 4 event chains, 3 businesses, 4 assets, 1 activity, 2 investments. |
-| Unit/component tests | `npm test` passed: 18 files, 70 tests. |
+| Unit/component tests | `npm test` passed: 19 files, 73 tests. |
 | Browser E2E | `npm run e2e` passed: 2 tests, desktop and mobile smoke flow. |
 | Production build | `npm run build` passed: content validation, TypeScript build, Vite build. |
 
@@ -74,6 +74,14 @@ Allowed statuses: `IMPLEMENTED`, `IMPLEMENTED VIA EQUIVALENT EXISTING SYSTEM`, `
 | Long-term simulation, world history, yearly/five-year summaries, final wealth/reflection | `docs/NEXT-UPDATE-FOUNDATION.md:24303-25763`, `28449-30752` | `src/game/engine/calendar.ts`; `src/game/engine/simulation.ts`; `src/game/engine/monthlySettlement.ts`; `src/game/store/gameStore.ts`; `src/App.tsx` (`MonthlySummary`, `MonthlySummaryModal`, `ProfileView`); `src/game/ui/LifeHistoryList.tsx` | EXTENSION REQUIRED | Week/day/month time loop, auto-repeat weekly plan, month-close summary, financial history, persisted life history, save persistence, and net-worth calculation exist. Missing: "continue 1 month/3 months" convenience control, yearly/five-year/ten-year summaries, long-term world/company/NPC/location histories, filterable history browser categories, world-level wealth milestones/reflection, no-ending framing as surfaced content, and stress tests for multi-year simulation scale. | Runtime history surfaces: lifeHistory persists career/purchase/housing/relationship/event/business/asset/investment records; financialHistory keeps last 12 months; employmentHistory exists; ambientLog keeps last 20 entries; monthlyHighlights reset after month summary. No yearly/world-history entities. | Player can keep a life running for months/years, pause on meaningful opportunities, inspect persisted life records without scores, preserve old relationships/companies/locations, and trigger future non-ending reflection milestones at high wealth. | `npm test`; future long-run simulation script and browser smoke: run 1 year, acknowledge monthly summaries, inspect history/reflection surfaces. | Task 2A tests cover life-history helper de-duplication, action-boundary records, old-save migration, and Profile newest-first rendering. Current `scripts/simulate.ts` exists but no Phase 0 run was used as evidence for multi-year completeness. |
 
 ## Self-Review
+
+## Latest Vertical Slice Evidence
+
+| Slice | Reachable loop | Evidence | Remaining gap |
+| --- | --- | --- | --- |
+| Consumable use | Shop purchase → inventory → Shop inventory panel → use once → effect/inventory/history persistence | `src/game/engine/actions.ts` (`use_item`), `src/App.tsx` (`InventoryPanel`), `src/game/engine/actions.test.ts`; `npm test` 19/73, build and desktop/mobile E2E pass | Services, subscriptions, wishlist and richer consumption content remain Phase 3 extensions. |
+
+## Self-Review Evidence
 
 | Review item | Result |
 | --- | --- |

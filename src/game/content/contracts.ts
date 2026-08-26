@@ -726,6 +726,7 @@ export type GameAction =
   | { type: 'rest' }
   | { type: 'accept_job'; jobId: ContentId }
   | { type: 'purchase_items'; items: Record<ContentId, number> }
+  | { type: 'use_item'; itemId: ContentId; quantity?: number }
   | { type: 'sell_item'; itemId: ContentId; quantity: number }
   | { type: 'move_housing'; housingId: ContentId; mode: 'rent' | 'owned' }
   | { type: 'buy_business'; businessId: ContentId }

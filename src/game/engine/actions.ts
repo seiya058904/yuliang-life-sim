@@ -385,6 +385,24 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       effects.push({ type: 'cash', amount: -total, reason: '购物结算' });
       break;
     }
+    case 'use_item': {
+      const item = find(content.items, action.itemId);
+      const quantity = action.quantity ?? 1;
+      if (!item || !item.consumable) return fail(input, '这件商品不能直接使用');
+      if (!Number.isInteger(quantity) || quantity <= 0 || (state.inventory[item.id] ?? 0) < quantity) return fail(input, '可使用数量不足');
+      state.inventory[item.id] -= quantity;
+      if (item.lifestyleDelta) state.lifestyle += item.lifestyleDelta * quantity;
+      for (const [stat, amount] of Object.entries(item.statEffects ?? {})) {
+        if (stat === 'lifestyle') state.lifestyle += amount * quantity;
+        if (stat === 'reputation') state.reputation += amount * quantity;
+        if (stat === 'ability') applyAttributeDelta(state, 'knowledge', amount * quantity);
+      }
+      for (const [attribute, amount] of Object.entries(item.attributeEffects ?? {})) applyAttributeDelta(state, attribute as AttributeId, amount * quantity);
+      applyContentEffects(state, item.effects ?? [], content, balance, effects);
+      addLifeRecord(state, { category: 'purchase', title: `使用${item.name}`, detail: quantity > 1 ? `数量 ${quantity}` : '已从库存消耗', sourceId: item.id });
+      effects.push({ type: 'message', text: `已使用${item.name}` });
+      break;
+    }
     case 'sell_item': {
       const item = find(content.items, action.itemId);
       if (!item || !item.sellable) return fail(input, '这件商品不能出售');

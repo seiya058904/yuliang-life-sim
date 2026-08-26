@@ -41,6 +41,16 @@ describe('game action dispatcher', () => {
     expect(result.effects.filter((effect) => effect.type === 'time')).toHaveLength(0);
   });
 
+  it('uses an owned consumable and records its effect without charging again', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.inventory['item.seed-coffee'] = 1;
+    const result = dispatchGameAction(state, { type: 'use_item', itemId: 'item.seed-coffee' }, contentRegistry, balanceConfig);
+    expect(result.error).toBeUndefined();
+    expect(result.state.inventory['item.seed-coffee']).toBe(0);
+    expect(result.state.lifestyle).toBe(state.lifestyle + 1);
+    expect(result.state.lifeHistory.at(-1)).toMatchObject({ category: 'purchase', title: '使用现磨咖啡' });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);
