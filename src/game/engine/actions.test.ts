@@ -183,6 +183,22 @@ describe('game action dispatcher', () => {
     expect(exited.state.lifeHistory?.at(-1)).toMatchObject({ title: '退出早餐与咖啡档', category: 'business' });
   });
 
+  it('lists a mature business and sells a partial public equity stake', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 10000;
+    state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, fundingRaised: 4800, fundingRound: 2, equityPercent: 65 };
+    const listed = dispatchGameAction(state, { type: 'list_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    const sold = dispatchGameAction(listed.state, { type: 'sell_business_equity', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
+
+    expect(listed.error).toBeUndefined();
+    expect(listed.state.businesses['business.seed-kiosk'].listed).toBe(true);
+    expect(sold.error).toBeUndefined();
+    expect(sold.state.businesses['business.seed-kiosk'].equityPercent).toBe(55);
+    expect(sold.state.cash).toBe(10000 + 520);
+    expect(sold.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 520, cashDelta: 520 });
+    expect(sold.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '出售早餐与咖啡档 10% 股权' });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);

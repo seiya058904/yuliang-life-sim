@@ -561,6 +561,7 @@ export interface BusinessHolding {
   equityPercent?: number;
   fundingRaised?: number;
   fundingRound?: number;
+  listed?: boolean;
 }
 
 export interface AssetHolding {
@@ -798,6 +799,8 @@ export type GameAction =
   | { type: 'update_business'; businessId: ContentId; priceLevel: number; wageLevel: number; inventoryLevel: number }
   | { type: 'inject_business_capital'; businessId: ContentId; amount: number }
   | { type: 'raise_business_funding'; businessId: ContentId }
+  | { type: 'list_business'; businessId: ContentId }
+  | { type: 'sell_business_equity'; businessId: ContentId; percent: number }
   | { type: 'sell_business'; businessId: ContentId }
   | { type: 'buy_asset'; assetId: ContentId }
   | { type: 'sell_asset'; assetId: ContentId }
