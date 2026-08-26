@@ -8,8 +8,8 @@ Scope: this matrix audits `docs/NEXT-UPDATE-FOUNDATION.md` as the sole product/c
 | --- | --- |
 | Branch | `codex/yuliang-completion` |
 | Content validation | `npm run content:validate` passed: 40 jobs, 34 items, 9 services, 5 subscriptions, 6 housing, 7 characters, 36 events, 4 event chains, 4 businesses, 12 assets, 34 activities, 6 venues, 4 courses, 8 investments. |
-| Unit/component tests | `npm test` passed: 20 files, 282 tests. |
-| Browser E2E | `npm run e2e` passed: 75 specs / 150 project runs (including staged controlling-stake entry and board-decision persistence on desktop and mobile), including named-city-venue, career, shop, dining/concert/home/cinema/fitness/travel/contact-specific activities, wealth, social, city, annual-review, asset, business, service/subscription, wishlist, diamond-pendant, camping-gear/weekend-camping, warehouse-to-office, first-real-project, big-promotion, client-poach, employee-purchase Storylines, independent-public-equity, and persistence flows on desktop and mobile. |
+| Unit/component tests | `npm test` passed: 21 files, 285 tests. |
+| Browser E2E | `npm run e2e` passed: 74 specs / 148 project runs (including staged controlling-stake entry, board decisions, and world-coupled NPC/company evolution on desktop and mobile), including named-city-venue, career, shop, dining/concert/home/cinema/fitness/travel/contact-specific activities, wealth, social, city, annual-review, asset, business, service/subscription, wishlist, diamond-pendant, camping-gear/weekend-camping, warehouse-to-office, first-real-project, big-promotion, client-poach, employee-purchase Storylines, independent-public-equity, and persistence flows on desktop and mobile. |
 | Production build | `npm run build` passed: content validation, TypeScript build, Vite build. |
 
 ## Content Counts
