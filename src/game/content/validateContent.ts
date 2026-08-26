@@ -217,6 +217,15 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
   });
   registry.housing.forEach((home) => { if (home.rentPerDay < 0 || home.valuation < 0 || home.furnitureCapacity < 0) errors.push(`住房 ${home.id} 的数值无效`); checkLocation(home.locationId, `住房 ${home.id}`); checkCondition(home.requirements, `住房 ${home.id}`); checkEffects(home.effects, `住房 ${home.id}`); });
   registry.businesses.forEach((business) => { if (business.price < 0 || business.priceLevels.length === 0 || business.wageLevels.length === 0 || business.inventoryLevels.length === 0) errors.push(`企业 ${business.id} 的配置无效`); checkLocation(business.locationId, `企业 ${business.id}`); checkCondition(business.requirements, `企业 ${business.id}`); checkEffects(business.effects, `企业 ${business.id}`); });
+  registry.companies?.forEach((company) => {
+    let previousYear = 0;
+    for (const entry of company.history ?? []) {
+      if (!Number.isInteger(entry.startYear) || entry.startYear < 1 || entry.startYear <= previousYear || !entry.title.trim()) {
+        errors.push(`公司 ${company.id} 的历史阶段无效`);
+      }
+      previousYear = entry.startYear;
+    }
+  });
   registry.assets.forEach((asset) => { if (asset.price < 0 || asset.valuation < 0 || asset.volatility < 0) errors.push(`资产 ${asset.id} 的数值无效`); checkCondition(asset.requirements, `资产 ${asset.id}`); checkEffects(asset.effects, `资产 ${asset.id}`); });
   registry.characters.forEach((character) => { if (character.initialRelationship < 0 || character.initialRelationship > 100) errors.push(`人物 ${character.id} 的初始关系无效`); });
   registry.events.forEach((event) => {

@@ -104,6 +104,14 @@ describe('seed content registry', () => {
     expect(companies.every((company) => (company.history?.length ?? 0) >= 1)).toBe(true);
   });
 
+  it('rejects malformed company history stages', () => {
+    const malformed = {
+      ...contentRegistry,
+      companies: contentRegistry.companies!.map((company) => company.id === 'company.xinghe' ? { ...company, history: [{ startYear: 0, title: '' }] } : company),
+    };
+    expect(validateContent(malformed).errors).toContain('公司 company.xinghe 的历史阶段无效');
+  });
+
   it('exposes official investment products from the content registry', () => {
     expect(contentRegistry.investments?.filter((investment) => investment.contentStatus === 'official').map((investment) => investment.id)).toEqual([
       'investment.flexible-savings',
