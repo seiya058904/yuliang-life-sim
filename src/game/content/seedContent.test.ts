@@ -115,6 +115,17 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes the first consulting career route with stable company and vacancy IDs', () => {
+    expect(contentRegistry.companies).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'company.clearview-consulting', jobIds: expect.arrayContaining(['job.research-assistant', 'job.business-analysis-assistant', 'job.business-analyst']) }),
+    ]));
+    expect(contentRegistry.vacancyTemplates).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'vacancy-template.research-clearview', jobId: 'job.research-assistant', companyId: 'company.clearview-consulting' }),
+      expect.objectContaining({ id: 'vacancy-template.analysis-assistant-clearview', jobId: 'job.business-analysis-assistant', companyId: 'company.clearview-consulting' }),
+      expect.objectContaining({ id: 'vacancy-template.analyst-clearview', jobId: 'job.business-analyst', companyId: 'company.clearview-consulting' }),
+    ]));
+  });
+
   it('exposes the official headhunter contact and its opportunity-bearing choice', () => {
     expect(contentRegistry.characters.find((character) => character.id === 'character.xuheng')).toMatchObject({ identity: '资深招聘顾问 / 猎头' });
     expect(contentRegistry.events.find((event) => event.id === 'event.headhunter-contact')?.choices[0]).toMatchObject({
