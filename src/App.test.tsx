@@ -156,7 +156,8 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/持股 65%/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '申请上市' }));
     expect(screen.getByRole('button', { name: '已上市' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '锁定至第 29 天' })).toBeDisabled();
+    expect(screen.getAllByRole('button', { name: '锁定至第 29 天' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: '锁定至第 29 天' })[0]).toBeDisabled();
   });
 
   it('exposes a business exit and clears the operating panel after liquidation', async () => {

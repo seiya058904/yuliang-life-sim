@@ -802,6 +802,7 @@ export type GameAction =
   | { type: 'raise_business_funding'; businessId: ContentId }
   | { type: 'list_business'; businessId: ContentId }
   | { type: 'sell_business_equity'; businessId: ContentId; percent: number }
+  | { type: 'buy_business_equity'; businessId: ContentId; percent: number }
   | { type: 'sell_business'; businessId: ContentId }
   | { type: 'buy_asset'; assetId: ContentId }
   | { type: 'sell_asset'; assetId: ContentId }

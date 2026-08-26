@@ -581,6 +581,25 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       effects.push({ type: 'cash', amount: saleValue, reason: '出售公开股权' });
       break;
     }
+    case 'buy_business_equity': {
+      const holding = state.businesses[action.businessId];
+      const business = find(content.businesses, action.businessId);
+      const percent = Math.round(action.percent);
+      const currentEquity = holding?.equityPercent ?? 100;
+      if (!holding || !business) return fail(input, '还没有这项生意');
+      if (!holding.listed) return fail(input, '企业尚未上市');
+      if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
+      if (!Number.isInteger(action.percent) || percent <= 0 || percent > 100 - currentEquity) return fail(input, '可回购的流通股不足');
+      const valuation = (holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio;
+      const purchaseValue = Math.max(0, Math.round(valuation * percent / 100));
+      if (state.cash - purchaseValue < reserveRequired(state, content)) return fail(input, '现金不足以回购企业股权');
+      holding.equityPercent = Math.min(100, currentEquity + percent);
+      state.cash -= purchaseValue;
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_allocation', category: 'business_transfer', amount: purchaseValue, label: `回购${business.name} ${percent}%股权`, sourceType: 'business', sourceId: business.id, cashDelta: -purchaseValue });
+      addLifeRecord(state, { category: 'business', title: `回购${business.name} ${percent}% 股权`, detail: `公开市场回购，当前持股 ${holding.equityPercent}%`, sourceId: business.id, amount: -purchaseValue });
+      effects.push({ type: 'cash', amount: -purchaseValue, reason: '回购公开股权' });
+      break;
+    }
     case 'sell_business': {
       const holding = state.businesses[action.businessId];
       const business = find(content.businesses, action.businessId);

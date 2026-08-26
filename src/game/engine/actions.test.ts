@@ -201,6 +201,13 @@ describe('game action dispatcher', () => {
     expect(sold.state.cash).toBe(10000 + 520);
     expect(sold.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 520, cashDelta: 520 });
     expect(sold.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '出售早餐与咖啡档 10% 股权' });
+
+    const bought = dispatchGameAction(sold.state, { type: 'buy_business_equity', businessId: 'business.seed-kiosk', percent: 5 }, contentRegistry, balanceConfig);
+    expect(bought.error).toBeUndefined();
+    expect(bought.state.businesses['business.seed-kiosk'].equityPercent).toBe(60);
+    expect(bought.state.cash).toBe(10000 + 520 - 260);
+    expect(bought.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', group: 'asset_allocation', amount: 260, cashDelta: -260 });
+    expect(bought.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '回购早餐与咖啡档 5% 股权' });
   });
 
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
