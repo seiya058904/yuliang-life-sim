@@ -635,6 +635,13 @@ export interface BusinessPublicEquityHolding {
   purchaseDay: number;
 }
 
+export interface WorldPublicBusinessEquitySnapshot {
+  businessId: ContentId;
+  percent: number;
+  investedAmount: number;
+  currentValue: number;
+}
+
 export interface AssetHolding {
   assetId: ContentId;
   purchasePrice: number;
@@ -756,6 +763,7 @@ export interface WorldSnapshot {
   locationDevelopment?: Record<ContentId, number>;
   listedBusinessCount?: number;
   publicFloatPercent?: number;
+  publicBusinessEquities?: Record<ContentId, WorldPublicBusinessEquitySnapshot>;
   currentJobId?: ContentId;
 }
 export interface PendingMonthlySummary { month: number; summary: MonthlySummary; financial?: MonthlyFinancialSummary; resumeMode: 'running' | 'planning' | 'paused'; highlights: MonthlyHighlight[]; }

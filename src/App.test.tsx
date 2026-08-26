@@ -444,6 +444,17 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('region', { name: '年度公开股权记录' })).toHaveTextContent('公开流通 35%');
   });
 
+  it('shows annual public business equity positions in world history', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 0, visitedLocationCount: 0, listedBusinessCount: 1, publicFloatPercent: 35, publicBusinessEquities: { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, currentValue: 220 } } }] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+
+    expect(screen.getByRole('region', { name: '年度公开股权记录' })).toHaveTextContent('早餐与咖啡档 10% · 年末估值 ¥220');
+  });
+
   it('shows the long-term wealth tier without ending the life simulation', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

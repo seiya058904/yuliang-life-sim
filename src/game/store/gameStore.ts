@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { BalanceConfig } from '../balance/config';
-import type { ContentRegistry, GameAction, GameEffect, GameState, JobSchedule, LifeRecordEntry, ViewId } from '../content/contracts';
+import type { ContentRegistry, GameAction, GameEffect, GameState, JobSchedule, LifeRecordEntry, ViewId, WorldSnapshot } from '../content/contracts';
 import { calendarForDay } from '../engine/calendar';
 import { dispatchGameAction } from '../engine/actions';
 import { createInitialState } from '../engine/initialState';
@@ -49,6 +49,20 @@ function isLifeRecordEntry(value: unknown): value is LifeRecordEntry {
     && Number.isInteger(value.day)
     && ['career', 'purchase', 'service', 'activity', 'housing', 'relationship', 'event', 'business', 'asset', 'investment'].includes(String(value.category))
     && typeof value.title === 'string';
+}
+
+function migrateWorldPublicBusinessEquities(value: unknown, businessIds: Set<string>): WorldSnapshot['publicBusinessEquities'] {
+  if (!isRecord(value)) return undefined;
+  return Object.fromEntries(Object.entries(value).filter(([id, holding]) => {
+    if (!businessIds.has(id) || !isRecord(holding)) return false;
+    return holding.businessId === id
+      && Number.isInteger(holding.percent) && Number(holding.percent) > 0 && Number(holding.percent) <= 100
+      && Number.isFinite(holding.investedAmount) && Number(holding.investedAmount) >= 0
+      && Number.isFinite(holding.currentValue) && Number(holding.currentValue) >= 0;
+  }).map(([id, holding]) => {
+    const entry = holding as Record<string, unknown>;
+    return [id, { businessId: id, percent: Number(entry.percent), investedAmount: Number(entry.investedAmount), currentValue: Number(entry.currentValue) }];
+  }));
 }
 
 export function saveGameState(state: GameState): void {
@@ -194,7 +208,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.wealthMilestones = Array.isArray(candidate.wealthMilestones)
     ? candidate.wealthMilestones.filter((entry) => isRecord(entry) && typeof entry.id === 'string' && wealthTierIds.has(entry.id) && Number.isInteger(entry.day) && Number(entry.day) > 0 && Number.isFinite(entry.netWorth)).map((entry) => ({ id: String(entry.id), day: Number(entry.day), netWorth: Number(entry.netWorth) })).slice(-10)
     : [];
-  candidate.worldHistory = Array.isArray(candidate.worldHistory) ? candidate.worldHistory.filter((entry) => isRecord(entry) && Number.isInteger(entry.year) && Number(entry.year) > 0 && Number.isInteger(entry.day) && Number(entry.day) > 0 && Number.isFinite(entry.netWorth) && Number.isInteger(entry.businessCount) && Number(entry.businessCount) >= 0 && Number.isInteger(entry.relationshipCount) && Number(entry.relationshipCount) >= 0 && Number.isInteger(entry.visitedLocationCount) && Number(entry.visitedLocationCount) >= 0 && (entry.listedBusinessCount === undefined || (Number.isInteger(entry.listedBusinessCount) && Number(entry.listedBusinessCount) >= 0)) && (entry.publicFloatPercent === undefined || (Number.isFinite(entry.publicFloatPercent) && Number(entry.publicFloatPercent) >= 0)) && (entry.currentJobId === undefined || jobIds.has(String(entry.currentJobId)))).map((entry) => ({ ...entry, locationDevelopment: isRecord(entry.locationDevelopment) ? Object.fromEntries(Object.entries(entry.locationDevelopment).filter(([id, level]) => locationIds.has(id) && Number.isInteger(level) && Number(level) >= 0 && Number(level) <= 5)) : undefined, relationshipValues: isRecord(entry.relationshipValues) ? Object.fromEntries(Object.entries(entry.relationshipValues).filter(([id, value]) => characterIds.has(id) && Number.isFinite(value) && Number(value) >= 0 && Number(value) <= 100).map(([id, value]) => [id, Math.round(Number(value))])) : undefined, characterCareerStates: isRecord(entry.characterCareerStates) ? Object.fromEntries(Object.entries(entry.characterCareerStates).filter(([id, title]) => characterIds.has(id) && typeof title === 'string' && title.trim().length > 0).map(([id, title]) => [id, String(title)])) : undefined, companyStates: isRecord(entry.companyStates) ? Object.fromEntries(Object.entries(entry.companyStates).filter(([id, title]) => (content.companies ?? []).some((company) => company.id === id) && typeof title === 'string' && title.trim().length > 0).map(([id, title]) => [id, String(title)])) : undefined, listedBusinessCount: entry.listedBusinessCount === undefined ? undefined : Number(entry.listedBusinessCount), publicFloatPercent: entry.publicFloatPercent === undefined ? undefined : Number(entry.publicFloatPercent) })).slice(-10) as GameState['worldHistory'] : [];
+  candidate.worldHistory = Array.isArray(candidate.worldHistory) ? candidate.worldHistory.filter((entry) => isRecord(entry) && Number.isInteger(entry.year) && Number(entry.year) > 0 && Number.isInteger(entry.day) && Number(entry.day) > 0 && Number.isFinite(entry.netWorth) && Number.isInteger(entry.businessCount) && Number(entry.businessCount) >= 0 && Number.isInteger(entry.relationshipCount) && Number(entry.relationshipCount) >= 0 && Number.isInteger(entry.visitedLocationCount) && Number(entry.visitedLocationCount) >= 0 && (entry.listedBusinessCount === undefined || (Number.isInteger(entry.listedBusinessCount) && Number(entry.listedBusinessCount) >= 0)) && (entry.publicFloatPercent === undefined || (Number.isFinite(entry.publicFloatPercent) && Number(entry.publicFloatPercent) >= 0)) && (entry.currentJobId === undefined || jobIds.has(String(entry.currentJobId)))).map((entry) => ({ ...entry, locationDevelopment: isRecord(entry.locationDevelopment) ? Object.fromEntries(Object.entries(entry.locationDevelopment).filter(([id, level]) => locationIds.has(id) && Number.isInteger(level) && Number(level) >= 0 && Number(level) <= 5)) : undefined, relationshipValues: isRecord(entry.relationshipValues) ? Object.fromEntries(Object.entries(entry.relationshipValues).filter(([id, value]) => characterIds.has(id) && Number.isFinite(value) && Number(value) >= 0 && Number(value) <= 100).map(([id, value]) => [id, Math.round(Number(value))])) : undefined, characterCareerStates: isRecord(entry.characterCareerStates) ? Object.fromEntries(Object.entries(entry.characterCareerStates).filter(([id, title]) => characterIds.has(id) && typeof title === 'string' && title.trim().length > 0).map(([id, title]) => [id, String(title)])) : undefined, companyStates: isRecord(entry.companyStates) ? Object.fromEntries(Object.entries(entry.companyStates).filter(([id, title]) => (content.companies ?? []).some((company) => company.id === id) && typeof title === 'string' && title.trim().length > 0).map(([id, title]) => [id, String(title)])) : undefined, listedBusinessCount: entry.listedBusinessCount === undefined ? undefined : Number(entry.listedBusinessCount), publicFloatPercent: entry.publicFloatPercent === undefined ? undefined : Number(entry.publicFloatPercent), publicBusinessEquities: migrateWorldPublicBusinessEquities(entry.publicBusinessEquities, businessIds) })).slice(-10) as GameState['worldHistory'] : [];
   candidate.lifeHistory = Array.isArray(candidate.lifeHistory) ? candidate.lifeHistory.filter(isLifeRecordEntry) : [];
   candidate.ambientLog = Array.isArray(candidate.ambientLog) ? candidate.ambientLog.slice(-20) : [];
   const storylines = new Map((content.storylines ?? []).map((storyline) => [storyline.id, new Set(storyline.stages.map((stage) => stage.id))]));

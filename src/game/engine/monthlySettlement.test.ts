@@ -65,6 +65,18 @@ describe('annual world snapshots', () => {
     expect(state.worldHistory?.[0]).toMatchObject({ year: 1, businessCount: 1, listedBusinessCount: 1, publicFloatPercent: 35, visitedLocationCount: 2, locationDevelopment: { 'location.central': 2, 'location.riverside': 0 }, relationshipValues: { 'character.seed-zhou': 42 }, characterCareerStates: { 'character.seed-lin': '远望零售 · 门店员工' }, companyStates: { 'company.yuanwang': '门店与社区零售' } });
   });
 
+  it('archives separately held public business equity in the annual world snapshot', () => {
+    const state = createInitialState(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 7);
+    state.time = { day: 337, hour: 8, minute: 0 };
+    state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 65, publicFloatPercent: 35, listed: true, listedDay: 1 };
+    state.publicBusinessEquities = { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, purchaseDay: 29 } };
+    const effects: GameEffect[] = [];
+
+    closeMonth(state, 12, contentRegistry, balanceConfig, effects);
+
+    expect(state.worldHistory?.[0]?.publicBusinessEquities).toEqual({ 'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, currentValue: 208 } });
+  });
+
   it('archives a player-triggered company state in the annual world snapshot', () => {
     const state = createInitialState(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 7);
     state.time = { day: 337, hour: 8, minute: 0 };

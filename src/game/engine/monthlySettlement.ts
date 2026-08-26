@@ -1,6 +1,6 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary, WorldSnapshot } from '../content/contracts';
-import { calculateNetWorth, wealthTierForNetWorth } from './economy';
+import { businessValuation, calculateNetWorth, wealthTierForNetWorth } from './economy';
 import { emptyFinancialLedger, projectLegacyMonthlyLedger, recordStateFinancialEntry, summarizeFinancialLedger } from './financialLedger';
 import { appendLifeRecord } from './lifeHistory';
 import { housingPrice, housingRentPerDay } from './locations';
@@ -121,6 +121,11 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       locationDevelopment: { ...development },
       listedBusinessCount: Object.values(state.businesses).filter((holding) => holding.listed).length,
       publicFloatPercent: Object.values(state.businesses).reduce((total, holding) => total + (holding.publicFloatPercent ?? (100 - (holding.equityPercent ?? 100))), 0),
+      publicBusinessEquities: Object.fromEntries(Object.entries(state.publicBusinessEquities ?? {}).flatMap(([businessId, publicHolding]) => {
+        const business = state.businesses[businessId];
+        if (!business?.listed) return [];
+        return [[businessId, { businessId, percent: publicHolding.percent, investedAmount: publicHolding.investedAmount, currentValue: Math.round(businessValuation(business, balance) * publicHolding.percent / 100) }]];
+      })),
       currentJobId: state.currentJobId,
     };
     state.worldHistory = [...(state.worldHistory ?? []).filter((entry) => entry.year !== snapshot.year), snapshot].slice(-10);

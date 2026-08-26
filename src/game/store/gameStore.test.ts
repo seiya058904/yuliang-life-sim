@@ -159,6 +159,18 @@ describe('game store persistence', () => {
     expect(restored.annualHistory).toEqual([{ year: 1, cashStart: 1000, cashEnd: 1200, netWorthStart: 1000, netWorthEnd: 1400, totalIncome: 500, totalConsumption: 300, months: 12 }]);
   });
 
+  it('migrates and filters public business equity snapshots inside world history', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 7, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 0, visitedLocationCount: 0, publicBusinessEquities: {
+      'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, currentValue: 220 },
+      'business.unknown': { businessId: 'business.unknown', percent: 10, investedAmount: 100, currentValue: 100 },
+    } }] }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.worldHistory?.[0]?.publicBusinessEquities).toEqual({ 'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, currentValue: 220 } });
+  });
+
   it('keeps valid wealth milestones and removes malformed or unknown tiers during migration', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, wealthMilestones: [
