@@ -176,6 +176,20 @@ describe('余量 app flow', () => {
     expect(screen.getByText('并购线上小店')).toBeInTheDocument();
   });
 
+  it('exposes the relationship-gated partner business offer', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 10000, ability: 18, relationships: { ...game.relationships, 'character.seed-zhou': 20 }, unlockedCapabilities: ['business_license', 'remote_work'], unlockedBusinessIds: ['business.online-store'] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    expect(screen.getByText(/合伙方案：与周妍共同经营 · 你持股 50%/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '加入合伙 ¥4,200' }));
+    expect(screen.getByText(/预计净利润 .*持股 50%/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('加入线上小店合伙')).toBeInTheDocument();
+  });
+
   it('exposes long-run period controls from the time console', () => {
     render(<App />);
 
@@ -190,13 +204,14 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    const businessPanel = screen.getByRole('heading', { name: '企业经营' }).closest('section') as HTMLElement;
     await user.click(screen.getByRole('button', { name: '投入 ¥1,000' }));
     expect(screen.getByText(/已投入资本 ¥1,000/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '发起融资' }));
-    expect(screen.getByText(/持股 80%/)).toBeInTheDocument();
+    expect(within(businessPanel).getByText(/持股 80%/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '继续融资' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '继续融资' }));
-    expect(screen.getByText(/持股 65%/)).toBeInTheDocument();
+    expect(within(businessPanel).getByText(/持股 65%/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '申请上市' }));
     expect(screen.getByRole('button', { name: '已上市' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '公开股权' })).toHaveTextContent('外部公开流通 35%');

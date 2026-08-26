@@ -672,6 +672,22 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       effects.push({ type: 'cash', amount: -business.price, reason: '购买生意' });
       break;
     }
+    case 'join_business_partnership': {
+      const business = find(content.businesses, action.businessId);
+      const partnership = business?.partnership;
+      if (!business || !partnership || !state.unlockedBusinessIds.includes(action.businessId)) return fail(input, '这项企业没有可加入的合伙方案');
+      if (state.businesses[action.businessId]) return fail(input, '这项企业已经在你的企业组合中');
+      if (!hasRequirements(state, business.requirements, content, balance) || !hasRequirements(state, partnership.requirements, content, balance)) return fail(input, '当前合伙条件还不满足');
+      if (state.cash - partnership.entryPrice < reserveRequired(state, content)) return fail(input, '现金不足以加入合伙');
+      state.cash -= partnership.entryPrice;
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: partnership.entryPrice, capitalInvested: 0, equityPercent: partnership.playerEquityPercent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, partnerCharacterId: partnership.characterId };
+      if (business.locationId) recordLocationVisit(state, business.locationId, content);
+      const partner = content.characters.find((character) => character.id === partnership.characterId);
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: partnership.entryPrice, label: `加入${business.name}合伙`, sourceType: 'business', sourceId: business.id, cashDelta: -partnership.entryPrice });
+      addLifeRecord(state, { category: 'business', title: `加入${business.name}合伙`, detail: `与${partner?.name ?? partnership.characterId}共同经营，持股 ${partnership.playerEquityPercent}%`, sourceId: business.id, amount: -partnership.entryPrice });
+      effects.push({ type: 'cash', amount: -partnership.entryPrice, reason: '加入企业合伙' });
+      break;
+    }
     case 'acquire_business': {
       const business = find(content.businesses, action.businessId);
       const parentBusinessId = Object.keys(state.businesses)[0];

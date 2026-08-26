@@ -338,6 +338,22 @@ describe('game action dispatcher', () => {
     expect(acquired.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '并购线上小店', amount: -8580 });
   });
 
+  it('joins an unlocked partner business with a partial holding and records the contribution', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 10_000;
+    state.ability = 18;
+    state.relationships['character.seed-zhou'] = 20;
+    state.unlockedCapabilities.push('business_license', 'remote_work');
+    state.unlockedBusinessIds.push('business.online-store');
+
+    const joined = dispatchGameAction(state, { type: 'join_business_partnership', businessId: 'business.online-store' }, contentRegistry, balanceConfig);
+
+    expect(joined.error).toBeUndefined();
+    expect(joined.state.businesses['business.online-store']).toMatchObject({ purchasePrice: 4200, equityPercent: 50, publicFloatPercent: 0, partnerCharacterId: 'character.seed-zhou' });
+    expect(joined.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 4200, cashDelta: -4200 });
+    expect(joined.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '加入线上小店合伙', amount: -4200 });
+  });
+
   it('keeps business capital separate and records one dilutive funding round', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 10000;

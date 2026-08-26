@@ -263,8 +263,16 @@ export interface BusinessDefinition extends ContentMeta {
   wageLevels: readonly number[];
   inventoryLevels: readonly number[];
   requirements?: ConditionDefinition;
+  partnership?: BusinessPartnershipDefinition;
   effects?: readonly EffectDefinition[];
   locationId?: ContentId;
+}
+
+export interface BusinessPartnershipDefinition {
+  characterId: ContentId;
+  playerEquityPercent: number;
+  entryPrice: number;
+  requirements?: ConditionDefinition;
 }
 
 export interface AssetDefinition extends ContentMeta {
@@ -611,6 +619,7 @@ export interface BusinessHolding {
   listedDay?: number;
   acquiredDay?: number;
   acquiredFromBusinessId?: ContentId;
+  partnerCharacterId?: ContentId;
 }
 
 export interface AssetHolding {
@@ -892,6 +901,7 @@ export type GameAction =
   | { type: 'set_housing_rental'; housingId: ContentId; rented: boolean }
   | { type: 'sell_rental_housing'; housingId: ContentId }
   | { type: 'buy_business'; businessId: ContentId }
+  | { type: 'join_business_partnership'; businessId: ContentId }
   | { type: 'acquire_business'; businessId: ContentId }
   | { type: 'update_business'; businessId: ContentId; priceLevel: number; wageLevel: number; inventoryLevel: number }
   | { type: 'inject_business_capital'; businessId: ContentId; amount: number }

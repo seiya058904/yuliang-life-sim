@@ -564,6 +564,35 @@ test('acquires an unlocked business and persists the holding history', async ({ 
   await expect(page.getByText('并购线上小店')).toBeVisible();
 });
 
+test('joins a relationship-gated business partnership and persists the partial holding', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 10_000;
+    state.ability = 18;
+    state.attributes = { ...(state.attributes ?? {}), professional: 18, knowledge: 18, communication: 18, fitness: 18, appearance: 10, network: 0, mood: 50 };
+    state.relationships = { ...(state.relationships ?? {}), 'character.seed-zhou': 20 };
+    state.unlockedCapabilities = ['business_license', 'remote_work'];
+    state.unlockedBusinessIds = ['business.online-store'];
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByText('合伙方案：与周妍共同经营 · 你持股 50%')).toBeVisible();
+  await page.getByRole('button', { name: '加入合伙 ¥4,200' }).click();
+  await expect(page.getByText('预计净利润 ¥330 /天 · 持股 50%', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('加入线上小店合伙')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByText('预计净利润 ¥330 /天 · 持股 50%', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('加入线上小店合伙')).toBeVisible();
+});
+
 test('completes a wishlist purchase goal and persists its history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

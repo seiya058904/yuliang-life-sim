@@ -220,6 +220,12 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes the first relationship-gated partner business offer', () => {
+    expect(contentRegistry.businesses.find((business) => business.id === 'business.online-store')).toMatchObject({
+      partnership: { characterId: 'character.seed-zhou', playerEquityPercent: 50, entryPrice: 4200, requirements: { type: 'relationship_at_least', characterId: 'character.seed-zhou', amount: 20 } },
+    });
+  });
+
   it('exposes the neworder automotive service route with a progression ladder', () => {
     expect(contentRegistry.companies).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'company.neworder-auto', name: '新序汽车服务', jobIds: expect.arrayContaining(['job.auto-service-assistant', 'job.sales-consultant-assistant', 'job.auto-sales-consultant', 'job.auto-customer-operations']) }),

@@ -83,6 +83,16 @@ export const officialBusinesses = [
           "amount": 18
         }
       ]
+    },
+    "partnership": {
+      "characterId": "character.seed-zhou",
+      "playerEquityPercent": 50,
+      "entryPrice": 4200,
+      "requirements": {
+        "type": "relationship_at_least",
+        "characterId": "character.seed-zhou",
+        "amount": 20
+      }
     }
   },
   {
