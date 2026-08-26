@@ -122,6 +122,7 @@ describe('余量 app flow', () => {
     const storyline = screen.getByRole('heading', { name: '远程连接' }).closest('.item-row');
     expect(storyline).not.toBeNull();
     await user.click(within(storyline as HTMLElement).getByRole('button', { name: '开始故事' }));
+    expect(within(storyline as HTMLElement).getByText('徐可：最近这段时间，你好像一直在处理很复杂的事情。')).toBeInTheDocument();
     await user.click(within(storyline as HTMLElement).getByRole('button', { name: '约个时间聊聊' }));
     expect(screen.getByText('进行中')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '职业' }));

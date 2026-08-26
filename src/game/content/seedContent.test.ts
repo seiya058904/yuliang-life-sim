@@ -133,6 +133,9 @@ describe('seed content registry', () => {
     expect(contentRegistry.storylines?.filter((storyline) => storyline.contentStatus === 'official').map((storyline) => storyline.id)).toEqual([
       'storyline.remote-connection',
     ]);
+    expect(contentRegistry.dialogues?.filter((dialogue) => dialogue.contentStatus === 'official').map((dialogue) => dialogue.id)).toEqual([
+      'dialogue.remote-connection',
+    ]);
   });
 
   it('supports replacing one category while keeping the remaining Seed categories', () => {

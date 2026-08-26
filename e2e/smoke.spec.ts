@@ -154,6 +154,19 @@ test('applies the industrial hub city event and persists its development', async
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 });
 
+test('reads and persists the official storyline dialogue', async ({ page }) => {
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const storyline = page.getByRole('heading', { name: '远程连接' }).locator('..').locator('..');
+  await storyline.getByRole('button', { name: '开始故事' }).click();
+  await expect(storyline).toContainText('最近这段时间，你好像一直在处理很复杂的事情。');
+  await storyline.getByRole('button', { name: '约个时间聊聊' }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('远程连接：约个时间聊聊')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('远程连接：约个时间聊聊')).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
