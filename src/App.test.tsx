@@ -393,6 +393,18 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/周末短途旅行 · 慢慢走走/)).toBeInTheDocument();
   });
 
+  it('shows and enforces the travel cooldown in the activity market', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, time: { ...game.time, day: 15 }, lifeHistory: [{ id: 'life.activity.last-trip', day: 10, category: 'activity', title: '周末短途旅行 · 慢慢走走', sourceId: 'activity.weekend-getaway' }] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const getaway = screen.getByRole('heading', { name: '周末短途旅行 · 慢慢走走' }).closest('article') as HTMLElement;
+    expect(within(getaway).getAllByText('冷却中 · 还需 9 天')).toHaveLength(2);
+    expect(within(getaway).getByRole('button', { name: '冷却中 · 还需 9 天' })).toBeDisabled();
+  });
+
   it('shows contact preferences in the social view', async () => {
     const user = userEvent.setup();
     render(<App />);

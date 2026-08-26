@@ -48,6 +48,23 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
   await expect(page.getByTestId('clock-value')).toHaveText(pausedClock);
 });
 
+test('enforces the persisted travel cooldown in the activity market', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.time = { day: 15, hour: 8, minute: 0 };
+    state.lifeHistory = [{ id: 'life.activity.last-trip', day: 10, category: 'activity', title: '周末短途旅行 · 慢慢走走', sourceId: 'activity.weekend-getaway' }];
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const getaway = page.getByRole('heading', { name: '周末短途旅行 · 慢慢走走' }).locator('..');
+  await expect(getaway).toContainText('冷却中 · 还需 9 天');
+  await expect(getaway.getByRole('button', { name: '冷却中 · 还需 9 天' })).toBeDisabled();
+});
+
 test('settles a city development event and keeps the location change after reload', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

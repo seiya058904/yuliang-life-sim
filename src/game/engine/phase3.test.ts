@@ -5,7 +5,7 @@ import { createInitialState } from './initialState';
 import { applyAttributeDelta, calculateLegacyAbility, migrateAttributes } from './attributes';
 import { explainCondition, evaluateCondition } from './conditions';
 import { emptyFinancialLedger, recordFinancialEntry, summarizeFinancialLedger } from './financialLedger';
-import { activityCashCost, activityDiscountLabel, getActivityOption } from './activities';
+import { activityCashCost, activityCooldownRemaining, activityDiscountLabel, getActivityOption } from './activities';
 import { dispatchGameAction } from './actions';
 import { composeContentPacks } from '../content/registry';
 import { advanceSimulation } from './simulation';
@@ -27,6 +27,29 @@ describe('phase 3 additive systems', () => {
 
     expect(option).toMatchObject({ label: '临江夜游', durationMinutes: 240, cashCost: 520 });
     expect(activityCashCost(createInitialState(contentRegistry, balanceConfig, 7), activity, option!, contentRegistry)).toBe(520);
+  });
+
+  it('reports the remaining cooldown after a repeated travel activity', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 7);
+    const activity = contentRegistry.activities?.find((entry) => entry.id === 'activity.weekend-getaway')!;
+    const option = getActivityOption(activity, 'standard')!;
+    state.lifeHistory = [{ id: 'life.activity.last-trip', day: 10, category: 'activity', title: '周末短途旅行 · 慢慢走走', sourceId: activity.id }];
+    state.time.day = 15;
+
+    expect(activityCooldownRemaining(state, activity, option)).toBe(9);
+    state.time.day = 24;
+    expect(activityCooldownRemaining(state, activity, option)).toBe(0);
+  });
+
+  it('blocks planning a travel option while its cooldown is active', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 7);
+    state.time.day = 15;
+    state.lifeHistory = [{ id: 'life.activity.last-trip', day: 10, category: 'activity', title: '周末短途旅行 · 慢慢走走', sourceId: 'activity.weekend-getaway' }];
+    const activity = { kind: 'activity' as const, activityId: 'activity.weekend-getaway', optionId: 'standard' };
+
+    expect(dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity }, contentRegistry, balanceConfig).error).toMatch(/冷却中/);
+    state.time.day = 24;
+    expect(dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity }, contentRegistry, balanceConfig).error).toBeUndefined();
   });
 
   it('keeps legacy ability synchronized with fine attributes', () => {

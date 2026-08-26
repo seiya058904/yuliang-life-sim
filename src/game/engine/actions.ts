@@ -5,6 +5,7 @@ import { calculateNetWorth } from './economy';
 import { applyContentEffects, applyReachedMilestones, cloneGameState, itemCost, refreshUnlocks } from './effects';
 import { advanceSimulation } from './simulation';
 import { activityAtTime, defaultJobSchedule, validateWeeklyPlan } from './schedule';
+import { activityCooldownRemaining, getActivityDefinition, getActivityOption } from './activities';
 import { groupForCategory, recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
 import { investmentUnitValue } from './investments';
 import { applyAttributeDelta } from './attributes';
@@ -58,6 +59,19 @@ function addLifeRecord(state: GameState, record: Omit<LifeRecordEntry, 'id' | 'd
     amount: record.amount,
   };
   state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], nextRecord);
+}
+
+function planCooldownError(state: GameState, plan: GameState['weeklyPlan'], content: ContentRegistry): string | undefined {
+  for (const day of Object.values(plan.days)) {
+    for (const activity of [day.day, day.evening]) {
+      if (activity.kind !== 'activity') continue;
+      const definition = getActivityDefinition(content, activity.activityId);
+      const option = definition && getActivityOption(definition, activity.optionId);
+      const remaining = definition && option ? activityCooldownRemaining(state, definition, option) : 0;
+      if (definition && remaining > 0) return `${definition.name}仍在冷却中，还需要 ${remaining} 天`;
+    }
+  }
+  return undefined;
 }
 
 function advancePeriod(input: GameState, months: 1 | 3, content: ContentRegistry, balance: BalanceConfig): GameResult {
@@ -117,6 +131,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       break;
     case 'start_week': {
       if (!['planning', 'paused', 'week_complete'].includes(state.simulationMode)) return fail(input, '当前不能开始新一周');
+      const cooldownError = planCooldownError(state, state.weeklyPlan, content);
+      if (cooldownError) return fail(input, cooldownError);
       const errors = validateWeeklyPlan(state.weeklyPlan, state.employment, content);
       if (errors.length) return fail(input, errors[0]);
       if (state.employment?.pendingJobId) {
@@ -156,6 +172,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (state.simulationMode === 'running' || state.simulationMode === 'event') return fail(input, '运行中不能修改计划');
       const weeklyPlan = cloneGameState(state).weeklyPlan;
       weeklyPlan.days[action.weekday][action.slot] = action.activity;
+      const cooldownError = planCooldownError(state, weeklyPlan, content);
+      if (cooldownError) return fail(input, cooldownError);
       const errors = validateWeeklyPlan(weeklyPlan, state.employment, content);
       if (errors.length) return fail(input, errors[0]);
       state.weeklyPlan = weeklyPlan;
@@ -166,6 +184,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!state.previousWeeklyPlan) return fail(input, '暂时没有可沿用的上周计划');
       const weeklyPlan = structuredClone(state.previousWeeklyPlan);
       weeklyPlan.autoRepeat = state.autoRepeatPlan;
+      const cooldownError = planCooldownError(state, weeklyPlan, content);
+      if (cooldownError) return fail(input, cooldownError);
       const errors = validateWeeklyPlan(weeklyPlan, state.employment, content);
       if (errors.length) return fail(input, errors[0]);
       state.weeklyPlan = weeklyPlan;

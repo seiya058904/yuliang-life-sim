@@ -8,6 +8,13 @@ export function getActivityOption(activity: ActivityDefinition, optionId: string
   return activity.options.find((option) => option.id === optionId);
 }
 
+export function activityCooldownRemaining(state: GameState, definition: ActivityDefinition, option: ActivityOption): number {
+  if (!option.cooldownDays) return 0;
+  const lastDay = (state.lifeHistory ?? []).filter((record) => record.category === 'activity' && record.sourceId === definition.id).reduce<number | undefined>((latest, record) => Math.max(latest ?? record.day, record.day), undefined);
+  if (lastDay === undefined) return 0;
+  return Math.max(0, option.cooldownDays - (state.time.day - lastDay));
+}
+
 export function activityCashCost(state: GameState, definition: ActivityDefinition, option: ActivityOption, content: ContentRegistry): number {
   const locationLevel = Math.min(5, Math.max(0, state.locationDevelopment?.[definition.locationId ?? ''] ?? 0));
   const developmentFactor = 1 - locationLevel * 0.01;
