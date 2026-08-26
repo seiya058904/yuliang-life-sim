@@ -50,6 +50,7 @@ export const officialCharacters = [
     ],
     "identity": "邻居",
     "preferredGiftTags": ["flower", "dessert"],
+    "preferredActivityTags": ["film", "culture"],
     "initialRelationship": 5,
     "locationId": "location.riverside",
     "stages": [

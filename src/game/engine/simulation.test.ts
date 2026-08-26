@@ -92,9 +92,9 @@ describe('automatic simulation', () => {
     const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: false, simulationMode: 'running' as const };
     const result = advanceSimulation(running, 6 * 24 * 60, contentRegistry, balance);
 
-    expect(result.state.relationships['character.seed-zhou']).toBe(8);
+    expect(result.state.relationships['character.seed-zhou']).toBe(9);
     expect(result.state.financialLedger?.entries.some((entry) => entry.sourceId === 'activity.cinema' && entry.amount === 160)).toBe(true);
-    expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'activity.cinema' && entry.detail?.includes('和周妍一起'))).toBe(true);
+    expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'activity.cinema' && entry.detail?.includes('周妍喜欢这类活动'))).toBe(true);
   });
 
   it('settles the old-town cultural trip and records its destination visit', () => {

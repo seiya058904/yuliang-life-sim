@@ -165,13 +165,17 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     }
     state.cash -= cost;
     recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: definition.financialCategory ?? 'entertainment', amount: cost, label: `${definition.name} · ${option.label}`, sourceType: 'activity', sourceId: definition.id });
-    applyContentEffects(state, option.effects ?? [], content, balance, output);
+    const companion = option.requiredCharacterId ? content.characters.find((character) => character.id === option.requiredCharacterId) : undefined;
+    const preferenceMatch = Boolean(companion?.preferredActivityTags?.some((tag) => (option.tags ?? definition.tags ?? []).includes(tag)));
+    const activityEffects = preferenceMatch && companion
+      ? [...(option.effects ?? []), { type: 'relation' as const, characterId: companion.id, amount: 1 }]
+      : option.effects ?? [];
+    applyContentEffects(state, activityEffects, content, balance, output);
     if (definition.locationId) recordLocationVisit(state, definition.locationId, content);
     const discountLabel = activityDiscountLabel(state, definition, content);
     const familiarity = applyActivityFamiliarity(state, definition);
-    const companion = option.requiredCharacterId ? content.characters.find((character) => character.id === option.requiredCharacterId) : undefined;
     const baseDetail = discountLabel === '自驾优惠' ? '自驾出行，交通费用有所减少' : discountLabel === '地点发展优惠' ? '地点发展使活动更便利' : '活动已完成';
-    const detail = companion ? `和${companion.name}一起，${baseDetail}` : baseDetail;
+    const detail = companion ? `和${companion.name}一起，${baseDetail}${preferenceMatch ? `；${companion.name}喜欢这类活动` : ''}` : baseDetail;
     state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: familiarity.length ? `${detail} · ${familiarity.join('、')}熟练度提升` : detail, sourceId: definition.id, amount: -cost });
     return;
   }

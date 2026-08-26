@@ -400,6 +400,7 @@ export interface CharacterDefinition extends ContentMeta {
   locationId?: ContentId;
   preferredInteractionCategories?: readonly RelationshipInteractionDefinition['category'][];
   preferredGiftTags?: readonly string[];
+  preferredActivityTags?: readonly string[];
 }
 
 export interface EventOpportunityDefinition {
