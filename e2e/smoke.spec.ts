@@ -108,6 +108,30 @@ test('discovers the industrial design exhibition trip', async ({ page }) => {
   await expect(exhibition.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
 
+test('trades a listed business equity slice from the wealth flow', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 10_000;
+    state.time = { ...state.time, day: 29 };
+    state.businesses = { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3_200, equityPercent: 80, listed: true, listedDay: 1 } };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
+  await page.getByRole('button', { name: '出售 10% 股权' }).click();
+  await expect(page.getByText('持股 70%')).toBeVisible();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('出售早餐与咖啡档 10% 股权')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByText('持股 70%')).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
