@@ -79,7 +79,14 @@ describe('game store persistence', () => {
 
     const restored = loadGameState(contentRegistry, balanceConfig);
 
-    expect(restored.unlockedAssetIds).toEqual(['asset.used-compact', 'asset.city-sedan', 'asset.city-ev']);
+    expect(restored.unlockedAssetIds).toEqual([
+      'asset.used-compact',
+      'asset.city-sedan',
+      'asset.city-ev',
+      'asset.quality-sedan',
+      'asset.city-suv',
+      'asset.executive-sedan',
+    ]);
   });
 
   it('migrates old business holdings with independent capital and equity defaults', () => {

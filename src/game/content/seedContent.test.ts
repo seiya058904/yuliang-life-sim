@@ -42,7 +42,18 @@ describe('seed content registry', () => {
       'asset.used-compact',
       'asset.city-sedan',
       'asset.city-ev',
+      'asset.quality-sedan',
+      'asset.city-suv',
+      'asset.executive-sedan',
     ]);
+  });
+
+  it('populates distinct quality, SUV, and executive vehicle tiers for the same reachable asset loop', () => {
+    expect(contentRegistry.assets.filter((asset) => asset.kind === 'vehicle' && asset.contentStatus === 'official')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'asset.quality-sedan', price: 236000, monthlyCost: 980, depreciationRate: 0.005 }),
+      expect.objectContaining({ id: 'asset.city-suv', price: 318000, monthlyCost: 1380, depreciationRate: 0.006 }),
+      expect.objectContaining({ id: 'asset.executive-sedan', price: 520000, monthlyCost: 2200, depreciationRate: 0.007 }),
+    ]));
   });
 
   it('exposes official courses from the content registry', () => {
