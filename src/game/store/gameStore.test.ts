@@ -93,6 +93,15 @@ describe('game store persistence', () => {
     expect(restored.businesses['business.seed-kiosk']).toMatchObject({ capitalInvested: 0, equityPercent: 100, fundingRaised: 0, fundingRound: 0 });
   });
 
+  it('filters completed business projects against current activity content', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, completedBusinessProjects: ['activity.brand-film-project.contract', 'activity.unknown.contract'] }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.completedBusinessProjects).toEqual(['activity.brand-film-project.contract']);
+  });
+
   it('keeps valid annual records while dropping malformed entries during migration', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, annualHistory: [

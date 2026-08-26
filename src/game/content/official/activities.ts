@@ -48,4 +48,14 @@ export const officialActivities = [
     locationId: 'location.riverside',
     options: [{ id: 'standard', label: '慢慢走走', durationMinutes: 240, cashCost: 360, effects: [{ type: 'attribute', attribute: 'mood', amount: 8 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] }],
   },
+  {
+    id: 'activity.brand-film-project',
+    contentStatus: 'official',
+    name: '品牌短片项目',
+    description: '为已有企业接下一个明确的客户合同，把经营收入和项目成本分开看。',
+    tags: ['business', 'project', 'career'],
+    category: 'premium',
+    financialCategory: 'business_income',
+    options: [{ id: 'contract', label: '完成客户合同', durationMinutes: 240, cashCost: 0, requirements: { type: 'owns_business', businessId: 'business.service-studio' }, effects: [{ type: 'attribute', attribute: 'professional', amount: 2 }, { type: 'attribute', attribute: 'network', amount: 1 }], businessProject: { businessId: 'business.service-studio', revenue: 8000, cost: 3200 } }],
+  },
 ] satisfies readonly ActivityDefinition[];

@@ -31,9 +31,24 @@ describe('余量 app flow', () => {
     expect(screen.getByText('课程 · 职场基础课')).toBeInTheDocument();
   });
 
+  it('discovers a business project only after owning the required enterprise', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, businesses: { 'business.service-studio': { businessId: 'business.service-studio', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 14500 } } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const project = screen.getByRole('heading', { name: '品牌短片项目 · 完成客户合同' }).closest('.activity-card');
+    expect(project).not.toBeNull();
+    expect(within(project as HTMLElement).getByText('企业项目利润 · 可承接')).toBeInTheDocument();
+    await user.click(within(project as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
+    expect(screen.getByText(/品牌短片项目/)).toBeInTheDocument();
+  });
+
   it('submits a public-market application without reopening the legacy recruitment dialog', async () => {
     const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
     await user.click(screen.getAllByRole('button', { name: '申请职位' })[0]);
     await user.click(screen.getByRole('button', { name: '我的申请' }));
     expect(screen.getByText(/当前竞争力：/)).toBeInTheDocument();

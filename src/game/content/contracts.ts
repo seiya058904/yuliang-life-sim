@@ -281,6 +281,7 @@ export interface ActivityOption {
   cooldownDays?: number;
   requiredCharacterId?: ContentId;
   tags?: readonly ContentTag[];
+  businessProject?: { businessId: ContentId; revenue: number; cost: number };
 }
 
 export interface ActivityDefinition extends ContentMeta {
@@ -719,6 +720,7 @@ export interface GameState {
   relationships: Record<ContentId, number>;
   messages?: MessageState[];
   businesses: Record<ContentId, BusinessHolding>;
+  completedBusinessProjects?: ContentId[];
   assets: Record<ContentId, AssetHolding>;
   investments?: Record<ContentId, InvestmentHolding>;
   activeSubscriptions?: Record<ContentId, { subscriptionId: ContentId; startedDay: number }>;

@@ -57,6 +57,21 @@ describe('automatic simulation', () => {
     expect(result.state.locationVisits?.['location.central']).toBe(1);
   });
 
+  it('settles an owned business project as one-time equity-proportional profit', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 23);
+    initial.businesses['business.service-studio'] = { businessId: 'business.service-studio', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 14500, equityPercent: 50 };
+    const plan = structuredClone(initial.weeklyPlan);
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.brand-film-project', optionId: 'contract' };
+    const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: false, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 6 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.completedBusinessProjects).toContain('activity.brand-film-project.contract');
+    expect(result.state.cash).toBeGreaterThan(initial.cash);
+    expect(result.state.financialLedger?.entries.some((entry) => entry.sourceId === 'business.service-studio' && entry.category === 'business_income' && entry.amount === 2400)).toBe(true);
+    expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'business.service-studio' && entry.title === '完成企业项目：品牌短片项目')).toBe(true);
+  });
+
   it('settles a scheduled course into qualification, career experience, ledger and life history', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 23);

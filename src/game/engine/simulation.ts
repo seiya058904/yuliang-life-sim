@@ -131,6 +131,29 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
       output.push({ type: 'message', text: option ? `现金不足，未能完成${definition?.name ?? '活动'}` : '活动选项已失效' });
       return;
     }
+    if (option.businessProject) {
+      const projectId = `${definition.id}.${option.id}`;
+      if (state.completedBusinessProjects?.includes(projectId)) {
+        output.push({ type: 'message', text: `${definition.name}已经完成过了` });
+        return;
+      }
+      const holding = state.businesses[option.businessProject.businessId];
+      if (!holding) {
+        output.push({ type: 'message', text: '完成这个项目需要先拥有对应企业' });
+        return;
+      }
+      const grossProfit = option.businessProject.revenue - option.businessProject.cost;
+      const equity = Math.min(100, Math.max(0, holding.equityPercent ?? 100)) / 100;
+      const profit = Math.round(grossProfit * equity);
+      state.cash += profit;
+      state.completedBusinessProjects = [...(state.completedBusinessProjects ?? []), projectId];
+      recordStateFinancialEntry(state, { day: state.time.day, direction: profit >= 0 ? 'income' : 'expense', category: profit >= 0 ? 'business_income' : 'business_cost', amount: Math.abs(profit), label: `${definition.name}利润分配`, sourceType: 'business', sourceId: option.businessProject.businessId });
+      applyContentEffects(state, option.effects ?? [], content, balance, output);
+      if (definition.locationId) recordLocationVisit(state, definition.locationId, content);
+      state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.business-project.${projectId}.${state.time.day}`, day: state.time.day, category: 'business', title: `完成企业项目：${definition.name}`, detail: `合同收入 ¥${option.businessProject.revenue.toLocaleString('zh-CN')} · 项目成本 ¥${option.businessProject.cost.toLocaleString('zh-CN')} · 按持股获得利润 ¥${profit.toLocaleString('zh-CN')}`, sourceId: option.businessProject.businessId, amount: profit });
+      output.push({ type: 'cash', amount: profit, reason: `${definition.name}利润分配` });
+      return;
+    }
     state.cash -= option.cashCost;
     recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: definition.financialCategory ?? 'entertainment', amount: option.cashCost, label: `${definition.name} · ${option.label}`, sourceType: 'activity', sourceId: definition.id });
     applyContentEffects(state, option.effects ?? [], content, balance, output);
