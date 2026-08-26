@@ -482,6 +482,7 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
     state.cash = 10_000;
     state.time = { ...state.time, day: 29 };
     state.businesses = { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3_200, equityPercent: 80, listed: true, listedDay: 1 } };
+    state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
     localStorage.setItem(key, JSON.stringify(state));
   }, { key: saveKey, state: initial });
@@ -491,12 +492,19 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await page.getByRole('button', { name: '出售 10% 股权' }).click();
   await expect(page.getByText('持股 70% · 已投入资本 ¥0 · 融资 ¥0')).toBeVisible();
+  await page.getByRole('button', { name: '买入公开股权 ¥208' }).click();
+  await expect(page.getByRole('region', { name: '公开股权' })).toContainText('你持有公开份额 10%');
+  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toContainText('投资分红');
+  await page.getByRole('button', { name: '进入下个月' }).click();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByText('出售早餐与咖啡档 10% 股权')).toBeVisible();
+  await expect(page.getByText('买入早餐与咖啡档公开股权')).toBeVisible();
 
   await page.reload();
   await page.getByRole('button', { name: '财富', exact: true }).click();
-  await expect(page.getByRole('region', { name: '公开股权' })).toContainText('你的持股 70% · 外部公开流通 30%');
+  await expect(page.getByRole('region', { name: '公开股权' })).toContainText('企业持股 70% · 市场流通 30%');
 });
 
 test('runs a business from purchase through funding, listing, daily profit and persistence', async ({ page }) => {

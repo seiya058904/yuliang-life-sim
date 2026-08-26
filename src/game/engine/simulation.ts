@@ -1,6 +1,6 @@
 import type { BalanceConfig } from '../balance/config';
 import type { ContentRegistry, GameEffect, GameResult, GameState, JobDefinition, MonthlySummary } from '../content/contracts';
-import { calculateDailyPassiveIncome, calculateLifestyle, calculateNetWorth } from './economy';
+import { calculateDailyPassiveIncome, calculateDailyPublicBusinessDividend, calculateLifestyle, calculateNetWorth } from './economy';
 import { calendarForDay } from './calendar';
 import { closeMonth } from './monthlySettlement';
 import { applyCareerExperience, careerRequirementsSatisfied } from './careerProgression';
@@ -241,6 +241,7 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
 function settleDay(state: GameState, day: number, content: ContentRegistry, balance: BalanceConfig, output: GameEffect[]): void {
   advanceCareerLifecycle(state, day, content, balance);
   const passive = calculateDailyPassiveIncome(state, content);
+  const publicBusinessDividend = calculateDailyPublicBusinessDividend(state, content);
   const investmentDividend = updateInvestmentValuations(state, content, day);
   const home = content.housing.find((entry) => entry.id === state.housing.housingId);
   const rent = state.housing.mode === 'rent' && home ? housingRentPerDay(state, home) : 0;
@@ -267,7 +268,7 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
     return total + (asset?.kind === 'rental' ? asset.dailyIncome : 0);
   }, 0);
   const otherAssetIncome = passive.assetIncome - propertyIncome;
-  const income = passive.profit + passive.assetIncome + investmentDividend;
+  const income = passive.profit + passive.assetIncome + publicBusinessDividend + investmentDividend;
   const totalExpense = rent + living + transport + communication + homeFixed + vehicleCost;
   state.cash += income - totalExpense;
   if (passive.profit >= 0) recordStateFinancialEntry(state, { day, direction: 'income', category: 'business_income', amount: passive.profit, label: '企业利润', sourceType: 'business' });
@@ -278,6 +279,7 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
     state.flags.investment_dividend_received = true;
     recordStateFinancialEntry(state, { day, direction: 'income', category: 'investment_dividend', amount: investmentDividend, label: '投资分红', sourceType: 'investment' });
   }
+  if (publicBusinessDividend > 0) recordStateFinancialEntry(state, { day, direction: 'income', category: 'investment_dividend', amount: publicBusinessDividend, label: '企业公开股权分红', sourceType: 'business_equity' });
   if (rent > 0) recordStateFinancialEntry(state, { day, direction: 'expense', category: 'housing', amount: rent, label: '房租', sourceType: 'housing', sourceId: state.housing.housingId });
   recordStateFinancialEntry(state, { day, direction: 'expense', category: 'living', amount: living, label: '基础生活', sourceType: 'living' });
   recordStateFinancialEntry(state, { day, direction: 'expense', category: 'transport', amount: transport, label: '交通', sourceType: 'living' });
@@ -287,6 +289,7 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
     { label: '营业利润', amount: passive.profit },
     { label: '资产收益', amount: passive.assetIncome },
     { label: '投资分红', amount: investmentDividend },
+    { label: '企业公开股权分红', amount: publicBusinessDividend },
     { label: '租金', amount: -rent },
     { label: '生活支出', amount: -living },
     { label: '交通', amount: -transport },

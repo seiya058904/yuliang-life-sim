@@ -137,6 +137,14 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
       listedDay: Number.isInteger(value.listedDay) && Number(value.listedDay) > 0 ? Number(value.listedDay) : undefined,
     }];
   }));
+  const businessIds = knownIds(content, 'businesses');
+  candidate.publicBusinessEquities = Object.fromEntries(Object.entries(candidate.publicBusinessEquities ?? {}).filter(([id, holding]) => {
+    const value: Record<string, unknown> = isRecord(holding) ? holding : {};
+    return businessIds.has(id) && candidate.businesses[id]?.listed === true && value.businessId === id && Number.isInteger(value.percent) && Number(value.percent) > 0 && Number(value.percent) <= 100 && Number.isFinite(value.investedAmount) && Number(value.investedAmount) > 0 && Number.isInteger(value.purchaseDay) && Number(value.purchaseDay) > 0;
+  }).map(([id, holding]) => {
+    const value = holding as unknown as Record<string, unknown>;
+    return [id, { businessId: id, percent: Number(value.percent), investedAmount: Number(value.investedAmount), purchaseDay: Number(value.purchaseDay) }];
+  }));
   const businessProjectIds = new Set((content.activities ?? []).flatMap((activity) => activity.options.filter((option) => option.businessProject).map((option) => `${activity.id}.${option.id}`)));
   candidate.completedBusinessProjects = [...new Set((candidate.completedBusinessProjects ?? []).filter((id) => businessProjectIds.has(id)))];
   candidate.assets = Object.fromEntries(Object.entries(candidate.assets ?? {}).filter(([id]) => knownIds(content, 'assets').has(id)));

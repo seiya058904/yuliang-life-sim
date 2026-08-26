@@ -214,7 +214,7 @@ describe('余量 app flow', () => {
     expect(within(businessPanel).getByText(/持股 65%/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '申请上市' }));
     expect(screen.getByRole('button', { name: '已上市' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: '公开股权' })).toHaveTextContent('外部公开流通 35%');
+    expect(screen.getByRole('region', { name: '公开股权' })).toHaveTextContent('市场流通 35%');
     expect(screen.getAllByRole('button', { name: '锁定至第 29 天' })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: '锁定至第 29 天' })[0]).toBeDisabled();
   });
@@ -226,7 +226,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
-    expect(screen.getByRole('region', { name: '公开股权' })).toHaveTextContent('外部公开流通 5%');
+    expect(screen.getByRole('region', { name: '公开股权' })).toHaveTextContent('市场流通 5%');
     expect(screen.queryByRole('button', { name: '回购 10% 股权' })).not.toBeInTheDocument();
   });
 

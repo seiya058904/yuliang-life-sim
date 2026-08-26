@@ -462,6 +462,25 @@ describe('game action dispatcher', () => {
     expect(bought.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '回购早餐与咖啡档 5% 股权' });
   });
 
+  it('buys and sells separate public business shares without changing the owner stake', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 10_000;
+    state.time = { ...state.time, day: 29 };
+    state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3_200, equityPercent: 65, publicFloatPercent: 35, listed: true, listedDay: 1 };
+
+    const bought = dispatchGameAction(state, { type: 'buy_public_business_equity', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
+    const sold = dispatchGameAction(bought.state, { type: 'sell_public_business_equity', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
+
+    expect(bought.error).toBeUndefined();
+    expect(bought.state.businesses['business.seed-kiosk'].equityPercent).toBe(65);
+    expect(bought.state.publicBusinessEquities?.['business.seed-kiosk']).toMatchObject({ percent: 10, investedAmount: 208, purchaseDay: 29 });
+    expect(bought.state.lifeHistory.at(-1)).toMatchObject({ category: 'investment', title: '买入早餐与咖啡档公开股权' });
+    expect(sold.error).toBeUndefined();
+    expect(sold.state.publicBusinessEquities?.['business.seed-kiosk']).toBeUndefined();
+    expect(sold.state.businesses['business.seed-kiosk'].equityPercent).toBe(65);
+    expect(sold.state.lifeHistory.at(-1)).toMatchObject({ category: 'investment', title: '出售早餐与咖啡档公开股权' });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);

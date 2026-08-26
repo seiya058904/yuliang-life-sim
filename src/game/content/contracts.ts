@@ -628,6 +628,13 @@ export interface BusinessHolding {
   partnerCharacterId?: ContentId;
 }
 
+export interface BusinessPublicEquityHolding {
+  businessId: ContentId;
+  percent: number;
+  investedAmount: number;
+  purchaseDay: number;
+}
+
 export interface AssetHolding {
   assetId: ContentId;
   purchasePrice: number;
@@ -826,6 +833,7 @@ export interface GameState {
   relationships: Record<ContentId, number>;
   messages?: MessageState[];
   businesses: Record<ContentId, BusinessHolding>;
+  publicBusinessEquities?: Record<ContentId, BusinessPublicEquityHolding>;
   completedBusinessProjects?: ContentId[];
   assets: Record<ContentId, AssetHolding>;
   investments?: Record<ContentId, InvestmentHolding>;
@@ -915,6 +923,8 @@ export type GameAction =
   | { type: 'list_business'; businessId: ContentId }
   | { type: 'sell_business_equity'; businessId: ContentId; percent: number }
   | { type: 'buy_business_equity'; businessId: ContentId; percent: number }
+  | { type: 'buy_public_business_equity'; businessId: ContentId; percent: number }
+  | { type: 'sell_public_business_equity'; businessId: ContentId; percent: number }
   | { type: 'sell_business'; businessId: ContentId }
   | { type: 'buy_asset'; assetId: ContentId }
   | { type: 'sell_asset'; assetId: ContentId }

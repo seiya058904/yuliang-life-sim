@@ -42,7 +42,7 @@ export interface BalanceConfig {
 }
 
 export const balanceConfig: BalanceConfig = {
-  saveVersion: 6,
+  saveVersion: 7,
   contentVersion: 1,
   initialCash: 500,
   initialAbility: 10,

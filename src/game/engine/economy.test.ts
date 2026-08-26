@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateDailyBusinessProfit, calculateDailyPassiveIncome, calculateLifestyle, calculateNetWorth, wealthTierForNetWorth } from './economy';
+import { calculateDailyBusinessProfit, calculateDailyPassiveIncome, calculateDailyPublicBusinessDividend, calculateLifestyle, calculateNetWorth, wealthTierForNetWorth } from './economy';
 import type { ContentRegistry, GameState } from '../content/contracts';
 import { balanceConfig } from '../balance/config';
 
@@ -48,5 +48,15 @@ describe('economy calculations', () => {
   it('distributes passive business profit according to the player equity share', () => {
     const diluted = { ...state, businesses: { 'business.kiosk': { ...state.businesses['business.kiosk'], equityPercent: 50 } } };
     expect(calculateDailyPassiveIncome(diluted, content).profit).toBe(77);
+  });
+
+  it('values and pays dividends for separately held listed business shares', () => {
+    const listed = {
+      ...state,
+      businesses: { 'business.kiosk': { ...state.businesses['business.kiosk'], listed: true, publicFloatPercent: 35, equityPercent: 65 } },
+      publicBusinessEquities: { 'business.kiosk': { businessId: 'business.kiosk', percent: 10, investedAmount: 65, purchaseDay: 29 } },
+    };
+    expect(calculateDailyPublicBusinessDividend(listed, content)).toBe(15);
+    expect(calculateNetWorth(listed, content, balanceConfig)).toBe(Math.round(100 + 1200 + 650 * 0.65 + 65 + 550 + 100));
   });
 });

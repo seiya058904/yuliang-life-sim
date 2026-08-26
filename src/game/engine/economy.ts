@@ -49,6 +49,20 @@ export function calculateDailyBusinessProfit(holding: BusinessHolding, definitio
   return { revenue, goodsCost, wage, rent, profit: revenue - goodsCost - wage - rent };
 }
 
+export function businessValuation(holding: BusinessHolding, balance: BalanceConfig): number {
+  return Math.max(0, Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio));
+}
+
+export function calculateDailyPublicBusinessDividend(state: GameState, content: ContentRegistry): number {
+  return Object.entries(state.publicBusinessEquities ?? {}).reduce((total, [businessId, publicHolding]) => {
+    const holding = state.businesses[businessId];
+    const definition = content.businesses.find((entry) => entry.id === businessId);
+    if (!holding?.listed || !definition) return total;
+    const profit = calculateDailyBusinessProfit(holding, definition).profit;
+    return total + (profit > 0 ? roundMoney(profit * publicHolding.percent / 100) : 0);
+  }, 0);
+}
+
 function findItem(content: ContentRegistry, itemId: string): ItemDefinition | undefined {
   return content.items.find((item) => item.id === itemId);
 }
@@ -68,7 +82,11 @@ export function calculateNetWorth(state: GameState, content: ContentRegistry, ba
     const item = findItem(content, itemId);
     return total + (item?.sellable ? (state.itemPurchasePrices[itemId] ?? item.price) * item.resaleRatio * quantity : 0);
   }, 0);
-  const businessValue = Object.values(state.businesses).reduce((total, holding) => total + (holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio * ((holding.equityPercent ?? 100) / 100), 0);
+  const businessValue = Object.values(state.businesses).reduce((total, holding) => total + businessValuation(holding, balance) * ((holding.equityPercent ?? 100) / 100), 0);
+  const publicBusinessEquityValue = Object.entries(state.publicBusinessEquities ?? {}).reduce((total, [businessId, publicHolding]) => {
+    const business = state.businesses[businessId];
+    return total + (business ? businessValuation(business, balance) * publicHolding.percent / 100 : 0);
+  }, 0);
   const assetValue = Object.entries(state.assets).reduce((total, [assetId, holding]) => {
     const definition = content.assets.find((asset) => asset.id === assetId) as AssetDefinition | undefined;
     return total + (holding.currentValuation || definition?.valuation || 0);
@@ -76,7 +94,7 @@ export function calculateNetWorth(state: GameState, content: ContentRegistry, ba
   const investmentValue = Object.values(state.investments ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
   const housingHoldingValue = Object.values(state.housingHoldings ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
   const mortgageBalance = state.mortgage?.remainingPrincipal ?? 0;
-  return roundMoney(cash + housingValue + housingHoldingValue + itemValue + businessValue + assetValue + investmentValue - mortgageBalance);
+  return roundMoney(cash + housingValue + housingHoldingValue + itemValue + businessValue + publicBusinessEquityValue + assetValue + investmentValue - mortgageBalance);
 }
 
 export function calculateDailyPassiveIncome(state: GameState, content: ContentRegistry): BusinessProfitBreakdown & { assetIncome: number } {

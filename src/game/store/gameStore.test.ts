@@ -123,6 +123,21 @@ describe('game store persistence', () => {
     expect(loadGameState(contentRegistry, balanceConfig).businesses['business.seed-kiosk'].partnerCharacterId).toBeUndefined();
   });
 
+  it('migrates and filters separate public business equity holdings', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 6, businesses: {
+      'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 65, publicFloatPercent: 35, listed: true, listedDay: 8 },
+    }, publicBusinessEquities: {
+      'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, purchaseDay: 40 },
+      'business.unknown': { businessId: 'business.unknown', percent: 10, investedAmount: 100, purchaseDay: 40 },
+    } }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.publicBusinessEquities).toEqual({ 'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, purchaseDay: 40 } });
+    expect(restored.version).toBe(balanceConfig.saveVersion);
+  });
+
   it('filters completed business projects against current activity content', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, completedBusinessProjects: ['activity.brand-film-project.contract', 'activity.unknown.contract'] }));

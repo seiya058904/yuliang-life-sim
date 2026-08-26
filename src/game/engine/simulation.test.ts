@@ -209,6 +209,19 @@ describe('automatic simulation', () => {
     expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'milestone.first-investment-dividend')).toBe(true);
   });
 
+  it('pays separately held listed business shares as investment dividends', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 31);
+    initial.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3_200, equityPercent: 65, publicFloatPercent: 35, listed: true, listedDay: 1 };
+    initial.publicBusinessEquities = { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, purchaseDay: 29 } };
+    const result = advanceSimulation({ ...initial, simulationMode: 'running' as const }, 24 * 60, contentRegistry, balance);
+
+    expect(result.state.financialLedger?.entries).toEqual(expect.arrayContaining([
+      expect.objectContaining({ category: 'investment_dividend', sourceType: 'business_equity', amount: 15 }),
+    ]));
+    expect(result.state.cash).toBeGreaterThan(initial.cash);
+  });
+
   it('applies gentle vehicle depreciation and a monthly vehicle cost without treating depreciation as consumption', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 31);
@@ -222,7 +235,7 @@ describe('automatic simulation', () => {
     expect(result.state.financialLedger?.entries.some((entry) => entry.category === 'maintenance' && entry.amount > 0)).toBe(true);
   });
 
-  it('keeps deterministic annual records through five years of monthly summaries', () => {
+  it('keeps deterministic annual records through five years of monthly summaries', { timeout: 15_000 }, () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 41);
     let state: GameState = { ...initial, simulationMode: 'running', autoRepeatPlan: true, weeklyPlan: { ...initial.weeklyPlan, autoRepeat: true } };

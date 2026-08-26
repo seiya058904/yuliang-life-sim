@@ -1,7 +1,7 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity } from '../content/contracts';
 import { evaluateCondition, explainCondition } from './conditions';
-import { calculateNetWorth } from './economy';
+import { businessValuation, calculateNetWorth } from './economy';
 import { applyContentEffects, applyReachedMilestones, cloneGameState, itemCost, refreshUnlocks } from './effects';
 import { advanceSimulation } from './simulation';
 import { activityAtTime, defaultJobSchedule, validateWeeklyPlan } from './schedule';
@@ -789,11 +789,12 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const percent = Math.round(action.percent);
       const currentEquity = holding?.equityPercent ?? 100;
       const publicFloat = holding?.publicFloatPercent ?? (100 - currentEquity);
+      const publicHolding = state.publicBusinessEquities?.[action.businessId];
       if (!holding || !business) return fail(input, '还没有这项生意');
       if (!holding.listed) return fail(input, '企业尚未上市');
       if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
-      if (!Number.isInteger(action.percent) || percent <= 0 || percent > publicFloat) return fail(input, '可回购的流通股不足');
-      const valuation = (holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio;
+      if (!Number.isInteger(action.percent) || percent <= 0 || percent > publicFloat - (publicHolding?.percent ?? 0)) return fail(input, '可回购的流通股不足');
+      const valuation = businessValuation(holding, balance);
       const purchaseValue = Math.max(0, Math.round(valuation * percent / 100));
       if (state.cash - purchaseValue < reserveRequired(state, content)) return fail(input, '现金不足以回购企业股权');
       holding.equityPercent = Math.min(100, currentEquity + percent);
@@ -804,10 +805,56 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       effects.push({ type: 'cash', amount: -purchaseValue, reason: '回购公开股权' });
       break;
     }
+    case 'buy_public_business_equity': {
+      const holding = state.businesses[action.businessId];
+      const business = find(content.businesses, action.businessId);
+      const percent = Math.round(action.percent);
+      const publicFloat = holding?.publicFloatPercent ?? (100 - (holding?.equityPercent ?? 100));
+      const existing = state.publicBusinessEquities?.[action.businessId];
+      if (!holding || !business) return fail(input, '还没有这项企业');
+      if (!holding.listed) return fail(input, '企业尚未上市');
+      if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
+      if (!Number.isInteger(action.percent) || percent <= 0 || percent > publicFloat - (existing?.percent ?? 0)) return fail(input, '可购买的公开流通股不足');
+      const purchaseValue = Math.max(1, Math.round(businessValuation(holding, balance) * percent / 100));
+      if (state.cash - purchaseValue < reserveRequired(state, content)) return fail(input, '现金不足以购买公开股权');
+      state.publicBusinessEquities ??= {};
+      state.publicBusinessEquities[action.businessId] = existing
+        ? { ...existing, percent: existing.percent + percent, investedAmount: existing.investedAmount + purchaseValue }
+        : { businessId: action.businessId, percent, investedAmount: purchaseValue, purchaseDay: state.time.day };
+      state.cash -= purchaseValue;
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_allocation', category: 'investment_transfer', amount: purchaseValue, label: `买入${business.name}公开股权`, sourceType: 'business_equity', sourceId: business.id, cashDelta: -purchaseValue });
+      addLifeRecord(state, { category: 'investment', title: `买入${business.name}公开股权`, detail: `取得 ${state.publicBusinessEquities[action.businessId].percent}% 公开份额`, sourceId: business.id, amount: -purchaseValue });
+      effects.push({ type: 'cash', amount: -purchaseValue, reason: '买入企业公开股权' });
+      break;
+    }
+    case 'sell_public_business_equity': {
+      const holding = state.businesses[action.businessId];
+      const business = find(content.businesses, action.businessId);
+      const publicHolding = state.publicBusinessEquities?.[action.businessId];
+      const percent = Math.round(action.percent);
+      if (!holding || !business || !publicHolding) return fail(input, '还没有这项公开股权');
+      if (!holding.listed) return fail(input, '企业尚未上市');
+      if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
+      if (!Number.isInteger(action.percent) || percent <= 0 || percent > publicHolding.percent) return fail(input, '出售公开股权比例无效');
+      const saleValue = Math.max(1, Math.round(businessValuation(holding, balance) * percent / 100));
+      const costBasis = Math.round(publicHolding.investedAmount * percent / publicHolding.percent);
+      publicHolding.percent -= percent;
+      publicHolding.investedAmount -= costBasis;
+      if (publicHolding.percent <= 0) delete state.publicBusinessEquities![action.businessId];
+      state.cash += saleValue;
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'asset_liquidation', amount: saleValue, label: `出售${business.name}公开股权`, sourceType: 'business_equity', sourceId: business.id, cashDelta: saleValue, costBasis });
+      const realized = saleValue - costBasis;
+      if (realized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: realized, cashDelta: 0, label: `已实现收益 · ${business.name}公开股权`, sourceType: 'business_equity', sourceId: business.id, costBasis });
+      if (realized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized, cashDelta: 0, label: `已实现亏损 · ${business.name}公开股权`, sourceType: 'business_equity', sourceId: business.id, costBasis });
+      addLifeRecord(state, { category: 'investment', title: `出售${business.name}公开股权`, detail: `变现 ${percent}% 公开份额`, sourceId: business.id, amount: saleValue });
+      effects.push({ type: 'cash', amount: saleValue, reason: '出售企业公开股权' });
+      break;
+    }
     case 'sell_business': {
       const holding = state.businesses[action.businessId];
       const business = find(content.businesses, action.businessId);
       if (!holding || !business) return fail(input, '还没有这项生意');
+      if (state.publicBusinessEquities?.[action.businessId]) return fail(input, '请先出售这项企业的公开股权');
       const equity = Math.min(100, Math.max(0, holding.equityPercent ?? 100)) / 100;
       const saleValue = Math.max(0, Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio * equity));
       delete state.businesses[action.businessId];
