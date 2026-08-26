@@ -79,6 +79,28 @@ describe('automatic simulation', () => {
     expect(result.state.cash).toBeLessThan(2800);
   });
 
+  it('settles a five-day luxury vacation once across a week boundary', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 29);
+    initial.time = { day: 6, hour: 8, minute: 0 };
+    initial.calendar = { ...initial.calendar, week: 1, weekday: 6 };
+    initial.currentJobId = undefined;
+    initial.employment = undefined;
+    initial.cash = 25000;
+    const plan = structuredClone(initial.weeklyPlan);
+    plan.autoRepeat = true;
+    for (const weekday of [7, 1, 2, 3, 4] as const) plan.days[weekday] = { day: { kind: 'free' }, evening: { kind: 'free' } };
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.luxury-vacation', optionId: 'resort' };
+    const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: true, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 8 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.financialLedger?.entries.filter((entry) => entry.sourceId === 'activity.luxury-vacation')).toHaveLength(1);
+    expect(result.state.financialLedger?.entries.find((entry) => entry.sourceId === 'activity.luxury-vacation')?.amount).toBe(18000);
+    expect(result.state.lifeHistory?.filter((entry) => entry.sourceId === 'activity.luxury-vacation')).toHaveLength(1);
+    expect(result.state.locationVisits?.['location.old-town']).toBe(1);
+    expect(result.state.cash).toBeLessThan(7000);
+  });
+
   it('applies a vehicle travel discount and records the self-drive feedback', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 23);

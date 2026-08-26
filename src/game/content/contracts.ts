@@ -13,7 +13,7 @@ export type CareerExperienceStage = '暂无' | '基础' | '熟悉' | '扎实' | 
 export type PlayerStage = 'start' | 'growing' | 'stable' | 'wealthy';
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export type PlanSlot = 'day' | 'evening';
-export type ActivityDuration = 60 | 120 | 180 | 240 | 2880;
+export type ActivityDuration = 60 | 120 | 180 | 240 | 2880 | 4320 | 7200;
 export type PlannedActivity =
   | { kind: 'study'; durationMinutes: ActivityDuration }
   | { kind: 'course'; courseId: ContentId }

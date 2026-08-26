@@ -334,7 +334,7 @@ export const officialActivities = [
     financialCategory: 'travel',
     locationId: 'location.old-town',
     familiarityTags: ['travel'],
-    options: [{ id: 'explore', label: '安排国内探索', durationMinutes: 240, cashCost: 2800, cooldownDays: 90, effects: [{ type: 'attribute', attribute: 'mood', amount: 24 }, { type: 'stat', stat: 'lifestyle', amount: 3 }] }],
+    options: [{ id: 'explore', label: '安排国内探索', durationMinutes: 4320, cashCost: 2800, cooldownDays: 90, effects: [{ type: 'attribute', attribute: 'mood', amount: 24 }, { type: 'stat', stat: 'lifestyle', amount: 3 }] }],
   },
   {
     id: 'activity.luxury-vacation',
@@ -346,7 +346,7 @@ export const officialActivities = [
     financialCategory: 'travel',
     locationId: 'location.old-town',
     familiarityTags: ['travel'],
-    options: [{ id: 'resort', label: '安排豪华度假', durationMinutes: 240, cashCost: 18000, cooldownDays: 120, effects: [{ type: 'attribute', attribute: 'mood', amount: 28 }, { type: 'stat', stat: 'lifestyle', amount: 7 }] }],
+    options: [{ id: 'resort', label: '安排豪华度假', durationMinutes: 7200, cashCost: 18000, cooldownDays: 120, effects: [{ type: 'attribute', attribute: 'mood', amount: 28 }, { type: 'stat', stat: 'lifestyle', amount: 7 }] }],
   },
   {
     id: 'activity.coffee-with-contact',

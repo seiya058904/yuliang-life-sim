@@ -10,7 +10,7 @@ const DAY_END = 17 * 60;
 const EVENING_START = 19 * 60;
 const EVENING_END = 23 * 60;
 const DURATIONS: readonly ActivityDuration[] = [60, 120, 240];
-const LONG_ACTIVITY_DURATION = 2880;
+const LONG_ACTIVITY_MIN_DURATION = 2880;
 const MINUTES_PER_DAY = 24 * 60;
 
 export interface ScheduleValidationContent {
@@ -53,13 +53,16 @@ export function validateWeeklyPlan(plan: WeeklyPlan, employment: EmploymentState
         const definition = getActivityDefinition(content as ContentRegistry, activity.activityId);
         const option = definition && getActivityOption(definition, activity.optionId);
         if (!option) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}活动选项不存在`);
-        else if (slot === 'day' && option.durationMinutes > DAY_END - DAY_START && option.durationMinutes !== LONG_ACTIVITY_DURATION) errors.push(`周${weekday}白天活动时长超出可规划时间`);
+        else if (slot === 'day' && option.durationMinutes > DAY_END - DAY_START && option.durationMinutes < LONG_ACTIVITY_MIN_DURATION) errors.push(`周${weekday}白天活动时长超出可规划时间`);
         else if (slot === 'evening' && option.durationMinutes > EVENING_END - EVENING_START) errors.push(`周${weekday}晚间活动时长超出可规划时间`);
-        else if (slot === 'day' && option.durationMinutes === LONG_ACTIVITY_DURATION) {
-          const nextWeekday = weekday === 7 ? 1 : weekday + 1 as Weekday;
-          const nextDayPlan = plan.days[nextWeekday];
-          if (nextDayPlan.day.kind !== 'free' || nextDayPlan.evening.kind !== 'free') errors.push(`周${weekday}两日活动与周${weekdayLabel(nextWeekday)}计划冲突`);
-          if (employment?.schedule.workDays.includes(nextWeekday)) errors.push(`周${weekday}两日活动与周${weekdayLabel(nextWeekday)}正式工作排班冲突`);
+        else if (slot === 'day' && option.durationMinutes >= LONG_ACTIVITY_MIN_DURATION) {
+          const coveredFollowingDays = Math.floor((option.durationMinutes - (24 * 60 - DAY_START)) / MINUTES_PER_DAY);
+          for (let offset = 1; offset <= coveredFollowingDays; offset += 1) {
+            const nextWeekday = weekdayAfter(weekday, offset);
+            const nextDayPlan = plan.days[nextWeekday];
+            if (nextDayPlan.day.kind !== 'free' || nextDayPlan.evening.kind !== 'free') errors.push(`周${weekday}多日活动与周${weekdayLabel(nextWeekday)}计划冲突`);
+            if (employment?.schedule.workDays.includes(nextWeekday)) errors.push(`周${weekday}多日活动与周${weekdayLabel(nextWeekday)}正式工作排班冲突`);
+          }
         }
       } else if (activity.kind === 'course') {
         const course = content.courses?.find((entry) => entry.id === activity.courseId);
@@ -141,7 +144,7 @@ function findLongActivity(day: number, plan: WeeklyPlan, content: ContentRegistr
       if (!planned || planned.kind !== 'activity') continue;
       const definition = getActivityDefinition(content, planned.activityId);
       const option = definition && getActivityOption(definition, planned.optionId);
-      if (!option || option.durationMinutes !== LONG_ACTIVITY_DURATION) continue;
+      if (!option || option.durationMinutes < LONG_ACTIVITY_MIN_DURATION) continue;
       const candidate = plannedActivity(weekStartDay + weekday - 1, DAY_START, planned, content);
       if (absoluteMinute(candidate.start) < targetEnd && absoluteMinute(candidate.end) > targetStart) return candidate;
     }
@@ -197,6 +200,10 @@ function replaceRange(activities: ActivityState[], startMinute: number, endMinut
 
 function weekdayLabel(weekday: Weekday): string {
   return ['一', '二', '三', '四', '五', '六', '日'][weekday - 1];
+}
+
+function weekdayAfter(weekday: Weekday, offset: number): Weekday {
+  return ((weekday - 1 + offset) % 7 + 1) as Weekday;
 }
 
 type PlanSlotName = 'day' | 'evening';

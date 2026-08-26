@@ -495,8 +495,10 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
   await expect(premiumWeekend.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   const domestic = page.locator('article.activity-card').filter({ hasText: '普通国内旅行 · 安排国内探索' });
   await expect(domestic).toContainText('¥2,800');
+  await expect(domestic).toContainText('3 天');
   const luxury = page.locator('article.activity-card').filter({ hasText: '豪华度假 · 安排豪华度假' });
   await expect(luxury).toContainText('¥18,000');
+  await expect(luxury).toContainText('5 天');
   await premiumWeekend.getByRole('button', { name: '安排到本周自由时间' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
   await expect(page.getByRole('button', { name: /周[一二三四五六日]白天计划/ }).filter({ hasText: '品质周末旅行 · premium-stay' })).toBeVisible();
