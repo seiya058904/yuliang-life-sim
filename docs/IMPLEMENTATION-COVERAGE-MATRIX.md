@@ -118,7 +118,7 @@ Allowed statuses: `IMPLEMENTED`, `IMPLEMENTED VIA EQUIVALENT EXISTING SYSTEM`, `
 | Silent omissions | No required major area from the Phase 0 brief is omitted; cross-cutting versioning, counts, UI reachability, and baselines are included above the matrix. |
 | Unsupported counts | Counts are from `npm run content:validate` and an independent runtime count script using `officialContent`, `seedContent`, and `contentRegistry`. |
 | Completion overclaim risk | Matrix avoids `IMPLEMENTED` for schema-only or content-only areas. Career/shop/wealth loops are marked as requiring extension where target design exceeds reachable implementation; milestone content is only counted as complete because its evaluator, effects, persistence, history, Profile surface, and desktop/mobile flow are now verified. |
-| Ambiguous evidence | Social interaction flows are inferred from reachable UI/actions and engine tests; dedicated E2E coverage for social remains an extension/verification target. Housing/wealth now has dedicated mortgage, rental portfolio, private-equity, and wealth-summary desktop/mobile flows. |
+| Ambiguous evidence | Social interaction flows now have a dedicated Zhou business-interaction desktop/mobile E2E in addition to reachable UI/actions and engine tests; broader social variants and long-term relationship history remain extension targets. Housing/wealth now has dedicated mortgage, rental portfolio, private-equity, and wealth-summary/history desktop/mobile flows. |
 
 ## Phase 0 Concerns
 
