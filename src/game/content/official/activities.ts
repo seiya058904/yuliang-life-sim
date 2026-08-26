@@ -1,0 +1,40 @@
+import type { ActivityDefinition } from '../contracts';
+
+export const officialActivities = [
+  {
+    id: 'activity.casual-meal',
+    contentStatus: 'official',
+    name: '随便吃点好的',
+    description: '不用庆祝什么，也可以认真吃一顿。',
+    tags: ['life', 'leisure'],
+    category: 'food',
+    financialCategory: 'food',
+    locationId: 'location.central',
+    options: [{ id: 'standard', label: '普通餐桌', durationMinutes: 60, cashCost: 45, effects: [{ type: 'attribute', attribute: 'mood', amount: 2 }] }],
+  },
+  {
+    id: 'activity.cinema',
+    contentStatus: 'official',
+    name: '看电影',
+    description: '两个小时不用想工作和收入。',
+    tags: ['life', 'leisure'],
+    category: 'film',
+    financialCategory: 'entertainment',
+    locationId: 'location.central',
+    options: [
+      { id: 'standard', label: '普通影厅', durationMinutes: 180, cashCost: 68, effects: [{ type: 'attribute', attribute: 'mood', amount: 5 }] },
+      { id: 'premium', label: '特别放映', durationMinutes: 180, cashCost: 138, effects: [{ type: 'attribute', attribute: 'mood', amount: 7 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] },
+    ],
+  },
+  {
+    id: 'activity.cafe-break',
+    contentStatus: 'official',
+    name: '去咖啡馆坐一会',
+    description: '给自己留一小时，不为赚钱服务。',
+    tags: ['life', 'social', 'leisure'],
+    category: 'hobby',
+    financialCategory: 'social',
+    locationId: 'location.riverside',
+    options: [{ id: 'rest', label: '只是休息', durationMinutes: 60, cashCost: 38, effects: [{ type: 'attribute', attribute: 'mood', amount: 2 }] }],
+  },
+] satisfies readonly ActivityDefinition[];
