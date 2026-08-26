@@ -35,6 +35,10 @@ describe('seed content registry', () => {
       'activity.gym-session',
       'activity.personal-training',
       'activity.city-run',
+      'activity.day-trip',
+      'activity.premium-weekend',
+      'activity.domestic-standard',
+      'activity.luxury-vacation',
       'activity.brand-film-project',
     ]);
   });
