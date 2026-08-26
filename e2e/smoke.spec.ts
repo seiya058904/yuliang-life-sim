@@ -1900,3 +1900,66 @@ test('discovers the new districts and reaches their venue activities', async ({ 
   await page.getByRole('button', { name: '去安排活动' }).last().click();
   await expect(page.locator('.activity-card', { hasText: '园区公开课' })).toBeVisible();
 });
+test('runs a multi-year life in the real browser and keeps annual records consistent', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  await page.goto('http://127.0.0.1:4173');
+  await page.evaluate(() => localStorage.setItem('yuliang-e2e-hook', '1'));
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 6_000;
+    state.ability = 30;
+    state.simulationMode = 'paused';
+    state.rng = { ...(state.rng ?? {}), seed: 7, cursor: 0 };
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  const targetDay = 840; // roughly two and a half years
+  for (let cycle = 0; cycle < 80 && await page.evaluate(() => window.__yuliang.store.getState().game.time.day) < targetDay; cycle += 1) {
+    await page.evaluate(() => { window.__yuliang.store.getState().dispatch({ type: 'advance_period', months: 3 }); });
+    for (let guard = 0; guard < 60; guard += 1) {
+      const status = await page.evaluate(() => {
+        const st = window.__yuliang.store.getState();
+        const game = st.game;
+        const out = { day: game.time.day, mode: game.simulationMode, event: (game.pendingEventId ?? null) as string | null, reward: Boolean(game.pendingReward), summary: Boolean(game.pendingMonthlySummary), choices: [] as string[] };
+        if (out.event) out.choices = [...(window.__yuliang.eventChoices[out.event] ?? [])];
+        return out;
+      });
+      if (status.event && status.choices.length > 0) {
+        await page.evaluate(({ eventId, choiceId }: { eventId: string; choiceId: string }) => {
+          window.__yuliang.store.getState().dispatch({ type: 'choose_event', eventId, choiceId } as never);
+        }, { eventId: status.event, choiceId: status.choices[0] });
+        continue;
+      }
+      if (status.reward) {
+        await page.evaluate(() => { window.__yuliang.store.getState().dispatch({ type: 'claim_reward' }); });
+        continue;
+      }
+      if (status.summary) {
+        await page.evaluate(() => { window.__yuliang.store.getState().dispatch({ type: 'acknowledge_monthly_summary' }); });
+        continue;
+      }
+      break;
+    }
+  }
+
+  const snapshot = await page.evaluate(() => {
+    const g = window.__yuliang.store.getState().game;
+    return {
+      day: g.time.day,
+      years: (g.annualHistory ?? []).map((entry: { year: number }) => entry.year),
+      worlds: (g.worldHistory ?? []).map((entry: { year: number }) => entry.year),
+      hasWageEntry: (g.financialLedger?.entries ?? []).some((entry: { category: string }) => entry.category === 'wage'),
+      mode: g.simulationMode,
+    };
+  });
+  console.log('MULTIYEAR:', JSON.stringify(snapshot));
+  expect(snapshot.day).toBeGreaterThanOrEqual(280);
+  expect(snapshot.years.length).toBeGreaterThanOrEqual(2);
+  expect(new Set(snapshot.years).size).toBe(snapshot.years.length);
+  expect(snapshot.hasWageEntry).toBe(true);
+
+  await page.reload();
+  const restored = await page.evaluate(() => (window.__yuliang.store.getState().game.annualHistory ?? []).length);
+  expect(restored).toBeGreaterThanOrEqual(2);
+});

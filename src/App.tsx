@@ -25,6 +25,19 @@ import './styles.css';
 
 export const appStore = createGameStore(contentRegistry, balanceConfig);
 const gameStore = appStore;
+// Opt-in debug bridge for browser long-run verification (activated by the test suite via localStorage).
+declare global {
+  interface Window {
+    __yuliang?: { store: typeof appStore; eventChoices: Record<string, readonly string[]> };
+  }
+}
+if (typeof window !== 'undefined' && window.localStorage.getItem('yuliang-e2e-hook') === '1') {
+  const eventChoices: Record<string, readonly string[]> = {};
+  for (const event of contentRegistry.events) {
+    eventChoices[event.id] = event.choices.map((choice) => choice.id);
+  }
+  (window as unknown as { __yuliang?: unknown }).__yuliang = { store: appStore, eventChoices };
+}
 const navItems = [
   ['life', '生活'], ['work', '职业'], ['shop', '商店'], ['wealth', '财富'], ['relations', '社交'], ['city', '城市'], ['profile', '我的'],
 ] as const;
