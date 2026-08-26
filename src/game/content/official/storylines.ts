@@ -195,4 +195,57 @@ export const officialStorylines = [
       { id: 'complete' },
     ],
   },
+  {
+    id: 'storyline.old-photo-album',
+    contentStatus: 'official',
+    name: '旧相册',
+    description: '一张旧照片把你和宋雨然带回同一段记忆里。',
+    tags: ['relationship'],
+    conditions: { type: 'all', conditions: [{ type: 'relationship_at_least', characterId: 'character.song-yuran', amount: 25 }, { type: 'day_at_least', day: 60 }] },
+    initialStageId: 'call',
+    stages: [
+      {
+        id: 'call',
+        dialogueId: 'dialogue.old-photo-call',
+        branches: [
+          { id: 'meet', text: '周末去旧城见她', nextStageId: 'walk', effects: [{ type: 'relation', characterId: 'character.song-yuran', amount: 8 }, { type: 'attribute', attribute: 'mood', amount: 2 }] },
+          { id: 'postpone', text: '先在线上聊聊', nextStageId: 'walk', effects: [{ type: 'relation', characterId: 'character.song-yuran', amount: 3 }] },
+        ],
+      },
+      {
+        id: 'walk',
+        dialogueId: 'dialogue.old-photo-walk',
+        branches: [
+          { id: 'close', text: '把这页翻过去', nextStageId: 'complete', effects: [{ type: 'relation', characterId: 'character.song-yuran', amount: 6 }, { type: 'attribute', attribute: 'communication', amount: 1 }] },
+        ],
+      },
+      { id: 'complete' },
+    ],
+  },
+  {
+    id: 'storyline.partnership-trial',
+    contentStatus: 'official',
+    name: '第一次合伙试验',
+    description: '顾清手里有个小项目：赔了算学费，赚了是第一笔真正的合伙收入。',
+    tags: ['business', 'career'],
+    conditions: { type: 'owns_business', businessId: 'business.seed-kiosk' },
+    initialStageId: 'offer',
+    stages: [
+      {
+        id: 'offer',
+        dialogueId: 'dialogue.partnership-trial',
+        branches: [
+          { id: 'join', text: '投 ¥3,000 入伙', nextStageId: 'report', effects: [{ type: 'cash', amount: -3000 }, { type: 'set_flag', flag: 'first_partnership_trial' }, { type: 'relation', characterId: 'character.guqing', amount: 8 }] },
+          { id: 'observe', text: '这次先围观', nextStageId: 'report', effects: [{ type: 'relation', characterId: 'character.guqing', amount: 3 }, { type: 'attribute', attribute: 'knowledge', amount: 1 }] },
+        ],
+      },
+      {
+        id: 'report',
+        branches: [
+          { id: 'close', text: '复盘这次选择', nextStageId: 'complete', effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] },
+        ],
+      },
+      { id: 'complete' },
+    ],
+  },
 ] satisfies readonly StorylineDefinition[];

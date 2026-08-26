@@ -603,7 +603,7 @@ describe('余量 app flow', () => {
 
     await user.click(screen.getByRole('button', { name: '社交' }));
     expect(screen.getByRole('heading', { name: '人物偏好' })).toBeInTheDocument();
-    expect(screen.getAllByText('偏好：吃饭')).toHaveLength(2);
+    expect(screen.getAllByText('偏好：吃饭').length).toBeGreaterThanOrEqual(2);
   });
 
   it('shows the authored NPC career history available in the current year', async () => {

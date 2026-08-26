@@ -2252,5 +2252,53 @@ export const officialEvents = [
       "business",
       "luck"
     ]
+  },
+  {
+    "id": "event.wedding-invite",
+    "contentStatus": "official",
+    "name": "老同事的婚礼请柬",
+    "description": "一位很久没联系的老同事发来婚礼请柬。",
+    "title": "红色的请柬躺在信箱里",
+    "body": "写着自己名字的桌位号，让你想起不少旧时光。去不去，都是一种态度。",
+    "category": "relationship",
+    "weight": 0.8,
+    "cooldownDays": 150,
+    "conditions": { "type": "day_at_least", "day": 90 },
+    "choices": [
+      { "id": "attend", "text": "带上红包去喝喜酒", "effects": [{ "type": "cash", "amount": -600 }, { "type": "attribute", "attribute": "network", "amount": 2 }, { "type": "stat", "stat": "lifestyle", "amount": 1 }] },
+      { "id": "gift-only", "text": "托人带一个红包", "effects": [{ "type": "cash", "amount": -300 }, { "type": "attribute", "attribute": "network", "amount": 1 }] }
+    ]
+  },
+  {
+    "id": "event.industry-salon",
+    "contentStatus": "official",
+    "name": "行业沙龙邀请函",
+    "description": "周末的行业沙龙在征集一线观察分享者。",
+    "title": "有人递来一支话筒",
+    "body": "台下的提问比想象中尖锐，也比你想象中友好。",
+    "category": "work",
+    "weight": 0.9,
+    "cooldownDays": 120,
+    "conditions": { "type": "day_at_least", "day": 60 },
+    "choices": [
+      { "id": "speak", "text": "上台分享十五分钟", "effects": [{ "type": "cash", "amount": -80 }, { "type": "stat", "stat": "reputation", "amount": 3 }, { "type": "attribute", "attribute": "knowledge", "amount": 1 }] },
+      { "id": "attend-quietly", "text": "坐在后排做笔记", "effects": [{ "type": "cash", "amount": -80 }, { "type": "attribute", "attribute": "knowledge", "amount": 2 }] }
+    ]
+  },
+  {
+    "id": "event.gym-annual-promo",
+    "contentStatus": "official",
+    "name": "健身房年卡促销",
+    "description": "楼下的健身房在做一年一度的续卡促销。",
+    "title": "前台摆出了倒计时牌",
+    "body": "促销员笑着说：练不练无所谓，来拍照打卡的也有的是。",
+    "category": "shopping",
+    "weight": 0.7,
+    "cooldownDays": 200,
+    "conditions": { "type": "cash_at_least", "amount": 800 },
+    "choices": [
+      { "id": "buy-annual", "text": "顺势办一张年卡", "effects": [{ "type": "cash", "amount": -700 }, { "type": "attribute", "attribute": "fitness", "amount": 2 }] },
+      { "id": "pass", "text": "继续户外跑步", "effects": [{ "type": "attribute", "attribute": "mood", "amount": 1 }] }
+    ]
   }
 ] satisfies readonly EventDefinition[];

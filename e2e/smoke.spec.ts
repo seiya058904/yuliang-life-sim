@@ -1852,3 +1852,32 @@ test('shows cross-industry mobility distance and a senior expert ladder', async 
   await page.getByRole('button', { name: '跨行业', exact: true }).click();
   await expect(page.locator('section[aria-label="跨行业流动"]')).toContainText('换行业的距离');
 });
+test('starts the old-photo storyline with song-yuran and persists its branch', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 5_000;
+    state.time = { day: 90, hour: 10, minute: 0 };
+    state.relationships = { ...(state.relationships ?? {}), 'character.song-yuran': 30 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const albumStory = page.locator('.item-row').filter({ hasText: '旧相册' }).first();
+  await expect(albumStory).toBeVisible();
+  await albumStory.getByRole('button', { name: '开始故事' }).click();
+  await expect(page.getByRole('region', { name: '故事线' }).or(page.locator('section', { hasText: '正在发生的故事' })).last()).toContainText('进行中');
+  await page.getByRole('button', { name: /周末去旧城见她|先在线上聊聊/ }).first().click();
+  await page.getByRole('button', { name: '把这页翻过去' }).click();
+  await expect(page.getByText('已完成').first()).toBeVisible();
+
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('把这页翻过去').first()).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const albumAfterReload = page.locator('.item-row').filter({ hasText: '旧相册' }).first();
+  await expect(albumAfterReload).toContainText('已完成');
+});

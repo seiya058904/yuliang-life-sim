@@ -106,4 +106,37 @@ export const officialDialogues = [
       { id: 'reminder', speakerId: 'character.chenyu', text: '看清楚风险、投入和现金流，再决定下一步就好。' },
     ],
   },
+  {
+    id: 'dialogue.old-photo-call',
+    contentStatus: 'official',
+    name: '旧相册来电',
+    description: '宋雨然整理工作室时翻到一张旧合影，打电话问你记不记得那天。',
+    tags: ['relationship'],
+    lines: [
+      { id: 'hello', speakerId: 'character.song-yuran', text: '我在画箱底下翻到一张旧照片，就是那年河边的那一次。' },
+      { id: 'ask', speakerId: 'character.song-yuran', text: '周末要是有空，来旧城坐坐？我把它装进新绘本里。' },
+    ],
+  },
+  {
+    id: 'dialogue.old-photo-walk',
+    contentStatus: 'official',
+    name: '沿着河边的散步',
+    description: '你们沿着河边走了很久，聊起各自这几年绕过的路。',
+    tags: ['relationship'],
+    lines: [
+      { id: 'walk', speakerId: 'character.song-yuran', text: '原来你也想过放弃。我还以为只有我在硬撑。' },
+      { id: 'warm', speakerId: 'character.song-yuran', text: '谢谢你回来陪我走这一段。' },
+    ],
+  },
+  {
+    id: 'dialogue.partnership-trial',
+    contentStatus: 'official',
+    name: '合伙试验的开场白',
+    description: '顾清提起一个小项目：可以合伙，也可以只是围观。',
+    tags: ['business'],
+    lines: [
+      { id: 'intro', speakerId: 'character.guqing', text: '有个为期一个季度的小项目，规模不大，但需要一个人一起扛。' },
+      { id: 'choice-set', speakerId: 'character.guqing', text: '投入不用多，但需要你认真对待。想好了再答我。' },
+    ],
+  },
 ] satisfies readonly DialogueDefinition[];

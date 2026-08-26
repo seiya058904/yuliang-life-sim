@@ -112,12 +112,16 @@ describe('seed content registry', () => {
       'interaction.business-with-zhou',
       'interaction.consulting-review-with-guqing',
       'interaction.bookstore-with-lin',
+      'interaction.song-yuran-gallery',
+      'interaction.tang-ke-meal',
+      'interaction.luo-lan-nighttalk',
+      'interaction.yan-zhe-late-meal',
     ]);
   });
 
   it('populates a bounded career history for every official character', () => {
     const characters = contentRegistry.characters.filter((character) => character.contentStatus === 'official');
-    expect(characters).toHaveLength(7);
+    expect(characters).toHaveLength(11);
     expect(characters.every((character) => (character.careerHistory?.length ?? 0) >= 1)).toBe(true);
   });
 
@@ -390,6 +394,8 @@ describe('seed content registry', () => {
       'storyline.client-poach',
       'storyline.employee-purchase',
       'storyline.first-fund-purchase',
+      'storyline.old-photo-album',
+      'storyline.partnership-trial',
     ]);
     expect(contentRegistry.dialogues?.filter((dialogue) => dialogue.contentStatus === 'official').map((dialogue) => dialogue.id)).toEqual([
       'dialogue.remote-connection',
@@ -403,6 +409,9 @@ describe('seed content registry', () => {
       'dialogue.client-poach-entry',
       'dialogue.employee-purchase-entry',
       'dialogue.first-fund-purchase',
+      'dialogue.old-photo-call',
+      'dialogue.old-photo-walk',
+      'dialogue.partnership-trial',
     ]);
   });
 
