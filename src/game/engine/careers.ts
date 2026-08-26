@@ -373,6 +373,10 @@ export function advanceCareerLifecycle(state: GameState, day: number, _content: 
   }
   state.opportunities = (state.opportunities ?? []).filter((opportunity) => opportunity.expiresDay >= day || state.applications?.some((application) => application.opportunityId === opportunity.id));
   state.gigs = (state.gigs ?? []).filter((gig) => gig.expiresDay >= day);
+  if (!(state.gigs ?? []).length) {
+    const gigJob = _content.jobs.find((job) => employmentKind(job) === 'gig' && (job.abilityRequired ?? 0) <= state.ability && (job.reputationRequired ?? 0) <= state.reputation);
+    if (gigJob) state.gigs = [{ id: `gig.offer.${gigJob.id}.${day}`, jobId: gigJob.id, validFromDay: day, expiresDay: day + 6, executableDay: day, startMinute: 18 * 60, endMinute: 18 * 60 + gigJob.hours * 60, pay: gigJob.basePay, source: '工作市场' }];
+  }
 }
 
 function vacancyFromTemplate(template: VacancyTemplate, month: number, content: ContentRegistry, balance: BalanceConfig): VacancyState {

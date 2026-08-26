@@ -129,4 +129,14 @@ describe('game action dispatcher', () => {
     expect(failed.error).toBeDefined();
     expect(failed.state.lifeHistory).toHaveLength(beforeFailureCount);
   });
+
+  it('executes an offered gig once and records its income and career progress', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 9);
+    state.gigs = [{ id: 'gig.test', jobId: 'job.delivery-shift', validFromDay: 1, expiresDay: 7, executableDay: 1, startMinute: 1080, endMinute: 1320, pay: 76, source: '测试市场' }];
+    const result = dispatchGameAction(state, { type: 'execute_gig', gigId: 'gig.test' }, contentRegistry, balanceConfig);
+    expect(result.error).toBeUndefined();
+    expect(result.state.cash).toBe(balanceConfig.initialCash + 76);
+    expect(result.state.gigs).toEqual([]);
+    expect(result.state.lifeHistory.at(-1)).toMatchObject({ category: 'career', title: '完成同城配送', amount: 76 });
+  });
 });

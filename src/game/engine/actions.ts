@@ -11,6 +11,7 @@ import { applyAttributeDelta } from './attributes';
 import { deterministicApplicationDecision, employmentKind, evaluateApplicationCompetitiveness } from './careers';
 import { appendLifeRecord } from './lifeHistory';
 import { careerRequirementsSatisfied } from './careerProgression';
+import { applyCareerExperience } from './careerProgression';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
 const find = <T extends { id: string }>(entries: readonly T[], id: string): T | undefined => entries.find((entry) => entry.id === id);
@@ -200,7 +201,14 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         addLifeRecord(state, { category: 'career', title: `获得${job.name}资格`, detail: '长期兼职资格已加入我的兼职', sourceId: job.id, amount: application.salaryRange[0] });
         break;
       }
-      if (employmentKind(job) === 'gig') return fail(input, '一次性零工需要在工作机会中安排');
+      if (employmentKind(job) === 'gig') {
+        state.gigs ??= [];
+        if (state.gigs.some((gig) => gig.jobId === job.id && gig.expiresDay >= state.time.day)) return fail(input, '这项零工已经在你的安排中');
+        state.gigs.push({ id: `gig.${application.applicationId}`, jobId: job.id, validFromDay: state.time.day, expiresDay: state.time.day + 6, executableDay: state.time.day, startMinute: state.time.hour * 60, endMinute: state.time.hour * 60 + job.hours * 60, pay: application.salaryRange[0], source: application.companyId });
+        application.status = 'accepted';
+        addLifeRecord(state, { category: 'career', title: `接下${job.name}`, detail: '一次性零工已加入工作机会', sourceId: job.id });
+        break;
+      }
       if (state.employment?.pendingJobId && !action.replacePending) return fail(input, '你已经准备加入另一份工作，请明确选择是否替换');
       if (state.employment?.pendingJobId && action.replacePending) {
         state.applications?.filter((entry) => entry.status === 'accepted').forEach((entry) => { entry.status = 'withdrawn'; });
@@ -503,6 +511,19 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (realized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized, cashDelta: 0, label: `已实现亏损 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
       addLifeRecord(state, { category: 'investment', title: `卖出${investment.name}`, detail: `${action.units} 份`, sourceId: investment.id, amount: total });
       effects.push({ type: 'cash', amount: total, reason: '投资退出' });
+      break;
+    }
+    case 'execute_gig': {
+      const gig = state.gigs?.find((entry) => entry.id === action.gigId);
+      const job = gig ? find(content.jobs, gig.jobId) : undefined;
+      if (!gig || !job || state.time.day < gig.validFromDay || state.time.day > gig.expiresDay) return fail(input, '这项零工已过期');
+      state.cash += gig.pay;
+      applyCareerExperience(state, job.experienceTags ?? [], job.careerXp);
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'side_job', amount: gig.pay, label: `${job.name}结算`, sourceType: 'job', sourceId: job.id });
+      addLifeRecord(state, { category: 'career', title: `完成${job.name}`, detail: '一次性零工已结算', sourceId: job.id, amount: gig.pay });
+      state.monthlyHighlights = [...(state.monthlyHighlights ?? []), { id: `gig.completed.${gig.id}`, kind: 'gig_completed', day: state.time.day, label: `完成零工 · ${job.name}`, sourceId: job.id }];
+      state.gigs = (state.gigs ?? []).filter((entry) => entry.id !== gig.id);
+      effects.push({ type: 'cash', amount: gig.pay, reason: `${job.name}结算` });
       break;
     }
     case 'work':

@@ -709,6 +709,7 @@ export type GameAction =
   | { type: 'submit_application'; vacancyId?: string; opportunityId?: ContentId }
   | { type: 'withdraw_application'; applicationId: string }
   | { type: 'accept_application_offer'; applicationId: string; replacePending?: boolean }
+  | { type: 'execute_gig'; gigId: ContentId }
   | { type: 'decline_application_offer'; applicationId: string }
   | { type: 'start_recruitment'; jobId: ContentId }
   | { type: 'advance_recruitment'; jobId: ContentId }
