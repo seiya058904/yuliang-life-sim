@@ -225,6 +225,11 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
       }
       previousYear = entry.startYear;
     }
+    const dynamicFlags = new Set<string>();
+    for (const dynamicState of company.dynamicStates ?? []) {
+      if (!dynamicState.flag.trim() || !dynamicState.title.trim() || dynamicFlags.has(dynamicState.flag)) errors.push(`公司 ${company.id} 的动态状态无效`);
+      dynamicFlags.add(dynamicState.flag);
+    }
   });
   registry.assets.forEach((asset) => { if (asset.price < 0 || asset.valuation < 0 || asset.volatility < 0) errors.push(`资产 ${asset.id} 的数值无效`); checkCondition(asset.requirements, `资产 ${asset.id}`); checkEffects(asset.effects, `资产 ${asset.id}`); });
   registry.characters.forEach((character) => { if (character.initialRelationship < 0 || character.initialRelationship > 100) errors.push(`人物 ${character.id} 的初始关系无效`); });

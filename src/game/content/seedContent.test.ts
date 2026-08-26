@@ -243,6 +243,15 @@ describe('seed content registry', () => {
     ]));
   });
 
+  it('exposes the player-impactable Xinghe company state', () => {
+    expect(contentRegistry.companies?.find((company) => company.id === 'company.xinghe')).toMatchObject({
+      dynamicStates: [{ flag: 'xinghe_service_line_launched', title: '企业服务线提前启动（玩家参与）' }],
+    });
+    expect(contentRegistry.events.find((event) => event.id === 'event.xinghe-expansion')?.choices[0].effects).toEqual(expect.arrayContaining([
+      { type: 'set_flag', flag: 'xinghe_service_line_launched' },
+    ]));
+  });
+
   it('exposes the neworder automotive service route with a progression ladder', () => {
     expect(contentRegistry.companies).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'company.neworder-auto', name: '新序汽车服务', jobIds: expect.arrayContaining(['job.auto-service-assistant', 'job.sales-consultant-assistant', 'job.auto-sales-consultant', 'job.auto-customer-operations']) }),

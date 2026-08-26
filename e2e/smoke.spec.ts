@@ -1076,10 +1076,31 @@ test('turns a company expansion event into a visible internal career opportunity
   await expect(page.getByRole('dialog')).toContainText('星河科技的业务扩展');
   await page.getByRole('dialog').getByRole('button', { name: /参与前期项目/ }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
+  const changedState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  expect(changedState.flags?.xinghe_service_line_launched).toBe(true);
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
   await page.getByRole('button', { name: '工作机会' }).click();
   await expect(page.getByText('星河科技业务扩展')).toBeVisible();
   await expect(page.getByText('独立项目顾问')).toBeVisible();
+});
+
+test('shows the player-triggered company state in annual world history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.worldHistory = [{ year: 1, day: 337, netWorth: 18_000, businessCount: 0, relationshipCount: 1, visitedLocationCount: 1, companyStates: { 'company.xinghe': '企业服务线提前启动（玩家参与）' } }];
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  const worldHistory = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
+  await expect(worldHistory).toContainText('星河科技');
+  await expect(worldHistory).toContainText('企业服务线提前启动（玩家参与）');
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]')).toContainText('企业服务线提前启动（玩家参与）');
 });
 
 test('turns a qualifying manager state into a persisted headhunter opportunity', async ({ page }) => {

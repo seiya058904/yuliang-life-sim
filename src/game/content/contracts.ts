@@ -349,6 +349,7 @@ export interface InvestmentDefinition extends ContentMeta {
 export interface CompanyDefinition extends ContentMeta {
   industry: string;
   history?: readonly CompanyHistoryEntry[];
+  dynamicStates?: readonly CompanyDynamicState[];
   jobIds?: readonly ContentId[];
   characterIds?: readonly ContentId[];
   investmentIds?: readonly ContentId[];
@@ -359,6 +360,11 @@ export interface CompanyDefinition extends ContentMeta {
 
 export interface CompanyHistoryEntry {
   startYear: number;
+  title: string;
+}
+
+export interface CompanyDynamicState {
+  flag: string;
   title: string;
 }
 

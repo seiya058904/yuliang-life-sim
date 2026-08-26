@@ -25,7 +25,8 @@ export const officialEvents = [
         "text": "参与前期项目",
         "effects": [
           { "type": "attribute", "attribute": "network", "amount": 1 },
-          { "type": "stat", "stat": "reputation", "amount": 2 }
+          { "type": "stat", "stat": "reputation", "amount": 2 },
+          { "type": "set_flag", "flag": "xinghe_service_line_launched" }
         ],
         "opportunity": {
           "jobId": "job.independent-consultant",

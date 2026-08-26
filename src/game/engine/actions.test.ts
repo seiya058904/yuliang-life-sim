@@ -538,6 +538,7 @@ describe('game action dispatcher', () => {
       expect.objectContaining({ jobId: 'job.independent-consultant', companyId: 'company.xinghe', route: 'internal', expiresDay: 22 }),
     ]));
     expect(chosen.state.lifeHistory.at(-1)).toMatchObject({ category: 'event', title: '星河科技的业务扩展' });
+    expect(chosen.state.flags.xinghe_service_line_launched).toBe(true);
   });
 
   it('runs a requested month through the normal weekly and monthly settlement loop', () => {
