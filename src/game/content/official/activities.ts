@@ -420,7 +420,7 @@ export const officialActivities = [
     name: '园区公开课',
     description: '科技园的开放讲座谁都能进，讲者水平随缘，收获看个人。',
     tags: ['life', 'career'],
-    category: 'study',
+    category: 'hobby',
     financialCategory: 'education',
     locationId: 'location.tech-park',
     options: [{ id: 'attend', label: '旁听一场分享', durationMinutes: 120, cashCost: 25, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }, { type: 'attribute', attribute: 'professional', amount: 1 }] }],
