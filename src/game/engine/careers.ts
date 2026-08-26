@@ -45,6 +45,7 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     'job.huanliu-warehouse-assistant',
     'job.huanliu-dispatch-coordinator',
     'job.course-operations-assistant',
+    'job.course-teaching-assistant',
   ];
   const protectedJobIds = new Set([starterTemplate?.jobId, ...officeTemplates.map((template) => template.jobId)]);
   for (const jobId of guaranteedRoutes) {

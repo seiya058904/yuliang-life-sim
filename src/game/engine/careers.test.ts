@@ -46,6 +46,17 @@ describe('career market', () => {
     expect(requirementHints(job, state, contentRegistry, balanceConfig).map((hint) => hint.label)).toEqual(expect.arrayContaining(['提升知识', '提升沟通']));
   });
 
+  it('connects the education course qualification to the long-term teaching assistant route', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 31);
+    const job = contentRegistry.jobs.find((entry) => entry.id === 'job.course-teaching-assistant')!;
+    const before = requirementHints(job, state, contentRegistry, balanceConfig);
+    const after = requirementHints(job, { ...state, ability: 14, reputation: 3, qualifications: ['qualification.workplace-basics'] }, contentRegistry, balanceConfig);
+
+    expect(generateVacancies(state, contentRegistry, balanceConfig).some((vacancy) => vacancy.jobId === job.id)).toBe(true);
+    expect(before.map((hint) => hint.label)).toContain('获得qualification.workplace-basics资格');
+    expect(after).toEqual([]);
+  });
+
   it('rates a referred, experienced candidate above a minimally qualified candidate without exposing a raw chance', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 7);
     const job = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!;

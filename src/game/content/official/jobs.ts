@@ -400,5 +400,22 @@ export const officialJobs = [
       { "type": "attribute_at_least", "attribute": "communication", "amount": 22 }
     ] },
     "isLongTerm": true
+  },
+  {
+    "id": "job.course-teaching-assistant",
+    "contentStatus": "official",
+    "name": "线上课程助教",
+    "description": "协助学员答疑、整理作业与维护课程秩序，把课程资格转成稳定的长期兼职。",
+    "tags": ["work", "remote", "education"],
+    "kind": "freelance",
+    "employmentKind": "repeatable_side_job",
+    "hours": 4,
+    "basePay": 168,
+    "abilityRequired": 14,
+    "reputationRequired": 3,
+    "careerXp": 2,
+    "experienceTags": ["office", "customer_service"],
+    "qualificationRequired": ["qualification.workplace-basics"],
+    "isLongTerm": false
   }
 ] satisfies readonly JobDefinition[];

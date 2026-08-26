@@ -107,10 +107,10 @@ describe('seed content registry', () => {
 
   it('exposes the official education company route and its public vacancies', () => {
     expect(contentRegistry.companies?.find((company) => company.id === 'company.greenfield-education')).toMatchObject({
-      name: '青禾教育科技', locationId: 'location.central', jobIds: expect.arrayContaining(['job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist']),
+      name: '青禾教育科技', locationId: 'location.central', jobIds: expect.arrayContaining(['job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist', 'job.course-teaching-assistant']),
     });
     expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.greenfield-education').map((vacancy) => vacancy.jobId)).toEqual([
-      'job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist',
+      'job.course-operations-assistant', 'job.learning-consultant', 'job.course-operations-specialist', 'job.course-teaching-assistant',
     ]);
   });
 

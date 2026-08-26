@@ -51,6 +51,19 @@ describe('game store persistence', () => {
     expect(restored.qualifications).toEqual(['office_basics']);
   });
 
+  it('preserves qualifications issued by official courses while removing unknown ids', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({
+      ...state,
+      version: 1,
+      qualifications: ['qualification.workplace-basics', 'qualification.unknown'],
+    }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.qualifications).toEqual(['qualification.workplace-basics']);
+  });
+
   it('migrates subscription records and removes subscriptions from unknown content', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 3, activeSubscriptions: {

@@ -150,7 +150,13 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.jobExperience = candidate.jobExperience ?? {};
   candidate.courseProgress = Object.fromEntries(Object.entries(candidate.courseProgress ?? {}).filter(([id, value]) => (content.courses ?? []).some((course) => course.id === id) && Number.isInteger(value) && Number(value) >= 0).map(([id, value]) => [id, Number(value)]));
   candidate.careerExperience = Object.fromEntries(Object.entries(candidate.careerExperience ?? {}).filter(([id, value]) => ['office', 'operations', 'customer_service', 'retail', 'logistics', 'data', 'project', 'management', 'media', 'finance'].includes(id) && Number.isFinite(value) && Number(value) >= 0).map(([id, value]) => [id, Number(value)]));
-  candidate.qualifications = [...new Set((candidate.qualifications ?? []).filter((id) => typeof id === 'string' && ['office_basics', 'operations_foundation', 'client_service_experience', 'retail_operations_experience', 'logistics_experience', 'data_analysis_foundation', 'project_coordination', 'people_management_basics', 'media_production_experience', 'investment_basics'].includes(id)))];
+  const legacyQualificationIds = ['office_basics', 'operations_foundation', 'client_service_experience', 'retail_operations_experience', 'logistics_experience', 'data_analysis_foundation', 'project_coordination', 'people_management_basics', 'media_production_experience', 'investment_basics'];
+  const knownQualificationIds = new Set([
+    ...legacyQualificationIds,
+    ...(content.courses ?? []).flatMap((course) => course.qualificationId ? [course.qualificationId] : []),
+    ...content.jobs.flatMap((job) => job.qualificationRequired ?? []),
+  ]);
+  candidate.qualifications = [...new Set((candidate.qualifications ?? []).filter((id) => typeof id === 'string' && knownQualificationIds.has(id)))];
   candidate.relationships = candidate.relationships ?? {};
   const characterIds = new Set(content.characters.map((entry) => entry.id));
   candidate.messages = Array.isArray(candidate.messages)
