@@ -110,7 +110,7 @@ function App() {
         {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /></>}
         {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></>}
         {activeView === 'city' && <CityView game={game} />}
-        {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /></>}
+        {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><WealthMilestoneView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /></>}
       </main>
 
       <footer className="footer-note">你负责规划，世界负责继续运行。</footer>
@@ -305,5 +305,10 @@ function EventModal({ event, onChoose }: { event: (typeof contentRegistry.events
 function EffectRail({ effects }: { effects: ReturnType<typeof gameStore.getState>['effects'] }) { const visible = effects.filter((effect) => effect.type !== 'time' && effect.type !== 'activity'); if (!visible.length) return null; return <div className="effect-rail" aria-live="polite">{visible.slice(-4).map((effect, index) => <div className="effect-item" key={`${effect.type}-${index}`}>{effect.type === 'cash' ? `${effect.amount >= 0 ? '+' : ''}${money(effect.amount)}` : effect.type === 'stat' ? `${effect.stat === 'ability' ? '能力' : effect.stat === 'reputation' ? '声誉' : '生活水平'} ${effect.amount >= 0 ? '+' : ''}${effect.amount}` : effect.type === 'month' ? `第 ${effect.summary.month} 月结算` : effect.type === 'settlement' ? `第 ${effect.day} 天结算` : effect.type === 'unlock' ? `解锁：${effect.id}` : effect.type === 'purchase' ? `已购买 ${effect.quantity} 件` : effect.type === 'message' ? effect.text : '进展更新'}</div>)}</div>; }
 
 function ConfirmReset({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) { return <div className="modal-backdrop"><section className="confirm-modal" role="dialog" aria-modal="true"><h2>重新开始？</h2><p>当前存档会被新的开始替换，之后可以从头体验。</p><div className="button-pair"><button className="secondary-button" onClick={onCancel}>先不重来</button><button className="primary-button" onClick={onConfirm}>确认重新开始</button></div></section></div>; }
+
+function WealthMilestoneView({ game }: { game: GameState }) {
+  if (!game.wealthMilestones?.length) return null;
+  return <section className="detail-panel" aria-label="财富阶段记录"><span className="eyebrow">已走过的财富阶段</span><div className="item-list">{game.wealthMilestones.map((milestone) => <div className="item-row" key={milestone.id}><div><h3>{wealthTierForNetWorth(milestone.netWorth).name}</h3><p className="muted">第 {milestone.day} 天 · 净资产 {money(milestone.netWorth)}</p></div><span className="requirement-met">已记录</span></div>)}</div></section>;
+}
 
 export default App;

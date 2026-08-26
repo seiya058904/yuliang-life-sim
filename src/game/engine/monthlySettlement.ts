@@ -1,6 +1,6 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary, WorldSnapshot } from '../content/contracts';
-import { calculateNetWorth } from './economy';
+import { calculateNetWorth, wealthTierForNetWorth } from './economy';
 import { emptyFinancialLedger, projectLegacyMonthlyLedger, summarizeFinancialLedger } from './financialLedger';
 import { appendLifeRecord } from './lifeHistory';
 
@@ -33,6 +33,21 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
   state.lastMonthlySummary = summary;
   state.lastFinancialSummary = financialSummary;
   state.financialHistory = [...(state.financialHistory ?? []), financialSummary].slice(-12);
+  const wealthTier = wealthTierForNetWorth(netWorthEnd);
+  if (wealthTier.id !== 'start' && !(state.wealthMilestones ?? []).some((entry) => entry.id === wealthTier.id)) {
+    const milestone = { id: wealthTier.id, day: state.time.day, netWorth: netWorthEnd };
+    state.wealthMilestones = [...(state.wealthMilestones ?? []), milestone];
+    state.lifeHistory = appendLifeRecord(state.lifeHistory, {
+      id: `life.wealth-milestone.${wealthTier.id}`,
+      day: state.time.day,
+      category: 'event',
+      title: `财富阶段：${wealthTier.name}`,
+      detail: wealthTier.description,
+      sourceId: wealthTier.id,
+      amount: netWorthEnd,
+    });
+    output.push({ type: 'message', text: `财富阶段达到：${wealthTier.name}` });
+  }
   if (month % 12 === 0) {
     const yearMonths = (state.financialHistory ?? []).filter((entry) => entry.month >= month - 11 && entry.month <= month);
     const annual: AnnualSummary = {

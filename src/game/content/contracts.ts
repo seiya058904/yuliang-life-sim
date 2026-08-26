@@ -671,6 +671,11 @@ export interface AnnualSummary {
   totalConsumption: number;
   months: number;
 }
+export interface WealthMilestone {
+  id: string;
+  day: number;
+  netWorth: number;
+}
 export interface WorldSnapshot {
   year: number;
   day: number;
@@ -731,6 +736,7 @@ export interface GameState {
   financialLedger?: FinancialLedgerState;
   financialHistory?: MonthlyFinancialSummary[];
   annualHistory?: AnnualSummary[];
+  wealthMilestones?: WealthMilestone[];
   worldHistory?: WorldSnapshot[];
   lastFinancialSummary?: MonthlyFinancialSummary;
   pendingMonthlySummary?: PendingMonthlySummary;

@@ -6,6 +6,19 @@ import { createInitialState } from './initialState';
 import { closeMonth } from './monthlySettlement';
 
 describe('annual world snapshots', () => {
+  it('records the first achieved wealth tier at month close and keeps it in life history', () => {
+    const state = createInitialState(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 7);
+    state.cash = 12_000;
+    state.time = { day: 28, hour: 8, minute: 0 };
+    const effects: GameEffect[] = [];
+
+    closeMonth(state, 1, contentRegistry, balanceConfig, effects);
+
+    expect(state.wealthMilestones).toEqual([{ id: 'savings', day: 28, netWorth: 12_000 }]);
+    expect(state.lifeHistory).toContainEqual(expect.objectContaining({ category: 'event', title: '财富阶段：有积蓄', sourceId: 'savings', amount: 12_000 }));
+    expect(effects).toContainEqual({ type: 'message', text: '财富阶段达到：有积蓄' });
+  });
+
   it('evolves location development from real business and visit state at year close', () => {
     const state = createInitialState(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 7);
     state.time = { day: 337, hour: 8, minute: 0 };

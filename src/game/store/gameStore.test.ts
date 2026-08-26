@@ -121,6 +121,20 @@ describe('game store persistence', () => {
     expect(restored.annualHistory).toEqual([{ year: 1, cashStart: 1000, cashEnd: 1200, netWorthStart: 1000, netWorthEnd: 1400, totalIncome: 500, totalConsumption: 300, months: 12 }]);
   });
 
+  it('keeps valid wealth milestones and removes malformed or unknown tiers during migration', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, wealthMilestones: [
+      { id: 'savings', day: 28, netWorth: 12000 },
+      { id: 'unknown', day: 30, netWorth: 20000 },
+      { id: 'stable', day: 0, netWorth: 100000 },
+      { id: 'abundant', day: 337, netWorth: 'invalid' },
+    ] }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.wealthMilestones).toEqual([{ id: 'savings', day: 28, netWorth: 12000 }]);
+  });
+
   it('keeps valid world snapshots and removes malformed or unknown-job entries during migration', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, worldHistory: [

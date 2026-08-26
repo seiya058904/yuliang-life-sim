@@ -39,6 +39,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     financialLedger: emptyFinancialLedger(calendar.month, balance.initialCash, balance.initialCash),
     financialHistory: [],
     annualHistory: [],
+    wealthMilestones: [],
     worldHistory: [],
     locationDevelopment: Object.fromEntries((content.locations ?? []).map((location) => [location.id, 0])),
     jobExperience: {},

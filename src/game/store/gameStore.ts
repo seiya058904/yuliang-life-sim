@@ -26,6 +26,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+const wealthTierIds = new Set(['savings', 'stable', 'abundant', 'high_net_worth', 'entrepreneur', 'billionaire', 'super_wealth', 'world', 'global']);
+
 function knownIds(content: ContentRegistry, category: keyof Pick<ContentRegistry, 'jobs' | 'items' | 'housing' | 'businesses' | 'assets' | 'characters' | 'events' | 'eventChains' | 'milestones'>): Set<string> {
   return new Set(content[category].map((entry) => entry.id));
 }
@@ -152,6 +154,9 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     : emptyFinancialLedger(candidate.calendar.month, candidate.cash, candidate.monthlyLedger.netWorthStart);
   candidate.financialHistory = Array.isArray(candidate.financialHistory) ? candidate.financialHistory.slice(-12) : [];
   candidate.annualHistory = Array.isArray(candidate.annualHistory) ? candidate.annualHistory.filter((entry) => isRecord(entry) && Number.isInteger(entry.year) && Number.isFinite(entry.cashStart) && Number.isFinite(entry.cashEnd) && Number.isFinite(entry.netWorthStart) && Number.isFinite(entry.netWorthEnd) && Number.isFinite(entry.totalIncome) && Number.isFinite(entry.totalConsumption) && Number.isInteger(entry.months)).slice(-10) as GameState['annualHistory'] : [];
+  candidate.wealthMilestones = Array.isArray(candidate.wealthMilestones)
+    ? candidate.wealthMilestones.filter((entry) => isRecord(entry) && typeof entry.id === 'string' && wealthTierIds.has(entry.id) && Number.isInteger(entry.day) && Number(entry.day) > 0 && Number.isFinite(entry.netWorth)).map((entry) => ({ id: String(entry.id), day: Number(entry.day), netWorth: Number(entry.netWorth) })).slice(-10)
+    : [];
   candidate.worldHistory = Array.isArray(candidate.worldHistory) ? candidate.worldHistory.filter((entry) => isRecord(entry) && Number.isInteger(entry.year) && Number(entry.year) > 0 && Number.isInteger(entry.day) && Number(entry.day) > 0 && Number.isFinite(entry.netWorth) && Number.isInteger(entry.businessCount) && Number(entry.businessCount) >= 0 && Number.isInteger(entry.relationshipCount) && Number(entry.relationshipCount) >= 0 && Number.isInteger(entry.visitedLocationCount) && Number(entry.visitedLocationCount) >= 0 && (entry.currentJobId === undefined || jobIds.has(String(entry.currentJobId)))).map((entry) => ({ ...entry, locationDevelopment: isRecord(entry.locationDevelopment) ? Object.fromEntries(Object.entries(entry.locationDevelopment).filter(([id, level]) => locationIds.has(id) && Number.isInteger(level) && Number(level) >= 0 && Number(level) <= 5)) : undefined })).slice(-10) as GameState['worldHistory'] : [];
   candidate.lifeHistory = Array.isArray(candidate.lifeHistory) ? candidate.lifeHistory.filter(isLifeRecordEntry) : [];
   candidate.ambientLog = Array.isArray(candidate.ambientLog) ? candidate.ambientLog.slice(-20) : [];

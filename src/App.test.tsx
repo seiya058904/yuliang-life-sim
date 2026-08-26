@@ -352,6 +352,19 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('button', { name: '生活' })).toBeInTheDocument();
   });
 
+  it('shows persisted wealth milestones separately from the current wealth tier', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 200_000, wealthMilestones: [{ id: 'savings', day: 28, netWorth: 12_000 }, { id: 'stable', day: 90, netWorth: 100_000 }] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    const records = screen.getByRole('region', { name: '财富阶段记录' });
+    expect(records).toHaveTextContent('有积蓄');
+    expect(records).toHaveTextContent('稳定');
+    expect(records).toHaveTextContent('第 28 天');
+  });
+
   it('shows persisted location visits in the city view', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
