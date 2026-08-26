@@ -197,3 +197,29 @@ test('finances a home and restores the mortgage state after reload', async ({ pa
   await expect(page.getByText('分期中')).toBeVisible();
   await expect(page.getByText('住房分期还款')).toHaveCount(0);
 });
+
+test('buys and rents a second home with persisted portfolio controls', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 20_000;
+    state.unlockedHousingIds = [...new Set([...(state.unlockedHousingIds ?? []), 'housing.seed-room'])];
+    state.housing = { housingId: 'housing.shared-room', mode: 'rent' };
+    state.housingHoldings = {};
+    state.mortgage = undefined;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+  const homeRow = page.getByRole('heading', { name: '独立单间' }).locator('..').locator('..');
+  await homeRow.getByRole('button', { name: '买作投资房' }).click();
+  await homeRow.getByRole('button', { name: '开始出租' }).click();
+  await expect(homeRow).toContainText('已出租');
+  await expect(homeRow).toContainText('本月预计净租金');
+
+  await page.reload();
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '独立单间' }).locator('..').locator('..')).toContainText('已出租');
+});

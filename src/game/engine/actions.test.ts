@@ -156,6 +156,27 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory?.at(-1)).toMatchObject({ title: '分期买下独立单间', category: 'housing' });
   });
 
+  it('buys a second home, switches it to rental, and can sell it', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 20_000;
+    state.unlockedHousingIds = [...new Set([...state.unlockedHousingIds, 'housing.seed-room'])];
+
+    const bought = dispatchGameAction(state, { type: 'buy_rental_housing', housingId: 'housing.seed-room' }, contentRegistry, balanceConfig);
+    expect(bought.error).toBeUndefined();
+    expect(bought.state.housingHoldings?.['housing.seed-room']).toMatchObject({ housingId: 'housing.seed-room', purchasePrice: 5_800, occupancy: 'vacant' });
+    expect(bought.state.housing.housingId).toBe('housing.shared-room');
+
+    const rented = dispatchGameAction(bought.state, { type: 'set_housing_rental', housingId: 'housing.seed-room', rented: true }, contentRegistry, balanceConfig);
+    expect(rented.error).toBeUndefined();
+    expect(rented.state.housingHoldings?.['housing.seed-room']?.occupancy).toBe('rented');
+
+    const sold = dispatchGameAction(rented.state, { type: 'sell_rental_housing', housingId: 'housing.seed-room' }, contentRegistry, balanceConfig);
+    expect(sold.error).toBeUndefined();
+    expect(sold.state.housingHoldings?.['housing.seed-room']).toBeUndefined();
+    expect(sold.state.cash).toBe(20_000);
+    expect(sold.state.lifeHistory.at(-1)).toMatchObject({ category: 'housing', title: '出售独立单间' });
+  });
+
   it('updates owned business operating levers and records the decision in life history', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 5000;

@@ -1,8 +1,9 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary, WorldSnapshot } from '../content/contracts';
 import { calculateNetWorth, wealthTierForNetWorth } from './economy';
-import { emptyFinancialLedger, projectLegacyMonthlyLedger, summarizeFinancialLedger } from './financialLedger';
+import { emptyFinancialLedger, projectLegacyMonthlyLedger, recordStateFinancialEntry, summarizeFinancialLedger } from './financialLedger';
 import { appendLifeRecord } from './lifeHistory';
+import { housingPrice, housingRentPerDay } from './locations';
 
 export function emptyMonthlyLedger(netWorthStart: number): MonthlyLedger {
   return { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart, netWorthEnd: netWorthStart };
@@ -40,6 +41,19 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
     } else {
       output.push({ type: 'message', text: '现金不足，本月住房分期未扣款' });
     }
+  }
+  for (const holding of Object.values(state.housingHoldings ?? {})) {
+    const home = content.housing.find((entry) => entry.id === holding.housingId);
+    if (!home) continue;
+    holding.currentValuation = housingPrice(state, home) ?? holding.currentValuation;
+    if (holding.occupancy !== 'rented') continue;
+    const rent = housingRentPerDay(state, home) * 28;
+    const maintenance = Math.round(rent * 0.12);
+    state.cash += rent - maintenance;
+    recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'property_income', amount: rent, label: `${home.name}租金`, sourceType: 'housing', sourceId: home.id });
+    recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'maintenance', amount: maintenance, label: `${home.name}维护`, sourceType: 'housing', sourceId: home.id });
+    state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.housing.rent.${home.id}.${month}`, day: state.time.day, category: 'housing', title: `收到${home.name}租金`, detail: '投资房月度自动结算', sourceId: home.id, amount: rent });
+    state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.housing.maintenance.${home.id}.${month}`, day: state.time.day, category: 'housing', title: `${home.name}维护`, detail: '按租金的一定比例自动扣除', sourceId: home.id, amount: -maintenance });
   }
   const financialLedger = state.financialLedger ?? emptyFinancialLedger(month, state.monthlyLedger.netWorthStart, state.monthlyLedger.netWorthStart);
   const netWorthEnd = calculateNetWorth(state, content, balance);
@@ -111,8 +125,5 @@ function recordSubscriptionFee(state: GameState, subscriptionId: string, name: s
 }
 
 function recordMortgagePayment(state: GameState, amount: number, housingId: string): void {
-  const ledger = state.financialLedger;
-  if (!ledger) return;
-  const sequence = ledger.nextSequence++;
-  ledger.entries.push({ id: `ledger.${ledger.month}.${sequence}`, day: state.time.day, direction: 'expense', group: 'consumption', category: 'housing', amount, cashDelta: -amount, sourceType: 'housing', sourceId: housingId, label: '住房分期还款' });
+  recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'housing', amount, sourceType: 'housing', sourceId: housingId, label: '住房分期还款' });
 }

@@ -145,6 +145,19 @@ describe('game store persistence', () => {
     expect(loadGameState(contentRegistry, balanceConfig).mortgage).toBeUndefined();
   });
 
+  it('migrates known housing holdings and drops current or unknown properties', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 6, housingHoldings: {
+      'housing.seed-room': { housingId: 'housing.seed-room', purchasePrice: 5800, currentValuation: 5900, occupancy: 'rented' },
+      'housing.shared-room': { housingId: 'housing.shared-room', purchasePrice: 2000, currentValuation: 2000, occupancy: 'vacant' },
+      'housing.unknown': { housingId: 'housing.unknown', purchasePrice: 100, currentValuation: 100, occupancy: 'rented' },
+    } }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.housingHoldings).toEqual({ 'housing.seed-room': { housingId: 'housing.seed-room', purchasePrice: 5800, currentValuation: 5900, occupancy: 'rented' } });
+  });
+
   it('keeps valid world snapshots and removes malformed or unknown-job entries during migration', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, worldHistory: [

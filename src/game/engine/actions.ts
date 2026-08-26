@@ -545,6 +545,48 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       effects.push({ type: 'cash', amount: -terms.downPayment, reason: '住房首付' });
       break;
     }
+    case 'buy_rental_housing': {
+      const home = find(content.housing, action.housingId);
+      if (!home || home.mode !== 'both' || !home.price) return fail(input, '这套住房不支持投资持有');
+      if (home.id === state.housing.housingId) return fail(input, '当前住房不能重复购买');
+      if (!state.unlockedHousingIds.includes(home.id)) return fail(input, '这套住房还没有解锁');
+      if (!hasRequirements(state, home.requirements, content, balance)) return fail(input, '当前条件还不满足');
+      if (state.housingHoldings?.[home.id]) return fail(input, '你已经持有这套房产');
+      const price = housingPrice(state, home);
+      if (price === undefined || state.cash - price < reserveRequired(state, content)) return fail(input, '现金不足以购买投资房并保留生活余量');
+      state.cash -= price;
+      state.housingHoldings = { ...(state.housingHoldings ?? {}), [home.id]: { housingId: home.id, purchasePrice: price, currentValuation: home.valuation ?? price, occupancy: 'vacant' } };
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'property_transfer', amount: price, label: `购买投资房 · ${home.name}`, sourceType: 'housing', sourceId: home.id });
+      addLifeRecord(state, { category: 'housing', title: `买下投资房${home.name}`, detail: '当前为空置，可切换为出租', sourceId: home.id, amount: -price });
+      effects.push({ type: 'cash', amount: -price, reason: '购买投资房' });
+      break;
+    }
+    case 'set_housing_rental': {
+      const holding = state.housingHoldings?.[action.housingId];
+      const home = find(content.housing, action.housingId);
+      if (!holding || !home) return fail(input, '当前没有这套投资房');
+      if (holding.occupancy === (action.rented ? 'rented' : 'vacant')) return fail(input, action.rented ? '这套房已经在出租' : '这套房已经空置');
+      holding.occupancy = action.rented ? 'rented' : 'vacant';
+      addLifeRecord(state, { category: 'housing', title: action.rented ? `出租${home.name}` : `收回${home.name}`, detail: action.rented ? '月结自动收取租金并扣除维护' : '房产暂时空置，不产生租金', sourceId: home.id });
+      break;
+    }
+    case 'sell_rental_housing': {
+      const holding = state.housingHoldings?.[action.housingId];
+      const home = find(content.housing, action.housingId);
+      if (!holding || !home) return fail(input, '当前没有这套投资房');
+      const saleValue = Math.max(0, Math.round(holding.currentValuation));
+      state.cash += saleValue;
+      const holdings = { ...(state.housingHoldings ?? {}) };
+      delete holdings[action.housingId];
+      state.housingHoldings = holdings;
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: saleValue, label: `出售投资房 · ${home.name}`, sourceType: 'housing', sourceId: home.id, costBasis: holding.purchasePrice });
+      const realized = saleValue - holding.purchasePrice;
+      if (realized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: realized, cashDelta: 0, label: `已实现收益 · ${home.name}`, sourceType: 'housing', sourceId: home.id, costBasis: holding.purchasePrice });
+      if (realized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized, cashDelta: 0, label: `已实现亏损 · ${home.name}`, sourceType: 'housing', sourceId: home.id, costBasis: holding.purchasePrice });
+      addLifeRecord(state, { category: 'housing', title: `出售${home.name}`, detail: holding.occupancy === 'rented' ? '结束出租并变现房产' : '空置房产变现', sourceId: home.id, amount: saleValue });
+      effects.push({ type: 'cash', amount: saleValue, reason: '出售投资房' });
+      break;
+    }
     case 'sell_housing': {
       const currentHome = find(content.housing, state.housing.housingId);
       if (!currentHome || state.housing.mode !== 'owned' || !currentHome.price) return fail(input, '当前没有可出售的自有住房');

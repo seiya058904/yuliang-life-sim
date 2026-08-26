@@ -98,6 +98,16 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     && Number.isInteger(rawMortgage.paidMonths) && Number(rawMortgage.paidMonths) >= 0 && Number(rawMortgage.paidMonths) < Number(rawMortgage.totalMonths)
     ? { housingId: String(rawMortgage.housingId), remainingPrincipal: Number(rawMortgage.remainingPrincipal), monthlyPayment: Number(rawMortgage.monthlyPayment), totalMonths: Number(rawMortgage.totalMonths), paidMonths: Number(rawMortgage.paidMonths) }
     : undefined;
+  candidate.housingHoldings = Object.fromEntries(Object.entries(candidate.housingHoldings ?? {}).filter(([id, holding]) => {
+    const value = isRecord(holding) ? holding : {};
+    return housingIds.has(id) && id !== candidate.housing.housingId && isRecord(value)
+      && value.housingId === id && Number.isFinite(value.purchasePrice) && Number(value.purchasePrice) > 0
+      && Number.isFinite(value.currentValuation) && Number(value.currentValuation) >= 0
+      && (value.occupancy === 'vacant' || value.occupancy === 'rented');
+  }).map(([id, holding]) => {
+    const value = holding as unknown as Record<string, unknown>;
+    return [id, { housingId: id, purchasePrice: Number(value.purchasePrice), currentValuation: Number(value.currentValuation), occupancy: value.occupancy as 'vacant' | 'rented' }];
+  }));
   const jobIds = knownIds(content, 'jobs');
   if (candidate.currentJobId && !jobIds.has(candidate.currentJobId)) candidate.currentJobId = initial.currentJobId;
   candidate.unlockedJobIds = (candidate.unlockedJobIds ?? []).filter((id) => jobIds.has(id));

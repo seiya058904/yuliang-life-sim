@@ -35,6 +35,22 @@ describe('annual world snapshots', () => {
     expect(state.lifeHistory).toContainEqual(expect.objectContaining({ title: '住房分期还款', category: 'housing', amount: -199 }));
   });
 
+  it('settles rent and maintenance for a rented housing holding', () => {
+    const state = createInitialState(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 7);
+    state.cash = 20_000;
+    state.housingHoldings = { 'housing.seed-room': { housingId: 'housing.seed-room', purchasePrice: 5_800, currentValuation: 5_800, occupancy: 'rented' } };
+    state.time = { day: 28, hour: 8, minute: 0 };
+    const effects: GameEffect[] = [];
+
+    closeMonth(state, 1, contentRegistry, balanceConfig, effects);
+
+    expect(state.cash).toBe(21_035);
+    expect(state.lastFinancialSummary?.income.categories).toMatchObject({ property_income: 1_176 });
+    expect(state.lastFinancialSummary?.consumption.categories).toMatchObject({ maintenance: 141 });
+    expect(state.lifeHistory).toContainEqual(expect.objectContaining({ title: '收到独立单间租金', amount: 1_176 }));
+    expect(state.lifeHistory).toContainEqual(expect.objectContaining({ title: '独立单间维护', amount: -141 }));
+  });
+
   it('evolves location development from real business and visit state at year close', () => {
     const state = createInitialState(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 7);
     state.time = { day: 337, hour: 8, minute: 0 };

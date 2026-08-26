@@ -602,6 +602,13 @@ export interface HousingState {
   housingId: ContentId;
   mode: 'rent' | 'owned';
 }
+
+export interface HousingHolding {
+  housingId: ContentId;
+  purchasePrice: number;
+  currentValuation: number;
+  occupancy: 'vacant' | 'rented';
+}
 export interface MortgageState {
   housingId: ContentId;
   remainingPrincipal: number;
@@ -760,6 +767,7 @@ export interface GameState {
   unlockedBusinessIds: ContentId[];
   unlockedAssetIds: ContentId[];
   housing: HousingState;
+  housingHoldings?: Record<ContentId, HousingHolding>;
   mortgage?: MortgageState;
   locationVisits?: Record<ContentId, number>;
   locationDevelopment?: Record<ContentId, number>;
@@ -843,6 +851,9 @@ export type GameAction =
   | { type: 'move_housing'; housingId: ContentId; mode: 'rent' | 'owned' }
   | { type: 'finance_housing'; housingId: ContentId }
   | { type: 'sell_housing' }
+  | { type: 'buy_rental_housing'; housingId: ContentId }
+  | { type: 'set_housing_rental'; housingId: ContentId; rented: boolean }
+  | { type: 'sell_rental_housing'; housingId: ContentId }
   | { type: 'buy_business'; businessId: ContentId }
   | { type: 'acquire_business'; businessId: ContentId }
   | { type: 'update_business'; businessId: ContentId; priceLevel: number; wageLevel: number; inventoryLevel: number }
