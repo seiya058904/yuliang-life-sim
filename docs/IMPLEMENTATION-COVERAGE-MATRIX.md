@@ -26,7 +26,7 @@ Counts are separated by direct official content, seed content, and the composed 
 | Event chains | 4 | 1 | 4 | Chain progression exists through event metadata. |
 | Businesses | 3 | 1 | 3 | Buy, operate, inject capital, raise constrained dilutive rounds, list, trade partial equity after lockup, and exit are reachable after unlock; founding/partners/M&A remain extensions. |
 | Assets | 11 | 1 | 11 | Runtime includes 5 non-vehicle assets and 6 vehicles across used, compact, EV, quality, SUV, and executive tiers; vehicle ownership, maintenance, depreciation, commute effect, high-value collectible trade, and resale are reachable. |
-| Activities | 6 | 1 | 7 | Six official activities, including a short trip, an owned-business project, and camera-gated city photography, plus one seed fallback are schedulable and settle through the weekly plan; vehicle ownership changes travel cost and feedback. |
+| Activities | 6 | 1 | 7 | Six official activities, including a short trip, an owned-business project, camera-gated city photography, and a relationship-gated friend-specific café option, plus one seed fallback are schedulable and settle through the weekly plan; vehicle ownership changes travel cost and feedback. Runtime contains 11 activity options. |
 | Investments | 6 | 2 | 8 | Six official products, including a company-equity holding and one relationship-gated private-equity holding, plus two seed fallback funds are reachable in the Wealth market. |
 | Companies | 4 | 1 | 5 | Runtime includes one seed company fallback; 环流物流 adds a logistics route, and 星河科技 owns a company-expansion event that opens an internal consultant opportunity. |
 | Dialogues | 0 | 1 | 1 | Dialogue/storyline data is seed-only. |
