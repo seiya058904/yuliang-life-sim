@@ -155,13 +155,15 @@ describe('seed content registry', () => {
       'investment.isle-lifestyle-equity',
       'investment.luhai-manufacturing-equity',
       'investment.harbor-travel-equity',
+      'investment.local-restaurant-share',
+      'investment.creative-studio-share',
       'investment.qiming-equity',
       'investment.citylife-private-equity',
     ]);
   });
 
   it('links listed company equity to its corresponding official companies', () => {
-    expect(contentRegistry.companies.filter((company) => company.investmentIds?.length).map((company) => [company.id, company.investmentIds])).toEqual([
+    expect(contentRegistry.companies!.filter((company) => company.investmentIds?.length).map((company) => [company.id, company.investmentIds])).toEqual([
       ['company.yuanwang', ['investment.yuanwang-retail-equity']],
       ['company.qiming', ['investment.qiming-equity']],
       ['company.harbor-travel', ['investment.harbor-travel-equity']],

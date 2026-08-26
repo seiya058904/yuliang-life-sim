@@ -2069,6 +2069,54 @@ export const officialEvents = [
     ]
   },
   {
+    "id": "event.local-restaurant-investment",
+    "contentStatus": "official",
+    "name": "本地餐饮合伙邀请",
+    "description": "周妍认识的一家小店正在找少量长期合伙人。",
+    "title": "这家店想找长期合伙人",
+    "body": "周妍说：店面不大，但客源还算稳定。对方不想把项目做得太复杂，只开放少量份额给真正了解本地生活的人。",
+    "category": "investment",
+    "weight": 0.16,
+    "cooldownDays": 365,
+    "conditions": {
+      "type": "all",
+      "conditions": [
+        { "type": "day_at_least", "day": 60 },
+        { "type": "relationship_at_least", "characterId": "character.seed-zhou", "amount": 40 },
+        { "type": "not", "condition": { "type": "flag", "flag": "local_restaurant_access" } }
+      ]
+    },
+    "choices": [
+      { "id": "learn", "text": "了解合伙条件", "effects": [{ "type": "set_flag", "flag": "local_restaurant_access" }, { "type": "relation", "characterId": "character.seed-zhou", "amount": 3 }] },
+      { "id": "pass", "text": "先不参与", "effects": [{ "type": "relation", "characterId": "character.seed-zhou", "amount": 1 }] }
+    ],
+    "tags": ["investment", "business", "private-equity", "relationship"]
+  },
+  {
+    "id": "event.creative-studio-investment",
+    "contentStatus": "official",
+    "name": "独立工作室投资邀请",
+    "description": "顾清把一个小型创意工作室的早期份额介绍给你。",
+    "title": "一个不太标准的创意项目",
+    "body": "顾清说：他们还没有打算做成一家大公司，但手上的客户和作品有些潜力。你可以把它当作一次小额长期投资，也可以只保持合作关系。",
+    "category": "investment",
+    "weight": 0.14,
+    "cooldownDays": 365,
+    "conditions": {
+      "type": "all",
+      "conditions": [
+        { "type": "day_at_least", "day": 90 },
+        { "type": "relationship_at_least", "characterId": "character.guqing", "amount": 40 },
+        { "type": "not", "condition": { "type": "flag", "flag": "creative_studio_access" } }
+      ]
+    },
+    "choices": [
+      { "id": "learn", "text": "了解项目", "effects": [{ "type": "set_flag", "flag": "creative_studio_access" }, { "type": "relation", "characterId": "character.guqing", "amount": 3 }, { "type": "attribute", "attribute": "network", "amount": 1 }] },
+      { "id": "pass", "text": "暂时保持合作", "effects": [{ "type": "relation", "characterId": "character.guqing", "amount": 1 }] }
+    ],
+    "tags": ["investment", "business", "private-equity", "relationship"]
+  },
+  {
     "id": "event.business-equipment-failure",
     "contentStatus": "official",
     "name": "设备突然故障",

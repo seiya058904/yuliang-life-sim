@@ -1419,6 +1419,41 @@ test('settles the authored private-equity exit opportunity', async ({ page }) =>
   await expect(investment).toContainText('买入 1 份');
 });
 
+test('unlocks and trades the authored local restaurant investment opportunity', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.time = { ...state.time, day: 60 };
+    state.relationships = { ...(state.relationships ?? {}), 'character.seed-zhou': 40 };
+    state.cash = 10_000;
+    state.pendingEventId = 'event.local-restaurant-investment';
+    state.simulationMode = 'event';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await expect(page.getByRole('dialog')).toContainText('这家店想找长期合伙人');
+  await page.getByRole('dialog').getByRole('button', { name: '了解合伙条件' }).click();
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  const investment = page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..');
+  await expect(investment).toContainText('私人股权');
+  await investment.getByRole('button', { name: '买入 1 份' }).click();
+  await expect(investment).toContainText('持有 1 份');
+
+  await page.evaluate(({ key }) => {
+    const state = JSON.parse(localStorage.getItem(key) ?? '{}');
+    state.time = { ...state.time, day: 150 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey });
+  await page.reload();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  const matureInvestment = page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..');
+  await matureInvestment.getByRole('button', { name: '卖出 1 份' }).click();
+  await expect(matureInvestment).not.toContainText('持有 1 份');
+});
+
 test('buys and sells independent public company equity with persisted history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

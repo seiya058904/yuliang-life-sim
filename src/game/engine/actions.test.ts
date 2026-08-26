@@ -295,6 +295,33 @@ describe('game action dispatcher', () => {
     expect(sold.state.lifeHistory.at(-1)?.category).toBe('investment');
   });
 
+  it('unlocks and trades both authored private investment projects through their event gates', () => {
+    const cases = [
+      { eventId: 'event.local-restaurant-investment', flag: 'local_restaurant_access', characterId: 'character.seed-zhou', investmentId: 'investment.local-restaurant-share', cash: 10_000, day: 60 },
+      { eventId: 'event.creative-studio-investment', flag: 'creative_studio_access', characterId: 'character.guqing', investmentId: 'investment.creative-studio-share', cash: 20_000, day: 90 },
+    ] as const;
+    for (const entry of cases) {
+      const state = createInitialState(contentRegistry, balanceConfig, 1);
+      state.cash = entry.cash;
+      state.time = { day: entry.day, hour: 8, minute: 0 };
+      state.relationships[entry.characterId] = 40;
+      state.pendingEventId = entry.eventId;
+      state.simulationMode = 'event';
+
+      const introduced = dispatchGameAction(state, { type: 'choose_event', eventId: entry.eventId, choiceId: 'learn' }, contentRegistry, balanceConfig);
+      expect(introduced.error).toBeUndefined();
+      expect(introduced.state.flags[entry.flag]).toBe(true);
+      const acknowledged = dispatchGameAction(introduced.state, { type: 'claim_reward', resume: true }, contentRegistry, balanceConfig);
+      const bought = dispatchGameAction(acknowledged.state, { type: 'buy_investment', investmentId: entry.investmentId, units: 1 }, contentRegistry, balanceConfig);
+      expect(bought.error).toBeUndefined();
+      expect(bought.state.investments?.[entry.investmentId]).toMatchObject({ units: 1 });
+      expect(bought.state.lifeHistory.at(-1)).toMatchObject({ category: 'investment', sourceId: entry.investmentId });
+      const sold = dispatchGameAction({ ...bought.state, time: { day: entry.day + 90, hour: 8, minute: 0 } }, { type: 'sell_investment', investmentId: entry.investmentId, units: 1 }, contentRegistry, balanceConfig);
+      expect(sold.error).toBeUndefined();
+      expect(sold.state.investments?.[entry.investmentId]).toBeUndefined();
+    }
+  });
+
   it('updates owned business operating levers and records the decision in life history', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 5000;
