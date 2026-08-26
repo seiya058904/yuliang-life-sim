@@ -132,6 +132,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
       publicFloatPercent: Number.isFinite(value.publicFloatPercent) ? Math.min(100, Math.max(0, Number(value.publicFloatPercent))) : Math.max(0, 100 - (Number.isFinite(value.equityPercent) ? Number(value.equityPercent) : 100)),
       fundingRaised: Number.isFinite(value.fundingRaised) ? Math.max(0, Number(value.fundingRaised)) : 0,
       fundingRound: Number.isInteger(value.fundingRound) ? Math.max(0, Number(value.fundingRound)) : 0,
+      partnerCharacterId: typeof value.partnerCharacterId === 'string' && content.characters.some((character) => character.id === value.partnerCharacterId) ? value.partnerCharacterId : undefined,
       listed: value.listed === true,
       listedDay: Number.isInteger(value.listedDay) && Number(value.listedDay) > 0 ? Number(value.listedDay) : undefined,
     }];

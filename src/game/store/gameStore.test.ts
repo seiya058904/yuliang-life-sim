@@ -113,9 +113,14 @@ describe('game store persistence', () => {
     expect(restored.businesses['business.seed-kiosk']).toMatchObject({ capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0 });
 
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, businesses: {
-      'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 65, listed: true, listedDay: 8 },
+      'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 65, partnerCharacterId: 'character.seed-zhou', listed: true, listedDay: 8 },
     } }));
-    expect(loadGameState(contentRegistry, balanceConfig).businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 65, publicFloatPercent: 35, listed: true, listedDay: 8 });
+    expect(loadGameState(contentRegistry, balanceConfig).businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 65, publicFloatPercent: 35, partnerCharacterId: 'character.seed-zhou', listed: true, listedDay: 8 });
+
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, businesses: {
+      'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, partnerCharacterId: 'character.unknown' },
+    } }));
+    expect(loadGameState(contentRegistry, balanceConfig).businesses['business.seed-kiosk'].partnerCharacterId).toBeUndefined();
   });
 
   it('filters completed business projects against current activity content', () => {
