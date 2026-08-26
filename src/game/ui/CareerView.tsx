@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { GameAction, GameState, JobDefinition, ViewId } from '../content/contracts';
+import type { GameAction, GameState, JobDefinition, ViewId, Weekday } from '../content/contracts';
 import { employmentKind, requirementHints } from '../engine/careers';
 import { contentRegistry } from '../content/registry';
 import { balanceConfig } from '../balance/config';
@@ -30,7 +30,7 @@ export function CareerView({ game, dispatch, jobs, onNavigate }: { game: GameSta
     {tab === 'market' && <VacancyMarket game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'opportunities' && <OpportunityList game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'applications' && <ApplicationList game={game} jobs={jobs} dispatch={dispatch} onNavigate={onNavigate} />}
-    {tab === 'side-jobs' && <SideJobList game={game} jobs={jobs} />}
+    {tab === 'side-jobs' && <SideJobList game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'history' && <HistoryList game={game} jobs={jobs} />}
   </section>;
 }
@@ -88,9 +88,23 @@ function ApplicationList({ game, jobs, dispatch, onNavigate }: { game: GameState
   })}</div>;
 }
 
-function SideJobList({ game, jobs }: { game: GameState; jobs: readonly any[] }) {
+function SideJobList({ game, jobs, dispatch }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void }) {
   const entries = Object.values(game.acquiredSideJobs ?? {});
-  return entries.length ? <div className="item-list">{entries.map((entry) => <div className="item-row" key={entry.jobId}><div><h2>{jobs.find((job) => job.id === entry.jobId)?.name ?? entry.jobId}</h2><p>已获得长期兼职资格，可在周计划中安排。</p></div><span className="current-label">已获得</span></div>)}</div> : <p className="muted">通过招聘市场获得的长期兼职会在这里出现。</p>;
+  const scheduleSideJob = (job: any) => {
+    const durationMinutes = Math.min(240, Math.max(60, job.hours * 60)) as 60 | 120 | 240;
+    for (const weekday of [1, 2, 3, 4, 5, 6, 7] as Weekday[]) {
+      if (weekday < game.calendar.weekday) continue;
+      if (!game.employment?.schedule.workDays.includes(weekday) && game.weeklyPlan.days[weekday].day.kind === 'free') {
+        dispatch({ type: 'set_plan', weekday, slot: 'day', activity: { kind: 'side_job', jobId: job.id, durationMinutes } });
+        return;
+      }
+      if (game.weeklyPlan.days[weekday].evening.kind === 'free') {
+        dispatch({ type: 'set_plan', weekday, slot: 'evening', activity: { kind: 'side_job', jobId: job.id, durationMinutes } });
+        return;
+      }
+    }
+  };
+  return entries.length ? <div className="item-list">{entries.map((entry) => { const job = jobs.find((candidate) => candidate.id === entry.jobId); if (!job) return null; return <div className="item-row" key={entry.jobId}><div><h2>{job.name}</h2><p>已获得长期兼职资格；安排后会在周计划自动执行，并计入兼职收入、经验和职业记录。</p></div><div className="button-pair"><span className="current-label">已获得</span><button className="secondary-button" disabled={game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleSideJob(job)}>安排到本周</button></div></div>; })}</div> : <p className="muted">通过招聘市场获得的长期兼职会在这里出现。</p>;
 }
 
 function HistoryList({ game, jobs }: { game: GameState; jobs: readonly any[] }) {

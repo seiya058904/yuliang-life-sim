@@ -33,6 +33,7 @@ describe('automatic simulation', () => {
 
   it('settles planned study and side-job duration without touching the formal work schedule', () => {
     const initial = createInitialState(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 13);
+    initial.acquiredSideJobs = { 'job.delivery-shift': { jobId: 'job.delivery-shift', acquiredDay: initial.time.day } };
     const plan = structuredClone(initial.weeklyPlan);
     plan.days[6].day = { kind: 'side_job', jobId: 'job.delivery-shift', durationMinutes: 240 };
     const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: false, simulationMode: 'running' as const };

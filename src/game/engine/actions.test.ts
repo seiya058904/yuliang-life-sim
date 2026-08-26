@@ -524,6 +524,17 @@ describe('game action dispatcher', () => {
     expect(copied.state.weeklyPlan.days[6].day).toEqual(state.weeklyPlan.days[6].day);
   });
 
+  it('only allows an acquired long-term side job to enter the weekly plan', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const blocked = dispatchGameAction(state, { type: 'set_plan', weekday: 6, slot: 'day', activity: { kind: 'side_job', jobId: 'job.course-teaching-assistant', durationMinutes: 240 } }, contentRegistry, balanceConfig);
+    expect(blocked.error).toContain('兼职资格');
+
+    state.acquiredSideJobs = { 'job.course-teaching-assistant': { jobId: 'job.course-teaching-assistant', acquiredDay: 1 } };
+    const scheduled = dispatchGameAction(state, { type: 'set_plan', weekday: 6, slot: 'day', activity: { kind: 'side_job', jobId: 'job.course-teaching-assistant', durationMinutes: 240 } }, contentRegistry, balanceConfig);
+    expect(scheduled.error).toBeUndefined();
+    expect(scheduled.state.weeklyPlan.days[6].day).toEqual({ kind: 'side_job', jobId: 'job.course-teaching-assistant', durationMinutes: 240 });
+  });
+
   it('pauses recruitment while running and activates a pending job on the next auto-repeated week', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 3);

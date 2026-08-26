@@ -13,7 +13,7 @@ import { applyAttributeDelta } from './attributes';
 import { recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
 import { updateInvestmentValuations } from './investments';
 import { activityCashCost, activityDiscountLabel, applyActivityFamiliarity, getActivityDefinition, getActivityOption } from './activities';
-import { advanceCareerLifecycle, generateVacancies } from './careers';
+import { advanceCareerLifecycle, employmentKind, generateVacancies } from './careers';
 import { appendLifeRecord } from './lifeHistory';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
@@ -229,6 +229,9 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
   state.jobExperience[job.id] = (state.jobExperience[job.id] ?? 0) + job.careerXp;
   applyCareerExperience(state, job.experienceTags ?? [], job.careerXp);
   recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: activity.kind === 'side_job' ? 'side_job' : 'wage', amount: pay, label: `${job.name}工资`, sourceType: 'job', sourceId: job.id });
+  if (activity.kind === 'side_job') {
+    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.side-job.${job.id}.${state.time.day}`, day: state.time.day, category: 'career', title: `完成${job.name}`, detail: `长期兼职已结算 · 获得 ¥${pay.toLocaleString('zh-CN')} · 职业经验已记录`, sourceId: job.id, amount: pay });
+  }
   output.push({ type: 'cash', amount: pay, reason: `${job.name}工资结算` });
   applyContentEffects(state, job.rewards ?? [], content, balance, output);
 }
@@ -292,6 +295,7 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
 }
 
 function jobAvailable(state: GameState, job: JobDefinition, content: ContentRegistry, balance: BalanceConfig): boolean {
+  if (employmentKind(job) === 'repeatable_side_job' && !state.acquiredSideJobs?.[job.id]) return false;
   if (job.abilityRequired !== undefined && state.ability < job.abilityRequired) return false;
   if (job.reputationRequired !== undefined && state.reputation < job.reputationRequired) return false;
   if (job.requirements && !evaluateCondition(job.requirements, state, content, balance)) return false;

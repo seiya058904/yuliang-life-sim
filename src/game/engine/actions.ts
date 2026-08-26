@@ -78,6 +78,11 @@ function planCooldownError(state: GameState, plan: GameState['weeklyPlan'], cont
 function planRequirementError(state: GameState, plan: GameState['weeklyPlan'], content: ContentRegistry, balance: BalanceConfig): string | undefined {
   for (const day of Object.values(plan.days)) {
     for (const activity of [day.day, day.evening]) {
+      if (activity.kind === 'side_job') {
+        const job = content.jobs.find((entry) => entry.id === activity.jobId);
+        if (!job || employmentKind(job) !== 'repeatable_side_job') return '计划中的兼职不存在或不是长期兼职';
+        if (!state.acquiredSideJobs?.[job.id]) return `需要先获得${job.name}兼职资格`;
+      }
       if (activity.kind !== 'activity') continue;
       const definition = getActivityDefinition(content, activity.activityId);
       const option = definition && getActivityOption(definition, activity.optionId);

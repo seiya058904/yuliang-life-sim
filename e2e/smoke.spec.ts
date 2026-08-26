@@ -118,6 +118,14 @@ test('turns the education course qualification into a persistent teaching assist
   await page.getByRole('button', { name: '接受 Offer' }).click();
   await page.getByRole('button', { name: '我的兼职' }).click();
   await expect(page.getByRole('heading', { name: '线上课程助教' })).toBeVisible();
+  await page.getByRole('button', { name: '安排到本周' }).click();
+  await expect(page.getByText('线上课程助教 4 小时', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toContainText('线上课程助教');
+  await page.getByRole('button', { name: '进入下个月' }).click();
+  await page.getByLabel('主导航').getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '完成线上课程助教' }).first()).toBeVisible();
   await page.reload();
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
   await page.getByRole('button', { name: '我的兼职' }).click();
