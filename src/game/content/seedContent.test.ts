@@ -89,6 +89,8 @@ describe('seed content registry', () => {
       'interaction.tech-coffee',
       'interaction.dinner-with-agent',
       'interaction.business-with-zhou',
+      'interaction.consulting-review-with-guqing',
+      'interaction.bookstore-with-lin',
     ]);
   });
 
@@ -232,6 +234,13 @@ describe('seed content registry', () => {
       requirements: { type: 'all' },
       partnership: { characterId: 'character.guqing', playerEquityPercent: 60, entryPrice: 12000, requirements: { type: 'all' } },
     });
+  });
+
+  it('exposes the expanded relationship interaction routes', () => {
+    expect(contentRegistry.relationshipInteractions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'interaction.consulting-review-with-guqing', characterId: 'character.guqing', category: 'work' }),
+      expect.objectContaining({ id: 'interaction.bookstore-with-lin', characterId: 'character.seed-lin', category: 'outing' }),
+    ]));
   });
 
   it('exposes the neworder automotive service route with a progression ladder', () => {

@@ -589,6 +589,18 @@ describe('game action dispatcher', () => {
     expect(result.state.messages?.at(-1)).toMatchObject({ characterId: 'character.seed-zhou', read: false, sourceId: 'interaction.business-with-zhou' });
   });
 
+  it('applies the authored Guqing work preference to the consulting review interaction', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 500;
+
+    const result = dispatchGameAction(state, { type: 'interact_character', interactionId: 'interaction.consulting-review-with-guqing', optionId: 'review' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.relationships['character.guqing']).toBe(7);
+    expect(result.state.attributes?.professional).toBe(11);
+    expect(result.state.lifeHistory.at(-1)).toMatchObject({ sourceId: 'interaction.consulting-review-with-guqing', detail: '符合对方偏好，关系进展更顺利' });
+  });
+
   it('diminishes repeated relationship gains without decaying the stored relationship', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 1_000;

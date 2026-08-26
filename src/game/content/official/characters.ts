@@ -12,6 +12,7 @@ export const officialCharacters = [
     ],
     "identity": "同事",
     "preferredGiftTags": ["dessert", "flower"],
+    "preferredInteractionCategories": ["outing"],
     "preferredActivityTags": ["culture", "hobby"],
     "initialRelationship": 8,
     "careerHistory": [

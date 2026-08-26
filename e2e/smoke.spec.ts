@@ -1540,3 +1540,25 @@ test('settles Zhou business interaction and persists the follow-up message', asy
   await expect(relationshipHistory).toContainText('一起看看店');
   await expect(relationshipHistory).toContainText('第 1 月 · 1 次关系记录');
 });
+
+test('settles Guqing consulting review interaction with preference feedback', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 500;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const contact = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '顾清', exact: true }) });
+  await contact.getByRole('button', { name: /一起复盘项目/ }).click();
+  await expect(contact).toContainText('7');
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('region', { name: '关系历史' })).toContainText('和顾清复盘项目');
+  await page.reload();
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('region', { name: '关系历史' })).toContainText('和顾清复盘项目');
+});

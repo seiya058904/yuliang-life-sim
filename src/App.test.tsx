@@ -584,7 +584,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '社交' }));
-    const lin = screen.getByRole('heading', { name: '林晨' }).closest('article') as HTMLElement;
+    const lin = screen.getByRole('heading', { name: '林晨', level: 2 }).closest('article') as HTMLElement;
     expect(lin).toHaveTextContent('职业经历');
     expect(lin).toHaveTextContent('第 1 年 · 远望零售 · 门店员工');
   });
