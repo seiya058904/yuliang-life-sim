@@ -778,6 +778,7 @@ export type GameAction =
   | { type: 'update_business'; businessId: ContentId; priceLevel: number; wageLevel: number; inventoryLevel: number }
   | { type: 'inject_business_capital'; businessId: ContentId; amount: number }
   | { type: 'raise_business_funding'; businessId: ContentId }
+  | { type: 'sell_business'; businessId: ContentId }
   | { type: 'buy_asset'; assetId: ContentId }
   | { type: 'sell_asset'; assetId: ContentId }
   | { type: 'buy_investment'; investmentId: ContentId; units: number }

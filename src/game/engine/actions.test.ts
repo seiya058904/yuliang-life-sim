@@ -158,6 +158,22 @@ describe('game action dispatcher', () => {
     expect(funded.state.lifeHistory.filter((entry) => entry.sourceId === 'business.seed-kiosk')).toHaveLength(3);
   });
 
+  it('exits a funded business at its equity-adjusted valuation', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 10000;
+    state.unlockedCapabilities.push('business_license');
+    state.unlockedBusinessIds.push('business.seed-kiosk');
+    const bought = dispatchGameAction(state, { type: 'buy_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    const funded = dispatchGameAction(bought.state, { type: 'raise_business_funding', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    const exited = dispatchGameAction(funded.state, { type: 'sell_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+
+    expect(exited.error).toBeUndefined();
+    expect(exited.state.businesses['business.seed-kiosk']).toBeUndefined();
+    expect(exited.state.cash).toBe(10000 - 3200 + 2400 + 2912);
+    expect(exited.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', group: 'asset_liquidation', amount: 2912, cashDelta: 2912 });
+    expect(exited.state.lifeHistory?.at(-1)).toMatchObject({ title: '退出早餐与咖啡档', category: 'business' });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);

@@ -116,6 +116,17 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('button', { name: '本轮融资已完成' })).toBeInTheDocument();
   });
 
+  it('exposes a business exit and clears the operating panel after liquidation', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 10000, businesses: { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 100 } } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(screen.getByRole('button', { name: '退出企业' }));
+    expect(screen.queryByRole('heading', { name: '企业经营' })).not.toBeInTheDocument();
+  });
+
   it('uses a service and manages a monthly subscription from the shop', async () => {
     const user = userEvent.setup();
     render(<App />);

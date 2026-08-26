@@ -549,6 +549,19 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       effects.push({ type: 'cash', amount, reason: '企业融资到账' });
       break;
     }
+    case 'sell_business': {
+      const holding = state.businesses[action.businessId];
+      const business = find(content.businesses, action.businessId);
+      if (!holding || !business) return fail(input, '还没有这项生意');
+      const equity = Math.min(100, Math.max(0, holding.equityPercent ?? 100)) / 100;
+      const saleValue = Math.max(0, Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio * equity));
+      delete state.businesses[action.businessId];
+      state.cash += saleValue;
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: saleValue, label: `退出${business.name}`, sourceType: 'business', sourceId: business.id, cashDelta: saleValue });
+      addLifeRecord(state, { category: 'business', title: `退出${business.name}`, detail: `按持股 ${Math.round(equity * 100)}% 变现`, sourceId: business.id, amount: saleValue });
+      effects.push({ type: 'cash', amount: saleValue, reason: '企业退出变现' });
+      break;
+    }
     case 'buy_asset': {
       const asset = find(content.assets, action.assetId);
       if (!asset || !state.unlockedAssetIds.includes(action.assetId)) return fail(input, '这项资产还没有解锁');
