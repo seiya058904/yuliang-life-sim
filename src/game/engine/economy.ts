@@ -43,7 +43,7 @@ export function calculateNetWorth(state: GameState, content: ContentRegistry, ba
     const item = findItem(content, itemId);
     return total + (item?.sellable ? (state.itemPurchasePrices[itemId] ?? item.price) * item.resaleRatio * quantity : 0);
   }, 0);
-  const businessValue = Object.values(state.businesses).reduce((total, holding) => total + holding.purchasePrice * balance.businessValuationRatio, 0);
+  const businessValue = Object.values(state.businesses).reduce((total, holding) => total + (holding.purchasePrice + (holding.capitalInvested ?? 0)) * balance.businessValuationRatio * ((holding.equityPercent ?? 100) / 100), 0);
   const assetValue = Object.entries(state.assets).reduce((total, [assetId, holding]) => {
     const definition = content.assets.find((asset) => asset.id === assetId) as AssetDefinition | undefined;
     return total + (holding.currentValuation || definition?.valuation || 0);

@@ -102,6 +102,20 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/定价 3/)).toBeInTheDocument();
   });
 
+  it('exposes separate business capital and funding decisions', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 10000, businesses: { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, capitalInvested: 0, equityPercent: 100, fundingRaised: 0, fundingRound: 0 } } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(screen.getByRole('button', { name: '投入 ¥1,000' }));
+    expect(screen.getByText(/已投入资本 ¥1,000/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '发起融资' }));
+    expect(screen.getByText(/持股 80%/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '本轮融资已完成' })).toBeInTheDocument();
+  });
+
   it('uses a service and manages a monthly subscription from the shop', async () => {
     const user = userEvent.setup();
     render(<App />);

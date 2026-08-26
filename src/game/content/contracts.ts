@@ -552,6 +552,12 @@ export interface BusinessHolding {
   wageLevel: number;
   inventoryLevel: number;
   purchasePrice: number;
+  /** Cash invested into the business, separate from daily operating costs. */
+  capitalInvested?: number;
+  /** Player ownership after external funding; ordinary investments never use this field. */
+  equityPercent?: number;
+  fundingRaised?: number;
+  fundingRound?: number;
 }
 
 export interface AssetHolding {
@@ -770,6 +776,8 @@ export type GameAction =
   | { type: 'sell_housing' }
   | { type: 'buy_business'; businessId: ContentId }
   | { type: 'update_business'; businessId: ContentId; priceLevel: number; wageLevel: number; inventoryLevel: number }
+  | { type: 'inject_business_capital'; businessId: ContentId; amount: number }
+  | { type: 'raise_business_funding'; businessId: ContentId }
   | { type: 'buy_asset'; assetId: ContentId }
   | { type: 'sell_asset'; assetId: ContentId }
   | { type: 'buy_investment'; investmentId: ContentId; units: number }

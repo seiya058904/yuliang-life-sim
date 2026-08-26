@@ -82,6 +82,17 @@ describe('game store persistence', () => {
     expect(restored.unlockedAssetIds).toEqual(['asset.used-compact', 'asset.city-sedan', 'asset.city-ev']);
   });
 
+  it('migrates old business holdings with independent capital and equity defaults', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, businesses: {
+      'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200 },
+    } }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.businesses['business.seed-kiosk']).toMatchObject({ capitalInvested: 0, equityPercent: 100, fundingRaised: 0, fundingRound: 0 });
+  });
+
   it('does not persist animation-only effect data as authoritative state', () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
     const state = store.getState().game;
