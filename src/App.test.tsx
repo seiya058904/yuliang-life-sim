@@ -232,6 +232,19 @@ describe('余量 app flow', () => {
     expect(screen.getByText('取消基础通信套餐')).toBeInTheDocument();
   });
 
+  it('uses the vehicle annual service from the shop when a vehicle is owned', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 1000, assets: { 'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 35000, purchaseDay: 1, currentValuation: 35000 } } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const service = screen.getByRole('heading', { name: '车辆年度保养' }).closest('.item-row');
+    expect(service).not.toBeNull();
+    await user.click(within(service as HTMLElement).getByRole('button', { name: '使用服务' }));
+    expect(screen.getByRole('region', { name: '服务记录' })).toHaveTextContent('车辆年度保养');
+  });
+
   it('adds a large item to the wishlist, shows progress, and completes it through the goal panel', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

@@ -85,6 +85,27 @@ test('shows the persisted service history beside the service market', async ({ p
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础理发');
 });
 
+test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 1000;
+    state.assets = { ...(state.assets ?? {}), 'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 35000, purchaseDay: 1, currentValuation: 35000 } };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const service = page.getByRole('heading', { name: '车辆年度保养' }).locator('..').locator('..');
+  await expect(service).toContainText('车辆年度保养');
+  await service.getByRole('button', { name: '使用服务' }).click();
+  await expect(page.getByRole('region', { name: '服务记录' })).toContainText('车辆年度保养');
+  await page.reload();
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await expect(page.getByRole('region', { name: '服务记录' })).toContainText('车辆年度保养');
+});
+
 test('shows persisted vehicle maintenance history in wealth', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

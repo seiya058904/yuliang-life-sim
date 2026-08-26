@@ -76,6 +76,18 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '基础理发' });
   });
 
+  it('uses the vehicle annual service only when a vehicle is owned', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 1000;
+    state.assets['asset.used-compact'] = { assetId: 'asset.used-compact', purchasePrice: 35000, purchaseDay: 1, currentValuation: 35000 };
+    const result = dispatchGameAction(state, { type: 'use_service', serviceId: 'service.vehicle-annual' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.cash).toBe(400);
+    expect(result.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'maintenance', amount: 600 });
+    expect(result.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '车辆年度保养' });
+  });
+
   it('starts and cancels a subscription with a persisted active record', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     const started = dispatchGameAction(state, { type: 'manage_subscription', subscriptionId: 'subscription.mobile-basic', enabled: true }, contentRegistry, balanceConfig);
