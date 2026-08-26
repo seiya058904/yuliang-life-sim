@@ -32,6 +32,7 @@ Counts are separated by direct official content, seed content, and the composed 
 | Dialogues | 0 | 1 | 1 | Dialogue/storyline data is seed-only. |
 | Relationship interactions | 0 | 1 | 1 | One seed interaction is reachable in Social. |
 | Messages | 0 | 0 | Runtime-generated | Relationship interactions enqueue up to 30 persisted messages; reading a message writes a relationship history record. |
+| Messages | 0 | 0 | Runtime-generated | Relationship interactions enqueue up to 30 persisted messages; reading a message writes a relationship history record. |
 | Storylines | 0 | 1 | 1 | Storyline schema exists; no official authored storyline loop is surfaced. |
 | Vacancy templates | 13 | 0 | 13 | Public market generation uses official templates. |
 | Locations | 3 | 0 | 3 | 澄川市中央区、临江区、北部产业区；稳定 location ID 已接入公司、住房、人物和活动引用。 |

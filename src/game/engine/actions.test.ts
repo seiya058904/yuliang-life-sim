@@ -258,6 +258,9 @@ describe('game action dispatcher', () => {
     expect(read.error).toBeUndefined();
     expect(read.state.messages?.[0].read).toBe(true);
     expect(read.state.lifeHistory?.at(-1)).toMatchObject({ category: 'relationship', title: expect.stringContaining('查看消息') });
+    const duplicateRead = dispatchGameAction(read.state, { type: 'read_message', messageId: message!.id }, contentRegistry, balanceConfig);
+    expect(duplicateRead.error).toBeUndefined();
+    expect(duplicateRead.state.lifeHistory).toHaveLength(read.state.lifeHistory.length);
 
     const investor = { ...relationship.state, cash: 10_000 };
     const investment = dispatchGameAction(investor, { type: 'buy_investment', investmentId: 'investment.seed-index', units: 1 }, contentRegistry, balanceConfig);
