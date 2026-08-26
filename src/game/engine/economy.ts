@@ -57,12 +57,13 @@ export function calculateDailyPassiveIncome(state: GameState, content: ContentRe
     const definition = content.businesses.find((entry) => entry.id === holding.businessId);
     if (!definition) return total;
     const breakdown = calculateDailyBusinessProfit(holding, definition);
+    const equity = Math.min(100, Math.max(0, holding.equityPercent ?? 100)) / 100;
     return {
-      revenue: total.revenue + breakdown.revenue,
-      goodsCost: total.goodsCost + breakdown.goodsCost,
-      wage: total.wage + breakdown.wage,
-      rent: total.rent + breakdown.rent,
-      profit: total.profit + breakdown.profit,
+      revenue: total.revenue + roundMoney(breakdown.revenue * equity),
+      goodsCost: total.goodsCost + roundMoney(breakdown.goodsCost * equity),
+      wage: total.wage + roundMoney(breakdown.wage * equity),
+      rent: total.rent + roundMoney(breakdown.rent * equity),
+      profit: total.profit + roundMoney(breakdown.profit * equity),
     };
   }, { revenue: 0, goodsCost: 0, wage: 0, rent: 0, profit: 0 });
   const assetIncome = Object.entries(state.assets).reduce((total, [assetId]) => total + (content.assets.find((asset) => asset.id === assetId)?.dailyIncome ?? 0), 0);

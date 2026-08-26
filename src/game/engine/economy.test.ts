@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateDailyBusinessProfit, calculateLifestyle, calculateNetWorth } from './economy';
+import { calculateDailyBusinessProfit, calculateDailyPassiveIncome, calculateLifestyle, calculateNetWorth } from './economy';
 import type { ContentRegistry, GameState } from '../content/contracts';
 import { balanceConfig } from '../balance/config';
 
@@ -36,5 +36,10 @@ describe('economy calculations', () => {
       rent: 30,
       profit: 200 * 1.1 * 1.2 - 50 * 1.2 - 20 - 30,
     });
+  });
+
+  it('distributes passive business profit according to the player equity share', () => {
+    const diluted = { ...state, businesses: { 'business.kiosk': { ...state.businesses['business.kiosk'], equityPercent: 50 } } };
+    expect(calculateDailyPassiveIncome(diluted, content).profit).toBe(77);
   });
 });
