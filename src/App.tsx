@@ -77,6 +77,7 @@ function AcquisitionRequirementsPanel({ game, onNavigate, scope }: { game: GameS
   if (scope === 'wealth') {
     contentRegistry.investments?.filter((investment) => investment.requirements && !evaluateCondition(investment.requirements, game, contentRegistry, balanceConfig)).forEach((investment) => entries.push({ id: investment.id, name: investment.name, condition: investment.requirements! }));
     contentRegistry.assets.filter((asset) => asset.requirements && !game.unlockedAssetIds.includes(asset.id) && !evaluateCondition(asset.requirements, game, contentRegistry, balanceConfig)).forEach((asset) => entries.push({ id: asset.id, name: asset.name, condition: asset.requirements! }));
+    contentRegistry.businesses.filter((business) => business.requirements && !game.unlockedBusinessIds.includes(business.id) && !evaluateCondition(business.requirements, game, contentRegistry, balanceConfig)).forEach((business) => entries.push({ id: business.id, name: business.name, condition: business.requirements! }));
   }
   if (!entries.length) return null;
   return <section className="detail-panel" aria-label="获取路径"><div className="section-heading compact"><div><span className="eyebrow">条件透明</span><h2>还差什么，下一步去哪</h2></div><p>锁定内容会显示真实条件和现有可执行入口；满足后回来即可继续操作。</p></div><div className="item-list">{entries.map((entry) => <div className="item-row" key={entry.id}><div><h3>{entry.name}</h3></div><AcquisitionHint condition={entry.condition} game={game} onNavigate={onNavigate} /></div>)}</div></section>;

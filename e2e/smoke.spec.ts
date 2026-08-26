@@ -353,6 +353,8 @@ test('shows locked wealth requirements with an actionable acquisition route', as
   const panel = page.getByRole('region', { name: '获取路径' });
   await expect(panel).toContainText('精品珠宝');
   await expect(panel).toContainText('需要能力 市场洞察');
+  await expect(panel).toContainText('早餐与咖啡档');
+  await expect(panel).toContainText('需要能力 经营资格');
   await panel.getByRole('button', { name: '去社交寻找机会' }).first().click();
   await expect(page.getByRole('heading', { name: '社交', exact: true })).toBeVisible();
 });
