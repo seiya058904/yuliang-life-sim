@@ -328,6 +328,19 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory.at(-1)).toMatchObject({ detail: '符合对方偏好，关系进展更顺利' });
   });
 
+  it('diminishes repeated relationship gains without decaying the stored relationship', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 1_000;
+    const first = dispatchGameAction(state, { type: 'interact_character', interactionId: 'interaction.coffee-with-recruiter', optionId: 'coffee' }, contentRegistry, balanceConfig);
+    const second = dispatchGameAction(first.state, { type: 'interact_character', interactionId: 'interaction.coffee-with-recruiter', optionId: 'coffee' }, contentRegistry, balanceConfig);
+    const third = dispatchGameAction(second.state, { type: 'interact_character', interactionId: 'interaction.coffee-with-recruiter', optionId: 'coffee' }, contentRegistry, balanceConfig);
+
+    expect(first.state.relationships['character.chenyu']).toBe(6);
+    expect(second.state.relationships['character.chenyu']).toBe(11);
+    expect(third.state.relationships['character.chenyu']).toBe(14);
+    expect(third.state.lifeHistory.at(-1)?.detail).toContain('近期重复互动收益递减');
+  });
+
   it('copies the stored previous weekly plan instead of only showing a message', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     const changed = dispatchGameAction(state, {
