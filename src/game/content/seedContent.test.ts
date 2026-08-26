@@ -51,6 +51,12 @@ describe('seed content registry', () => {
     ]));
   });
 
+  it('exposes the business operating risk event with stable ownership gating', () => {
+    expect(contentRegistry.events).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'event.business-equipment-failure', category: 'business', cooldownDays: 180, conditions: { type: 'owns_business', businessId: 'business.seed-kiosk' } }),
+    ]));
+  });
+
   it('exposes official character-specific interactions from the content registry', () => {
     expect(contentRegistry.relationshipInteractions?.filter((interaction) => interaction.contentStatus === 'official').map((interaction) => interaction.id)).toEqual([
       'interaction.coffee-with-recruiter',

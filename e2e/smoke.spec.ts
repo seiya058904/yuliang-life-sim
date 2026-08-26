@@ -487,6 +487,34 @@ test('buys and persists the Isle lifestyle technology smart-home set', async ({ 
   await expect(page.getByText('库存 ×1')).toBeVisible();
 });
 
+test('settles a business operating risk event with persisted financial history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 1_000;
+    state.businesses = { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 2_000, equityPercent: 100, publicFloatPercent: 0 } };
+    state.pendingEventId = 'event.business-equipment-failure';
+    state.simulationMode = 'event';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  const event = page.getByRole('dialog');
+  await expect(event).toContainText('设备今天不太配合');
+  await event.getByRole('button', { name: '马上维修设备' }).click();
+  await expect(event).toContainText('-300¥');
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('设备今天不太配合')).toBeVisible();
+  const settled = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  expect(settled.cash).toBe(700);
+  expect(settled.reputation).toBe((initial.reputation ?? 0) + 1);
+
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('设备今天不太配合')).toBeVisible();
+});
+
 test('applies the industrial hub city event and persists its development', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

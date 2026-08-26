@@ -2058,5 +2058,43 @@ export const officialEvents = [
       "private-equity",
       "story"
     ]
+  },
+  {
+    "id": "event.business-equipment-failure",
+    "contentStatus": "official",
+    "name": "设备突然故障",
+    "description": "企业运营中偶尔会遇到需要立刻处理的现实问题。",
+    "title": "设备今天不太配合",
+    "body": "店里的核心设备在客流最忙的时候停了下来。现在可以花一笔钱尽快维修，也可以先用临时方案撑过去。",
+    "category": "business",
+    "weight": 0.18,
+    "cooldownDays": 180,
+    "conditions": {
+      "type": "owns_business",
+      "businessId": "business.seed-kiosk"
+    },
+    "choices": [
+      {
+        "id": "repair",
+        "text": "马上维修设备",
+        "effects": [
+          { "type": "cash", "amount": -300 },
+          { "type": "stat", "stat": "reputation", "amount": 1 }
+        ]
+      },
+      {
+        "id": "defer",
+        "text": "先用临时方案",
+        "effects": [
+          { "type": "cash", "amount": -120 },
+          { "type": "stat", "stat": "reputation", "amount": -1 },
+          { "type": "attribute", "attribute": "mood", "amount": 1 }
+        ]
+      }
+    ],
+    "tags": [
+      "business",
+      "luck"
+    ]
   }
 ] satisfies readonly EventDefinition[];
