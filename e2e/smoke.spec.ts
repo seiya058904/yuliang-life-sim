@@ -1434,6 +1434,11 @@ test('buys and sells independent public company equity with persisted history', 
   await expect(equity).toContainText('独立于自营企业');
   await equity.getByRole('button', { name: '买入 1 份' }).click();
   await expect(equity).toContainText('持有 1 份');
+  await expect(equity).toContainText('已投入');
+  await expect(equity).toContainText('平均成本');
+  await expect(equity).toContainText('当前价值');
+  await expect(equity).toContainText('未实现收益');
+  await expect(equity).toContainText('30 日变化');
   await equity.getByRole('button', { name: '卖出 1 份' }).click();
   await expect(equity).not.toContainText('持有 1 份');
 

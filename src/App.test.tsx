@@ -632,6 +632,28 @@ describe('余量 app flow', () => {
     expect(allocation).toHaveTextContent('投资房');
   });
 
+  it('shows holding cost, valuation and return details for an investment', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: {
+      ...game,
+      time: { ...game.time, day: 40 },
+      investments: { 'investment.broad-market-index': { investmentId: 'investment.broad-market-index', units: 10, averageCost: 100, currentValuation: 1150, lastValuationDay: 40 } },
+    } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    const investment = screen.getByRole('heading', { name: '广域市场指数基金' }).closest('article') as HTMLElement;
+    expect(investment).toHaveTextContent('已投入');
+    expect(investment).toHaveTextContent('¥1,000');
+    expect(investment).toHaveTextContent('持有 10 份');
+    expect(investment).toHaveTextContent('平均成本');
+    expect(investment).toHaveTextContent('当前价值');
+    expect(investment).toHaveTextContent('未实现收益');
+    expect(investment).toHaveTextContent('+¥150');
+    expect(investment).toHaveTextContent('30 日变化');
+  });
+
   it('shows persisted monthly portfolio history in the wealth view', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
