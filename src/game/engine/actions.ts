@@ -375,6 +375,11 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (choice.nextEventId) state.pendingEventId = choice.nextEventId;
       if (choice.nextChainStage) state.chainStages[choice.nextChainStage.chainId] = choice.nextChainStage.stage;
       applyContentEffects(state, choice.effects, content, balance, effects);
+      if (choice.opportunity) {
+        const opportunityId = `opportunity.${event.id}.${choice.id}.${state.time.day}`;
+        const { expiresInDays, ...opportunity } = choice.opportunity;
+        state.opportunities = [...(state.opportunities ?? []).filter((entry) => entry.id !== opportunityId), { id: opportunityId, ...opportunity, expiresDay: state.time.day + Math.max(1, expiresInDays) }].slice(-20);
+      }
       addLifeRecord(state, { category: 'event', title: event.title, detail: choice.text, sourceId: event.id });
       state.pendingReward = {
         eventId: event.id,

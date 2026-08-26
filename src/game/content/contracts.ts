@@ -396,12 +396,22 @@ export interface CharacterDefinition extends ContentMeta {
   preferredInteractionCategories?: readonly RelationshipInteractionDefinition['category'][];
 }
 
+export interface EventOpportunityDefinition {
+  jobId: ContentId;
+  companyId: ContentId;
+  route: Exclude<ApplicationRoute, 'market'>;
+  source: string;
+  expiresInDays: number;
+  salaryRange: readonly [number, number];
+}
+
 export interface EventChoiceDefinition {
   id: string;
   text: string;
   effects: readonly EffectDefinition[];
   nextEventId?: ContentId;
   nextChainStage?: { chainId: ContentId; stage: number };
+  opportunity?: EventOpportunityDefinition;
 }
 
 export interface EventDefinition extends ContentMeta {
@@ -437,7 +447,7 @@ export interface StorylineBranch {
   condition?: ConditionDefinition;
   nextStageId?: string;
   effects?: readonly EffectDefinition[];
-  opportunity?: { jobId: ContentId; companyId: ContentId; route: Exclude<ApplicationRoute, 'market'>; source: string; expiresInDays: number; salaryRange: readonly [number, number] };
+  opportunity?: EventOpportunityDefinition;
 }
 
 export interface StorylineStageDefinition {

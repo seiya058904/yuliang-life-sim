@@ -65,6 +65,13 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes the official headhunter contact and its opportunity-bearing choice', () => {
+    expect(contentRegistry.characters.find((character) => character.id === 'character.xuheng')).toMatchObject({ identity: '资深招聘顾问 / 猎头' });
+    expect(contentRegistry.events.find((event) => event.id === 'event.headhunter-contact')?.choices[0]).toMatchObject({
+      opportunity: { jobId: 'job.category-operations-expert', route: 'headhunter', source: '许衡主动联系' },
+    });
+  });
+
   it('exposes the official relationship storyline from the content registry', () => {
     expect(contentRegistry.storylines?.filter((storyline) => storyline.contentStatus === 'official').map((storyline) => storyline.id)).toEqual([
       'storyline.remote-connection',

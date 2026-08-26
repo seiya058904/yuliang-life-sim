@@ -252,6 +252,25 @@ describe('game action dispatcher', () => {
     expect(resumed.state.simulationMode).toBe('running');
   });
 
+  it('turns an event choice into a persisted headhunter opportunity instead of an automatic offer', () => {
+    const event = {
+      id: 'event.test-headhunter', contentStatus: 'seed' as const, name: '猎头联系', description: '测试猎头联系。',
+      title: '猎头联系', body: '有猎头看过你的经历。', category: 'career' as const, weight: 1, cooldownDays: 99,
+      choices: [
+        { id: 'listen', text: '听听看', effects: [{ type: 'relation' as const, characterId: 'character.seed-lin', amount: 1 }], opportunity: { jobId: 'job.category-operations-expert', companyId: 'company.xinghe', route: 'headhunter' as const, source: '许衡主动联系', expiresInDays: 14, salaryRange: [780, 900] as const } },
+        { id: 'decline', text: '目前不考虑', effects: [{ type: 'stat' as const, stat: 'reputation' as const, amount: 1 }] },
+      ],
+    };
+    const content = { ...contentRegistry, events: [...contentRegistry.events, event] };
+    const state = { ...createInitialState(content, balanceConfig, 1), pendingEventId: event.id, simulationMode: 'event' as const };
+
+    const chosen = dispatchGameAction(state, { type: 'choose_event', eventId: event.id, choiceId: 'listen' }, content, balanceConfig);
+
+    expect(chosen.error).toBeUndefined();
+    expect(chosen.state.opportunities).toEqual(expect.arrayContaining([expect.objectContaining({ jobId: 'job.category-operations-expert', route: 'headhunter', source: '许衡主动联系', expiresDay: 15, salaryRange: [780, 900] })]));
+    expect(chosen.state.applications).toHaveLength(0);
+  });
+
   it('runs a requested month through the normal weekly and monthly settlement loop', () => {
     const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 1);
 

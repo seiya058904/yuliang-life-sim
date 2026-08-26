@@ -179,5 +179,37 @@ export const officialCharacters = [
         "label": "长期联系人"
       }
     ]
+  },
+  {
+    "id": "character.xuheng",
+    "contentStatus": "official",
+    "name": "许衡",
+    "description": "资深招聘顾问，专门为企业寻找合适的中高级人才。",
+    "tags": [
+      "relationship",
+      "career",
+      "headhunter"
+    ],
+    "identity": "资深招聘顾问 / 猎头",
+    "initialRelationship": 0,
+    "locationId": "location.central",
+    "stages": [
+      {
+        "threshold": 0,
+        "label": "职业联系"
+      },
+      {
+        "threshold": 25,
+        "label": "熟悉"
+      },
+      {
+        "threshold": 50,
+        "label": "信任"
+      },
+      {
+        "threshold": 75,
+        "label": "长期合作"
+      }
+    ]
   }
 ] satisfies readonly CharacterDefinition[];

@@ -1808,6 +1808,59 @@ export const officialEvents = [
       "chainId": "chain.business-path",
       "stage": 3
     }
+  },
+  {
+    "id": "event.headhunter-contact",
+    "contentStatus": "official",
+    "name": "猎头联系",
+    "description": "当你的职业经历和声誉达到一定阶段，猎头开始主动联系。",
+    "title": "有猎头看过你的经历",
+    "body": "许衡发来消息：你好，我这边正在帮一家企业找运营方向的人。你的经历和他们想找的人比较接近。",
+    "category": "career",
+    "weight": 0.55,
+    "cooldownDays": 180,
+    "conditions": {
+      "type": "all",
+      "conditions": [
+        { "type": "current_job", "jobId": "job.regional-operations-manager" },
+        { "type": "reputation_at_least", "amount": 30 }
+      ]
+    },
+    "choices": [
+      {
+        "id": "listen",
+        "text": "听听看",
+        "effects": [
+          { "type": "relation", "characterId": "character.xuheng", "amount": 5 },
+          { "type": "attribute", "attribute": "network", "amount": 1 }
+        ],
+        "opportunity": {
+          "jobId": "job.category-operations-expert",
+          "companyId": "company.xinghe",
+          "route": "headhunter",
+          "source": "许衡主动联系",
+          "expiresInDays": 14,
+          "salaryRange": [780, 900]
+        }
+      },
+      {
+        "id": "keep-in-touch",
+        "text": "以后有合适的可以联系",
+        "effects": [
+          { "type": "relation", "characterId": "character.xuheng", "amount": 2 }
+        ]
+      },
+      {
+        "id": "decline",
+        "text": "目前不考虑",
+        "effects": [
+          { "type": "attribute", "attribute": "professional", "amount": 1 }
+        ]
+      }
+    ],
+    "tags": [
+      "career",
+      "headhunter"
+    ]
   }
 ] satisfies readonly EventDefinition[];
-

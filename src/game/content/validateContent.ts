@@ -218,7 +218,16 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
         else if (stage.eventId !== event.id) errors.push(`事件 ${event.id} 与事件链 ${chain.id} 的阶段映射不一致`);
       }
     }
-    event.choices.forEach((choice: EventChoiceDefinition) => { checkEffects(choice.effects, `事件 ${event.id} 的选项 ${choice.id}`, true); if (choice.nextEventId && !known.events.has(choice.nextEventId)) errors.push(`事件 ${event.id} 引用了未知后续事件: ${choice.nextEventId}`); });
+    event.choices.forEach((choice: EventChoiceDefinition) => {
+      const owner = `事件 ${event.id} 的选项 ${choice.id}`;
+      checkEffects(choice.effects, owner, true);
+      if (choice.nextEventId && !known.events.has(choice.nextEventId)) errors.push(`事件 ${event.id} 引用了未知后续事件: ${choice.nextEventId}`);
+      if (choice.opportunity) {
+        if (!known.jobs.has(choice.opportunity.jobId)) errors.push(`${owner} 引用了未知机会工作: ${choice.opportunity.jobId}`);
+        if (!known.companies.has(choice.opportunity.companyId)) errors.push(`${owner} 引用了未知机会公司: ${choice.opportunity.companyId}`);
+        if (choice.opportunity.expiresInDays <= 0 || choice.opportunity.salaryRange[0] < 0 || choice.opportunity.salaryRange[1] < choice.opportunity.salaryRange[0]) errors.push(`${owner} 的机会数值无效`);
+      }
+    });
   });
   registry.eventChains.forEach((chain) => {
     if (chain.stages.length === 0) errors.push(`事件链 ${chain.id} 不能为空`);
