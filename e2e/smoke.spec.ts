@@ -6,6 +6,15 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
+test('discovers a named city venue and reaches its activity entry', async ({ page }) => {
+  await page.getByRole('button', { name: '城市', exact: true }).click();
+  const venue = page.getByRole('heading', { name: '云庭咖啡' }).locator('..');
+  await expect(venue).toContainText('去咖啡馆坐一会');
+  await venue.getByRole('button', { name: '去安排活动' }).click();
+  await expect(page.getByRole('heading', { name: '娱乐与生活活动' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeVisible();
+});
+
 test('uses the public market, plans a week, pauses for shopping, and restores the save', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '余量' })).toBeVisible();
   await expect(page.getByText('第 1 周', { exact: true })).toBeVisible();
@@ -148,7 +157,7 @@ test('applies the industrial hub city event and persists its development', async
   await expect(page.getByRole('dialog')).toContainText('北部产业区发展 +1');
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByRole('button', { name: '城市' }).click();
-  await expect(page.getByText('北部产业区')).toBeVisible();
+  await expect(page.getByRole('heading', { name: '北部产业区', exact: true })).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: '城市' }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();

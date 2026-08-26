@@ -443,6 +443,19 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('region', { name: '城市见闻' })).toHaveTextContent('夜间公交延长');
   });
 
+  it('discovers a venue and reaches its executable activity entry', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '城市' }));
+    const venue = screen.getByRole('heading', { name: '云庭咖啡' }).closest('article');
+    expect(venue).not.toBeNull();
+    expect(venue).toHaveTextContent('去咖啡馆坐一会');
+    await user.click(within(venue as HTMLElement).getByRole('button', { name: '去安排活动' }));
+    expect(screen.getByRole('heading', { name: '娱乐与生活活动' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeInTheDocument();
+  });
+
   it('discovers and schedules the official short trip activity', async () => {
     const user = userEvent.setup();
     render(<App />);

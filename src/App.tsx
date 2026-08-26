@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { balanceConfig } from './game/balance/config';
 import { contentRegistry } from './game/content/registry';
-import type { ContentId, GameAction, GameState, PlannedActivity, PlanSlot, Weekday } from './game/content/contracts';
+import type { ContentId, GameAction, GameState, PlannedActivity, PlanSlot, ViewId, Weekday } from './game/content/contracts';
 import { calculateDailyBusinessProfit, calculateLifestyle, calculateNetWorth, wealthTierForNetWorth } from './game/engine/economy';
 import { activityAtTime, deriveActivityProgress, defaultJobSchedule, getDailyActivities } from './game/engine/schedule';
 import { formatClock, formatDate, absoluteMinute } from './game/engine/time';
@@ -110,7 +110,7 @@ function App() {
         {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><ActivityAcquisitionHints game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><WishlistPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></>}
         {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /><PortfolioHistory game={game} /></>}
         {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><GiftPanel game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></>}
-        {activeView === 'city' && <CityView game={game} />}
+        {activeView === 'city' && <CityView game={game} onNavigate={setView} />}
         {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><WealthMilestoneView game={game} /><MilestoneProgressView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /></>}
       </main>
 
@@ -126,11 +126,16 @@ function App() {
   );
 }
 
-function CityView({ game }: { game: GameState }) {
+function CityView({ game, onNavigate }: { game: GameState; onNavigate: (view: ViewId) => void }) {
   const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
   const jobLocation = locationForCurrentJob(game, contentRegistry);
   const ambientLog = (game.ambientLog ?? []).slice(-6);
-  return <section className="city-section"><div className="section-heading compact"><div><span className="eyebrow">澄川市</span><h1>城市与地点</h1></div><p>地点会影响通勤反馈与每日交通费用；访问次数只是记录，不是新的玩家等级。</p></div><div className="item-grid">{locationSummary(contentRegistry).map((location) => <article className="item-card" key={location.id}><div className="job-card-head"><span className="job-kind">{location.region}</span><span className="muted">{location.id === home?.locationId ? '当前居住' : location.id === jobLocation?.id ? '当前工作' : '可发现'}</span></div><h2>{location.name}</h2><p>{location.description}</p><span className="muted">发展阶段 {game.locationDevelopment?.[location.id] ?? 0}/5 · 交通系数 ×{location.transportCostMultiplier.toFixed(2)} · 已访问 {game.locationVisits?.[location.id] ?? 0} 次</span></article>)}</div><section className="detail-panel" aria-label="城市见闻"><div className="section-heading compact"><div><span className="eyebrow">低频世界变化</span><h2>城市见闻</h2></div><p>这里保留自动运行中偶尔遇到的环境变化，不提供强制奖励。</p></div>{ambientLog.length ? <div className="item-list">{ambientLog.map((entry) => <div className="item-row" key={`${entry.day}-${entry.text}`}><span className="job-kind">第 {entry.day} 天</span><p>{entry.text}</p></div>)}</div> : <p className="muted">城市开始运行后，这里会留下偶尔发生的见闻。</p>}</section></section>;
+  return <section className="city-section">
+    <div className="section-heading compact"><div><span className="eyebrow">澄川市</span><h1>城市与地点</h1></div><p>地点会影响通勤反馈与每日交通费用；访问次数只是记录，不是新的玩家等级。</p></div>
+    <div className="item-grid">{locationSummary(contentRegistry).map((location) => <article className="item-card" key={location.id}><div className="job-card-head"><span className="job-kind">{location.region}</span><span className="muted">{location.id === home?.locationId ? '当前居住' : location.id === jobLocation?.id ? '当前工作' : '可发现'}</span></div><h2>{location.name}</h2><p>{location.description}</p><span className="muted">发展阶段 {game.locationDevelopment?.[location.id] ?? 0}/5 · 交通系数 ×{location.transportCostMultiplier.toFixed(2)} · 已访问 {game.locationVisits?.[location.id] ?? 0} 次</span></article>)}</div>
+    <section className="detail-panel" aria-label="城市场所"><div className="section-heading compact"><div><span className="eyebrow">Venue 网络</span><h2>城市里的场所</h2></div><p>先查看一个真实场所，再进入商店安排它承载的活动；执行后仍按正常规则结算并记录。</p></div><div className="item-grid">{(contentRegistry.venues ?? []).map((venue) => { const location = contentRegistry.locations?.find((entry) => entry.id === venue.locationId); const activities = venue.activityIds.map((id) => contentRegistry.activities?.find((entry) => entry.id === id)).filter((entry): entry is NonNullable<typeof entry> => Boolean(entry)); return <article className="item-card" key={venue.id}><div className="job-card-head"><span className="job-kind">{location?.name ?? venue.locationId}</span><span className="muted">{venue.priceRange ?? '按活动计费'}</span></div><h2>{venue.name}</h2><p>{venue.description}</p><div className="item-effect">可承载：{activities.map((activity) => activity.name).join('、')}</div><button className="secondary-button" onClick={() => onNavigate('shop')}>去安排活动</button></article>; })}</div></section>
+    <section className="detail-panel" aria-label="城市见闻"><div className="section-heading compact"><div><span className="eyebrow">低频世界变化</span><h2>城市见闻</h2></div><p>这里保留自动运行中偶尔遇到的环境变化，不提供强制奖励。</p></div>{ambientLog.length ? <div className="item-list">{ambientLog.map((entry) => <div className="item-row" key={`${entry.day}-${entry.text}`}><span className="job-kind">第 {entry.day} 天</span><p>{entry.text}</p></div>)}</div> : <p className="muted">城市开始运行后，这里会留下偶尔发生的见闻。</p>}</section>
+  </section>;
 }
 
 function PortfolioSummary({ game }: { game: GameState }) {

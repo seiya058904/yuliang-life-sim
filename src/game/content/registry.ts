@@ -25,6 +25,7 @@ export const contentRegistry: ContentRegistry = {
   investments: preferOfficial(officialContent.investments ?? [], seedContent.investments ?? []),
   companies: preferOfficial(officialContent.companies ?? [], seedContent.companies ?? []),
   locations: officialContent.locations ?? [],
+  venues: preferOfficial(officialContent.venues ?? [], seedContent.venues ?? []),
   dialogues: preferOfficial(officialContent.dialogues ?? [], seedContent.dialogues ?? []),
   relationshipInteractions: preferOfficial(officialContent.relationshipInteractions ?? [], seedContent.relationshipInteractions ?? []),
   services: preferOfficial(officialContent.services ?? [], seedContent.services ?? []),
@@ -51,6 +52,7 @@ export function composeContentRegistry(overrides: Partial<ContentRegistry> = {})
     investments: preferOfficial(overrides.investments ?? [], seedContent.investments ?? []),
     companies: preferOfficial(overrides.companies ?? [], seedContent.companies ?? []),
     locations: overrides.locations ?? contentRegistry.locations ?? [],
+    venues: preferOfficial(overrides.venues ?? [], seedContent.venues ?? []),
     dialogues: preferOfficial(overrides.dialogues ?? [], seedContent.dialogues ?? []),
     relationshipInteractions: preferOfficial(overrides.relationshipInteractions ?? [], seedContent.relationshipInteractions ?? []),
     services: preferOfficial(overrides.services ?? [], seedContent.services ?? []),
@@ -66,7 +68,7 @@ export function composeContentRegistry(overrides: Partial<ContentRegistry> = {})
 export function composeContentPacks(packs: readonly ContentPack[]): ContentRegistry {
   const merged: Partial<ContentRegistry> = { ...contentRegistry };
   for (const pack of packs) {
-    for (const key of ['jobs', 'items', 'housing', 'businesses', 'assets', 'characters', 'events', 'eventChains', 'milestones', 'activities', 'courses', 'investments', 'companies', 'locations', 'dialogues', 'relationshipInteractions', 'services', 'subscriptions', 'storylines', 'vacancyTemplates'] as const) {
+    for (const key of ['jobs', 'items', 'housing', 'businesses', 'assets', 'characters', 'events', 'eventChains', 'milestones', 'activities', 'courses', 'investments', 'companies', 'locations', 'venues', 'dialogues', 'relationshipInteractions', 'services', 'subscriptions', 'storylines', 'vacancyTemplates'] as const) {
       const values = pack.content[key] as readonly { id: string }[] | undefined;
       if (!values) continue;
       const existing = (merged[key] ?? []) as readonly { id: string }[];

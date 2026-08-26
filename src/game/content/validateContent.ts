@@ -28,6 +28,7 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     ...(registry.activities ?? []).length ? [['活动', registry.activities ?? []] as [string, ContentCollection]] : [],
     ...(registry.investments ?? []).length ? [['投资', registry.investments ?? []] as [string, ContentCollection]] : [],
     ...(registry.companies ?? []).length ? [['公司', registry.companies ?? []] as [string, ContentCollection]] : [],
+    ...(registry.venues ?? []).length ? [['场所', registry.venues ?? []] as [string, ContentCollection]] : [],
     ...(registry.dialogues ?? []).length ? [['对白', registry.dialogues ?? []] as [string, ContentCollection]] : [],
     ...(registry.services ?? []).length ? [['服务', registry.services ?? []] as [string, ContentCollection]] : [],
     ...(registry.subscriptions ?? []).length ? [['订阅', registry.subscriptions ?? []] as [string, ContentCollection]] : [],
@@ -48,6 +49,7 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     companies: new Set((registry.companies ?? []).map((entry) => entry.id)),
     dialogues: new Set((registry.dialogues ?? []).map((entry) => entry.id)),
     locations: new Set((registry.locations ?? []).map((entry) => entry.id)),
+    venueActivities: new Set((registry.activities ?? []).map((entry) => entry.id)),
   };
 
   for (const [category, collection] of collections) {
@@ -246,6 +248,12 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
       checkEffects(option.effects, `活动 ${activity.id} 的 Option ${option.id}`);
       if (option.requiredCharacterId && !known.characters.has(option.requiredCharacterId)) errors.push(`活动 ${activity.id} 引用了未知人物: ${option.requiredCharacterId}`);
     }
+  }
+  for (const venue of registry.venues ?? []) {
+    if (!known.locations.has(venue.locationId)) errors.push(`场所 ${venue.id} 引用了未知地点: ${venue.locationId}`);
+    if (venue.activityIds.length === 0) errors.push(`场所 ${venue.id} 必须至少绑定一个活动`);
+    venue.activityIds.forEach((id) => { if (!known.venueActivities.has(id)) errors.push(`场所 ${venue.id} 引用了未知活动: ${id}`); });
+    venue.characterIds?.forEach((id) => { if (!known.characters.has(id)) errors.push(`场所 ${venue.id} 引用了未知人物: ${id}`); });
   }
   for (const service of registry.services ?? []) {
     if (service.price < 0) errors.push(`服务 ${service.id} 的价格无效`);

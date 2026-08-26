@@ -299,6 +299,13 @@ export interface ActivityDefinition extends ContentMeta {
   familiarityTags?: readonly string[];
 }
 
+export interface VenueDefinition extends ContentMeta {
+  locationId: ContentId;
+  activityIds: readonly ContentId[];
+  characterIds?: readonly ContentId[];
+  priceRange?: string;
+}
+
 export interface CourseDefinition extends ContentMeta {
   durationMinutes: 60 | 120 | 180 | 240;
   cashCost: number;
@@ -566,6 +573,7 @@ export interface ContentRegistry {
   subscriptions?: readonly SubscriptionDefinition[];
   storylines?: readonly StorylineDefinition[];
   locations?: readonly LocationDefinition[];
+  venues?: readonly VenueDefinition[];
   vacancyTemplates?: readonly VacancyTemplate[];
   packs?: readonly { packId: string; version: number; contentStatus: ContentStatus }[];
 }
