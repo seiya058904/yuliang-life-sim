@@ -671,6 +671,7 @@ export interface GameState {
   qualifications?: ContentId[];
   inventory: Record<ContentId, number>;
   itemPurchasePrices: Record<ContentId, number>;
+  wishlist?: ContentId[];
   unlockedCapabilities: CapabilityId[];
   unlockedJobIds: ContentId[];
   unlockedHousingIds: ContentId[];
@@ -744,6 +745,7 @@ export type GameAction =
   | { type: 'purchase_items'; items: Record<ContentId, number> }
   | { type: 'use_item'; itemId: ContentId; quantity?: number }
   | { type: 'sell_item'; itemId: ContentId; quantity: number }
+  | { type: 'manage_wishlist'; itemId: ContentId; enabled: boolean }
   | { type: 'use_service'; serviceId: ContentId }
   | { type: 'manage_subscription'; subscriptionId: ContentId; enabled: boolean }
   | { type: 'move_housing'; housingId: ContentId; mode: 'rent' | 'owned' }

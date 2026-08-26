@@ -86,6 +86,18 @@ describe('game action dispatcher', () => {
     expect(cancelled.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '取消基础通信套餐' });
   });
 
+  it('tracks a wishlist item and completes the goal when the item is purchased', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const added = dispatchGameAction(state, { type: 'manage_wishlist', itemId: 'item.seed-phone', enabled: true }, contentRegistry, balanceConfig);
+    expect(added.error).toBeUndefined();
+    expect(added.state.wishlist).toContain('item.seed-phone');
+
+    const purchased = dispatchGameAction(added.state, { type: 'purchase_items', items: { 'item.seed-phone': 1 } }, contentRegistry, balanceConfig);
+    expect(purchased.error).toBeUndefined();
+    expect(purchased.state.wishlist).not.toContain('item.seed-phone');
+    expect(purchased.state.lifeHistory?.at(-1)).toMatchObject({ title: '愿望清单完成：实用手机' });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);

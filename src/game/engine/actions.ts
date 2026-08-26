@@ -381,6 +381,10 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         const group = groupForCategory(category);
         recordStateFinancialEntry(state, { day: state.time.day, direction: group === 'income' ? 'income' : group === 'consumption' ? 'expense' : 'transfer', category, amount: itemCost(state, item) * quantity, label: group === 'asset_allocation' ? `资产配置 · ${item.name}` : `${item.name} · 购物消费`, sourceType: 'item', sourceId: item.id });
         addLifeRecord(state, { category: 'purchase', title: `购买${item.name}`, detail: quantity > 1 ? `数量 ${quantity}` : undefined, sourceId: item.id, amount: -itemCost(state, item) * quantity });
+        if (state.wishlist?.includes(item.id)) {
+          state.wishlist = state.wishlist.filter((wishlistId) => wishlistId !== item.id);
+          addLifeRecord(state, { category: 'purchase', title: `愿望清单完成：${item.name}`, detail: '已按计划购入', sourceId: item.id });
+        }
       }
       effects.push({ type: 'cash', amount: -total, reason: '购物结算' });
       break;
@@ -413,6 +417,20 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: total, label: `出售${item.name}`, sourceType: 'item', sourceId: item.id });
       addLifeRecord(state, { category: 'purchase', title: `出售${item.name}`, detail: action.quantity > 1 ? `数量 ${action.quantity}` : '已从库存出售', sourceId: item.id, amount: total });
       effects.push({ type: 'cash', amount: total, reason: '出售商品' });
+      break;
+    }
+    case 'manage_wishlist': {
+      const item = find(content.items, action.itemId);
+      if (!item) return fail(input, '找不到这件商品');
+      state.wishlist ??= [];
+      if (action.enabled) {
+        if (state.inventory[item.id]) return fail(input, '已经拥有这件商品');
+        if (!state.wishlist.includes(item.id)) state.wishlist.push(item.id);
+        effects.push({ type: 'message', text: `已加入愿望清单：${item.name}` });
+      } else {
+        state.wishlist = state.wishlist.filter((wishlistId) => wishlistId !== item.id);
+        effects.push({ type: 'message', text: `已移出愿望清单：${item.name}` });
+      }
       break;
     }
     case 'use_service': {

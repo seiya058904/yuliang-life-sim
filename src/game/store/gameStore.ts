@@ -82,6 +82,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     delete candidate.inventory[itemId];
     delete candidate.itemPurchasePrices[itemId];
   }
+  candidate.wishlist = [...new Set((candidate.wishlist ?? []).filter((id) => itemIds.has(id) && (candidate.inventory[id] ?? 0) === 0))];
   const housingIds = knownIds(content, 'housing');
   if (!housingIds.has(candidate.housing?.housingId)) candidate.housing = initial.housing;
   const jobIds = knownIds(content, 'jobs');

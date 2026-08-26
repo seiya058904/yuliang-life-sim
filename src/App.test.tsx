@@ -97,6 +97,21 @@ describe('余量 app flow', () => {
     expect(screen.getByText('取消基础通信套餐')).toBeInTheDocument();
   });
 
+  it('adds a large item to the wishlist, shows progress, and completes it through the goal panel', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 2000 } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('button', { name: '加入愿望清单：新款手机' }));
+    const wishlist = screen.getByRole('region', { name: '愿望清单' });
+    expect(wishlist).toHaveTextContent('新款手机');
+    await user.click(within(wishlist).getByRole('button', { name: '买下' }));
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('愿望清单完成：新款手机')).toBeInTheDocument();
+  });
+
   it('navigates from a rejected application hint and renders life history newest first', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

@@ -64,6 +64,15 @@ describe('game store persistence', () => {
     expect(restored.activeSubscriptions).toEqual({ 'subscription.mobile-basic': { subscriptionId: 'subscription.mobile-basic', startedDay: 6 } });
   });
 
+  it('migrates wishlist ids and removes goals for unknown items', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 3, wishlist: ['item.seed-phone', 'item.unknown'] }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.wishlist).toEqual(['item.seed-phone']);
+  });
+
   it('does not persist animation-only effect data as authoritative state', () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
     const state = store.getState().game;

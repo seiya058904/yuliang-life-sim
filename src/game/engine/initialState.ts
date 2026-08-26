@@ -43,6 +43,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     qualifications: [],
     inventory: {},
     itemPurchasePrices: {},
+    wishlist: [],
     unlockedCapabilities: [...balance.startingCapabilities],
     unlockedJobIds: starterJobs,
     unlockedHousingIds: starterHousing,
