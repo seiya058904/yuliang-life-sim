@@ -63,7 +63,7 @@ const seedActivities: NonNullable<ContentRegistry['activities']> = [
       { id: 'standard', label: '普通影厅', durationMinutes: 180, cashCost: 68, effects: [{ type: 'attribute', attribute: 'mood', amount: 4 }] },
       { id: 'premium', label: '特别放映', durationMinutes: 240, cashCost: 128, effects: [{ type: 'attribute', attribute: 'mood', amount: 7 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] },
     ],
-    financialCategory: 'entertainment',
+    financialCategory: 'entertainment', locationId: 'location.central',
   },
 ];
 

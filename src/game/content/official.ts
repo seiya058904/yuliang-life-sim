@@ -11,5 +11,6 @@ import { officialEventChains } from './official/eventChains';
 import { officialMilestones } from './official/milestones';
 import { officialCompanies } from './official/companies';
 import { officialVacancyTemplates } from './official/vacancies';
+import { officialLocations } from './official/locations';
 
-export const officialContent: ContentRegistry = { jobs: officialJobs, items: officialItems, housing: officialHousing, businesses: officialBusinesses, assets: officialAssets, characters: officialCharacters, events: officialEvents, eventChains: officialEventChains, milestones: officialMilestones, companies: officialCompanies, vacancyTemplates: officialVacancyTemplates, vocabulary };
+export const officialContent: ContentRegistry = { jobs: officialJobs, items: officialItems, housing: officialHousing, businesses: officialBusinesses, assets: officialAssets, characters: officialCharacters, events: officialEvents, eventChains: officialEventChains, milestones: officialMilestones, companies: officialCompanies, locations: officialLocations, vacancyTemplates: officialVacancyTemplates, vocabulary };

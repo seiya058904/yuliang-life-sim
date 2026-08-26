@@ -12,6 +12,7 @@ export const officialCharacters = [
     ],
     "identity": "同事",
     "initialRelationship": 8,
+    "locationId": "location.central",
     "stages": [
       {
         "threshold": 0,
@@ -48,6 +49,7 @@ export const officialCharacters = [
     ],
     "identity": "邻居",
     "initialRelationship": 5,
+    "locationId": "location.riverside",
     "stages": [
       {
         "threshold": 0,
@@ -84,6 +86,7 @@ export const officialCharacters = [
     ],
     "identity": "招聘顾问",
     "initialRelationship": 0,
+    "locationId": "location.central",
     "stages": [
       {
         "threshold": 0,
@@ -114,6 +117,7 @@ export const officialCharacters = [
     ],
     "identity": "数码店店主",
     "initialRelationship": 0,
+    "locationId": "location.central",
     "stages": [
       {
         "threshold": 0,
@@ -150,6 +154,7 @@ export const officialCharacters = [
     ],
     "identity": "房产经纪",
     "initialRelationship": 0,
+    "locationId": "location.riverside",
     "stages": [
       {
         "threshold": 0,
@@ -173,4 +178,3 @@ export const officialCharacters = [
     ]
   }
 ] satisfies readonly CharacterDefinition[];
-

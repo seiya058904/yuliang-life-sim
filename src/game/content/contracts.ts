@@ -168,7 +168,7 @@ export interface JobOpportunityState {
   salaryRange: readonly [number, number];
 }
 
-export type ViewId = 'life' | 'work' | 'shop' | 'wealth' | 'relations' | 'profile';
+export type ViewId = 'life' | 'work' | 'shop' | 'wealth' | 'relations' | 'profile' | 'city';
 
 export interface AcquisitionHint {
   requirementId: string;
@@ -228,6 +228,7 @@ export interface HousingDefinition extends ContentMeta {
   fixedMonthlyCost?: number;
   requirements?: ConditionDefinition;
   effects?: readonly EffectDefinition[];
+  locationId?: ContentId;
 }
 
 export interface BusinessDefinition extends ContentMeta {
@@ -269,6 +270,7 @@ export interface ActivityDefinition extends ContentMeta {
   category: 'food' | 'film' | 'game' | 'fitness' | 'social' | 'culture' | 'travel' | 'hobby' | 'nightlife' | 'premium';
   options: readonly ActivityOption[];
   financialCategory?: FinancialCategory;
+  locationId?: ContentId;
 }
 
 export interface RelationshipInteractionDefinition extends ContentMeta {
@@ -297,6 +299,12 @@ export interface CompanyDefinition extends ContentMeta {
   investmentIds?: readonly ContentId[];
   businessIds?: readonly ContentId[];
   eventIds?: readonly ContentId[];
+  locationId?: ContentId;
+}
+
+export interface LocationDefinition extends ContentMeta {
+  region: string;
+  transportCostMultiplier: number;
 }
 
 export interface DialogueLine {
@@ -351,6 +359,7 @@ export interface CharacterDefinition extends ContentMeta {
   identity: string;
   initialRelationship: number;
   stages: readonly RelationshipStageDefinition[];
+  locationId?: ContentId;
 }
 
 export interface EventChoiceDefinition {
@@ -501,6 +510,7 @@ export interface ContentRegistry {
   dialogues?: readonly DialogueDefinition[];
   relationshipInteractions?: readonly RelationshipInteractionDefinition[];
   storylines?: readonly StorylineDefinition[];
+  locations?: readonly LocationDefinition[];
   vacancyTemplates?: readonly VacancyTemplate[];
   packs?: readonly { packId: string; version: number; contentStatus: ContentStatus }[];
 }

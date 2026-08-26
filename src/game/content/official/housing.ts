@@ -11,6 +11,7 @@ export const officialHousing = [
       "starter"
     ],
     "mode": "rent",
+    "locationId": "location.riverside",
     "rentPerDay": 18,
     "valuation": 0,
     "lifestyleDelta": 0,
@@ -25,6 +26,7 @@ export const officialHousing = [
       "housing"
     ],
     "mode": "both",
+    "locationId": "location.riverside",
     "rentPerDay": 42,
     "price": 5800,
     "valuation": 5800,
@@ -40,6 +42,7 @@ export const officialHousing = [
       "housing"
     ],
     "mode": "both",
+    "locationId": "location.industrial",
     "rentPerDay": 78,
     "price": 12800,
     "valuation": 12800,
@@ -60,6 +63,7 @@ export const officialHousing = [
       "life"
     ],
     "mode": "both",
+    "locationId": "location.riverside",
     "rentPerDay": 118,
     "price": 24000,
     "valuation": 24000,
@@ -89,6 +93,7 @@ export const officialHousing = [
       "luxury"
     ],
     "mode": "both",
+    "locationId": "location.central",
     "rentPerDay": 185,
     "price": 42000,
     "valuation": 42000,
@@ -115,6 +120,7 @@ export const officialHousing = [
       "luxury"
     ],
     "mode": "both",
+    "locationId": "location.central",
     "rentPerDay": 290,
     "price": 78000,
     "valuation": 78000,
@@ -132,4 +138,3 @@ export const officialHousing = [
     ]
   }
 ] satisfies readonly HousingDefinition[];
-

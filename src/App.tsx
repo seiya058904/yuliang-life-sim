@@ -15,12 +15,13 @@ import { summarizeFinancialLedger } from './game/engine/financialLedger';
 import { CareerView } from './game/ui/CareerView';
 import { LifeHistoryList } from './game/ui/LifeHistoryList';
 import { forecastWeeklyPlan } from './game/engine/forecast';
+import { locationSummary, locationForCurrentJob } from './game/engine/locations';
 import './styles.css';
 
 export const appStore = createGameStore(contentRegistry, balanceConfig);
 const gameStore = appStore;
 const navItems = [
-  ['life', '生活'], ['work', '职业'], ['shop', '商店'], ['wealth', '财富'], ['relations', '社交'], ['profile', '我的'],
+  ['life', '生活'], ['work', '职业'], ['shop', '商店'], ['wealth', '财富'], ['relations', '社交'], ['city', '城市'], ['profile', '我的'],
 ] as const;
 const speedMinutesPerSecond = { 1: 360, 2: 720, 4: 1440 } as const;
 
@@ -105,6 +106,7 @@ function App() {
         {activeView === 'shop' && <ShopView game={game} dispatch={dispatch} />}
         {activeView === 'wealth' && <AssetsView game={game} dispatch={dispatch} />}
         {activeView === 'relations' && <RelationsView game={game} dispatch={dispatch} />}
+        {activeView === 'city' && <CityView game={game} />}
         {activeView === 'profile' && <ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} />}
       </main>
 
@@ -118,6 +120,12 @@ function App() {
       {resetOpen && <ConfirmReset onCancel={() => setResetOpen(false)} onConfirm={() => { reset(); setResetOpen(false); }} />}
     </div>
   );
+}
+
+function CityView({ game }: { game: GameState }) {
+  const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
+  const jobLocation = locationForCurrentJob(game, contentRegistry);
+  return <section className="city-section"><div className="section-heading compact"><div><span className="eyebrow">澄川市</span><h1>城市与地点</h1></div><p>地点会影响通勤反馈与每日交通费用；它不是新的玩家等级。</p></div><div className="item-grid">{locationSummary(contentRegistry).map((location) => <article className="item-card" key={location.id}><div className="job-card-head"><span className="job-kind">{location.region}</span><span className="muted">{location.id === home?.locationId ? '当前居住' : location.id === jobLocation?.id ? '当前工作' : '可发现'}</span></div><h2>{location.name}</h2><p>{location.description}</p><span className="muted">交通系数 ×{location.transportCostMultiplier.toFixed(2)}</span></article>)}</div></section>;
 }
 
 function Metric({ label, value }: { label: string; value: number }) {

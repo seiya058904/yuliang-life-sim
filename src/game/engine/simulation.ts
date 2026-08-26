@@ -4,6 +4,7 @@ import { calculateDailyPassiveIncome, calculateLifestyle, calculateNetWorth } fr
 import { calendarForDay } from './calendar';
 import { closeMonth } from './monthlySettlement';
 import { applyCareerExperience, careerRequirementsSatisfied } from './careerProgression';
+import { commuteCostMultiplier } from './locations';
 import { applyContentEffects, chooseAmbientEvent, chooseWeightedEvent, cloneGameState, modifierValue } from './effects';
 import { activityAtTime, defaultJobSchedule } from './schedule';
 import { advanceMinutes, absoluteMinute } from './time';
@@ -164,7 +165,7 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
   const lifestyleScore = calculateLifestyle(state, content);
   const lifestyleFactor = Math.min(balance.lifestyleCostFactorCap, Math.max(0, lifestyleScore * balance.lifestyleCostFactor));
   const living = Math.round(balance.dailyLivingCost * (1 + lifestyleFactor));
-  const transport = Math.round(balance.dailyTransportCost * (1 + lifestyleFactor / 2));
+  const transport = Math.round(balance.dailyTransportCost * (1 + lifestyleFactor / 2) * commuteCostMultiplier(state, content));
   const homeFixed = Math.round((home?.fixedMonthlyCost ?? 0) / 28);
   const communication = day % 28 === 1 ? balance.monthlyCommunicationCost : 0;
   const propertyIncome = Object.keys(state.assets).reduce((total, assetId) => {

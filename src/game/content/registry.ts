@@ -23,6 +23,7 @@ export const contentRegistry: ContentRegistry = {
   activities: preferOfficial(officialContent.activities ?? [], seedContent.activities ?? []),
   investments: preferOfficial(officialContent.investments ?? [], seedContent.investments ?? []),
   companies: preferOfficial(officialContent.companies ?? [], seedContent.companies ?? []),
+  locations: officialContent.locations ?? [],
   dialogues: preferOfficial(officialContent.dialogues ?? [], seedContent.dialogues ?? []),
   relationshipInteractions: preferOfficial(officialContent.relationshipInteractions ?? [], seedContent.relationshipInteractions ?? []),
   storylines: preferOfficial(officialContent.storylines ?? [], seedContent.storylines ?? []),
@@ -45,6 +46,7 @@ export function composeContentRegistry(overrides: Partial<ContentRegistry> = {})
     activities: preferOfficial(overrides.activities ?? [], seedContent.activities ?? []),
     investments: preferOfficial(overrides.investments ?? [], seedContent.investments ?? []),
     companies: preferOfficial(overrides.companies ?? [], seedContent.companies ?? []),
+    locations: overrides.locations ?? contentRegistry.locations ?? [],
     dialogues: preferOfficial(overrides.dialogues ?? [], seedContent.dialogues ?? []),
     relationshipInteractions: preferOfficial(overrides.relationshipInteractions ?? [], seedContent.relationshipInteractions ?? []),
     storylines: preferOfficial(overrides.storylines ?? [], seedContent.storylines ?? []),
@@ -58,7 +60,7 @@ export function composeContentRegistry(overrides: Partial<ContentRegistry> = {})
 export function composeContentPacks(packs: readonly ContentPack[]): ContentRegistry {
   const merged: Partial<ContentRegistry> = { ...contentRegistry };
   for (const pack of packs) {
-    for (const key of ['jobs', 'items', 'housing', 'businesses', 'assets', 'characters', 'events', 'eventChains', 'milestones', 'activities', 'investments', 'companies', 'dialogues', 'relationshipInteractions', 'storylines', 'vacancyTemplates'] as const) {
+    for (const key of ['jobs', 'items', 'housing', 'businesses', 'assets', 'characters', 'events', 'eventChains', 'milestones', 'activities', 'investments', 'companies', 'locations', 'dialogues', 'relationshipInteractions', 'storylines', 'vacancyTemplates'] as const) {
       const values = pack.content[key] as readonly { id: string }[] | undefined;
       if (!values) continue;
       const existing = (merged[key] ?? []) as readonly { id: string }[];
