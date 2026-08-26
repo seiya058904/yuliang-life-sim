@@ -606,7 +606,7 @@ describe('余量 app flow', () => {
       { id: 'life.relationship.1', day: 8, category: 'relationship', title: '周妍 · 一起看看店', detail: '关系留下了新的进展', sourceId: 'interaction.business-with-zhou' },
       { id: 'life.relationship.2', day: 9, category: 'relationship', title: '查看消息：周妍发来新消息', detail: '对方想继续和你保持联系。', sourceId: 'interaction.business-with-zhou' },
       { id: 'life.relationship.3', day: 40, category: 'relationship', title: '周妍 · 后续联系', detail: '关系留下了新的进展', sourceId: 'interaction.business-with-zhou' },
-    ], relationships: { ...game.relationships, 'character.seed-zhou': 12 } } });
+    ], worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 0, relationshipCount: 2, visitedLocationCount: 1 }], relationships: { ...game.relationships, 'character.seed-zhou': 12 } } });
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
@@ -617,5 +617,6 @@ describe('余量 app flow', () => {
     expect(history).toHaveTextContent('一起看看店');
     expect(history).toHaveTextContent('第 1 月 · 2 次关系记录');
     expect(history).toHaveTextContent('第 2 月 · 1 次关系记录');
+    expect(history).toHaveTextContent('第 1 年 · 联系人 2 人');
   });
 });
