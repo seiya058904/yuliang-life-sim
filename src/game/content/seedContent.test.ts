@@ -20,6 +20,7 @@ describe('seed content registry', () => {
       'activity.riverside-park-ride',
       'activity.browse-bookstore',
       'activity.city-photography',
+      'activity.weekend-camping',
       'activity.brand-film-project',
     ]);
   });
@@ -50,6 +51,19 @@ describe('seed content registry', () => {
       sellable: true,
       resaleRatio: 0.74,
       attributeEffects: { appearance: 7 },
+    });
+  });
+
+  it('exposes camping gear for the gated weekend camping activity', () => {
+    expect(contentRegistry.items.find((item) => item.id === 'item.camping-gear')).toMatchObject({
+      contentStatus: 'official',
+      name: '露营装备',
+      price: 1899,
+      sellable: true,
+    });
+    expect(contentRegistry.activities?.find((activity) => activity.id === 'activity.weekend-camping')?.options[0]).toMatchObject({
+      requirements: { type: 'owns_item', itemId: 'item.camping-gear' },
+      cooldownDays: 28,
     });
   });
 

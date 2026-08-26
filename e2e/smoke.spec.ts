@@ -452,6 +452,28 @@ test('discovers the industrial design exhibition trip', async ({ page }) => {
   await expect(exhibition.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
 
+test('acquires camping gear and unlocks the weekend camping plan', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 3_000;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const hints = page.getByRole('region', { name: '活动获取提示' });
+  await expect(hints).toContainText('周末露营 · 搭帐篷住一晚');
+  await expect(hints).toContainText('需要商品 露营装备');
+  await hints.getByRole('button', { name: '购买 露营装备' }).click();
+  const camping = page.locator('article.activity-card').filter({ hasText: '周末露营 · 搭帐篷住一晚' });
+  await expect(camping.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
+  await camping.getByRole('button', { name: '安排到本周自由时间' }).click();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '周末露营 · camp' })).toBeVisible();
+});
+
 test('trades a listed business equity slice from the wealth flow', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

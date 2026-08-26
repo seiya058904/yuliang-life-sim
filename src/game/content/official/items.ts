@@ -571,6 +571,23 @@ export const officialItems = [
     }
   },
   {
+    "id": "item.camping-gear",
+    "contentStatus": "official",
+    "name": "露营装备",
+    "description": "不必把周末变成远征，先准备一套能让户外时间舒服一点的装备。",
+    "tags": [
+      "leisure",
+      "travel",
+      "life"
+    ],
+    "category": "leisure_item",
+    "price": 1899,
+    "consumable": false,
+    "sellable": true,
+    "resaleRatio": 0.62,
+    "lifestyleDelta": 3
+  },
+  {
     "id": "gift.flowers",
     "contentStatus": "official",
     "name": "一束花",

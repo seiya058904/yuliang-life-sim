@@ -126,6 +126,18 @@ export const officialActivities = [
     options: [{ id: 'walk', label: '街区取景', durationMinutes: 120, cashCost: 40, requirements: { type: 'owns_item', itemId: 'item.vintage-camera' }, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] }],
   },
   {
+    id: 'activity.weekend-camping',
+    contentStatus: 'official',
+    name: '周末露营',
+    description: '带上装备去临江区的开阔地过一晚，让生活暂时离开熟悉的室内节奏。',
+    tags: ['life', 'travel', 'leisure'],
+    category: 'travel',
+    financialCategory: 'travel',
+    locationId: 'location.riverside',
+    familiarityTags: ['travel'],
+    options: [{ id: 'camp', label: '搭帐篷住一晚', durationMinutes: 240, cashCost: 260, cooldownDays: 28, requirements: { type: 'owns_item', itemId: 'item.camping-gear' }, effects: [{ type: 'attribute', attribute: 'fitness', amount: 2 }, { type: 'attribute', attribute: 'mood', amount: 7 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] }],
+  },
+  {
     id: 'activity.brand-film-project',
     contentStatus: 'official',
     name: '品牌短片项目',

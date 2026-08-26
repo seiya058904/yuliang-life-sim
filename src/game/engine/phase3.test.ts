@@ -133,6 +133,21 @@ describe('phase 3 additive systems', () => {
     expect(result.state.weeklyPlan.days[2].evening).toEqual({ kind: 'free' });
   });
 
+  it('uses the camping gear acquisition hint and settles the weekend camping activity', () => {
+    const state = { ...createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 3), cash: 3_000 };
+    state.weeklyPlan.days[1].evening = { kind: 'free' };
+    const locked = dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity: { kind: 'activity', activityId: 'activity.weekend-camping', optionId: 'camp' } }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    expect(locked.error).toMatch(/需要商品 露营装备/);
+    const bought = dispatchGameAction(state, { type: 'purchase_items', items: { 'item.camping-gear': 1 } }, contentRegistry, balanceConfig);
+    const planned = dispatchGameAction(bought.state, { type: 'set_plan', weekday: 1, slot: 'evening', activity: { kind: 'activity', activityId: 'activity.weekend-camping', optionId: 'camp' } }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    expect(planned.error).toBeUndefined();
+    const started = dispatchGameAction(planned.state, { type: 'start_week' }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    const settled = dispatchGameAction(started.state, { type: 'advance_simulation', minutes: 24 * 60 }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    expect(settled.state.lifeHistory).toContainEqual(expect.objectContaining({ title: '周末露营 · 搭帐篷住一晚', sourceId: 'activity.weekend-camping' }));
+    expect(settled.state.financialLedger?.entries).toContainEqual(expect.objectContaining({ label: '周末露营 · 搭帐篷住一晚', amount: 260, category: 'travel' }));
+    expect(settled.state.attributes?.fitness).toBeGreaterThan(state.attributes?.fitness ?? 0);
+  });
+
   it('opens a friend-specific activity only after the relationship requirement and records the companion', () => {
     const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 3);
     state.weeklyPlan.days[1].evening = { kind: 'free' };
