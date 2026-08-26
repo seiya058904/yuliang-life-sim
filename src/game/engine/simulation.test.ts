@@ -42,6 +42,18 @@ describe('automatic simulation', () => {
     expect(result.state.jobExperience['job.seed-shop-clerk']).toBe(5);
   });
 
+  it('records a scheduled activity after it settles its cost and effects', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 23);
+    const plan = structuredClone(initial.weeklyPlan);
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.seed-movie', optionId: 'standard' };
+    const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: false, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 6 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.financialLedger?.entries.some((entry) => entry.sourceId === 'activity.seed-movie' && entry.amount === 68)).toBe(true);
+    expect(result.state.lifeHistory?.some((entry) => entry.sourceId === 'activity.seed-movie' && entry.title === '看电影 · 普通影厅')).toBe(true);
+  });
+
   it('closes a month after four weeks without requiring a confirmation action', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 17);

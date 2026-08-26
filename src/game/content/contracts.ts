@@ -188,7 +188,7 @@ export interface GigOpportunityState { id: ContentId; jobId: ContentId; validFro
 export interface EmploymentHistoryEntry { jobId: ContentId; companyId?: ContentId; startedDay?: number; endedDay?: number; finalPay: number; reason?: string; migrated?: boolean; }
 export interface MonthlyHighlight { id: string; kind: 'new_job' | 'new_contact' | 'side_job_acquired' | 'gig_completed' | 'major_purchase' | 'new_asset' | 'attribute_milestone' | 'storyline_completed'; day: number; label: string; sourceId?: ContentId; }
 
-export type LifeRecordCategory = 'career' | 'purchase' | 'housing' | 'relationship' | 'event' | 'business' | 'asset' | 'investment';
+export type LifeRecordCategory = 'career' | 'purchase' | 'activity' | 'housing' | 'relationship' | 'event' | 'business' | 'asset' | 'investment';
 
 export interface LifeRecordEntry {
   id: string;

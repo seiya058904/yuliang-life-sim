@@ -14,6 +14,7 @@ import { recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialL
 import { updateInvestmentValuations } from './investments';
 import { getActivityDefinition, getActivityOption } from './activities';
 import { advanceCareerLifecycle, generateVacancies } from './careers';
+import { appendLifeRecord } from './lifeHistory';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
 
@@ -132,6 +133,7 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     state.cash -= option.cashCost;
     recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: definition.financialCategory ?? 'entertainment', amount: option.cashCost, label: `${definition.name} · ${option.label}`, sourceType: 'activity', sourceId: definition.id });
     applyContentEffects(state, option.effects ?? [], content, balance, output);
+    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: '活动已完成', sourceId: definition.id, amount: -option.cashCost });
     return;
   }
   if (activity.kind === 'study') {

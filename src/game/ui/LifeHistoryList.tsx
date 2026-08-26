@@ -3,6 +3,7 @@ import type { LifeRecordEntry } from '../content/contracts';
 const categoryLabels: Record<LifeRecordEntry['category'], string> = {
   career: '职业',
   purchase: '消费',
+  activity: '活动',
   housing: '住房',
   relationship: '关系',
   event: '事件',
