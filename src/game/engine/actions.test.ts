@@ -177,6 +177,34 @@ describe('game action dispatcher', () => {
     expect(sold.state.lifeHistory.at(-1)).toMatchObject({ category: 'housing', title: '出售独立单间' });
   });
 
+  it('unlocks, buys, locks, and later exits a private-equity opportunity', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 20_000;
+    state.time = { day: 30, hour: 8, minute: 0 };
+    state.relationships['character.xuke'] = 40;
+    state.pendingEventId = 'event.private-equity-introduction';
+    state.simulationMode = 'event';
+
+    const introduced = dispatchGameAction(state, { type: 'choose_event', eventId: 'event.private-equity-introduction', choiceId: 'learn' }, contentRegistry, balanceConfig);
+    expect(introduced.error).toBeUndefined();
+    expect(introduced.state.flags.private_equity_access).toBe(true);
+    const acknowledged = dispatchGameAction(introduced.state, { type: 'claim_reward', resume: true }, contentRegistry, balanceConfig);
+
+    const bought = dispatchGameAction(acknowledged.state, { type: 'buy_investment', investmentId: 'investment.citylife-private-equity', units: 1 }, contentRegistry, balanceConfig);
+    expect(bought.error).toBeUndefined();
+    expect(bought.state.investments?.['investment.citylife-private-equity']).toMatchObject({ units: 1, lastValuationDay: 30 });
+    expect(bought.state.investments?.['investment.citylife-private-equity']?.averageCost).toBeGreaterThan(9_000);
+
+    const locked = dispatchGameAction(bought.state, { type: 'sell_investment', investmentId: 'investment.citylife-private-equity', units: 1 }, contentRegistry, balanceConfig);
+    expect(locked.error).toBe('私人股权仍在锁定期内');
+
+    const mature = { ...bought.state, time: { day: 120, hour: 8, minute: 0 } };
+    const sold = dispatchGameAction(mature, { type: 'sell_investment', investmentId: 'investment.citylife-private-equity', units: 1 }, contentRegistry, balanceConfig);
+    expect(sold.error).toBeUndefined();
+    expect(sold.state.investments?.['investment.citylife-private-equity']).toBeUndefined();
+    expect(sold.state.lifeHistory.at(-1)?.category).toBe('investment');
+  });
+
   it('updates owned business operating levers and records the decision in life history', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 5000;

@@ -849,6 +849,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const investment = content.investments?.find((entry) => entry.id === action.investmentId);
       const holding = state.investments?.[action.investmentId];
       if (!investment || !holding || !Number.isInteger(action.units) || action.units <= 0 || action.units > holding.units) return fail(input, '出售数量无效');
+      if (investment.kind === 'private_equity' && state.time.day < holding.lastValuationDay + 90) return fail(input, '私人股权仍在锁定期内');
       const unitValue = Math.round(investmentUnitValue(investment, state.rng.seed, state.time.day));
       const total = unitValue * action.units;
       const costBasis = holding.averageCost * action.units;

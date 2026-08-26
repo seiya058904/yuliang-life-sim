@@ -1945,5 +1945,47 @@ export const officialEvents = [
       "career",
       "headhunter"
     ]
+  },
+  {
+    "id": "event.private-equity-introduction",
+    "contentStatus": "official",
+    "name": "早期项目引荐",
+    "description": "熟悉的行业联系人把一个不公开的早期项目介绍给你。",
+    "title": "一个没有挂在市场上的机会",
+    "body": "徐可说：这不是公开市场上的东西，项目还早，但团队正在找少量长期参与者。你可以先了解，也可以把现金留在手里。",
+    "category": "investment",
+    "weight": 0.3,
+    "cooldownDays": 365,
+    "conditions": {
+      "type": "all",
+      "conditions": [
+        { "type": "day_at_least", "day": 30 },
+        { "type": "relationship_at_least", "characterId": "character.xuke", "amount": 40 },
+        { "type": "not", "condition": { "type": "flag", "flag": "private_equity_access" } }
+      ]
+    },
+    "choices": [
+      {
+        "id": "learn",
+        "text": "了解这个项目",
+        "effects": [
+          { "type": "set_flag", "flag": "private_equity_access" },
+          { "type": "relation", "characterId": "character.xuke", "amount": 4 },
+          { "type": "attribute", "attribute": "network", "amount": 1 }
+        ]
+      },
+      {
+        "id": "pass",
+        "text": "先不参与",
+        "effects": [
+          { "type": "relation", "characterId": "character.xuke", "amount": 1 }
+        ]
+      }
+    ],
+    "tags": [
+      "investment",
+      "private-equity",
+      "relationship"
+    ]
   }
 ] satisfies readonly EventDefinition[];

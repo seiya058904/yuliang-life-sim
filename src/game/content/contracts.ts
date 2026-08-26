@@ -315,7 +315,7 @@ export interface RelationshipInteractionDefinition extends ContentMeta {
 }
 
 export interface InvestmentDefinition extends ContentMeta {
-  kind: 'savings' | 'fund' | 'gold' | 'stock' | 'reit' | 'company_equity' | 'property_fund';
+  kind: 'savings' | 'fund' | 'gold' | 'stock' | 'reit' | 'company_equity' | 'property_fund' | 'private_equity';
   risk: 'low' | 'medium' | 'high';
   baseValue: number;
   minimumUnits: number;

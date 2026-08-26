@@ -23,6 +23,7 @@ export function updateInvestmentValuations(state: GameState, content: ContentReg
   for (const [investmentId, holding] of Object.entries(state.investments ?? {})) {
     const definition = content.investments?.find((entry) => entry.id === investmentId);
     if (!definition) continue;
+    if (definition.kind === 'private_equity' && day < holding.lastValuationDay + 28) continue;
     holding.currentValuation = investmentValuation(definition, holding, state.rng.seed, day);
     holding.lastValuationDay = day;
     dividend += Math.round(holding.currentValuation * (definition.dividendRate ?? 0));

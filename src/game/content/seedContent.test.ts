@@ -34,6 +34,7 @@ describe('seed content registry', () => {
       'investment.technology-growth',
       'investment.commercial-reit',
       'investment.qiming-equity',
+      'investment.citylife-private-equity',
     ]);
   });
 

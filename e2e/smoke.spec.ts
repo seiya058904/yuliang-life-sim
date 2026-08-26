@@ -223,3 +223,30 @@ test('buys and rents a second home with persisted portfolio controls', async ({ 
   await page.getByRole('button', { name: '生活', exact: true }).click();
   await expect(page.getByRole('heading', { name: '独立单间' }).locator('..').locator('..')).toContainText('已出租');
 });
+
+test('unlocks and persists a private-equity opportunity from a relationship event', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.time = { ...state.time, day: 30 };
+    state.relationships = { ...(state.relationships ?? {}), 'character.xuke': 40 };
+    state.cash = 20_000;
+    state.pendingEventId = 'event.private-equity-introduction';
+    state.simulationMode = 'event';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await expect(page.getByRole('dialog')).toContainText('一个没有挂在市场上的机会');
+  await page.getByRole('dialog').getByRole('button', { name: '了解这个项目' }).click();
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  const investment = page.getByRole('heading', { name: '城际生活早期股权' }).locator('..');
+  await expect(investment).toContainText('私人股权');
+  await investment.getByRole('button', { name: '买入 1 份' }).click();
+  await expect(investment).toContainText('持有 1 份');
+
+  await page.reload();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).toContainText('持有 1 份');
+});

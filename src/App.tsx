@@ -40,7 +40,7 @@ const statLabels: Record<string, string> = { ability: '能力', reputation: '声
 const capabilityLabels: Record<string, string> = { remote_work: '远程工作', home_workspace: '居家办公', business_license: '经营资格', market_insight: '市场洞察' };
 const financialLabels: Record<string, string> = { wage: '工资', side_job: '兼职', bonus: '奖金', business_income: '企业收入', property_income: '房产收入', investment_dividend: '投资分红', event_income: '事件收入', other_income: '其他收入', housing: '住房', living: '基础生活', food: '餐饮', transport: '交通', communication: '通讯', shopping: '购物', entertainment: '娱乐', social: '社交', education: '教育', travel: '旅行', service: '服务', maintenance: '维修', business_cost: '企业成本', other_expense: '其他消费', investment_transfer: '投资配置', property_transfer: '房产配置', business_transfer: '企业配置', collectible_transfer: '收藏配置', asset_liquidation: '资产变现' };
 const investmentRiskLabels: Record<string, string> = { low: '低', medium: '中', high: '高' };
-const investmentKindLabels: Record<string, string> = { savings: '储蓄', fund: '基金', gold: '黄金', stock: '股票', reit: '房产基金', company_equity: '企业股权', property_fund: '房产基金' };
+const investmentKindLabels: Record<string, string> = { savings: '储蓄', fund: '基金', gold: '黄金', stock: '股票', reit: '房产基金', company_equity: '企业股权', property_fund: '房产基金', private_equity: '私人股权' };
 
 function App() {
   const game = gameStore((store) => store.game);

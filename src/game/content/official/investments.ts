@@ -72,4 +72,22 @@ export const officialInvestments = [
     dividendRate: 0.00006,
     companyId: 'company.qiming',
   },
+  {
+    id: 'investment.citylife-private-equity',
+    contentStatus: 'official',
+    name: '城际生活早期股权',
+    description: '不在公开市场挂牌的早期项目份额，只能通过人物与特殊机会获得。',
+    tags: ['investment', 'private-equity', 'story'],
+    kind: 'private_equity',
+    risk: 'high',
+    baseValue: 10_000,
+    minimumUnits: 1,
+    dailyDrift: 0.0008,
+    dailyVolatility: 0.012,
+    dividendRate: 0.00035,
+    requirements: {
+      type: 'flag',
+      flag: 'private_equity_access',
+    },
+  },
 ] satisfies readonly InvestmentDefinition[];
