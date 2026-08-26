@@ -114,6 +114,20 @@ describe('game store persistence', () => {
     expect(restored.locationVisits).toEqual({ 'location.central': 2 });
   });
 
+  it('keeps valid storyline stages and removes unknown storyline state during migration', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, storylineStages: {
+      'storyline.seed-career': 'consider',
+      'storyline.remote-connection': 'follow-up',
+      'storyline.unknown': 'anything',
+      'storyline.remote-connection-bad': 'follow-up',
+    } }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.storylineStages).toEqual({ 'storyline.seed-career': 'consider', 'storyline.remote-connection': 'follow-up' });
+  });
+
   it('does not persist animation-only effect data as authoritative state', () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
     const state = store.getState().game;

@@ -79,6 +79,21 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/查看消息：徐可发来新消息/)).toBeInTheDocument();
   });
 
+  it('starts and advances the official relationship storyline from social', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '社交' }));
+    expect(screen.getByRole('heading', { name: '正在发生的故事' })).toBeInTheDocument();
+    const storyline = screen.getByRole('heading', { name: '远程连接' }).closest('.item-row');
+    expect(storyline).not.toBeNull();
+    await user.click(within(storyline as HTMLElement).getByRole('button', { name: '开始故事' }));
+    await user.click(within(storyline as HTMLElement).getByRole('button', { name: '约个时间聊聊' }));
+    expect(screen.getByText('进行中')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText(/远程连接：约个时间聊聊/)).toBeInTheDocument();
+  });
+
   it('trades an official investment through the wealth page and records both sides', async () => {
     const user = userEvent.setup();
     render(<App />);

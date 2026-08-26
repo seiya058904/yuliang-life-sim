@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { GameAction } from '../content/contracts';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createInitialState } from './initialState';
@@ -281,5 +282,18 @@ describe('game action dispatcher', () => {
     expect(result.state.cash).toBe(balanceConfig.initialCash + 76);
     expect(result.state.gigs).toEqual([]);
     expect(result.state.lifeHistory.at(-1)).toMatchObject({ category: 'career', title: '完成同城配送', amount: 76 });
+  });
+
+  it('starts an official storyline and settles a chosen relationship branch', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 9);
+    const started = dispatchGameAction(state, { type: 'start_storyline', storylineId: 'storyline.remote-connection' } as GameAction, contentRegistry, balanceConfig);
+    expect(started.error).toBeUndefined();
+    expect(started.state.storylineStages?.['storyline.remote-connection']).toBe('invite');
+
+    const advanced = dispatchGameAction(started.state, { type: 'choose_storyline_branch', storylineId: 'storyline.remote-connection', branchId: 'meet' } as GameAction, contentRegistry, balanceConfig);
+    expect(advanced.error).toBeUndefined();
+    expect(advanced.state.storylineStages?.['storyline.remote-connection']).toBe('follow-up');
+    expect(advanced.state.relationships['character.xuke']).toBeGreaterThan(state.relationships['character.xuke']);
+    expect(advanced.state.lifeHistory.at(-1)).toMatchObject({ category: 'relationship', sourceId: 'storyline.remote-connection' });
   });
 });

@@ -148,7 +148,8 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.annualHistory = Array.isArray(candidate.annualHistory) ? candidate.annualHistory.filter((entry) => isRecord(entry) && Number.isInteger(entry.year) && Number.isFinite(entry.cashStart) && Number.isFinite(entry.cashEnd) && Number.isFinite(entry.netWorthStart) && Number.isFinite(entry.netWorthEnd) && Number.isFinite(entry.totalIncome) && Number.isFinite(entry.totalConsumption) && Number.isInteger(entry.months)).slice(-10) as GameState['annualHistory'] : [];
   candidate.lifeHistory = Array.isArray(candidate.lifeHistory) ? candidate.lifeHistory.filter(isLifeRecordEntry) : [];
   candidate.ambientLog = Array.isArray(candidate.ambientLog) ? candidate.ambientLog.slice(-20) : [];
-  candidate.storylineStages = candidate.storylineStages ?? {};
+  const storylines = new Map((content.storylines ?? []).map((storyline) => [storyline.id, new Set(storyline.stages.map((stage) => stage.id))]));
+  candidate.storylineStages = Object.fromEntries(Object.entries(candidate.storylineStages ?? {}).filter(([id, stage]) => storylines.get(id)?.has(stage as string)));
   const legacyUnlockedJobs = [...candidate.unlockedJobIds];
   candidate.acquiredSideJobs = candidate.acquiredSideJobs ?? {};
   for (const jobId of legacyUnlockedJobs) {

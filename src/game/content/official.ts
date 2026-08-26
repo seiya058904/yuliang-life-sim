@@ -12,6 +12,7 @@ import { officialMilestones } from './official/milestones';
 import { officialCompanies } from './official/companies';
 import { officialVacancyTemplates } from './official/vacancies';
 import { officialLocations } from './official/locations';
+import { officialStorylines } from './official/storylines';
 import { officialActivities } from './official/activities';
 import { officialRelationshipInteractions } from './official/relationshipInteractions';
 import { officialInvestments } from './official/investments';
@@ -19,4 +20,4 @@ import { officialServices, officialSubscriptions } from './official/services';
 import { officialVehicles } from './official/vehicles';
 import { officialCourses } from './official/courses';
 
-export const officialContent: ContentRegistry = { jobs: officialJobs, items: officialItems, housing: officialHousing, businesses: officialBusinesses, assets: [...officialAssets, ...officialVehicles], characters: officialCharacters, events: officialEvents, eventChains: officialEventChains, milestones: officialMilestones, activities: officialActivities, courses: officialCourses, relationshipInteractions: officialRelationshipInteractions, investments: officialInvestments, services: officialServices, subscriptions: officialSubscriptions, companies: officialCompanies, locations: officialLocations, vacancyTemplates: officialVacancyTemplates, vocabulary };
+export const officialContent: ContentRegistry = { jobs: officialJobs, items: officialItems, housing: officialHousing, businesses: officialBusinesses, assets: [...officialAssets, ...officialVehicles], characters: officialCharacters, events: officialEvents, eventChains: officialEventChains, milestones: officialMilestones, activities: officialActivities, courses: officialCourses, relationshipInteractions: officialRelationshipInteractions, investments: officialInvestments, services: officialServices, subscriptions: officialSubscriptions, companies: officialCompanies, locations: officialLocations, storylines: officialStorylines, vacancyTemplates: officialVacancyTemplates, vocabulary };

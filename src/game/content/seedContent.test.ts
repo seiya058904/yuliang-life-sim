@@ -50,6 +50,12 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes the official relationship storyline from the content registry', () => {
+    expect(contentRegistry.storylines?.filter((storyline) => storyline.contentStatus === 'official').map((storyline) => storyline.id)).toEqual([
+      'storyline.remote-connection',
+    ]);
+  });
+
   it('supports replacing one category while keeping the remaining Seed categories', () => {
     const result = composeContentRegistry({ jobs: [{ ...contentRegistry.jobs[0], id: 'job.seed-shop-clerk', contentStatus: 'official', name: '正式示例工作' }] });
     expect(result.jobs[0].id).toBe('job.seed-shop-clerk');

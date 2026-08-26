@@ -10,6 +10,7 @@ import { investmentUnitValue } from './investments';
 import { applyAttributeDelta } from './attributes';
 import { deterministicApplicationDecision, employmentKind, evaluateApplicationCompetitiveness } from './careers';
 import { appendLifeRecord } from './lifeHistory';
+import { advanceStorylineStage, getStoryline, getStorylineStage } from './storylines';
 import { careerRequirementsSatisfied } from './careerProgression';
 import { applyCareerExperience } from './careerProgression';
 
@@ -633,6 +634,29 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         message.read = true;
         addLifeRecord(state, { category: 'relationship', title: `查看消息：${message.title}`, detail: message.body, sourceId: message.sourceId ?? message.characterId });
       }
+      break;
+    }
+    case 'start_storyline': {
+      const storyline = getStoryline(content, action.storylineId);
+      if (!storyline) return fail(input, '找不到这段故事');
+      const current = state.storylineStages?.[storyline.id];
+      if (current) return fail(input, '这段故事已经开始');
+      state.storylineStages ??= {};
+      state.storylineStages[storyline.id] = storyline.initialStageId;
+      addLifeRecord(state, { category: 'relationship', title: `开始故事：${storyline.name}`, sourceId: storyline.id });
+      effects.push({ type: 'message', text: `${storyline.name}已进入你的生活` });
+      break;
+    }
+    case 'choose_storyline_branch': {
+      const storyline = getStoryline(content, action.storylineId);
+      const stage = getStorylineStage(content, state, action.storylineId);
+      const branch = stage?.branches?.find((entry) => entry.id === action.branchId);
+      if (!storyline || !stage || !branch?.nextStageId) return fail(input, '当前没有这项故事选择');
+      if (branch.condition && !hasRequirements(state, branch.condition, content, balance)) return fail(input, '当前条件还不满足');
+      if (!advanceStorylineStage(state, content, storyline.id, branch.nextStageId)) return fail(input, '故事阶段已失效');
+      applyContentEffects(state, branch.effects ?? [], content, balance, effects);
+      addLifeRecord(state, { category: 'relationship', title: `${storyline.name}：${branch.text ?? '作出选择'}`, detail: `进入阶段 ${branch.nextStageId}`, sourceId: storyline.id });
+      effects.push({ type: 'message', text: `${storyline.name}进入下一段` });
       break;
     }
     case 'sell_investment': {
