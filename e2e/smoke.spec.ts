@@ -429,4 +429,5 @@ test('settles Zhou business interaction and persists the follow-up message', asy
   await expect(relationshipHistory).toContainText('当前关系 12');
   await expect(relationshipHistory).toContainText('1 次记录');
   await expect(relationshipHistory).toContainText('一起看看店');
+  await expect(relationshipHistory).toContainText('第 1 月 · 1 次关系记录');
 });

@@ -479,6 +479,7 @@ describe('余量 app flow', () => {
     appStore.setState({ game: { ...game, lifeHistory: [
       { id: 'life.relationship.1', day: 8, category: 'relationship', title: '周妍 · 一起看看店', detail: '关系留下了新的进展', sourceId: 'interaction.business-with-zhou' },
       { id: 'life.relationship.2', day: 9, category: 'relationship', title: '查看消息：周妍发来新消息', detail: '对方想继续和你保持联系。', sourceId: 'interaction.business-with-zhou' },
+      { id: 'life.relationship.3', day: 40, category: 'relationship', title: '周妍 · 后续联系', detail: '关系留下了新的进展', sourceId: 'interaction.business-with-zhou' },
     ], relationships: { ...game.relationships, 'character.seed-zhou': 12 } } });
     render(<App />);
 
@@ -486,7 +487,9 @@ describe('余量 app flow', () => {
     const history = screen.getByRole('region', { name: '关系历史' });
     expect(history).toHaveTextContent('周妍');
     expect(history).toHaveTextContent('当前关系 12');
-    expect(history).toHaveTextContent('2 次记录');
+    expect(history).toHaveTextContent('3 次记录');
     expect(history).toHaveTextContent('一起看看店');
+    expect(history).toHaveTextContent('第 1 月 · 2 次关系记录');
+    expect(history).toHaveTextContent('第 2 月 · 1 次关系记录');
   });
 });

@@ -291,12 +291,17 @@ function CharacterPreferenceSummary({ game }: { game: GameState }) {
 
 function RelationshipHistoryView({ game }: { game: GameState }) {
   const records = game.lifeHistory ?? [];
+  const monthlyRecords = records.filter((record) => record.category === 'relationship').reduce<Record<number, number>>((result, record) => {
+    const month = Math.max(1, Math.ceil(record.day / 28));
+    result[month] = (result[month] ?? 0) + 1;
+    return result;
+  }, {});
   const entries = contentRegistry.characters.map((character) => {
     const interactionIds = new Set((contentRegistry.relationshipInteractions ?? []).filter((interaction) => interaction.characterId === character.id).map((interaction) => interaction.id));
     const contactRecords = records.filter((record) => record.category === 'relationship' && (record.sourceId === character.id || (record.sourceId ? interactionIds.has(record.sourceId) : false)));
     return { character, contactRecords };
   }).filter(({ character, contactRecords }) => (game.relationships[character.id] ?? 0) > 0 || contactRecords.length > 0);
-  return <section className="detail-panel" aria-label="关系历史"><div className="section-heading compact"><div><span className="eyebrow">关系账本</span><h2>关系历史</h2></div><p>这里汇总已保存的互动与消息记录；关系数值不会因为暂时没有点击而自动下降。</p></div>{entries.length === 0 ? <p className="muted">和第一个联系人发生互动后，这里会留下记录。</p> : <div className="item-list">{entries.map(({ character, contactRecords }) => <div className="item-row" key={character.id}><div><h3>{character.name}</h3><p>当前关系 {game.relationships[character.id] ?? 0} · {contactRecords.length} 次记录</p><span className="muted">{contactRecords.slice(-2).map((record) => record.title).join(' · ') || '还没有可展示的互动记录'}</span></div></div>)}</div>}</section>;
+  return <section className="detail-panel" aria-label="关系历史"><div className="section-heading compact"><div><span className="eyebrow">关系账本</span><h2>关系历史</h2></div><p>这里汇总已保存的互动与消息记录；关系数值不会因为暂时没有点击而自动下降。</p></div>{entries.length === 0 ? <p className="muted">和第一个联系人发生互动后，这里会留下记录。</p> : <><div className="item-list">{entries.map(({ character, contactRecords }) => <div className="item-row" key={character.id}><div><h3>{character.name}</h3><p>当前关系 {game.relationships[character.id] ?? 0} · {contactRecords.length} 次记录</p><span className="muted">{contactRecords.slice(-3).map((record) => record.title).join(' · ') || '还没有可展示的互动记录'}</span></div></div>)}</div><div className="ledger-detail"><span>按月互动</span><small>{Object.entries(monthlyRecords).slice(-6).map(([month, count]) => `第 ${month} 月 · ${count} 次关系记录`).join(' · ')}</small></div></>}</section>;
 }
 
 function AnnualHistoryView({ game }: { game: GameState }) {
