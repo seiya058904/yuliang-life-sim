@@ -430,6 +430,36 @@ test('runs a business from purchase through funding, listing, daily profit and p
   await expect(page.getByRole('region', { name: '公开股权' })).toContainText('早餐与咖啡档');
 });
 
+test('acquires an unlocked business and persists the holding history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 15_000;
+    state.ability = 18;
+    state.attributes = { ...(state.attributes ?? {}), professional: 18, knowledge: 18, communication: 18, fitness: 18, appearance: 10, network: 0, mood: 50 };
+    state.unlockedCapabilities = ['business_license', 'remote_work'];
+    state.unlockedBusinessIds = ['business.seed-kiosk', 'business.online-store'];
+    state.businesses = { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3_200, equityPercent: 100 } };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '可并购企业' })).toBeVisible();
+  await page.getByRole('button', { name: '并购 ¥8,580' }).click();
+  await expect(page.getByRole('heading', { name: '线上小店' }).last()).toBeVisible();
+  const acquiredState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  expect(acquiredState.businesses['business.online-store']).toBeDefined();
+  expect(acquiredState.lifeHistory).toContainEqual(expect.objectContaining({ title: '并购线上小店' }));
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('并购线上小店')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('并购线上小店')).toBeVisible();
+});
+
 test('executes an offered gig and persists its income and career history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
