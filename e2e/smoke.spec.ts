@@ -136,6 +136,24 @@ test('discovers and plans the friend-specific cafe activity', async ({ page }) =
   await expect(page.getByText('去咖啡馆坐一会 · with-chenyu')).toBeVisible();
 });
 
+test('discovers and plans the relationship-gated cinema outing with Zhou', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 1000;
+    state.relationships = { ...(state.relationships ?? {}), 'character.seed-zhou': 6 };
+    state.simulationMode = 'planning';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const outing = page.locator('article').filter({ hasText: '和周妍看一场' });
+  await expect(outing).toContainText('和周妍看一场');
+  await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
+  await expect(page.getByText('看电影 · 和周妍看一场')).toBeVisible();
+});
+
 test('buys and gives a preference-matching gift with persisted social history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

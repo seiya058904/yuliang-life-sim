@@ -25,6 +25,7 @@ export const officialActivities = [
     options: [
       { id: 'standard', label: '普通影厅', durationMinutes: 180, cashCost: 68, effects: [{ type: 'attribute', attribute: 'mood', amount: 5 }] },
       { id: 'premium', label: '特别放映', durationMinutes: 180, cashCost: 138, effects: [{ type: 'attribute', attribute: 'mood', amount: 7 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] },
+      { id: 'with-zhou', label: '和周妍看一场', durationMinutes: 180, cashCost: 160, requiredCharacterId: 'character.seed-zhou', requirements: { type: 'relationship_at_least', characterId: 'character.seed-zhou', amount: 6 }, effects: [{ type: 'relation', characterId: 'character.seed-zhou', amount: 2 }, { type: 'attribute', attribute: 'mood', amount: 6 }] },
     ],
   },
   {

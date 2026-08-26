@@ -82,6 +82,21 @@ describe('automatic simulation', () => {
     expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'activity.cinema' && entry.detail?.includes('电影兴趣'))).toBe(true);
   });
 
+  it('settles a relationship-gated cinema outing with Zhou into relation and history', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 23);
+    initial.cash = 1000;
+    initial.relationships['character.seed-zhou'] = 6;
+    const plan = structuredClone(initial.weeklyPlan);
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.cinema', optionId: 'with-zhou' };
+    const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: false, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 6 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.relationships['character.seed-zhou']).toBe(8);
+    expect(result.state.financialLedger?.entries.some((entry) => entry.sourceId === 'activity.cinema' && entry.amount === 160)).toBe(true);
+    expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'activity.cinema' && entry.detail?.includes('和周妍一起'))).toBe(true);
+  });
+
   it('settles an owned business project as one-time equity-proportional profit', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 23);

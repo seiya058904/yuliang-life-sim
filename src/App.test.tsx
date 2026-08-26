@@ -425,6 +425,19 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/周末短途旅行 · 慢慢走走/)).toBeInTheDocument();
   });
 
+  it('discovers and schedules the relationship-gated cinema outing with Zhou', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, relationships: { ...game.relationships, 'character.seed-zhou': 6 } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const outing = screen.getByRole('heading', { name: '看电影 · 和周妍看一场' }).closest('article');
+    expect(outing).not.toBeNull();
+    await user.click(within(outing as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
+    expect(screen.getByText(/看电影 · 和周妍看一场/)).toBeInTheDocument();
+  });
+
   it('shows an actionable acquisition hint for a gated activity', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
