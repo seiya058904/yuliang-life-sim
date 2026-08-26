@@ -101,6 +101,13 @@ test('discovers the riverside night market activity', async ({ page }) => {
   await expect(market.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
 
+test('discovers the industrial design exhibition trip', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const exhibition = page.locator('article.activity-card').filter({ hasText: '北部产业设计展 · 看展' });
+  await expect(exhibition).toContainText('¥280');
+  await expect(exhibition.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

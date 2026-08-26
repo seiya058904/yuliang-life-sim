@@ -54,6 +54,18 @@ export const officialActivities = [
     options: [{ id: 'market', label: '逛一圈', durationMinutes: 120, cashCost: 96, effects: [{ type: 'attribute', attribute: 'mood', amount: 4 }, { type: 'attribute', attribute: 'network', amount: 1 }] }],
   },
   {
+    id: 'activity.industrial-design-exhibition',
+    contentStatus: 'official',
+    name: '北部产业设计展',
+    description: '去北部产业区看一场设计展，理解一座城市如何把工作、制造和日常生活连在一起。',
+    tags: ['life', 'travel', 'education'],
+    category: 'travel',
+    financialCategory: 'travel',
+    locationId: 'location.north',
+    familiarityTags: ['design'],
+    options: [{ id: 'exhibition', label: '看展', durationMinutes: 240, cashCost: 280, cooldownDays: 21, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 2 }, { type: 'attribute', attribute: 'professional', amount: 1 }] }],
+  },
+  {
     id: 'activity.weekend-getaway',
     contentStatus: 'official',
     name: '周末短途旅行',

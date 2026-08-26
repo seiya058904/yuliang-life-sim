@@ -11,6 +11,20 @@ import { composeContentPacks } from '../content/registry';
 import { advanceSimulation } from './simulation';
 
 describe('phase 3 additive systems', () => {
+  it('settles the official industrial design exhibition trip through the weekly plan', () => {
+    const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 7);
+    state.weeklyPlan.days[1].evening = { kind: 'free' };
+    const activity = contentRegistry.activities?.find((entry) => entry.id === 'activity.industrial-design-exhibition')!;
+    const planned = dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity: { kind: 'activity', activityId: activity.id, optionId: 'exhibition' } }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+
+    expect(planned.error).toBeUndefined();
+    const started = dispatchGameAction(planned.state, { type: 'start_week' }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+    const settled = dispatchGameAction(started.state, { type: 'advance_simulation', minutes: 24 * 60 }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+
+    expect(settled.state.lifeHistory).toContainEqual(expect.objectContaining({ title: '北部产业设计展 · 看展', sourceId: activity.id }));
+    expect(settled.state.financialLedger?.entries).toContainEqual(expect.objectContaining({ label: '北部产业设计展 · 看展', amount: 280, category: 'travel' }));
+  });
+
   it('settles the official riverside night market through the weekly plan', () => {
     const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 7);
     state.weeklyPlan.days[1].evening = { kind: 'free' };
