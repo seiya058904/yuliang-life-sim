@@ -1,6 +1,6 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity } from '../content/contracts';
-import { evaluateCondition } from './conditions';
+import { evaluateCondition, explainCondition } from './conditions';
 import { calculateNetWorth } from './economy';
 import { applyContentEffects, applyReachedMilestones, cloneGameState, itemCost, refreshUnlocks } from './effects';
 import { advanceSimulation } from './simulation';
@@ -74,6 +74,18 @@ function planCooldownError(state: GameState, plan: GameState['weeklyPlan'], cont
   return undefined;
 }
 
+function planRequirementError(state: GameState, plan: GameState['weeklyPlan'], content: ContentRegistry, balance: BalanceConfig): string | undefined {
+  for (const day of Object.values(plan.days)) {
+    for (const activity of [day.day, day.evening]) {
+      if (activity.kind !== 'activity') continue;
+      const definition = getActivityDefinition(content, activity.activityId);
+      const option = definition && getActivityOption(definition, activity.optionId);
+      if (definition && option?.requirements && !evaluateCondition(option.requirements, state, content, balance)) return `${definition.name} · ${option.label}：${explainCondition(option.requirements, state, content, balance)}`;
+    }
+  }
+  return undefined;
+}
+
 function advancePeriod(input: GameState, months: 1 | 3, content: ContentRegistry, balance: BalanceConfig): GameResult {
   if (!['planning', 'paused', 'week_complete'].includes(input.simulationMode)) return fail(input, '当前不能开始长期运行');
   let state = cloneGameState(input);
@@ -133,6 +145,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!['planning', 'paused', 'week_complete'].includes(state.simulationMode)) return fail(input, '当前不能开始新一周');
       const cooldownError = planCooldownError(state, state.weeklyPlan, content);
       if (cooldownError) return fail(input, cooldownError);
+      const requirementError = planRequirementError(state, state.weeklyPlan, content, balance);
+      if (requirementError) return fail(input, requirementError);
       const errors = validateWeeklyPlan(state.weeklyPlan, state.employment, content);
       if (errors.length) return fail(input, errors[0]);
       if (state.employment?.pendingJobId) {
@@ -174,6 +188,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       weeklyPlan.days[action.weekday][action.slot] = action.activity;
       const cooldownError = planCooldownError(state, weeklyPlan, content);
       if (cooldownError) return fail(input, cooldownError);
+      const requirementError = planRequirementError(state, weeklyPlan, content, balance);
+      if (requirementError) return fail(input, requirementError);
       const errors = validateWeeklyPlan(weeklyPlan, state.employment, content);
       if (errors.length) return fail(input, errors[0]);
       state.weeklyPlan = weeklyPlan;
@@ -186,6 +202,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       weeklyPlan.autoRepeat = state.autoRepeatPlan;
       const cooldownError = planCooldownError(state, weeklyPlan, content);
       if (cooldownError) return fail(input, cooldownError);
+      const requirementError = planRequirementError(state, weeklyPlan, content, balance);
+      if (requirementError) return fail(input, requirementError);
       const errors = validateWeeklyPlan(weeklyPlan, state.employment, content);
       if (errors.length) return fail(input, errors[0]);
       state.weeklyPlan = weeklyPlan;

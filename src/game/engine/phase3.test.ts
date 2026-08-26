@@ -82,6 +82,14 @@ describe('phase 3 additive systems', () => {
     expect(explainCondition(condition, state, contentRegistry, balanceConfig)).toMatch(/摄影兴趣熟练度/);
   });
 
+  it('blocks a gated activity before it enters the weekly plan and explains the acquisition path', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    state.weeklyPlan.days[2].evening = { kind: 'free' };
+    const result = dispatchGameAction(state, { type: 'set_plan', weekday: 2, slot: 'evening', activity: { kind: 'activity', activityId: 'activity.city-photography', optionId: 'walk' } }, contentRegistry, balanceConfig);
+    expect(result.error).toMatch(/需要商品 复古相机/);
+    expect(result.state.weeklyPlan.days[2].evening).toEqual({ kind: 'free' });
+  });
+
   it('records income, consumption, and asset allocation as different cash-flow groups', () => {
     let ledger = emptyFinancialLedger(1);
     ledger = recordFinancialEntry(ledger, { day: 1, direction: 'income', category: 'wage', amount: 620, label: '工资' });

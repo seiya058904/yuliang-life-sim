@@ -128,6 +128,10 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     const definition = activity.activityId ? getActivityDefinition(content, activity.activityId) : undefined;
     const option = definition && activity.optionId ? getActivityOption(definition, activity.optionId) : undefined;
     const cost = definition && option ? activityCashCost(state, definition, option, content) : undefined;
+    if (definition && option?.requirements && !evaluateCondition(option.requirements, state, content, balance)) {
+      output.push({ type: 'message', text: `当前条件未满足，未能完成${definition.name}` });
+      return;
+    }
     if (!definition || !option || cost === undefined || state.cash < cost) {
       output.push({ type: 'message', text: option ? `现金不足，未能完成${definition?.name ?? '活动'}` : '活动选项已失效' });
       return;
