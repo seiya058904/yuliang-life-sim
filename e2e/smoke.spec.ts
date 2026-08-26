@@ -101,6 +101,20 @@ test('shows persisted vehicle maintenance history in wealth', async ({ page }) =
   await expect(page.getByRole('region', { name: '车辆维护记录' })).toContainText('实用二手小车车辆成本');
 });
 
+test('shows persisted ambient city sightings in the city view', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.ambientLog = [{ day: 12, text: '中央区的夜间公交延长了运营时间。' }];
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '城市', exact: true }).click();
+  await expect(page.getByRole('region', { name: '城市见闻' })).toContainText('夜间公交延长');
+});
+
 test('settles a city development event and keeps the location change after reload', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
