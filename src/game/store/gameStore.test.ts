@@ -93,6 +93,18 @@ describe('game store persistence', () => {
     expect(restored.businesses['business.seed-kiosk']).toMatchObject({ capitalInvested: 0, equityPercent: 100, fundingRaised: 0, fundingRound: 0 });
   });
 
+  it('keeps valid annual records while dropping malformed entries during migration', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, annualHistory: [
+      { year: 1, cashStart: 1000, cashEnd: 1200, netWorthStart: 1000, netWorthEnd: 1400, totalIncome: 500, totalConsumption: 300, months: 12 },
+      { year: 2, cashStart: 'invalid' },
+    ] }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.annualHistory).toEqual([{ year: 1, cashStart: 1000, cashEnd: 1200, netWorthStart: 1000, netWorthEnd: 1400, totalIncome: 500, totalConsumption: 300, months: 12 }]);
+  });
+
   it('does not persist animation-only effect data as authoritative state', () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
     const state = store.getState().game;

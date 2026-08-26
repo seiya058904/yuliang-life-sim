@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import type { GameState } from '../content/contracts';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createInitialState } from './initialState';
 import { advanceSimulation } from './simulation';
+import { dispatchGameAction } from './actions';
 
 describe('automatic simulation', () => {
   it('runs a deterministic planned week and never turns one day into repeated full-time work', () => {
@@ -114,5 +116,26 @@ describe('automatic simulation', () => {
     expect(result.state.assets['asset.used-compact'].currentValuation).toBeLessThan(35000);
     expect(result.state.financialLedger?.entries.some((entry) => entry.category === 'valuation_change' && entry.cashDelta === 0)).toBe(true);
     expect(result.state.financialLedger?.entries.some((entry) => entry.category === 'maintenance' && entry.amount > 0)).toBe(true);
+  });
+
+  it('keeps deterministic annual records through five years of monthly summaries', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 41);
+    let state: GameState = { ...initial, simulationMode: 'running', autoRepeatPlan: true, weeklyPlan: { ...initial.weeklyPlan, autoRepeat: true } };
+    for (let month = 1; month <= 60; month += 1) {
+      const result = advanceSimulation(state, 28 * 24 * 60, contentRegistry, balance);
+      expect(result.error).toBeUndefined();
+      state = result.state;
+      if (state.simulationMode === 'monthly_summary') {
+        const acknowledged = dispatchGameAction(state, { type: 'acknowledge_monthly_summary' }, contentRegistry, balance);
+        expect(acknowledged.error).toBeUndefined();
+        state = acknowledged.state;
+      }
+    }
+
+    expect(state.time.day).toBe(1681);
+    expect(state.annualHistory).toHaveLength(5);
+    expect(state.annualHistory?.map((entry) => entry.year)).toEqual([1, 2, 3, 4, 5]);
+    expect(state.annualHistory?.every((entry) => entry.months === 12)).toBe(true);
   });
 });

@@ -230,4 +230,16 @@ describe('余量 app flow', () => {
     const oldest = screen.getByText('购买现磨咖啡');
     expect(newest.compareDocumentPosition(oldest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
+
+  it('shows persisted annual records in the profile view', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, annualHistory: [{ year: 1, cashStart: 1000, cashEnd: 1400, netWorthStart: 1000, netWorthEnd: 1800, totalIncome: 900, totalConsumption: 500, months: 12 }] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByRole('heading', { name: '年度回顾' })).toBeInTheDocument();
+    expect(screen.getByText('第 1 年')).toBeInTheDocument();
+    expect(screen.getByText(/收入 ¥900/)).toBeInTheDocument();
+  });
 });

@@ -638,6 +638,16 @@ export interface MonthlySummary {
   month: number;
   ledger: MonthlyLedger;
 }
+export interface AnnualSummary {
+  year: number;
+  cashStart: number;
+  cashEnd: number;
+  netWorthStart: number;
+  netWorthEnd: number;
+  totalIncome: number;
+  totalConsumption: number;
+  months: number;
+}
 export interface PendingMonthlySummary { month: number; summary: MonthlySummary; financial?: MonthlyFinancialSummary; resumeMode: 'running' | 'planning' | 'paused'; highlights: MonthlyHighlight[]; }
 
 export interface RecruitmentState {
@@ -687,6 +697,7 @@ export interface GameState {
   lastMonthlySummary?: MonthlySummary;
   financialLedger?: FinancialLedgerState;
   financialHistory?: MonthlyFinancialSummary[];
+  annualHistory?: AnnualSummary[];
   lastFinancialSummary?: MonthlyFinancialSummary;
   pendingMonthlySummary?: PendingMonthlySummary;
   jobExperience: Record<ContentId, number>;

@@ -139,6 +139,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     ? { month: candidate.calendar.month, nextSequence: Math.max(1, Number(candidate.financialLedger.nextSequence) || candidate.financialLedger.entries.length + 1), entries: candidate.financialLedger.entries }
     : emptyFinancialLedger(candidate.calendar.month, candidate.cash, candidate.monthlyLedger.netWorthStart);
   candidate.financialHistory = Array.isArray(candidate.financialHistory) ? candidate.financialHistory.slice(-12) : [];
+  candidate.annualHistory = Array.isArray(candidate.annualHistory) ? candidate.annualHistory.filter((entry) => isRecord(entry) && Number.isInteger(entry.year) && Number.isFinite(entry.cashStart) && Number.isFinite(entry.cashEnd) && Number.isFinite(entry.netWorthStart) && Number.isFinite(entry.netWorthEnd) && Number.isFinite(entry.totalIncome) && Number.isFinite(entry.totalConsumption) && Number.isInteger(entry.months)).slice(-10) as GameState['annualHistory'] : [];
   candidate.lifeHistory = Array.isArray(candidate.lifeHistory) ? candidate.lifeHistory.filter(isLifeRecordEntry) : [];
   candidate.ambientLog = Array.isArray(candidate.ambientLog) ? candidate.ambientLog.slice(-20) : [];
   candidate.storylineStages = candidate.storylineStages ?? {};

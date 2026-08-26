@@ -1,5 +1,5 @@
 import type { BalanceConfig } from '../balance/config';
-import type { ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary } from '../content/contracts';
+import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary } from '../content/contracts';
 import { calculateNetWorth } from './economy';
 import { emptyFinancialLedger, projectLegacyMonthlyLedger, summarizeFinancialLedger } from './financialLedger';
 import { appendLifeRecord } from './lifeHistory';
@@ -33,6 +33,20 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
   state.lastMonthlySummary = summary;
   state.lastFinancialSummary = financialSummary;
   state.financialHistory = [...(state.financialHistory ?? []), financialSummary].slice(-12);
+  if (month % 12 === 0) {
+    const yearMonths = (state.financialHistory ?? []).filter((entry) => entry.month >= month - 11 && entry.month <= month);
+    const annual: AnnualSummary = {
+      year: Math.ceil(month / 12),
+      cashStart: yearMonths[0]?.cashStart ?? state.cash,
+      cashEnd: state.cash,
+      netWorthStart: yearMonths[0]?.netWorthStart ?? netWorthEnd,
+      netWorthEnd,
+      totalIncome: yearMonths.reduce((sum, entry) => sum + entry.totalIncome, 0),
+      totalConsumption: yearMonths.reduce((sum, entry) => sum + entry.totalConsumption, 0),
+      months: yearMonths.length,
+    };
+    state.annualHistory = [...(state.annualHistory ?? []).filter((entry) => entry.year !== annual.year), annual].slice(-10);
+  }
   state.financialLedger = emptyFinancialLedger(state.calendar.month, state.cash, netWorthEnd);
   state.monthlyLedger = emptyMonthlyLedger(ledger.netWorthEnd);
   output.push({ type: 'month', summary });
