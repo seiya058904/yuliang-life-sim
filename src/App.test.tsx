@@ -204,6 +204,17 @@ describe('余量 app flow', () => {
     expect(screen.getAllByRole('button', { name: '锁定至第 29 天' })[0]).toBeDisabled();
   });
 
+  it('uses persisted public float when deciding whether repurchase is available', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 10_000, time: { ...game.time, day: 29 }, businesses: { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 50, publicFloatPercent: 5, listed: true, listedDay: 1 } } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    expect(screen.getByRole('region', { name: '公开股权' })).toHaveTextContent('外部公开流通 5%');
+    expect(screen.queryByRole('button', { name: '回购 10% 股权' })).not.toBeInTheDocument();
+  });
+
   it('exposes a business exit and clears the operating panel after liquidation', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
