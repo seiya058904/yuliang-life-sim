@@ -27,7 +27,7 @@
 
 ## Tag
 
-当前 Tag：`work`、`office`、`remote`、`starter`、`technology`、`clothing`、`furniture`、`luxury`、`collectible`、`housing`、`business`、`project`、`asset`、`relationship`、`life`、`city`、`luck`、`career`、`shopping`、`social`、`leisure`、`travel`、`investment`、`low-risk`、`growth`、`hobby`、`photography`、`gig`、`management`、`expert`、`education`、`headhunter`。
+当前 Tag：`work`、`office`、`remote`、`starter`、`technology`、`clothing`、`furniture`、`luxury`、`collectible`、`housing`、`business`、`project`、`asset`、`relationship`、`life`、`city`、`luck`、`career`、`shopping`、`social`、`leisure`、`travel`、`investment`、`low-risk`、`growth`、`hobby`、`photography`、`gig`、`management`、`expert`、`education`、`headhunter`、`logistics`。
 
 Tag 用于内容筛选、折扣和 modifier 适用范围。新增 Tag 必须注册后使用。
 
@@ -76,4 +76,4 @@ Tag 用于内容筛选、折扣和 modifier 适用范围。新增 Tag 必须注�
 
 ### 合法词汇补充
 
-新增 Tag 包括：`social`、`leisure`、`investment`、`project`、`low-risk`、`growth`。金融分类包括：`wage`、`side_job`、`bonus`、`business_income`、`property_income`、`investment_dividend`、`event_income`、`housing`、`living`、`food`、`transport`、`communication`、`shopping`、`entertainment`、`social`、`education`、`travel`、`service`、`maintenance`、`business_cost`、`investment_transfer`、`property_transfer`、`business_transfer`、`collectible_transfer`、`asset_liquidation`。
+新增 Tag 包括：`social`、`leisure`、`investment`、`project`、`low-risk`、`growth`、`logistics`。金融分类包括：`wage`、`side_job`、`bonus`、`business_income`、`property_income`、`investment_dividend`、`event_income`、`housing`、`living`、`food`、`transport`、`communication`、`shopping`、`entertainment`、`social`、`education`、`travel`、`service`、`maintenance`、`business_cost`、`investment_transfer`、`property_transfer`、`business_transfer`、`collectible_transfer`、`asset_liquidation`。

@@ -310,5 +310,38 @@ export const officialJobs = [
     "requiredItems": ["item.vintage-camera"],
     "requirements": { "type": "interest_familiarity_at_least", "tag": "photography", "amount": 2 },
     "isLongTerm": false
+  },
+  {
+    "id": "job.huanliu-warehouse-assistant",
+    "contentStatus": "official",
+    "name": "环流仓库助理",
+    "description": "从收货、分拣和盘点开始，稳定积累物流现场经验。",
+    "tags": ["work", "logistics", "starter"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 8,
+    "basePay": 136,
+    "abilityRequired": 10,
+    "reputationRequired": 2,
+    "careerXp": 2,
+    "experienceTags": ["logistics"],
+    "isLongTerm": true
+  },
+  {
+    "id": "job.huanliu-dispatch-coordinator",
+    "contentStatus": "official",
+    "name": "环流物流协调员",
+    "description": "连接仓库、车辆与客户的日常调度，把一线经验变成运营判断。",
+    "tags": ["work", "logistics", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 286,
+    "abilityRequired": 24,
+    "reputationRequired": 12,
+    "careerXp": 5,
+    "experienceTags": ["logistics", "operations"],
+    "experienceRequired": { "logistics": 22 },
+    "isLongTerm": true
   }
 ] satisfies readonly JobDefinition[];

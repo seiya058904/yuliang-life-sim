@@ -29,6 +29,14 @@ describe('career market', () => {
     expect(vacancies.some((vacancy) => vacancy.jobId === 'job.category-operations-expert')).toBe(true);
   });
 
+  it('keeps both official logistics route steps discoverable in the public market', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 31);
+    const vacancies = generateVacancies(state, contentRegistry, balanceConfig);
+
+    expect(vacancies.some((vacancy) => vacancy.jobId === 'job.huanliu-warehouse-assistant')).toBe(true);
+    expect(vacancies.some((vacancy) => vacancy.jobId === 'job.huanliu-dispatch-coordinator')).toBe(true);
+  });
+
   it('rates a referred, experienced candidate above a minimally qualified candidate without exposing a raw chance', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 7);
     const job = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!;

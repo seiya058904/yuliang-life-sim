@@ -39,7 +39,12 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     const vacancy = vacancyFromTemplate(starterTemplate, state.calendar.month, content, balance);
     if (!selected.some((entry) => entry.vacancyId === vacancy.vacancyId)) selected.unshift(vacancy);
   }
-  const guaranteedRoutes = ['job.regional-operations-manager', 'job.category-operations-expert'];
+  const guaranteedRoutes = [
+    'job.regional-operations-manager',
+    'job.category-operations-expert',
+    'job.huanliu-warehouse-assistant',
+    'job.huanliu-dispatch-coordinator',
+  ];
   const protectedJobIds = new Set([starterTemplate?.jobId, ...officeTemplates.map((template) => template.jobId), ...guaranteedRoutes]);
   for (const jobId of guaranteedRoutes) {
     const template = templates.find((entry) => entry.jobId === jobId);

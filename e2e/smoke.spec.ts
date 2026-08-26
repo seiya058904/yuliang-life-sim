@@ -13,6 +13,9 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
   await expect(page.getByRole('heading', { name: '招聘市场' })).toBeVisible();
   await page.getByLabel('搜索岗位或公司').fill('远望');
   await expect(page.getByText('远望零售').first()).toBeVisible();
+  await page.getByLabel('搜索岗位或公司').fill('环流');
+  await expect(page.getByText('环流物流').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: '环流物流协调员' })).toBeVisible();
   await page.getByLabel('搜索岗位或公司').fill('');
   await page.getByRole('button', { name: '申请职位' }).first().click();
   await page.getByRole('button', { name: '我的申请' }).click();

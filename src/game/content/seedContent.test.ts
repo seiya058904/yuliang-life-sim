@@ -76,6 +76,20 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes a reachable logistics company route from entry work to coordination', () => {
+    expect(contentRegistry.companies?.find((company) => company.id === 'company.huanliu')).toMatchObject({
+      name: '环流物流', locationId: 'location.industrial', jobIds: expect.arrayContaining(['job.huanliu-warehouse-assistant', 'job.huanliu-dispatch-coordinator']),
+    });
+    expect(contentRegistry.jobs.filter((job) => ['job.huanliu-warehouse-assistant', 'job.huanliu-dispatch-coordinator'].includes(job.id))).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'job.huanliu-warehouse-assistant', experienceTags: ['logistics'] }),
+      expect.objectContaining({ id: 'job.huanliu-dispatch-coordinator', experienceRequired: { logistics: 22 } }),
+    ]));
+    expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.huanliu').map((vacancy) => vacancy.jobId)).toEqual([
+      'job.huanliu-warehouse-assistant',
+      'job.huanliu-dispatch-coordinator',
+    ]);
+  });
+
   it('exposes the official headhunter contact and its opportunity-bearing choice', () => {
     expect(contentRegistry.characters.find((character) => character.id === 'character.xuheng')).toMatchObject({ identity: '资深招聘顾问 / 猎头' });
     expect(contentRegistry.events.find((event) => event.id === 'event.headhunter-contact')?.choices[0]).toMatchObject({
