@@ -205,6 +205,8 @@ function conditionHints(condition: ConditionDefinition, state: GameState, conten
       return state.assets[condition.assetId] ? [] : [{ requirementId: `asset:${condition.assetId}`, label: '配置指定资产', actionLabel: '去财富页查看资产', destinationView: 'wealth', targetId: condition.assetId }];
     case 'owns_business':
       return state.businesses[condition.businessId] ? [] : [{ requirementId: `business:${condition.businessId}`, label: '拥有指定企业', actionLabel: '去财富页查看企业', destinationView: 'wealth', targetId: condition.businessId }];
+    case 'owns_investment':
+      return state.investments?.[condition.investmentId] ? [] : [{ requirementId: `investment:${condition.investmentId}`, label: '持有指定投资', actionLabel: '去财富页查看投资', destinationView: 'wealth', targetId: condition.investmentId }];
     case 'completed_event':
       return state.completedEvents.includes(condition.eventId) ? [] : [identityHint(`completed_event:${condition.eventId}`, `完成${eventName(condition.eventId, content)}`, '查看个人状态', 'profile', condition.eventId)];
     case 'completed_milestone':
@@ -237,6 +239,7 @@ function conditionSatisfied(condition: ConditionDefinition, state: GameState, co
     case 'housing_is': return state.housing.housingId === condition.housingId && (!condition.mode || state.housing.mode === condition.mode);
     case 'owns_business': return Boolean(state.businesses[condition.businessId]);
     case 'owns_asset': return Boolean(state.assets[condition.assetId]);
+    case 'owns_investment': return Boolean(state.investments?.[condition.investmentId]);
     case 'relationship_at_least': return (state.relationships[condition.characterId] ?? 0) >= condition.amount;
     case 'relationship_stage_at_least': return stageForRelationship(state.relationships[condition.characterId] ?? 0, balance) >= condition.stage;
     case 'completed_event': return state.completedEvents.includes(condition.eventId);
@@ -325,6 +328,7 @@ function conditionKey(condition: ConditionDefinition): string {
     case 'housing_is': return `housing:${condition.housingId}:${condition.mode ?? 'any'}`;
     case 'owns_business': return `business:${condition.businessId}`;
     case 'owns_asset': return `asset:${condition.assetId}`;
+    case 'owns_investment': return `investment:${condition.investmentId}`;
     case 'relationship_at_least': return `relationship:${condition.characterId}:${condition.amount}`;
     case 'relationship_stage_at_least': return `relationship_stage:${condition.characterId}:${condition.stage}`;
     case 'completed_event': return `completed_event:${condition.eventId}`;
@@ -342,6 +346,7 @@ function conditionTarget(condition: ConditionDefinition): ContentId | undefined 
     case 'housing_is': return condition.housingId;
     case 'owns_business': return condition.businessId;
     case 'owns_asset': return condition.assetId;
+    case 'owns_investment': return condition.investmentId;
     case 'relationship_at_least':
     case 'relationship_stage_at_least':
       return condition.characterId;

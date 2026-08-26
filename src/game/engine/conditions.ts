@@ -42,6 +42,7 @@ export function evaluateCondition(condition: ConditionDefinition, state: GameSta
     case 'housing_is': return state.housing.housingId === condition.housingId && (!condition.mode || state.housing.mode === condition.mode);
     case 'owns_business': return Boolean(state.businesses[condition.businessId]);
     case 'owns_asset': return Boolean(state.assets[condition.assetId]);
+    case 'owns_investment': return Boolean(state.investments?.[condition.investmentId]);
     case 'relationship_at_least': return (state.relationships[condition.characterId] ?? 0) >= condition.amount;
     case 'relationship_stage_at_least': return (state.relationships[condition.characterId] ?? 0) >= (balance.relationshipStageThresholds[condition.stage] ?? Number.MAX_SAFE_INTEGER);
     case 'completed_event': return state.completedEvents.includes(condition.eventId);

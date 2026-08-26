@@ -250,3 +250,27 @@ test('unlocks and persists a private-equity opportunity from a relationship even
   await page.getByRole('button', { name: '财富', exact: true }).click();
   await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).toContainText('持有 1 份');
 });
+
+test('settles the authored private-equity exit opportunity', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.time = { ...state.time, day: 120 };
+    state.cash = 5_000;
+    state.flags = { ...(state.flags ?? {}), private_equity_access: true };
+    state.investments = { ...(state.investments ?? {}), 'investment.citylife-private-equity': { investmentId: 'investment.citylife-private-equity', units: 1, averageCost: 10_000, currentValuation: 10_000, lastValuationDay: 30 } };
+    state.pendingEventId = 'event.private-equity-exit-offer';
+    state.simulationMode = 'event';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await expect(page.getByRole('dialog')).toContainText('有人愿意接手这部分股权');
+  await page.getByRole('dialog').getByRole('button', { name: '接受收购报价' }).click();
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  const investment = page.getByRole('heading', { name: '城际生活早期股权' }).locator('..');
+  await investment.getByRole('button', { name: '卖出 1 份' }).click();
+  await expect(investment).not.toContainText('持有 1 份');
+  await expect(investment).toContainText('买入 1 份');
+});

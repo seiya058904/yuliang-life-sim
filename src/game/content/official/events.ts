@@ -1987,5 +1987,47 @@ export const officialEvents = [
       "private-equity",
       "relationship"
     ]
+  },
+  {
+    "id": "event.private-equity-exit-offer",
+    "contentStatus": "official",
+    "name": "私人股权退出机会",
+    "description": "项目进入下一阶段，有收购方愿意接手你的早期份额。",
+    "title": "有人愿意接手这部分股权",
+    "body": "项目方发来消息：新的资金方希望接手少量早期份额。你可以接受报价退出，也可以继续把它留在组合里。",
+    "category": "investment",
+    "weight": 0.22,
+    "cooldownDays": 365,
+    "conditions": {
+      "type": "all",
+      "conditions": [
+        { "type": "day_at_least", "day": 120 },
+        { "type": "owns_investment", "investmentId": "investment.citylife-private-equity" },
+        { "type": "not", "condition": { "type": "flag", "flag": "private_equity_exit_offer" } }
+      ]
+    },
+    "choices": [
+      {
+        "id": "accept",
+        "text": "接受收购报价",
+        "effects": [
+          { "type": "set_flag", "flag": "private_equity_exit_offer" },
+          { "type": "attribute", "attribute": "knowledge", "amount": 1 }
+        ]
+      },
+      {
+        "id": "hold",
+        "text": "继续持有",
+        "effects": [
+          { "type": "set_flag", "flag": "private_equity_exit_offer" },
+          { "type": "attribute", "attribute": "network", "amount": 1 }
+        ]
+      }
+    ],
+    "tags": [
+      "investment",
+      "private-equity",
+      "story"
+    ]
   }
 ] satisfies readonly EventDefinition[];

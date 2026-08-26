@@ -4,7 +4,7 @@
 
 ## Condition
 
-`all`、`any`、`not`；`day_at_least`、`day_at_most`、`time_between`；`player_stage`；`cash_at_least`、`ability_at_least`、`reputation_at_least`、`lifestyle_at_least`；`current_job`、`current_salary_at_least`、`job_experience_at_least`；`owns_item`、`has_capability`；`housing_is`；`owns_business`、`owns_asset`；`relationship_at_least`、`relationship_stage_at_least`；`completed_event`、`completed_milestone`；`chain_stage_at_least`；`flag`。
+`all`、`any`、`not`；`day_at_least`、`day_at_most`、`time_between`；`player_stage`；`cash_at_least`、`ability_at_least`、`reputation_at_least`、`lifestyle_at_least`；`current_job`、`current_salary_at_least`、`job_experience_at_least`；`owns_item`、`has_capability`；`housing_is`；`owns_business`、`owns_asset`、`owns_investment`；`relationship_at_least`、`relationship_stage_at_least`；`completed_event`、`completed_milestone`；`chain_stage_at_least`；`flag`。
 
 ## Effect
 

@@ -61,6 +61,7 @@ export type ConditionDefinition =
   | { type: 'housing_is'; housingId: ContentId; mode?: 'rent' | 'owned' }
   | { type: 'owns_business'; businessId: ContentId }
   | { type: 'owns_asset'; assetId: ContentId }
+  | { type: 'owns_investment'; investmentId: ContentId }
   | { type: 'relationship_at_least'; characterId: ContentId; amount: number }
   | { type: 'relationship_stage_at_least'; characterId: ContentId; stage: number }
   | { type: 'completed_event'; eventId: ContentId }

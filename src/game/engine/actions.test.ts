@@ -198,8 +198,12 @@ describe('game action dispatcher', () => {
     const locked = dispatchGameAction(bought.state, { type: 'sell_investment', investmentId: 'investment.citylife-private-equity', units: 1 }, contentRegistry, balanceConfig);
     expect(locked.error).toBe('私人股权仍在锁定期内');
 
-    const mature = { ...bought.state, time: { day: 120, hour: 8, minute: 0 } };
-    const sold = dispatchGameAction(mature, { type: 'sell_investment', investmentId: 'investment.citylife-private-equity', units: 1 }, contentRegistry, balanceConfig);
+    const offered = { ...bought.state, time: { day: 120, hour: 8, minute: 0 }, pendingEventId: 'event.private-equity-exit-offer', simulationMode: 'event' as const };
+    const exitEvent = dispatchGameAction(offered, { type: 'choose_event', eventId: 'event.private-equity-exit-offer', choiceId: 'accept' }, contentRegistry, balanceConfig);
+    expect(exitEvent.error).toBeUndefined();
+    expect(exitEvent.state.flags.private_equity_exit_offer).toBe(true);
+    const acknowledgedExit = dispatchGameAction(exitEvent.state, { type: 'claim_reward', resume: true }, contentRegistry, balanceConfig);
+    const sold = dispatchGameAction(acknowledgedExit.state, { type: 'sell_investment', investmentId: 'investment.citylife-private-equity', units: 1 }, contentRegistry, balanceConfig);
     expect(sold.error).toBeUndefined();
     expect(sold.state.investments?.['investment.citylife-private-equity']).toBeUndefined();
     expect(sold.state.lifeHistory.at(-1)?.category).toBe('investment');
