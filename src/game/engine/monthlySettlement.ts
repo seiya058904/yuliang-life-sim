@@ -46,16 +46,6 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       months: yearMonths.length,
     };
     state.annualHistory = [...(state.annualHistory ?? []).filter((entry) => entry.year !== annual.year), annual].slice(-10);
-    const snapshot: WorldSnapshot = {
-      year: annual.year,
-      day: state.time.day,
-      netWorth: netWorthEnd,
-      businessCount: Object.keys(state.businesses).length,
-      relationshipCount: Object.values(state.relationships).filter((value) => value > 0).length,
-      visitedLocationCount: Object.values(state.locationVisits ?? {}).filter((value) => value > 0).length,
-      currentJobId: state.currentJobId,
-    };
-    state.worldHistory = [...(state.worldHistory ?? []).filter((entry) => entry.year !== snapshot.year), snapshot].slice(-10);
     const development = { ...(state.locationDevelopment ?? {}) };
     for (const location of content.locations ?? []) {
       const visits = state.locationVisits?.[location.id] ?? 0;
@@ -64,6 +54,17 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       development[location.id] = Math.min(5, Math.max(0, development[location.id] ?? 0) + growth);
     }
     state.locationDevelopment = development;
+    const snapshot: WorldSnapshot = {
+      year: annual.year,
+      day: state.time.day,
+      netWorth: netWorthEnd,
+      businessCount: Object.keys(state.businesses).length,
+      relationshipCount: Object.values(state.relationships).filter((value) => value > 0).length,
+      visitedLocationCount: Object.values(state.locationVisits ?? {}).filter((value) => value > 0).length,
+      locationDevelopment: { ...development },
+      currentJobId: state.currentJobId,
+    };
+    state.worldHistory = [...(state.worldHistory ?? []).filter((entry) => entry.year !== snapshot.year), snapshot].slice(-10);
   }
   state.financialLedger = emptyFinancialLedger(state.calendar.month, state.cash, netWorthEnd);
   state.monthlyLedger = emptyMonthlyLedger(ledger.netWorthEnd);

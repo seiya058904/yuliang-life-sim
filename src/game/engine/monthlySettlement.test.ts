@@ -16,6 +16,6 @@ describe('annual world snapshots', () => {
     closeMonth(state, 12, contentRegistry, balanceConfig, effects);
 
     expect(state.locationDevelopment).toMatchObject({ 'location.central': 2, 'location.riverside': 0 });
-    expect(state.worldHistory?.[0]).toMatchObject({ year: 1, businessCount: 1, visitedLocationCount: 2 });
+    expect(state.worldHistory?.[0]).toMatchObject({ year: 1, businessCount: 1, visitedLocationCount: 2, locationDevelopment: { 'location.central': 2, 'location.riverside': 0 } });
   });
 });

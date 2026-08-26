@@ -664,6 +664,7 @@ export interface WorldSnapshot {
   businessCount: number;
   relationshipCount: number;
   visitedLocationCount: number;
+  locationDevelopment?: Record<ContentId, number>;
   currentJobId?: ContentId;
 }
 export interface PendingMonthlySummary { month: number; summary: MonthlySummary; financial?: MonthlyFinancialSummary; resumeMode: 'running' | 'planning' | 'paused'; highlights: MonthlyHighlight[]; }

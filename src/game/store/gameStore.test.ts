@@ -117,14 +117,14 @@ describe('game store persistence', () => {
   it('keeps valid world snapshots and removes malformed or unknown-job entries during migration', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, worldHistory: [
-      { year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, currentJobId: 'job.seed-shop-clerk' },
+      { year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, locationDevelopment: { 'location.central': 2, 'location.unknown': 4, 'location.riverside': 9 }, currentJobId: 'job.seed-shop-clerk' },
       { year: 2, day: 0, netWorth: 'invalid', businessCount: 1, relationshipCount: 1, visitedLocationCount: 1 },
       { year: 3, day: 1000, netWorth: 20000, businessCount: 2, relationshipCount: 1, visitedLocationCount: 2, currentJobId: 'job.unknown' },
     ] }));
 
     const restored = loadGameState(contentRegistry, balanceConfig);
 
-    expect(restored.worldHistory).toEqual([{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, currentJobId: 'job.seed-shop-clerk' }]);
+    expect(restored.worldHistory).toEqual([{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, locationDevelopment: { 'location.central': 2 }, currentJobId: 'job.seed-shop-clerk' }]);
   });
 
   it('keeps known location visits and removes unknown location ids during migration', () => {
