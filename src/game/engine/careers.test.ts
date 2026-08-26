@@ -56,6 +56,20 @@ describe('career market', () => {
     expect(requirementHints(job, state, contentRegistry, balanceConfig).some((hint) => hint.requirementId === 'interest:photography')).toBe(false);
   });
 
+  it('surfaces a concrete current-salary acquisition hint', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 31);
+    const job = {
+      ...contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!,
+      requirements: { type: 'current_salary_at_least' as const, amount: 9000 },
+    };
+    state.employment = { ...state.employment!, basePay: 400, salaryAdjustment: 0 };
+    expect(requirementHints(job, state, contentRegistry, balanceConfig)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ requirementId: 'current_salary_at_least', currentValue: 8000, requiredValue: 9000, destinationView: 'work' }),
+    ]));
+    state.employment.basePay = 500;
+    expect(requirementHints(job, state, contentRegistry, balanceConfig).some((hint) => hint.requirementId === 'current_salary_at_least')).toBe(false);
+  });
+
   it('creates the photography gig only after its item and familiarity requirements are met', () => {
     const content = { ...contentRegistry, jobs: contentRegistry.jobs.filter((entry) => entry.id !== 'job.delivery-shift') };
     const state = createInitialState(content, balanceConfig, 31);

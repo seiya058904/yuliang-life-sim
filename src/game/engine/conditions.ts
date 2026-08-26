@@ -11,6 +11,11 @@ export function getPlayerStage(state: GameState, content: ContentRegistry, balan
   return 'start';
 }
 
+export function currentMonthlySalary(state: GameState): number {
+  if (!state.employment) return 0;
+  return ((state.employment.basePay ?? 0) + (state.employment.salaryAdjustment ?? 0)) * 20;
+}
+
 export function evaluateCondition(condition: ConditionDefinition, state: GameState, content: ContentRegistry, balance: BalanceConfig): boolean {
   switch (condition.type) {
     case 'all': return condition.conditions.every((child) => evaluateCondition(child, state, content, balance));
@@ -29,6 +34,7 @@ export function evaluateCondition(condition: ConditionDefinition, state: GameSta
     case 'reputation_at_least': return state.reputation >= condition.amount;
     case 'lifestyle_at_least': return state.lifestyle >= condition.amount;
     case 'current_job': return state.currentJobId === condition.jobId;
+    case 'current_salary_at_least': return currentMonthlySalary(state) >= condition.amount;
     case 'job_experience_at_least': return (state.jobExperience[condition.jobId] ?? 0) >= condition.amount;
     case 'interest_familiarity_at_least': return (state.interestFamiliarity?.[condition.tag] ?? 0) >= condition.amount;
     case 'owns_item': return (state.inventory[condition.itemId] ?? 0) >= (condition.quantity ?? 1);
@@ -63,6 +69,7 @@ export function explainCondition(condition: ConditionDefinition, state: GameStat
     }
     case 'ability_at_least': return state.ability >= condition.amount ? `✓ 能力 ≥ ${condition.amount}` : `✕ 能力 ≥ ${condition.amount}（当前 ${state.ability}，还需要 ${condition.amount - state.ability}）`;
     case 'reputation_at_least': return state.reputation >= condition.amount ? `✓ 声誉 ≥ ${condition.amount}` : `✕ 声誉 ≥ ${condition.amount}（当前 ${state.reputation}）`;
+    case 'current_salary_at_least': { const current = currentMonthlySalary(state); return current >= condition.amount ? `✓ 当前月薪 ≥ ¥${condition.amount}` : `✕ 当前月薪 ≥ ¥${condition.amount}（当前 ¥${current}）`; }
     case 'cash_at_least': return state.cash >= condition.amount ? `✓ 现金 ≥ ¥${condition.amount}` : `✕ 现金 ≥ ¥${condition.amount}（当前 ¥${state.cash}）`;
     case 'lifestyle_at_least': return state.lifestyle >= condition.amount ? `✓ 生活品质 ≥ ${condition.amount}` : `✕ 生活品质 ≥ ${condition.amount}（当前 ${state.lifestyle}）`;
     case 'has_capability': return state.unlockedCapabilities.includes(condition.capability) ? `✓ 已拥有能力 ${capabilityLabels[condition.capability] ?? condition.capability}` : `✕ 需要能力 ${capabilityLabels[condition.capability] ?? condition.capability}`;

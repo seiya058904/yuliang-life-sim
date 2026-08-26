@@ -1,7 +1,7 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AcquisitionHint, ApplicationRoute, ConditionDefinition, ContentId, ContentRegistry, GameState, JobDefinition, VacancyState, VacancyTemplate, ViewId } from '../content/contracts';
 import { getAttribute } from './attributes';
-import { evaluateCondition, getPlayerStage } from './conditions';
+import { currentMonthlySalary, evaluateCondition, getPlayerStage } from './conditions';
 import { requirementForJob } from './careerProgression';
 
 export interface CompetitivenessResult {
@@ -159,6 +159,10 @@ function conditionHints(condition: ConditionDefinition, state: GameState, conten
     }
     case 'reputation_at_least':
       return state.reputation >= condition.amount ? [] : [numericHint('reputation', '积累声誉与相关经验', '查看入门岗位', 'work', state.reputation, condition.amount)];
+    case 'current_salary_at_least': {
+      const current = currentMonthlySalary(state);
+      return current >= condition.amount ? [] : [numericHint('current_salary_at_least', '提升当前月薪', '去职业页查看工作', 'work', current, condition.amount)];
+    }
     case 'lifestyle_at_least':
       return state.lifestyle >= condition.amount ? [] : [numericHint('lifestyle', '提升生活品质', '去商店改善生活', 'shop', state.lifestyle, condition.amount)];
     case 'job_experience_at_least': {
@@ -220,6 +224,7 @@ function conditionSatisfied(condition: ConditionDefinition, state: GameState, co
     case 'reputation_at_least': return state.reputation >= condition.amount;
     case 'lifestyle_at_least': return state.lifestyle >= condition.amount;
     case 'current_job': return state.currentJobId === condition.jobId;
+    case 'current_salary_at_least': return currentMonthlySalary(state) >= condition.amount;
     case 'job_experience_at_least': return (state.jobExperience[condition.jobId] ?? 0) >= condition.amount;
     case 'interest_familiarity_at_least': return (state.interestFamiliarity?.[condition.tag] ?? 0) >= condition.amount;
     case 'owns_item': return (state.inventory[condition.itemId] ?? 0) >= (condition.quantity ?? 1);
@@ -305,6 +310,7 @@ function conditionKey(condition: ConditionDefinition): string {
     case 'ability_at_least': return `ability:${condition.amount}`;
     case 'attribute_at_least': return `attribute:${condition.attribute}:${condition.amount}`;
     case 'reputation_at_least': return `reputation:${condition.amount}`;
+    case 'current_salary_at_least': return `current_salary:${condition.amount}`;
     case 'lifestyle_at_least': return `lifestyle:${condition.amount}`;
     case 'current_job': return `current_job:${condition.jobId}`;
     case 'job_experience_at_least': return `experience:${condition.jobId}:${condition.amount}`;

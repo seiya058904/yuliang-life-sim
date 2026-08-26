@@ -1823,7 +1823,8 @@ export const officialEvents = [
       "type": "all",
       "conditions": [
         { "type": "current_job", "jobId": "job.regional-operations-manager" },
-        { "type": "reputation_at_least", "amount": 30 }
+        { "type": "reputation_at_least", "amount": 30 },
+        { "type": "current_salary_at_least", "amount": 9000 }
       ]
     },
     "choices": [

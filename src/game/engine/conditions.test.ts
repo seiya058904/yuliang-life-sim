@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evaluateCondition } from './conditions';
+import { currentMonthlySalary, evaluateCondition, explainCondition } from './conditions';
 import type { ContentRegistry, GameState } from '../content/contracts';
 import { balanceConfig } from '../balance/config';
 
@@ -23,5 +23,13 @@ describe('condition evaluator', () => {
 
   it('supports any and not conditions', () => {
     expect(evaluateCondition({ type: 'any', conditions: [{ type: 'cash_at_least', amount: 2000 }, { type: 'not', condition: { type: 'current_job', jobId: 'job.other' } }] }, state, content, balanceConfig)).toBe(true);
+  });
+
+  it('evaluates current monthly salary from the persisted employment pay', () => {
+    const employed = { ...state, employment: { jobId: 'job.seed', schedule: { workDays: [1 as const], startMinute: 9 * 60, endMinute: 17 * 60 }, effectiveWeek: 1, basePay: 500, salaryAdjustment: 25 } };
+    expect(currentMonthlySalary(employed)).toBe(10500);
+    expect(evaluateCondition({ type: 'current_salary_at_least', amount: 9000 }, employed, content, balanceConfig)).toBe(true);
+    expect(evaluateCondition({ type: 'current_salary_at_least', amount: 11000 }, employed, content, balanceConfig)).toBe(false);
+    expect(explainCondition({ type: 'current_salary_at_least', amount: 11000 }, employed, content, balanceConfig)).toContain('当前月薪');
   });
 });

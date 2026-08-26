@@ -70,6 +70,9 @@ describe('seed content registry', () => {
     expect(contentRegistry.events.find((event) => event.id === 'event.headhunter-contact')?.choices[0]).toMatchObject({
       opportunity: { jobId: 'job.category-operations-expert', route: 'headhunter', source: '许衡主动联系' },
     });
+    expect(contentRegistry.events.find((event) => event.id === 'event.headhunter-contact')?.conditions).toMatchObject({
+      conditions: expect.arrayContaining([{ type: 'current_salary_at_least', amount: 9000 }]),
+    });
   });
 
   it('exposes the official relationship storyline from the content registry', () => {
