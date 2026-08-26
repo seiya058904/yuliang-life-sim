@@ -65,6 +65,26 @@ test('enforces the persisted travel cooldown in the activity market', async ({ p
   await expect(getaway.getByRole('button', { name: '冷却中 · 还需 9 天' })).toBeDisabled();
 });
 
+test('shows the persisted service history beside the service market', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 500;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('button', { name: '使用服务' }).first().click();
+  const serviceMarket = page.getByRole('region', { name: '服务与订阅' });
+  await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础理发');
+  await expect(serviceMarket).toContainText('最近服务记录');
+  await page.reload();
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础理发');
+});
+
 test('settles a city development event and keeps the location change after reload', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

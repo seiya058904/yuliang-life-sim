@@ -205,6 +205,9 @@ describe('余量 app flow', () => {
     expect(subscriptionRow).not.toBeNull();
     await user.click(within(subscriptionRow as HTMLElement).getByRole('button', { name: '开通订阅' }));
     await user.click(within(subscriptionRow as HTMLElement).getByRole('button', { name: '取消订阅' }));
+    expect(screen.getByRole('region', { name: '服务与订阅' })).toHaveTextContent('基础理发');
+    expect(screen.getByRole('region', { name: '服务与订阅' })).toHaveTextContent('最近服务记录');
+    expect(screen.getByRole('region', { name: '服务记录' })).toHaveTextContent('基础理发');
     await user.click(screen.getByRole('button', { name: '我的' }));
     expect(screen.getByText('基础理发')).toBeInTheDocument();
     expect(screen.getByText('开通基础通信套餐')).toBeInTheDocument();
