@@ -67,6 +67,25 @@ export const officialAssets = [
     "valuation": 22000,
     "dailyIncome": 320,
     "volatility": 0.006
+  },
+  {
+    "id": "asset.vintage-watch",
+    "contentStatus": "official",
+    "name": "限量机械腕表",
+    "description": "一件可以长期佩戴的收藏级资产，价值会随市场轻微波动，不保证升值。",
+    "tags": [
+      "asset",
+      "collectible",
+      "luxury"
+    ],
+    "kind": "collectible",
+    "price": 18000,
+    "valuation": 18000,
+    "dailyIncome": 0,
+    "volatility": 0.035,
+    "requirements": {
+      "type": "has_capability",
+      "capability": "market_insight"
+    }
   }
 ] satisfies readonly AssetDefinition[];
-

@@ -118,3 +118,28 @@ test('turns a qualifying manager state into a persisted headhunter opportunity',
   await page.getByRole('button', { name: '工作机会' }).click();
   await expect(page.getByText('许衡主动联系')).toBeVisible();
 });
+
+test('unlocks and trades the high-value collectible through the wealth flow', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.time = { ...state.time, day: 6 };
+    state.calendar = { ...state.calendar, month: 1 };
+    state.ability = 14;
+    state.cash = 20_000;
+    state.pendingEventId = 'event.investment-note';
+    state.simulationMode = 'event';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await expect(page.getByRole('dialog')).toContainText('一份很简单的理财说明');
+  await page.getByRole('dialog').getByRole('button', { name: /花点时间看懂它/ }).click();
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await expect(page.getByText('限量机械腕表')).toBeVisible();
+  await page.getByRole('button', { name: '买入 ¥18,000' }).click();
+  await expect(page.getByRole('button', { name: '出售 ¥18,000' })).toBeVisible();
+  await page.getByRole('button', { name: '出售 ¥18,000' }).click();
+  await expect(page.getByRole('button', { name: '买入 ¥18,000' })).toBeVisible();
+});

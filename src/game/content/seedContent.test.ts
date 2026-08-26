@@ -80,6 +80,12 @@ describe('seed content registry', () => {
     expect(event?.choices.find((choice) => choice.id === 'support')?.effects).toContainEqual({ type: 'location_development', locationId: 'location.riverside', amount: 1 });
   });
 
+  it('exposes a gated high-value collectible asset through the investment entry event', () => {
+    expect(contentRegistry.assets.find((asset) => asset.id === 'asset.vintage-watch')).toMatchObject({ kind: 'collectible', price: 18000, requirements: { type: 'has_capability', capability: 'market_insight' } });
+    const event = contentRegistry.events.find((entry) => entry.id === 'event.investment-note');
+    expect(event?.choices.every((choice) => choice.effects.some((effect) => effect.type === 'unlock_asset' && effect.assetId === 'asset.vintage-watch'))).toBe(true);
+  });
+
   it('exposes a company expansion event that creates an internal career opportunity', () => {
     const event = contentRegistry.events.find((entry) => entry.id === 'event.xinghe-expansion');
     expect(event?.choices.find((choice) => choice.id === 'join-project')?.opportunity).toMatchObject({

@@ -110,6 +110,22 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory?.at(-1)).toMatchObject({ title: '买入实用二手小车', category: 'asset' });
   });
 
+  it('buys and sells the gated high-value collectible through the asset ledger', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 20_000;
+    state.unlockedCapabilities.push('market_insight');
+    state.unlockedAssetIds.push('asset.vintage-watch');
+    const bought = dispatchGameAction(state, { type: 'buy_asset', assetId: 'asset.vintage-watch' }, contentRegistry, balanceConfig);
+    const sold = dispatchGameAction(bought.state, { type: 'sell_asset', assetId: 'asset.vintage-watch' }, contentRegistry, balanceConfig);
+
+    expect(bought.error).toBeUndefined();
+    expect(bought.state.assets['asset.vintage-watch']).toMatchObject({ purchasePrice: 18_000, currentValuation: 18_000 });
+    expect(sold.error).toBeUndefined();
+    expect(sold.state.assets['asset.vintage-watch']).toBeUndefined();
+    expect(sold.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'asset_liquidation', amount: 18_000 });
+    expect(sold.state.lifeHistory.at(-1)).toMatchObject({ category: 'asset', title: '出售限量机械腕表' });
+  });
+
   it('sells an owned home, returns its valuation, and moves the player back to rent', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 10000;
