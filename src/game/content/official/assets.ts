@@ -87,5 +87,25 @@ export const officialAssets = [
       "type": "has_capability",
       "capability": "market_insight"
     }
+  },
+  {
+    "id": "asset.fine-jewelry",
+    "contentStatus": "official",
+    "name": "精品珠宝",
+    "description": "一件可以长期佩戴的收藏资产，估值会缓慢波动，不保证升值。",
+    "tags": [
+      "asset",
+      "collectible",
+      "luxury"
+    ],
+    "kind": "collectible",
+    "price": 28000,
+    "valuation": 28000,
+    "dailyIncome": 0,
+    "volatility": 0.028,
+    "requirements": {
+      "type": "has_capability",
+      "capability": "market_insight"
+    }
   }
 ] satisfies readonly AssetDefinition[];

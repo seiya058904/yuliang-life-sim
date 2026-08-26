@@ -889,6 +889,10 @@ export const officialEvents = [
           {
             "type": "unlock_asset",
             "assetId": "asset.vintage-watch"
+          },
+          {
+            "type": "unlock_asset",
+            "assetId": "asset.fine-jewelry"
           }
         ]
       },
@@ -921,6 +925,10 @@ export const officialEvents = [
           {
             "type": "unlock_asset",
             "assetId": "asset.vintage-watch"
+          },
+          {
+            "type": "unlock_asset",
+            "assetId": "asset.fine-jewelry"
           }
         ]
       }

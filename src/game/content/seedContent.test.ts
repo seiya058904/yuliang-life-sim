@@ -88,6 +88,12 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes an official fine-jewelry collectible asset', () => {
+    expect(contentRegistry.assets).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'asset.fine-jewelry', contentStatus: 'official', name: '精品珠宝', kind: 'collectible', price: 28_000, valuation: 28_000, volatility: 0.028 }),
+    ]));
+  });
+
   it('populates distinct quality, SUV, and executive vehicle tiers for the same reachable asset loop', () => {
     expect(contentRegistry.assets.filter((asset) => asset.kind === 'vehicle' && asset.contentStatus === 'official')).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'asset.quality-sedan', price: 236000, monthlyCost: 980, depreciationRate: 0.005 }),

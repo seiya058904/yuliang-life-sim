@@ -854,7 +854,7 @@ test('unlocks and trades the high-value collectible through the wealth flow', as
     state.time = { ...state.time, day: 6 };
     state.calendar = { ...state.calendar, month: 1 };
     state.ability = 14;
-    state.cash = 20_000;
+    state.cash = 50_000;
     state.pendingEventId = 'event.investment-note';
     state.simulationMode = 'event';
     localStorage.setItem(key, JSON.stringify(state));
@@ -870,6 +870,11 @@ test('unlocks and trades the high-value collectible through the wealth flow', as
   await expect(page.getByRole('button', { name: '出售 ¥18,000' })).toBeVisible();
   await page.getByRole('button', { name: '出售 ¥18,000' }).click();
   await expect(page.getByRole('button', { name: '买入 ¥18,000' })).toBeVisible();
+  await expect(page.getByText('精品珠宝')).toBeVisible();
+  await page.getByRole('button', { name: '买入 ¥28,000' }).click();
+  await expect(page.getByRole('button', { name: '出售 ¥28,000' })).toBeVisible();
+  await page.getByRole('button', { name: '出售 ¥28,000' }).click();
+  await expect(page.getByRole('button', { name: '买入 ¥28,000' })).toBeVisible();
 });
 
 test('shows persisted wealth milestones in the profile on desktop and mobile', async ({ page }) => {
