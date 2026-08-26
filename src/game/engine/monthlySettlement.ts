@@ -107,6 +107,8 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       relationshipCount: Object.values(state.relationships).filter((value) => value > 0).length,
       visitedLocationCount: Object.values(state.locationVisits ?? {}).filter((value) => value > 0).length,
       locationDevelopment: { ...development },
+      listedBusinessCount: Object.values(state.businesses).filter((holding) => holding.listed).length,
+      publicFloatPercent: Object.values(state.businesses).reduce((total, holding) => total + (holding.publicFloatPercent ?? (100 - (holding.equityPercent ?? 100))), 0),
       currentJobId: state.currentJobId,
     };
     state.worldHistory = [...(state.worldHistory ?? []).filter((entry) => entry.year !== snapshot.year), snapshot].slice(-10);

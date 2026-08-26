@@ -714,6 +714,8 @@ export interface WorldSnapshot {
   relationshipCount: number;
   visitedLocationCount: number;
   locationDevelopment?: Record<ContentId, number>;
+  listedBusinessCount?: number;
+  publicFloatPercent?: number;
   currentJobId?: ContentId;
 }
 export interface PendingMonthlySummary { month: number; summary: MonthlySummary; financial?: MonthlyFinancialSummary; resumeMode: 'running' | 'planning' | 'paused'; highlights: MonthlyHighlight[]; }
