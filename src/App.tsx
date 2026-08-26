@@ -108,7 +108,7 @@ function App() {
         {activeView === 'life' && <LifeView game={game} dispatch={dispatch} />}
         {activeView === 'work' && <><CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={setView} /><section className="planning-section"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><CourseMarket game={game} dispatch={dispatch} /><ForecastPanel game={game} /></>}
         {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><ActivityAcquisitionHints game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><WishlistPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></>}
-        {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /><PortfolioHistory game={game} /></>}
+        {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /><PortfolioAllocation game={game} /><PortfolioHistory game={game} /></>}
         {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><GiftPanel game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></>}
         {activeView === 'city' && <CityView game={game} onNavigate={setView} />}
         {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><WealthMilestoneView game={game} /><MilestoneProgressView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /></>}
@@ -152,6 +152,19 @@ function PortfolioSummary({ game }: { game: GameState }) {
   const investmentValue = Object.values(game.investments ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
   const vehicleAndCollectibleValue = Object.values(game.assets).reduce((total, holding) => total + holding.currentValuation, 0);
   return <section className="detail-panel" aria-label="财富组合摘要"><div className="section-heading compact"><div><span className="eyebrow">资产结构</span><h2>我的财富组合</h2></div><p>把现金、现金流、资产估值和贷款余额分开看；估值变化不是现金收入。</p></div><div className="profile-grid"><div className="info-panel"><span>现金余额</span><strong>{money(game.cash)}</strong></div><div className="info-panel"><span>房产总值</span><strong>{money(propertyValue)}</strong></div><div className="info-panel"><span>贷款余额</span><strong>{money(mortgage)}</strong></div><div className="info-panel"><span>房产净值</span><strong>{money(propertyValue - mortgage)}</strong></div><div className="info-panel"><span>本月净租金</span><strong>{rentalCashFlow >= 0 ? '+' : '-'}{money(Math.abs(rentalCashFlow))}</strong></div><div className="info-panel"><span>投资资产</span><strong>{money(investmentValue)}</strong></div><div className="info-panel"><span>车辆与收藏</span><strong>{money(vehicleAndCollectibleValue)}</strong></div></div></section>;
+}
+
+function PortfolioAllocation({ game }: { game: GameState }) {
+  const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
+  const categories = [
+    ['现金', game.cash],
+    ['自住房净值', game.housing.mode === 'owned' && home ? Math.max(0, (housingPrice(game, home) ?? home.valuation) - (game.mortgage?.remainingPrincipal ?? 0)) : 0],
+    ['投资房', Object.values(game.housingHoldings ?? {}).reduce((sum, holding) => sum + holding.currentValuation, 0)],
+    ['金融投资', Object.values(game.investments ?? {}).reduce((sum, holding) => sum + holding.currentValuation, 0)],
+    ['企业与股权', Object.values(game.businesses).reduce((sum, holding) => sum + Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balanceConfig.businessValuationRatio * ((holding.equityPercent ?? 100) / 100)), 0)],
+    ['车辆与收藏', Object.values(game.assets).reduce((sum, holding) => sum + holding.currentValuation, 0)],
+  ] as const;
+  return <section className="detail-panel" aria-label="财富配置"><div className="section-heading compact"><div><span className="eyebrow">估值拆分</span><h2>财富配置</h2></div><p>这里展示当前各类持有物的估值；资产配置变化会继续进入月度账本。</p></div><div className="item-list">{categories.filter(([, value]) => value > 0).map(([label, value]) => <div className="item-row" key={label}><span>{label}</span><strong>{money(value)}</strong></div>)}</div></section>;
 }
 
 function PortfolioHistory({ game }: { game: GameState }) {

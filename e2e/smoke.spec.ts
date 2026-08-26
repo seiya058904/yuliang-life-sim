@@ -618,6 +618,10 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   await expect(summary).toContainText('¥1,100');
   await expect(summary).toContainText('车辆与收藏');
   await expect(summary).toContainText('¥1,000');
+  const allocation = page.getByRole('region', { name: '财富配置' });
+  await expect(allocation).toContainText('现金');
+  await expect(allocation).toContainText('金融投资');
+  await expect(allocation).toContainText('投资房');
   const history = page.getByRole('region', { name: '财富组合历史' });
   await expect(history).toContainText('第 2 月');
   await expect(history).toContainText('第 3 月');

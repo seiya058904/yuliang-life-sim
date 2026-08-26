@@ -568,6 +568,10 @@ describe('余量 app flow', () => {
     expect(summary).toHaveTextContent('¥1,100');
     expect(summary).toHaveTextContent('车辆与收藏');
     expect(summary).toHaveTextContent('¥1,000');
+    const allocation = screen.getByRole('region', { name: '财富配置' });
+    expect(allocation).toHaveTextContent('现金');
+    expect(allocation).toHaveTextContent('金融投资');
+    expect(allocation).toHaveTextContent('投资房');
   });
 
   it('shows persisted monthly portfolio history in the wealth view', async () => {
