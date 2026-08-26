@@ -763,6 +763,7 @@ export type GameAction =
   | { type: 'resume_simulation' }
   | { type: 'set_simulation_speed'; speed: SimulationSpeed }
   | { type: 'advance_simulation'; minutes: number }
+  | { type: 'advance_period'; months: 1 | 3 }
   | { type: 'set_plan'; weekday: Weekday; slot: PlanSlot; activity: PlannedActivity }
   | { type: 'copy_previous_plan' }
   | { type: 'set_auto_repeat_plan'; enabled: boolean }

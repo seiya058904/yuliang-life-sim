@@ -236,6 +236,18 @@ describe('game action dispatcher', () => {
     expect(resumed.state.simulationMode).toBe('running');
   });
 
+  it('runs a requested month through the normal weekly and monthly settlement loop', () => {
+    const state = createInitialState(contentRegistry, { ...balanceConfig, eventDailyLimit: 0 }, 1);
+
+    const result = dispatchGameAction(state, { type: 'advance_period', months: 1 }, contentRegistry, { ...balanceConfig, eventDailyLimit: 0 });
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.time.day).toBe(29);
+    expect(result.state.simulationMode).toBe('monthly_summary');
+    expect(result.state.pendingMonthlySummary?.month).toBe(1);
+    expect(result.state.financialHistory).toHaveLength(1);
+  });
+
   it('copies the stored previous weekly plan instead of only showing a message', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     const changed = dispatchGameAction(state, {

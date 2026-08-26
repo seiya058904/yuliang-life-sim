@@ -143,6 +143,13 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/定价 3/)).toBeInTheDocument();
   });
 
+  it('exposes long-run period controls from the time console', () => {
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: '运行 1 个月' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '运行 3 个月' })).toBeInTheDocument();
+  });
+
   it('exposes separate business capital and funding decisions', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

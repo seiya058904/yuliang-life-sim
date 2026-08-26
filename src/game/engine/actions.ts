@@ -14,6 +14,7 @@ import { advanceStorylineStage, getStoryline, getStorylineStage } from './storyl
 import { careerRequirementsSatisfied } from './careerProgression';
 import { applyCareerExperience } from './careerProgression';
 import { recordLocationVisit } from './locations';
+import { absoluteMinute } from './time';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
 const find = <T extends { id: string }>(entries: readonly T[], id: string): T | undefined => entries.find((entry) => entry.id === id);
@@ -59,11 +60,50 @@ function addLifeRecord(state: GameState, record: Omit<LifeRecordEntry, 'id' | 'd
   state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], nextRecord);
 }
 
+function advancePeriod(input: GameState, months: 1 | 3, content: ContentRegistry, balance: BalanceConfig): GameResult {
+  if (!['planning', 'paused', 'week_complete'].includes(input.simulationMode)) return fail(input, '当前不能开始长期运行');
+  let state = cloneGameState(input);
+  state.autoRepeatPlan = true;
+  state.weeklyPlan = { ...state.weeklyPlan, autoRepeat: true, days: structuredClone(state.weeklyPlan.days) };
+  const effects: GameEffect[] = [];
+  const targetMinutes = months * 28 * 24 * 60;
+  const targetMonth = input.calendar.month + months - 1;
+  let elapsed = 0;
+  while (elapsed < targetMinutes) {
+    if (state.simulationMode === 'planning' || state.simulationMode === 'paused' || state.simulationMode === 'week_complete') {
+      const started = dispatchGameAction(state, { type: 'start_week' }, content, balance);
+      if (started.error) return { state: input, effects: [], error: started.error };
+      state = started.state;
+      effects.push(...started.effects);
+    }
+    if (state.simulationMode === 'monthly_summary') {
+      if ((state.pendingMonthlySummary?.month ?? 0) >= targetMonth) break;
+      const acknowledged = dispatchGameAction(state, { type: 'acknowledge_monthly_summary' }, content, balance);
+      if (acknowledged.error) return { state: input, effects: [], error: acknowledged.error };
+      state = acknowledged.state;
+      effects.push(...acknowledged.effects);
+      continue;
+    }
+    if (state.simulationMode !== 'running') break;
+    const before = absoluteMinute(state.time);
+    const step = advanceSimulation(state, targetMinutes - elapsed, content, balance);
+    if (step.error) return { state: input, effects: [], error: step.error };
+    state = step.state;
+    effects.push(...step.effects);
+    const advanced = absoluteMinute(state.time) - before;
+    if (advanced <= 0) break;
+    elapsed += advanced;
+    if (state.simulationMode === 'event' || state.simulationMode === 'reward') break;
+  }
+  return { state, effects };
+}
+
 export function dispatchGameAction(input: GameState, action: GameAction, content: ContentRegistry, balance: BalanceConfig): GameResult {
   if (input.pendingEventId && action.type !== 'choose_event' && !(action.type === 'claim_reward' && input.pendingReward)) return fail(input, '请先处理当前事件');
   if (input.pendingReward && action.type !== 'claim_reward') return fail(input, '请先收下本次奖励');
   if (input.simulationMode === 'monthly_summary' && action.type !== 'acknowledge_monthly_summary') return fail(input, '请先进入下个月');
   if (action.type === 'advance_simulation') return advanceSimulation(input, action.minutes, content, balance);
+  if (action.type === 'advance_period') return advancePeriod(input, action.months, content, balance);
 
   const state = cloneGameState(input);
   const effects: GameEffect[] = [];
