@@ -12,7 +12,7 @@ import { evaluateCondition } from './conditions';
 import { applyAttributeDelta } from './attributes';
 import { recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
 import { updateInvestmentValuations } from './investments';
-import { activityCashCost, getActivityDefinition, getActivityOption } from './activities';
+import { activityCashCost, activityDiscountLabel, getActivityDefinition, getActivityOption } from './activities';
 import { advanceCareerLifecycle, generateVacancies } from './careers';
 import { appendLifeRecord } from './lifeHistory';
 
@@ -158,7 +158,8 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: definition.financialCategory ?? 'entertainment', amount: cost, label: `${definition.name} · ${option.label}`, sourceType: 'activity', sourceId: definition.id });
     applyContentEffects(state, option.effects ?? [], content, balance, output);
     if (definition.locationId) recordLocationVisit(state, definition.locationId, content);
-    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: cost < option.cashCost ? '自驾出行，交通费用有所减少' : '活动已完成', sourceId: definition.id, amount: -cost });
+    const discountLabel = activityDiscountLabel(state, definition, content);
+    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: discountLabel === '自驾优惠' ? '自驾出行，交通费用有所减少' : discountLabel === '地点发展优惠' ? '地点发展使活动更便利' : '活动已完成', sourceId: definition.id, amount: -cost });
     return;
   }
   if (activity.kind === 'study') {

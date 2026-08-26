@@ -5,12 +5,22 @@ import { createInitialState } from './initialState';
 import { applyAttributeDelta, calculateLegacyAbility, migrateAttributes } from './attributes';
 import { explainCondition, evaluateCondition } from './conditions';
 import { emptyFinancialLedger, recordFinancialEntry, summarizeFinancialLedger } from './financialLedger';
-import { getActivityOption } from './activities';
+import { activityCashCost, activityDiscountLabel, getActivityOption } from './activities';
 import { dispatchGameAction } from './actions';
 import { composeContentPacks } from '../content/registry';
 import { advanceSimulation } from './simulation';
 
 describe('phase 3 additive systems', () => {
+  it('applies location development discount to activities at that location', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 7);
+    state.locationDevelopment = { 'location.riverside': 3 };
+    const activity = contentRegistry.activities?.find((entry) => entry.id === 'activity.weekend-getaway')!;
+    const option = getActivityOption(activity, 'standard')!;
+
+    expect(activityCashCost(state, activity, option, contentRegistry)).toBe(349);
+    expect(activityDiscountLabel(state, activity, contentRegistry)).toBe('地点发展优惠');
+  });
+
   it('keeps legacy ability synchronized with fine attributes', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 7);
     expect(calculateLegacyAbility(state.attributes!)).toBe(state.ability);
