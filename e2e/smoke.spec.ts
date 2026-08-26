@@ -156,6 +156,8 @@ test('shows persisted wealth milestones in the profile on desktop and mobile', a
       { id: 'savings', day: 28, netWorth: 12_000 },
       { id: 'stable', day: 90, netWorth: 100_000 },
     ];
+    state.annualHistory = [{ year: 1, cashStart: 1_000, cashEnd: 1_400, netWorthStart: 1_000, netWorthEnd: 1_800, totalIncome: 900, totalConsumption: 500, months: 12 }];
+    state.worldHistory = [{ year: 1, day: 337, netWorth: 1_800, businessCount: 0, relationshipCount: 2, visitedLocationCount: 1 }];
     state.simulationMode = 'paused';
     localStorage.setItem(key, JSON.stringify(state));
   }, { key: saveKey, state: initial });
@@ -166,6 +168,9 @@ test('shows persisted wealth milestones in the profile on desktop and mobile', a
   await expect(records).toContainText('有积蓄');
   await expect(records).toContainText('稳定');
   await expect(records).toContainText('第 28 天');
+  const annualReview = page.getByRole('heading', { name: '年度回顾' }).locator('xpath=ancestor::section[1]');
+  await expect(annualReview).toBeVisible();
+  await expect(annualReview).toContainText('联系人 2 人');
   await page.reload();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByRole('region', { name: '财富阶段记录' })).toContainText('稳定');
