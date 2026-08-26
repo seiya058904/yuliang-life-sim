@@ -514,6 +514,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       holding.priceLevel = action.priceLevel;
       holding.wageLevel = action.wageLevel;
       holding.inventoryLevel = action.inventoryLevel;
+      addLifeRecord(state, { category: 'business', title: `调整${business.name}经营`, detail: `定价 ${action.priceLevel + 1} · 人员 ${action.wageLevel + 1} · 备货 ${action.inventoryLevel + 1}`, sourceId: business.id });
+      effects.push({ type: 'message', text: `${business.name}经营方案已更新` });
       break;
     }
     case 'buy_asset': {

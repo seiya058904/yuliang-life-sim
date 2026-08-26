@@ -90,6 +90,18 @@ describe('余量 app flow', () => {
     expect(screen.getByText('卖出灵活储蓄')).toBeInTheDocument();
   });
 
+  it('exposes operating controls for an owned business in the wealth view', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, businesses: { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200 } } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    expect(screen.getByRole('heading', { name: '企业经营' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '调整定价' }));
+    expect(screen.getByText(/定价 3/)).toBeInTheDocument();
+  });
+
   it('uses a service and manages a monthly subscription from the shop', async () => {
     const user = userEvent.setup();
     render(<App />);

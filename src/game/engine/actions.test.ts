@@ -125,6 +125,21 @@ describe('game action dispatcher', () => {
     expect(sold.state.lifeHistory?.at(-1)).toMatchObject({ title: '出售独立单间', category: 'housing' });
   });
 
+  it('updates owned business operating levers and records the decision in life history', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 5000;
+    state.unlockedCapabilities.push('business_license');
+    state.unlockedBusinessIds.push('business.seed-kiosk');
+    const bought = dispatchGameAction(state, { type: 'buy_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    expect(bought.error).toBeUndefined();
+
+    const updated = dispatchGameAction(bought.state, { type: 'update_business', businessId: 'business.seed-kiosk', priceLevel: 2, wageLevel: 0, inventoryLevel: 2 }, contentRegistry, balanceConfig);
+
+    expect(updated.error).toBeUndefined();
+    expect(updated.state.businesses['business.seed-kiosk']).toMatchObject({ priceLevel: 2, wageLevel: 0, inventoryLevel: 2 });
+    expect(updated.state.lifeHistory?.at(-1)).toMatchObject({ title: '调整早餐与咖啡档经营', category: 'business' });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);
