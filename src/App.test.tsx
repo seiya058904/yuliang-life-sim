@@ -320,4 +320,13 @@ describe('余量 app flow', () => {
     await user.click(within(getaway as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
     expect(screen.getByText(/周末短途旅行 · 慢慢走走/)).toBeInTheDocument();
   });
+
+  it('shows contact preferences in the social view', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '社交' }));
+    expect(screen.getByRole('heading', { name: '人物偏好' })).toBeInTheDocument();
+    expect(screen.getAllByText('偏好：吃饭')).toHaveLength(2);
+  });
 });

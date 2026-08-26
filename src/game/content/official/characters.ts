@@ -85,6 +85,7 @@ export const officialCharacters = [
       "career"
     ],
     "identity": "招聘顾问",
+    "preferredInteractionCategories": ["meal"],
     "initialRelationship": 0,
     "locationId": "location.central",
     "stages": [
@@ -116,6 +117,7 @@ export const officialCharacters = [
       "technology"
     ],
     "identity": "数码店店主",
+    "preferredInteractionCategories": ["work"],
     "initialRelationship": 0,
     "locationId": "location.central",
     "stages": [
@@ -153,6 +155,7 @@ export const officialCharacters = [
       "housing"
     ],
     "identity": "房产经纪",
+    "preferredInteractionCategories": ["meal"],
     "initialRelationship": 0,
     "locationId": "location.riverside",
     "stages": [

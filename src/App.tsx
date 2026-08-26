@@ -34,6 +34,7 @@ function money(value: number): string {
 const categoryLabels: Record<string, string> = {
   consumable: '日用品', technology: '科技', clothing: '服装', furniture: '家居', leisure_item: '休闲用品', entertainment: '休闲用品', luxury: '奢侈品', collectible: '收藏品',
 };
+const interactionCategoryLabels: Record<string, string> = { meal: '吃饭', work: '工作话题', outing: '出行', travel: '旅行', gift: '礼物', business: '经营' };
 const attributeLabels: Record<string, string> = { professional: '专业', knowledge: '知识', communication: '沟通', fitness: '体能', appearance: '形象', network: '人脉', mood: '心情' };
 const statLabels: Record<string, string> = { ability: '能力', reputation: '声誉', lifestyle: '生活水平' };
 const capabilityLabels: Record<string, string> = { remote_work: '远程工作', home_workspace: '居家办公', business_license: '经营资格', market_insight: '市场洞察' };
@@ -107,7 +108,7 @@ function App() {
         {activeView === 'work' && <><CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={setView} /><section className="planning-section"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><CourseMarket game={game} dispatch={dispatch} /><ForecastPanel game={game} /></>}
         {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><WishlistPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></>}
         {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} /></>}
-        {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><StorylinePanel game={game} dispatch={dispatch} /></>}
+        {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></>}
         {activeView === 'city' && <CityView game={game} />}
         {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><AnnualHistoryView game={game} /></>}
       </main>
@@ -257,6 +258,12 @@ function BusinessLocationSummary({ game }: { game: GameState }) {
   const owned = contentRegistry.businesses.filter((business) => game.businesses[business.id]);
   if (!owned.length) return null;
   return <section className="detail-panel"><div className="section-heading compact"><div><span className="eyebrow">企业与城市</span><h2>经营地点</h2></div><p>企业拥有稳定地点引用；购买企业会记录一次到访，后续项目和经营仍可继续累积地点记录。</p></div><div className="item-list">{owned.map((business) => { const location = contentRegistry.locations?.find((entry) => entry.id === business.locationId); return <div className="item-row" key={business.id}><div><h3>{business.name}</h3><p className="muted">{location ? `${location.name} · ${location.region}` : '未指定地点'}</p></div><div className="row-meta"><span className="current-label">已访问 {game.locationVisits?.[business.locationId ?? ''] ?? 0} 次</span></div></div>; })}</div></section>;
+}
+
+function CharacterPreferenceSummary({ game }: { game: GameState }) {
+  const entries = contentRegistry.characters.filter((character) => character.preferredInteractionCategories?.length);
+  if (!entries.length) return null;
+  return <section className="detail-panel"><div className="section-heading compact"><div><span className="eyebrow">关系反馈</span><h2>人物偏好</h2></div><p>选择对方偏好的互动类型，会让关系进展更顺利；偏好会在互动结算时生效并写入历史。</p></div><div className="item-list">{entries.map((character) => <div className="item-row" key={character.id}><div><h3>{character.name}</h3><span className="muted">偏好：{character.preferredInteractionCategories!.map((category) => interactionCategoryLabels[category] ?? category).join('、')}</span></div><div className="row-meta"><span className="current-label">当前关系 {game.relationships[character.id] ?? 0}</span></div></div>)}</div></section>;
 }
 
 function AnnualHistoryView({ game }: { game: GameState }) {

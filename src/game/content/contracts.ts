@@ -391,6 +391,7 @@ export interface CharacterDefinition extends ContentMeta {
   initialRelationship: number;
   stages: readonly RelationshipStageDefinition[];
   locationId?: ContentId;
+  preferredInteractionCategories?: readonly RelationshipInteractionDefinition['category'][];
 }
 
 export interface EventChoiceDefinition {

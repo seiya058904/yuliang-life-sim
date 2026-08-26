@@ -248,6 +248,17 @@ describe('game action dispatcher', () => {
     expect(result.state.financialHistory).toHaveLength(1);
   });
 
+  it('applies the contact preference bonus when the interaction category matches', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 200;
+
+    const result = dispatchGameAction(state, { type: 'interact_character', interactionId: 'interaction.coffee-with-recruiter', optionId: 'coffee' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.relationships['character.chenyu']).toBe(6);
+    expect(result.state.lifeHistory.at(-1)).toMatchObject({ detail: '符合对方偏好，关系进展更顺利' });
+  });
+
   it('copies the stored previous weekly plan instead of only showing a message', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     const changed = dispatchGameAction(state, {

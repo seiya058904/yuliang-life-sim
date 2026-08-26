@@ -710,13 +710,15 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!interaction || !option || interaction.characterId === undefined) return fail(input, '找不到这项互动');
       if (!hasRequirements(state, option.requirements, content, balance)) return fail(input, '当前关系或条件还不满足');
       if (state.cash < option.cashCost) return fail(input, '现金不足以完成这次互动');
+      const character = content.characters.find((entry) => entry.id === interaction.characterId);
+      const preferred = character?.preferredInteractionCategories?.includes(interaction.category) ?? false;
       state.cash -= option.cashCost;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'social', amount: option.cashCost, label: `${interaction.name} · ${option.label}`, sourceType: 'relationship', sourceId: interaction.id });
-      applyContentEffects(state, option.effects ?? [], content, balance, effects);
-      addLifeRecord(state, { category: 'relationship', title: `${interaction.name} · ${option.label}`, sourceId: interaction.id, amount: option.cashCost ? -option.cashCost : undefined });
-      const character = content.characters.find((entry) => entry.id === interaction.characterId);
+      const interactionEffects = preferred ? (option.effects ?? []).map((effect) => effect.type === 'relation' ? { ...effect, amount: effect.amount + 2 } : effect) : option.effects ?? [];
+      applyContentEffects(state, interactionEffects, content, balance, effects);
+      addLifeRecord(state, { category: 'relationship', title: `${interaction.name} · ${option.label}`, detail: preferred ? '符合对方偏好，关系进展更顺利' : undefined, sourceId: interaction.id, amount: option.cashCost ? -option.cashCost : undefined });
       state.messages = [...(state.messages ?? []), { id: `message.${interaction.id}.${state.time.day}.${(state.messages ?? []).length + 1}`, day: state.time.day, characterId: interaction.characterId, title: `${character?.name ?? '联系人'}发来新消息`, body: `${option.label}之后，对方想继续和你保持联系。`, sourceId: interaction.id, read: false }].slice(-30);
-      effects.push({ type: 'message', text: `${interaction.name}完成，关系留下了新的进展` });
+      effects.push({ type: 'message', text: `${interaction.name}完成，${preferred ? '符合对方偏好，' : ''}关系留下了新的进展` });
       break;
     }
     case 'read_message': {
