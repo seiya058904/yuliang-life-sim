@@ -175,6 +175,14 @@ test('discovers and plans the relationship-gated cinema outing with Zhou', async
   await expect(page.getByText('看电影 · 和周妍看一场')).toBeVisible();
 });
 
+test('discovers and plans the old-town cultural trip', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const outing = page.getByRole('heading', { name: '旧城文化日 · 看一场展览' }).locator('..');
+  await expect(outing).toContainText('旧城文化日 · 看一场展览');
+  await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
+  await expect(page.getByText('旧城文化日 · 看一场展览')).toBeVisible();
+});
+
 test('buys and gives a preference-matching gift with persisted social history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

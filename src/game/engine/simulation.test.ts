@@ -97,6 +97,20 @@ describe('automatic simulation', () => {
     expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'activity.cinema' && entry.detail?.includes('和周妍一起'))).toBe(true);
   });
 
+  it('settles the old-town cultural trip and records its destination visit', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 23);
+    initial.cash = 1000;
+    const plan = structuredClone(initial.weeklyPlan);
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.old-town-culture', optionId: 'exhibition' };
+    const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: false, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 6 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.financialLedger?.entries.some((entry) => entry.sourceId === 'activity.old-town-culture' && entry.amount === 220)).toBe(true);
+    expect(result.state.locationVisits?.['location.old-town']).toBe(1);
+    expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'activity.old-town-culture' && entry.title === '旧城文化日 · 看一场展览')).toBe(true);
+  });
+
   it('settles an owned business project as one-time equity-proportional profit', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 23);

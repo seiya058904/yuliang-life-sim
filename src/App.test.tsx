@@ -451,6 +451,17 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/看电影 · 和周妍看一场/)).toBeInTheDocument();
   });
 
+  it('discovers and schedules the old-town cultural trip', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const outing = screen.getByRole('heading', { name: '旧城文化日 · 看一场展览' }).closest('article');
+    expect(outing).not.toBeNull();
+    await user.click(within(outing as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
+    expect(screen.getByText(/旧城文化日 · 看一场展览/)).toBeInTheDocument();
+  });
+
   it('shows an actionable acquisition hint for a gated activity', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

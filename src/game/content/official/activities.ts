@@ -57,6 +57,17 @@ export const officialActivities = [
     ],
   },
   {
+    id: 'activity.old-town-culture',
+    contentStatus: 'official',
+    name: '旧城文化日',
+    description: '去旧城文化区看展览、走走老街，不把每次出门都换算成收益。',
+    tags: ['life', 'travel', 'leisure'],
+    category: 'culture',
+    financialCategory: 'travel',
+    locationId: 'location.old-town',
+    options: [{ id: 'exhibition', label: '看一场展览', durationMinutes: 240, cashCost: 220, effects: [] }],
+  },
+  {
     id: 'activity.city-photography',
     contentStatus: 'official',
     name: '城市摄影练习',
