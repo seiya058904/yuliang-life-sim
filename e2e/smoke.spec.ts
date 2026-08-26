@@ -736,6 +736,30 @@ test('unlocks the warehouse-to-office career storyline opportunity', async ({ pa
   await expect(page.getByText('环流物流内部调度机会')).toBeVisible();
 });
 
+test('completes the first real consulting project storyline with a persisted outcome', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.currentJobId = 'job.research-assistant';
+    state.employment = { ...(state.employment ?? {}), jobId: 'job.research-assistant', companyId: 'company.clearview-consulting', startedDay: 1 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const storyline = page.getByRole('heading', { name: '第一次真正的项目' }).locator('..').locator('..');
+  await storyline.getByRole('button', { name: '开始故事' }).click();
+  await storyline.getByRole('button', { name: '参加客户会议' }).click();
+  await storyline.getByRole('button', { name: '多花 2h 准备' }).click();
+  await storyline.getByRole('button', { name: '根据现有数据给出初步判断' }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('第一次真正的项目：根据现有数据给出初步判断')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('第一次真正的项目：根据现有数据给出初步判断')).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

@@ -265,11 +265,15 @@ describe('seed content registry', () => {
     expect(contentRegistry.storylines?.filter((storyline) => storyline.contentStatus === 'official').map((storyline) => storyline.id)).toEqual([
       'storyline.remote-connection',
       'storyline.warehouse-to-office',
+      'storyline.first-real-project',
     ]);
     expect(contentRegistry.dialogues?.filter((dialogue) => dialogue.contentStatus === 'official').map((dialogue) => dialogue.id)).toEqual([
       'dialogue.remote-connection',
       'dialogue.warehouse-office-entry',
       'dialogue.warehouse-office-follow-up',
+      'dialogue.first-project-entry',
+      'dialogue.first-project-prep',
+      'dialogue.first-project-meeting',
     ]);
   });
 

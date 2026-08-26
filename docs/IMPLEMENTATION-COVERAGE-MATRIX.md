@@ -7,9 +7,9 @@ Scope: this matrix audits `docs/NEXT-UPDATE-FOUNDATION.md` as the sole product/c
 | Check | Result |
 | --- | --- |
 | Branch | `codex/yuliang-completion` |
-| Content validation | `npm run content:validate` passed: 40 jobs, 34 items, 9 services, 5 subscriptions, 6 housing, 6 characters, 36 events, 4 event chains, 3 businesses, 12 assets, 13 activities, 6 venues, 4 courses, 8 investments. |
-| Unit/component tests | `npm test` passed: 20 files, 232 tests. |
-| Browser E2E | `npm run e2e` passed: 57 specs / 114 project runs, including named-city-venue, career, shop, wealth, social, city, annual-review, asset, business, service/subscription, wishlist, diamond-pendant, camping-gear/weekend-camping, warehouse-to-office Storyline, and persistence flows on desktop and mobile. |
+| Content validation | `npm run content:validate` passed: 40 jobs, 34 items, 9 services, 5 subscriptions, 6 housing, 7 characters, 36 events, 4 event chains, 3 businesses, 12 assets, 13 activities, 6 venues, 4 courses, 8 investments. |
+| Unit/component tests | `npm test` passed: 20 files, 235 tests. |
+| Browser E2E | `npm run e2e` passed: 58 specs / 116 project runs, including named-city-venue, career, shop, wealth, social, city, annual-review, asset, business, service/subscription, wishlist, diamond-pendant, camping-gear/weekend-camping, warehouse-to-office and first-real-project Storylines, and persistence flows on desktop and mobile. |
 | Production build | `npm run build` passed: content validation, TypeScript build, Vite build. |
 
 ## Content Counts
@@ -21,7 +21,7 @@ Counts are separated by direct official content, seed content, and the composed 
 | Jobs | 40 | 4 | 40 | Runtime jobs are 34 full-time, 4 repeatable side jobs, 2 gigs; management and technical categories are present for the high-tier routes, and the official logistics, education, consulting, travel, StarBridge e-commerce, Neworder automotive service, Frame Media, and Isle Lifestyle routes add stable entry-to-progression paths. |
 | Items | 34 | 7 | 34 | Runtime categories: 3 consumable, 7 technology, 6 furniture, 4 clothing, 5 luxury, 4 collectible, 2 entertainment, and 4 leisure items including the official `item.camping-gear`. The official `item.smart-home-set` is the Isle Lifestyle technology anchor with a persisted +6 lifestyle effect, and `item.diamond-pendant` adds a bounded jewelry purchase/resale route with appearance feedback. Some items carry `sellable`/`resaleRatio` metadata; owned durable goods can be sold from the Shop inventory panel. |
 | Housing | 6 | 3 | 6 | Runtime modes: 1 rent-only, 5 both rent/buy. |
-| Characters | 6 | 2 | 6 | Relationship stages exist; long-term character history does not. Runtime includes the official headhunter contact 许衡. |
+| Characters | 7 | 2 | 7 | Relationship stages exist; long-term character history does not. Runtime includes the official headhunter contact 许衡 and consulting project contact 顾清. |
 | Events | 35 | 6 | 36 | Runtime adds 1 seed-only event; categories cover life/work/career/shopping/business/housing/investment/asset/luck/relationship, including conditional headhunter, two authored city-development events, company expansion, private-equity introduction, private-equity exit, and business equipment-failure risk events. |
 | Event chains | 4 | 1 | 4 | Chain progression exists through event metadata. |
 | Businesses | 3 | 1 | 3 | Buy, operate, inject capital, raise constrained dilutive rounds, list, trade partial equity after lockup, and exit are reachable after unlock; founding/partners/M&A remain extensions. |
@@ -29,10 +29,10 @@ Counts are separated by direct official content, seed content, and the composed 
 | Activities | 12 | 1 | 13 | Twelve official activities, including four travel destinations, an owned-business project, camera-gated city photography, relationship-gated friend-specific cinema/café/bookstore options, a riverside night market, a bookstore visit, a riverside park ride, a northern industrial design exhibition, and item-gated weekend camping, plus one seed fallback are schedulable and settle through the weekly plan; vehicle ownership changes travel cost and feedback. Runtime contains 19 activity options. |
 | Investments | 6 | 2 | 8 | Six official products, including a company-equity holding and one relationship-gated private-equity holding, plus two seed fallback funds are reachable in the Wealth market. |
 | Companies | 11 | 1 | 11 | Official companies cover logistics, education operations, research-to-analysis, travel-product, e-commerce, automotive service, media production, lifestyle technology, and the core starter routes; the seed company remains a fallback with an overlapping ID. |
-| Dialogues | 3 | 1 | 4 | Three official storyline dialogues and one seed recruitment dialogue are reachable; official dialogues are rendered in Social and the seed dialogue remains a fallback recruitment asset. |
+| Dialogues | 6 | 1 | 7 | Six official storyline dialogues and one seed recruitment dialogue are reachable; official dialogues are rendered in Social and the seed dialogue remains a fallback recruitment asset. |
 | Relationship interactions | 4 | 1 | 4 | Four official character-specific interactions and one seed interaction are composed into four runtime interactions. |
 | Messages | 0 | 0 | Runtime-generated | Relationship interactions enqueue up to 30 persisted messages; reading a message writes a relationship history record. |
-| Storylines | 2 | 1 | 3 | One official relationship storyline and one official career storyline are discoverable in Social when their conditions are met, alongside one seed career fallback; stages and branch choices persist. |
+| Storylines | 3 | 1 | 4 | One official relationship storyline and two official career storylines are discoverable in Social when their conditions are met, alongside one seed career fallback; stages and branch choices persist. |
 | Vacancy templates | 40 | 0 | 40 | Public market generation uses official templates, including two 环流物流 vacancies, four 青禾教育科技 vacancies, three 澄明商业咨询 vacancies, one 栖岸文旅 vacancy, four 星桥电商 vacancies, four 新序汽车服务 vacancies, three 映界传媒 vacancies, and four 一屿生活科技 vacancies. |
 | Locations | 4 | 0 | 4 | 澄川市中央区、临江区、北部产业区、旧城文化区；稳定 location ID 已接入公司、企业、住房、人物和活动引用，内容校验会拒绝未知地点引用。 |
 | Venues | 6 | 0 | 6 | 云庭咖啡、衡川餐厅、北岸展馆、旧城影院、叶脉书店、临江夜市；每个场所绑定一个稳定地点和至少一个可执行活动。 |
@@ -68,7 +68,7 @@ Current content-count override for the goods row below: official/runtime items a
 
 Current asset-count override for the wealth rows below: official/runtime assets are 12 (not 11), including six non-vehicle assets and six vehicle tiers; the `asset.fine-jewelry` purchase/sale slice is covered by the existing desktop/mobile high-value collectible flow.
 
-Current storyline-count override: official/runtime storylines are now 2/3 and official/runtime dialogues are 3/4; the warehouse-to-office career storyline is gated by the current logistics job, creates an internal dispatch opportunity, and is covered by desktop/mobile E2E.
+Current storyline-count override: official/runtime storylines are now 3/4 and official/runtime dialogues are 6/7; the warehouse-to-office and first-real-project career storylines are gated by their current jobs, produce real outcomes/opportunities, and are covered by desktop/mobile E2E.
 
 Current long-run simulation override: `npm run content:simulate` runs all 9 fixed-seed strategies through day 1825 (the fifth year boundary), producing 5 annual records and 0 errors per strategy; the five-year browser strategy matrix remains verification work.
 

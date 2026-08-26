@@ -215,5 +215,22 @@ export const officialCharacters = [
         "label": "长期合作"
       }
     ]
+  },
+  {
+    "id": "character.guqing",
+    "contentStatus": "official",
+    "name": "顾清",
+    "description": "澄明商业咨询的项目负责人，愿意把研究工作带到真正的客户现场。",
+    "tags": ["relationship", "career"],
+    "identity": "咨询项目负责人",
+    "preferredInteractionCategories": ["work"],
+    "initialRelationship": 0,
+    "locationId": "location.central",
+    "stages": [
+      { "threshold": 0, "label": "项目联系" },
+      { "threshold": 25, "label": "熟悉" },
+      { "threshold": 50, "label": "信任" },
+      { "threshold": 75, "label": "长期合作" }
+    ]
   }
 ] satisfies readonly CharacterDefinition[];

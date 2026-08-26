@@ -689,6 +689,18 @@ describe('game action dispatcher', () => {
     expect(chosen.state.lifeHistory.at(-1)).toMatchObject({ title: '从仓库走进办公室：有兴趣' });
   });
 
+  it('runs the consulting project storyline through preparation and a settled outcome', () => {
+    const state = { ...createInitialState(contentRegistry, balanceConfig, 7), currentJobId: 'job.research-assistant', employment: { ...createInitialState(contentRegistry, balanceConfig, 7).employment!, jobId: 'job.research-assistant', companyId: 'company.clearview-consulting' } };
+    const started = dispatchGameAction(state, { type: 'start_storyline', storylineId: 'storyline.first-real-project' }, contentRegistry, balanceConfig);
+    const invited = dispatchGameAction(started.state, { type: 'choose_storyline_branch', storylineId: 'storyline.first-real-project', branchId: 'join' }, contentRegistry, balanceConfig);
+    const prepared = dispatchGameAction(invited.state, { type: 'choose_storyline_branch', storylineId: 'storyline.first-real-project', branchId: 'deep-prep' }, contentRegistry, balanceConfig);
+    const settled = dispatchGameAction(prepared.state, { type: 'choose_storyline_branch', storylineId: 'storyline.first-real-project', branchId: 'data-judgment' }, contentRegistry, balanceConfig);
+    expect(settled.error).toBeUndefined();
+    expect(settled.state.cash).toBe(balanceConfig.initialCash + 500);
+    expect(settled.state.flags.consulting_project_completed).toBe(true);
+    expect(settled.state.lifeHistory.at(-1)).toMatchObject({ title: '第一次真正的项目：根据现有数据给出初步判断' });
+  });
+
   it('completes a reached milestone with its reward, history, and monthly highlight', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 12), cash: 10_000 };
     const result = dispatchGameAction(state, { type: 'start_week' }, contentRegistry, balanceConfig);
