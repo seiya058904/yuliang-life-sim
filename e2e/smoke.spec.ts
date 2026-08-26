@@ -85,6 +85,16 @@ test('shows the persisted service history beside the service market', async ({ p
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础理发');
 });
 
+test('discovers the expanded daily services and subscriptions', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const styling = page.getByRole('heading', { name: '专业形象咨询' }).locator('..').locator('..');
+  await styling.getByRole('button', { name: '使用服务' }).click();
+  await expect(page.getByRole('region', { name: '服务记录' })).toContainText('专业形象咨询');
+  const video = page.getByRole('heading', { name: '视频会员' }).locator('..').locator('..');
+  await video.getByRole('button', { name: '开通订阅' }).click();
+  await expect(video.getByRole('button', { name: '取消订阅' })).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

@@ -232,6 +232,22 @@ describe('余量 app flow', () => {
     expect(screen.getByText('取消基础通信套餐')).toBeInTheDocument();
   });
 
+  it('discovers the expanded daily service and subscription content', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const styling = screen.getByRole('heading', { name: '专业形象咨询' }).closest('.item-row');
+    expect(styling).not.toBeNull();
+    await user.click(within(styling as HTMLElement).getByRole('button', { name: '使用服务' }));
+    expect(screen.getByRole('region', { name: '服务记录' })).toHaveTextContent('专业形象咨询');
+
+    const video = screen.getByRole('heading', { name: '视频会员' }).closest('.item-row');
+    expect(video).not.toBeNull();
+    await user.click(within(video as HTMLElement).getByRole('button', { name: '开通订阅' }));
+    expect(within(video as HTMLElement).getByRole('button', { name: '取消订阅' })).toBeInTheDocument();
+  });
+
   it('uses the vehicle annual service from the shop when a vehicle is owned', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
