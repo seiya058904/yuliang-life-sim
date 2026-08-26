@@ -61,7 +61,7 @@ export const officialActivities = [
     tags: ['life', 'travel', 'education'],
     category: 'travel',
     financialCategory: 'travel',
-    locationId: 'location.north',
+    locationId: 'location.industrial',
     familiarityTags: ['design'],
     options: [{ id: 'exhibition', label: '看展', durationMinutes: 240, cashCost: 280, cooldownDays: 21, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 2 }, { type: 'attribute', attribute: 'professional', amount: 1 }] }],
   },

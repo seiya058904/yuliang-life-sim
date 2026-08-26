@@ -8,7 +8,7 @@ Scope: this matrix audits `docs/NEXT-UPDATE-FOUNDATION.md` as the sole product/c
 | --- | --- |
 | Branch | `codex/yuliang-completion` |
 | Content validation | `npm run content:validate` passed: 17 jobs, 31 items, 6 services, 5 subscriptions, 6 housing, 6 characters, 35 events, 4 event chains, 3 businesses, 11 assets, 10 activities, 4 venues, 4 courses, 8 investments. |
-| Unit/component tests | `npm test` passed: 20 files, 203 tests. |
+| Unit/component tests | `npm test` passed: 20 files, 204 tests. |
 | Browser E2E | `npm run e2e` passed: 30 specs / 60 project runs, desktop and mobile smoke plus named-city-venue, city-development, industrial-hub-city-event, official-storyline-dialogue, company-expansion, qualifying-manager headhunter, listed-business-equity, high-value-asset, persisted-wealth-milestone, housing-mortgage, second-home-rental, private-equity purchase, private-equity exit, wealth-portfolio-summary/history, travel-cooldown, service-history, expanded daily services/subscriptions, riverside night-market, industrial-design-exhibition, vehicle-maintenance-history, vehicle-annual-service, ambient-city-sightings, friend-specific-cafe, friend-specific-cinema, old-town-cultural-trip, preference-matching-gift, milestone-profile, first-investment-dividend, and Zhou-business-interaction flows. |
 | Production build | `npm run build` passed: content validation, TypeScript build, Vite build. |
 
@@ -34,7 +34,7 @@ Counts are separated by direct official content, seed content, and the composed 
 | Messages | 0 | 0 | Runtime-generated | Relationship interactions enqueue up to 30 persisted messages; reading a message writes a relationship history record. |
 | Storylines | 1 | 1 | 2 | One official relationship storyline and one seed career storyline are discoverable in Social; stages and branch choices persist. |
 | Vacancy templates | 17 | 0 | 17 | Public market generation uses official templates, including two 环流物流 vacancies. |
-| Locations | 4 | 0 | 4 | 澄川市中央区、临江区、北部产业区、旧城文化区；稳定 location ID 已接入公司、企业、住房、人物和活动引用。 |
+| Locations | 4 | 0 | 4 | 澄川市中央区、临江区、北部产业区、旧城文化区；稳定 location ID 已接入公司、企业、住房、人物和活动引用，内容校验会拒绝未知地点引用。 |
 | Venues | 4 | 0 | 4 | 云庭咖啡、衡川餐厅、北岸展馆、旧城影院；每个场所绑定一个稳定地点和至少一个可执行活动。 |
 | Milestones | 9 | 2 | 9 | Official milestones replace seed overlap in runtime; first investment dividend is an authored persisted milestone. |
 

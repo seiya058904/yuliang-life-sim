@@ -90,4 +90,15 @@ describe('content validator', () => {
     expect(result.valid).toBe(false);
     expect(result.errors.join('\n')).toMatch(/排班|招聘人物/);
   });
+
+  it('rejects content that points at an unknown stable location', () => {
+    const invalid: ContentRegistry = {
+      ...validRegistry,
+      locations: [{ id: 'location.central', contentStatus: 'official', name: '中央区', description: '测试地点', region: '澄川市', transportCostMultiplier: 1 }],
+      activities: [{ id: 'activity.invalid-location', contentStatus: 'official', name: '测试活动', description: '测试', category: 'culture', options: [{ id: 'visit', label: '参观', durationMinutes: 60, cashCost: 1 }], locationId: 'location.missing' }],
+    };
+    const result = validateContent(invalid);
+    expect(result.valid).toBe(false);
+    expect(result.errors.join('\n')).toContain('活动 activity.invalid-location 引用了未知地点');
+  });
 });

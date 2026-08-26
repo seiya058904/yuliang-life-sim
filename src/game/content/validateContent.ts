@@ -51,6 +51,9 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     locations: new Set((registry.locations ?? []).map((entry) => entry.id)),
     venueActivities: new Set((registry.activities ?? []).map((entry) => entry.id)),
   };
+  const checkLocation = (locationId: ContentId | undefined, owner: string): void => {
+    if (locationId && !known.locations.has(locationId)) errors.push(`${owner} 引用了未知地点: ${locationId}`);
+  };
 
   for (const [category, collection] of collections) {
     for (const entry of collection) {
@@ -207,8 +210,8 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     checkCondition(item.requirements, `商品 ${item.id}`); checkEffects(item.effects, `商品 ${item.id}`);
     item.capabilities?.forEach((id) => { if (!registry.vocabulary.capabilities.includes(id)) errors.push(`商品 ${item.id} 引用了未知 Capability: ${id}`); });
   });
-  registry.housing.forEach((home) => { if (home.rentPerDay < 0 || home.valuation < 0 || home.furnitureCapacity < 0) errors.push(`住房 ${home.id} 的数值无效`); checkCondition(home.requirements, `住房 ${home.id}`); checkEffects(home.effects, `住房 ${home.id}`); });
-  registry.businesses.forEach((business) => { if (business.price < 0 || business.priceLevels.length === 0 || business.wageLevels.length === 0 || business.inventoryLevels.length === 0) errors.push(`企业 ${business.id} 的配置无效`); checkCondition(business.requirements, `企业 ${business.id}`); checkEffects(business.effects, `企业 ${business.id}`); });
+  registry.housing.forEach((home) => { if (home.rentPerDay < 0 || home.valuation < 0 || home.furnitureCapacity < 0) errors.push(`住房 ${home.id} 的数值无效`); checkLocation(home.locationId, `住房 ${home.id}`); checkCondition(home.requirements, `住房 ${home.id}`); checkEffects(home.effects, `住房 ${home.id}`); });
+  registry.businesses.forEach((business) => { if (business.price < 0 || business.priceLevels.length === 0 || business.wageLevels.length === 0 || business.inventoryLevels.length === 0) errors.push(`企业 ${business.id} 的配置无效`); checkLocation(business.locationId, `企业 ${business.id}`); checkCondition(business.requirements, `企业 ${business.id}`); checkEffects(business.effects, `企业 ${business.id}`); });
   registry.assets.forEach((asset) => { if (asset.price < 0 || asset.valuation < 0 || asset.volatility < 0) errors.push(`资产 ${asset.id} 的数值无效`); checkCondition(asset.requirements, `资产 ${asset.id}`); checkEffects(asset.effects, `资产 ${asset.id}`); });
   registry.characters.forEach((character) => { if (character.initialRelationship < 0 || character.initialRelationship > 100) errors.push(`人物 ${character.id} 的初始关系无效`); });
   registry.events.forEach((event) => {
@@ -241,6 +244,7 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
   });
   registry.milestones.forEach((milestone) => { checkCondition(milestone.condition, `里程碑 ${milestone.id}`); checkEffects(milestone.effects, `里程碑 ${milestone.id}`); });
   for (const activity of registry.activities ?? []) {
+    checkLocation(activity.locationId, `活动 ${activity.id}`);
     if (!activity.options.length) errors.push(`活动 ${activity.id} 必须至少有一个 Option`);
     for (const option of activity.options) {
       if (!Number.isInteger(option.durationMinutes) || option.durationMinutes <= 0 || option.cashCost < 0) errors.push(`活动 ${activity.id} 的 Option ${option.id} 数值无效`);
@@ -275,10 +279,12 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     if (investment.companyId && !known.companies.has(investment.companyId)) errors.push(`投资 ${investment.id} 引用了未知公司: ${investment.companyId}`);
   }
   for (const company of registry.companies ?? []) {
+    checkLocation(company.locationId, `公司 ${company.id}`);
     company.jobIds?.forEach((id) => { if (!known.jobs.has(id)) errors.push(`公司 ${company.id} 引用了未知工作: ${id}`); });
     company.characterIds?.forEach((id) => { if (!known.characters.has(id)) errors.push(`公司 ${company.id} 引用了未知人物: ${id}`); });
     company.investmentIds?.forEach((id) => { if (!known.investments.has(id)) errors.push(`公司 ${company.id} 引用了未知投资: ${id}`); });
   }
+  for (const character of registry.characters) checkLocation(character.locationId, `人物 ${character.id}`);
   for (const template of registry.vacancyTemplates ?? []) {
     if (!known.jobs.has(template.jobId)) errors.push('VacancyTemplate ' + template.id + ' 引用了未知工作: ' + template.jobId);
     if (!known.companies.has(template.companyId)) errors.push('VacancyTemplate ' + template.id + ' 引用了未知公司: ' + template.companyId);
