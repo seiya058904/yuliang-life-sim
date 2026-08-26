@@ -21,6 +21,12 @@ describe('seed content registry', () => {
       'activity.browse-bookstore',
       'activity.city-photography',
       'activity.weekend-camping',
+      'activity.new-restaurant',
+      'activity.fine-dining',
+      'activity.luxury-dining',
+      'activity.specialty-cafe',
+      'activity.home-gaming',
+      'activity.concert',
       'activity.brand-film-project',
     ]);
   });

@@ -453,6 +453,19 @@ test('discovers the industrial design exhibition trip', async ({ page }) => {
   await expect(exhibition.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
 
+test('discovers and plans the expanded dining and concert activities', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const dining = page.locator('article.activity-card').filter({ hasText: '精品餐厅晚餐 · 慢慢吃完' });
+  await expect(dining).toContainText('¥380');
+  await expect(dining.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
+  const concert = page.locator('article.activity-card').filter({ hasText: '演唱会 · 去现场' });
+  await expect(concert).toContainText('¥680');
+  await expect(concert.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
+  await dining.getByRole('button', { name: '安排到本周自由时间' }).click();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '精品餐厅晚餐 · dinner' })).toBeVisible();
+});
+
 test('acquires camping gear and unlocks the weekend camping plan', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
