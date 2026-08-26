@@ -160,6 +160,16 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('links listed company equity to its corresponding official companies', () => {
+    expect(contentRegistry.companies.filter((company) => company.investmentIds?.length).map((company) => [company.id, company.investmentIds])).toEqual([
+      ['company.yuanwang', ['investment.yuanwang-retail-equity']],
+      ['company.qiming', ['investment.qiming-equity']],
+      ['company.harbor-travel', ['investment.harbor-travel-equity']],
+      ['company.starbridge-ecommerce', ['investment.starbridge-ecommerce-equity']],
+      ['company.isle-lifestyle', ['investment.isle-lifestyle-equity']],
+    ]);
+  });
+
   it('exposes official vehicle assets from the content registry', () => {
     expect(contentRegistry.assets.filter((asset) => asset.contentStatus === 'official' && asset.kind === 'vehicle').map((asset) => asset.id)).toEqual([
       'asset.used-compact',
