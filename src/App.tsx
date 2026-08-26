@@ -44,6 +44,44 @@ const financialLabels: Record<string, string> = { wage: '工资', side_job: '兼
 const investmentRiskLabels: Record<string, string> = { low: '低', medium: '中', high: '高' };
 const investmentKindLabels: Record<string, string> = { savings: '储蓄', fund: '基金', gold: '黄金', stock: '股票', reit: '房产基金', company_equity: '企业股权', property_fund: '房产基金', private_equity: '私人股权' };
 
+function acquisitionRoute(condition: Parameters<typeof explainCondition>[0]): { view: ViewId; label: string } {
+  switch (condition.type) {
+    case 'relationship_at_least':
+    case 'relationship_stage_at_least':
+      return { view: 'relations', label: '去社交推进关系' };
+    case 'owns_item':
+      return { view: 'shop', label: '去商店准备商品' };
+    case 'has_capability':
+    case 'flag':
+    case 'completed_event':
+      return { view: 'relations', label: '去社交寻找机会' };
+    case 'cash_at_least':
+    case 'owns_asset':
+    case 'owns_investment':
+    case 'housing_is':
+      return { view: 'wealth', label: '去财富页查看准备项' };
+    default:
+      return { view: 'work', label: '去职业页提升条件' };
+  }
+}
+
+function AcquisitionHint({ condition, game, onNavigate }: { condition: Parameters<typeof explainCondition>[0]; game: GameState; onNavigate: (view: ViewId) => void }) {
+  const route = acquisitionRoute(condition);
+  return <div className="requirement-box"><strong>获取路径</strong><span className="requirement-missing">{explainCondition(condition, game, contentRegistry, balanceConfig)}</span><button className="text-button" onClick={() => onNavigate(route.view)}>{route.label}</button></div>;
+}
+
+function AcquisitionRequirementsPanel({ game, onNavigate, scope }: { game: GameState; onNavigate: (view: ViewId) => void; scope: 'shop' | 'life' | 'wealth' }) {
+  const entries: Array<{ id: string; name: string; condition: Parameters<typeof explainCondition>[0] }> = [];
+  if (scope === 'shop') contentRegistry.items.filter((item) => item.requirements && !evaluateCondition(item.requirements, game, contentRegistry, balanceConfig)).forEach((item) => entries.push({ id: item.id, name: item.name, condition: item.requirements! }));
+  if (scope === 'life') contentRegistry.housing.filter((home) => home.requirements && !game.unlockedHousingIds.includes(home.id) && !evaluateCondition(home.requirements, game, contentRegistry, balanceConfig)).forEach((home) => entries.push({ id: home.id, name: home.name, condition: home.requirements! }));
+  if (scope === 'wealth') {
+    contentRegistry.investments?.filter((investment) => investment.requirements && !evaluateCondition(investment.requirements, game, contentRegistry, balanceConfig)).forEach((investment) => entries.push({ id: investment.id, name: investment.name, condition: investment.requirements! }));
+    contentRegistry.assets.filter((asset) => asset.requirements && !game.unlockedAssetIds.includes(asset.id) && !evaluateCondition(asset.requirements, game, contentRegistry, balanceConfig)).forEach((asset) => entries.push({ id: asset.id, name: asset.name, condition: asset.requirements! }));
+  }
+  if (!entries.length) return null;
+  return <section className="detail-panel" aria-label="获取路径"><div className="section-heading compact"><div><span className="eyebrow">条件透明</span><h2>还差什么，下一步去哪</h2></div><p>锁定内容会显示真实条件和现有可执行入口；满足后回来即可继续操作。</p></div><div className="item-list">{entries.map((entry) => <div className="item-row" key={entry.id}><div><h3>{entry.name}</h3></div><AcquisitionHint condition={entry.condition} game={game} onNavigate={onNavigate} /></div>)}</div></section>;
+}
+
 function App() {
   const game = gameStore((store) => store.game);
   const activeView = gameStore((store) => store.activeView);
@@ -106,10 +144,10 @@ function App() {
           <Metric label="生活水平" value={lifestyle} /><Metric label="能力" value={game.ability} /><Metric label="声誉" value={game.reputation} /><Metric label="关系" value={Object.values(game.relationships).reduce((sum, value) => sum + value, 0)} />
         </section>
         {lastError && <div className="notice error" role="alert">{lastError}</div>}
-        {activeView === 'life' && <LifeView game={game} dispatch={dispatch} />}
+        {activeView === 'life' && <><LifeView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="life" /></>}
         {activeView === 'work' && <><CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={setView} /><section className="planning-section"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><CourseMarket game={game} dispatch={dispatch} /><ForecastPanel game={game} /></>}
-        {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><ActivityAcquisitionHints game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><WishlistPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></>}
-        {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessPublicFloatView game={game} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /><PortfolioAllocation game={game} /><PortfolioHistory game={game} /></>}
+        {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><WishlistPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></>}
+        {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="wealth" /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessPublicFloatView game={game} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /><PortfolioAllocation game={game} /><PortfolioHistory game={game} /></>}
         {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><GiftPanel game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></>}
         {activeView === 'city' && <CityView game={game} onNavigate={setView} />}
         {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><WealthMilestoneView game={game} /><MilestoneProgressView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /><WorldEquityHistoryView game={game} /></>}

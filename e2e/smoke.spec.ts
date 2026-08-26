@@ -348,6 +348,15 @@ test('discovers the expanded daily services and subscriptions', async ({ page })
   await expect(video.getByRole('button', { name: '取消订阅' })).toBeVisible();
 });
 
+test('shows locked wealth requirements with an actionable acquisition route', async ({ page }) => {
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  const panel = page.getByRole('region', { name: '获取路径' });
+  await expect(panel).toContainText('精品珠宝');
+  await expect(panel).toContainText('需要能力 市场洞察');
+  await panel.getByRole('button', { name: '去社交寻找机会' }).first().click();
+  await expect(page.getByRole('heading', { name: '社交', exact: true })).toBeVisible();
+});
+
 test('negotiates salary and persists a voluntary departure in career history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
