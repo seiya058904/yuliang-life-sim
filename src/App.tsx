@@ -292,11 +292,15 @@ function ShopView({ game, dispatch }: { game: GameState; dispatch: (action: Game
   const categories = ['all', ...new Set(contentRegistry.items.map((item) => item.category))];
   const items = contentRegistry.items.filter((item) => category === 'all' || item.category === category);
   const scheduleActivity = (activityId: ContentId, optionId: string) => {
+    const activityOption = contentRegistry.activities?.find((entry) => entry.id === activityId)?.options.find((entry) => entry.id === optionId);
+    const isTwoDayActivity = activityOption?.durationMinutes === 2880;
     for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) {
       if (weekday < game.calendar.weekday) continue;
       for (const slot of ['day', 'evening'] as const) {
         if (slot === 'day' && game.employment?.schedule.workDays.includes(weekday)) continue;
         if (game.weeklyPlan.days[weekday][slot].kind !== 'free') continue;
+        const nextWeekday: Weekday = weekday === 7 ? 1 : weekday + 1 as Weekday;
+        if (isTwoDayActivity && (slot !== 'day' || game.weeklyPlan.days[nextWeekday].day.kind !== 'free' || game.weeklyPlan.days[nextWeekday].evening.kind !== 'free' || game.employment?.schedule.workDays.includes(nextWeekday))) continue;
         dispatch({ type: 'set_plan', weekday, slot, activity: { kind: 'activity', activityId, optionId } });
         return;
       }

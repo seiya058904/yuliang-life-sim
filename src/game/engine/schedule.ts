@@ -55,6 +55,12 @@ export function validateWeeklyPlan(plan: WeeklyPlan, employment: EmploymentState
         if (!option) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}活动选项不存在`);
         else if (slot === 'day' && option.durationMinutes > DAY_END - DAY_START && option.durationMinutes !== LONG_ACTIVITY_DURATION) errors.push(`周${weekday}白天活动时长超出可规划时间`);
         else if (slot === 'evening' && option.durationMinutes > EVENING_END - EVENING_START) errors.push(`周${weekday}晚间活动时长超出可规划时间`);
+        else if (slot === 'day' && option.durationMinutes === LONG_ACTIVITY_DURATION) {
+          const nextWeekday = weekday === 7 ? 1 : weekday + 1 as Weekday;
+          const nextDayPlan = plan.days[nextWeekday];
+          if (nextDayPlan.day.kind !== 'free' || nextDayPlan.evening.kind !== 'free') errors.push(`周${weekday}两日活动与周${weekdayLabel(nextWeekday)}计划冲突`);
+          if (employment?.schedule.workDays.includes(nextWeekday)) errors.push(`周${weekday}两日活动与周${weekdayLabel(nextWeekday)}正式工作排班冲突`);
+        }
       } else if (activity.kind === 'course') {
         const course = content.courses?.find((entry) => entry.id === activity.courseId);
         if (!course) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}课程不存在`);

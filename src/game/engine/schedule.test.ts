@@ -49,6 +49,18 @@ describe('weekly schedule', () => {
     expect(activityAtTime({ day: 8, hour: 8, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
     expect(activityAtTime({ day: 8, hour: 10, minute: 0 }, plan, undefined, travelContent).kind).toBe('free');
   });
+
+  it('rejects two-day activities that overlap the following day plan or work schedule', () => {
+    const plan = createDefaultWeeklyPlan();
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay' };
+    plan.days[7].evening = { kind: 'study', durationMinutes: 120 };
+    const weekendEmployment = { ...employment, schedule: { workDays: [7] as const, startMinute: 9 * 60, endMinute: 17 * 60 } };
+
+    expect(validateWeeklyPlan(plan, weekendEmployment, travelContent)).toEqual([
+      '周6两日活动与周日计划冲突',
+      '周6两日活动与周日正式工作排班冲突',
+    ]);
+  });
 });
 
 function planFor(evening: WeeklyPlan['days'][1]['evening']): WeeklyPlan {

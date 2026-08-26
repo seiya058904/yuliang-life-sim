@@ -499,7 +499,7 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
   await expect(luxury).toContainText('¥18,000');
   await premiumWeekend.getByRole('button', { name: '安排到本周自由时间' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await expect(page.getByRole('button', { name: '周一白天计划' })).toContainText('品质周末旅行 · premium-stay');
+  await expect(page.getByRole('button', { name: /周[一二三四五六日]白天计划/ }).filter({ hasText: '品质周末旅行 · premium-stay' })).toBeVisible();
 });
 
 test('discovers a contact-specific activity and schedules it with its relationship gate', async ({ page }) => {
