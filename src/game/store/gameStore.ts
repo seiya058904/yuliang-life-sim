@@ -117,6 +117,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.assets = Object.fromEntries(Object.entries(candidate.assets ?? {}).filter(([id]) => knownIds(content, 'assets').has(id)));
   const locationIds = new Set((content.locations ?? []).map((entry) => entry.id));
   candidate.locationVisits = Object.fromEntries(Object.entries(candidate.locationVisits ?? {}).filter(([id, value]) => locationIds.has(id) && Number.isInteger(value) && Number(value) > 0).map(([id, value]) => [id, Number(value)]));
+  candidate.locationDevelopment = Object.fromEntries(Object.entries(candidate.locationDevelopment ?? {}).filter(([id, value]) => locationIds.has(id) && Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 5).map(([id, value]) => [id, Number(value)]));
   const investmentIds = new Set((content.investments ?? []).map((entry) => entry.id));
   candidate.investments = Object.fromEntries(Object.entries(candidate.investments ?? {}).filter(([id]) => investmentIds.has(id)));
   const subscriptionIds = new Set((content.subscriptions ?? []).map((entry) => entry.id));

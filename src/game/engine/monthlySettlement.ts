@@ -56,6 +56,14 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       currentJobId: state.currentJobId,
     };
     state.worldHistory = [...(state.worldHistory ?? []).filter((entry) => entry.year !== snapshot.year), snapshot].slice(-10);
+    const development = { ...(state.locationDevelopment ?? {}) };
+    for (const location of content.locations ?? []) {
+      const visits = state.locationVisits?.[location.id] ?? 0;
+      const businesses = Object.values(state.businesses).filter((holding) => content.businesses.find((business) => business.id === holding.businessId)?.locationId === location.id).length;
+      const growth = (businesses > 0 ? 1 : 0) + (visits >= 3 ? 1 : 0);
+      development[location.id] = Math.min(5, Math.max(0, development[location.id] ?? 0) + growth);
+    }
+    state.locationDevelopment = development;
   }
   state.financialLedger = emptyFinancialLedger(state.calendar.month, state.cash, netWorthEnd);
   state.monthlyLedger = emptyMonthlyLedger(ledger.netWorthEnd);

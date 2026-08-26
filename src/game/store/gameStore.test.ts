@@ -129,11 +129,12 @@ describe('game store persistence', () => {
 
   it('keeps known location visits and removes unknown location ids during migration', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
-    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, locationVisits: { 'location.central': 2, 'location.unknown': 4, 'location.riverside': 0 } }));
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, locationVisits: { 'location.central': 2, 'location.unknown': 4, 'location.riverside': 0 }, locationDevelopment: { 'location.central': 3, 'location.unknown': 7, 'location.riverside': -1 } }));
 
     const restored = loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.locationVisits).toEqual({ 'location.central': 2 });
+    expect(restored.locationDevelopment).toEqual({ 'location.central': 3 });
   });
 
   it('keeps valid storyline stages and removes unknown storyline state during migration', () => {

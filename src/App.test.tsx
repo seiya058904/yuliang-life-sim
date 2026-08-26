@@ -355,7 +355,7 @@ describe('余量 app flow', () => {
   it('shows persisted location visits in the city view', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
-    appStore.setState({ game: { ...game, locationVisits: { 'location.central': 3 } } });
+    appStore.setState({ game: { ...game, locationVisits: { 'location.central': 3 }, locationDevelopment: { 'location.central': 2 } } });
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '城市' }));
@@ -363,6 +363,7 @@ describe('余量 app flow', () => {
     const central = screen.getByRole('heading', { name: '中央区' }).closest('article');
     expect(central).not.toBeNull();
     expect(central).toHaveTextContent('已访问 3 次');
+    expect(central).toHaveTextContent('发展阶段 2/5');
   });
 
   it('discovers and schedules the official short trip activity', async () => {

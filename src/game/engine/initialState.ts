@@ -40,6 +40,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     financialHistory: [],
     annualHistory: [],
     worldHistory: [],
+    locationDevelopment: Object.fromEntries((content.locations ?? []).map((location) => [location.id, 0])),
     jobExperience: {},
     courseProgress: {},
     careerExperience: {},
