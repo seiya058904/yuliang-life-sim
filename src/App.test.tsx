@@ -426,4 +426,16 @@ describe('余量 app flow', () => {
     expect(summary).toHaveTextContent('车辆与收藏');
     expect(summary).toHaveTextContent('¥1,000');
   });
+
+  it('shows completed content milestones in the profile', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, completedMilestones: ['milestone.cash-10000'] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    const records = screen.getByRole('region', { name: '里程碑记录' });
+    expect(records).toHaveTextContent('第一万现金');
+    expect(records).toHaveTextContent('已达成');
+  });
 });

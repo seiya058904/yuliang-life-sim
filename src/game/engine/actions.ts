@@ -2,7 +2,7 @@ import type { BalanceConfig } from '../balance/config';
 import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity } from '../content/contracts';
 import { evaluateCondition } from './conditions';
 import { calculateNetWorth } from './economy';
-import { applyContentEffects, cloneGameState, itemCost, refreshUnlocks } from './effects';
+import { applyContentEffects, applyReachedMilestones, cloneGameState, itemCost, refreshUnlocks } from './effects';
 import { advanceSimulation } from './simulation';
 import { activityAtTime, defaultJobSchedule, validateWeeklyPlan } from './schedule';
 import { groupForCategory, recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
@@ -889,6 +889,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
     default:
       return fail(input, '无法识别的行动');
   }
+  applyReachedMilestones(state, content, balance, effects);
   syncLegacyMonthlyLedger(state, content, balance);
   return { state, effects };
 }

@@ -5,7 +5,7 @@ import { calendarForDay } from './calendar';
 import { closeMonth } from './monthlySettlement';
 import { applyCareerExperience, careerRequirementsSatisfied } from './careerProgression';
 import { commuteCostMultiplier, housingRentPerDay, recordLocationVisit } from './locations';
-import { applyContentEffects, chooseAmbientEvent, chooseWeightedEvent, cloneGameState, modifierValue } from './effects';
+import { applyContentEffects, applyReachedMilestones, chooseAmbientEvent, chooseWeightedEvent, cloneGameState, modifierValue } from './effects';
 import { activityAtTime, defaultJobSchedule } from './schedule';
 import { advanceMinutes, absoluteMinute } from './time';
 import { evaluateCondition } from './conditions';
@@ -45,6 +45,7 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
         state.eventsToday = 0;
       }
       for (let day = state.lastSettledDay + 1; day < next.day; day += 1) settleDay(state, day, content, balance, effects);
+      applyReachedMilestones(state, content, balance, effects);
       state.lastSettledDay = next.day - 1;
       if (next.day % 28 === 1) {
         const resumeMode = state.autoRepeatPlan ? 'running' : 'planning';

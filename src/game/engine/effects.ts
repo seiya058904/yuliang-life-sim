@@ -2,8 +2,9 @@ import type { BalanceConfig } from '../balance/config';
 import type { ContentId, ContentRegistry, EffectDefinition, GameEffect, GameState, ItemDefinition, PermanentModifierDefinition } from '../content/contracts';
 import { evaluateCondition, getPlayerStage } from './conditions';
 import { nextRandom, weightedPick } from './rng';
-import { applyAttributeDelta } from './attributes';
+import { applyAttributeDelta, createInitialAttributes } from './attributes';
 import { recordStateFinancialEntry } from './financialLedger';
+import { appendLifeRecord } from './lifeHistory';
 
 export const cloneGameState = (state: GameState): GameState => structuredClone(state);
 
@@ -60,7 +61,10 @@ export function applyContentEffects(
           applyAttributeDelta(state, 'fitness', effect.amount);
         } else {
           state[effect.stat] = Math.max(0, state[effect.stat] + effect.amount);
-          if (effect.stat === 'lifestyle') applyAttributeDelta(state, 'appearance', effect.amount);
+          if (effect.stat === 'lifestyle') {
+            state.attributes ??= createInitialAttributes(state.ability, state.lifestyle);
+            state.attributes.appearance = Math.max(0, state.attributes.appearance + effect.amount);
+          }
         }
         output.push({ type: 'stat', stat: effect.stat, amount: effect.amount });
         break;
@@ -115,6 +119,36 @@ export function applyContentEffects(
       case 'set_flag': state.flags[effect.flag] = true; break;
       case 'advance_chain': state.chainStages[effect.chainId] = Math.max(state.chainStages[effect.chainId] ?? 0, effect.stage); break;
     }
+  }
+}
+
+export function applyReachedMilestones(state: GameState, content: ContentRegistry, balance: BalanceConfig, output: GameEffect[]): void {
+  state.completedMilestones ??= [];
+  for (const milestone of content.milestones) {
+    if (state.completedMilestones.includes(milestone.id) || !evaluateCondition(milestone.condition, state, content, balance)) continue;
+    state.completedMilestones.push(milestone.id);
+    const milestoneRecord = {
+      id: `life.milestone.${milestone.id}`,
+      day: state.time.day,
+      category: 'event',
+      title: `达成里程碑：${milestone.name}`,
+      detail: milestone.description,
+      sourceId: milestone.id,
+    } as const;
+    const existingHistory = state.lifeHistory ?? [];
+    state.lifeHistory = existingHistory.length > 0
+      ? [...existingHistory.slice(0, -1), milestoneRecord, existingHistory.at(-1)!]
+      : appendLifeRecord(existingHistory, milestoneRecord);
+    state.monthlyHighlights = [...(state.monthlyHighlights ?? []).filter((entry) => entry.sourceId !== milestone.id), {
+      id: `milestone.${milestone.id}`,
+      kind: 'attribute_milestone',
+      day: state.time.day,
+      label: `里程碑 · ${milestone.name}`,
+      sourceId: milestone.id,
+    }];
+    output.push({ type: 'milestone', milestoneId: milestone.id });
+    output.push({ type: 'message', text: `达成里程碑：${milestone.name}` });
+    applyContentEffects(state, milestone.effects ?? [], content, balance, output);
   }
 }
 

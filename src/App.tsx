@@ -110,7 +110,7 @@ function App() {
         {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /></>}
         {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></>}
         {activeView === 'city' && <CityView game={game} />}
-        {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><WealthMilestoneView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /></>}
+        {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><WealthMilestoneView game={game} /><MilestoneProgressView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /></>}
       </main>
 
       <footer className="footer-note">你负责规划，世界负责继续运行。</footer>
@@ -325,6 +325,12 @@ function ConfirmReset({ onCancel, onConfirm }: { onCancel: () => void; onConfirm
 function WealthMilestoneView({ game }: { game: GameState }) {
   if (!game.wealthMilestones?.length) return null;
   return <section className="detail-panel" aria-label="财富阶段记录"><span className="eyebrow">已走过的财富阶段</span><div className="item-list">{game.wealthMilestones.map((milestone) => <div className="item-row" key={milestone.id}><div><h3>{wealthTierForNetWorth(milestone.netWorth).name}</h3><p className="muted">第 {milestone.day} 天 · 净资产 {money(milestone.netWorth)}</p></div><span className="requirement-met">已记录</span></div>)}</div></section>;
+}
+
+function MilestoneProgressView({ game }: { game: GameState }) {
+  const milestones = contentRegistry.milestones.filter((milestone) => game.completedMilestones.includes(milestone.id));
+  if (!milestones.length) return null;
+  return <section className="detail-panel" aria-label="里程碑记录"><div className="section-heading compact"><div><span className="eyebrow">生活中的节点</span><h2>里程碑记录</h2></div><p>这些记录来自已经发生的选择，不是新的等级系统。</p></div><div className="item-list">{milestones.map((milestone) => <div className="item-row" key={milestone.id}><div><h3>{milestone.name}</h3><p className="muted">{milestone.description}</p></div><span className="requirement-met">已达成</span></div>)}</div></section>;
 }
 
 export default App;

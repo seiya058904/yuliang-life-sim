@@ -313,3 +313,24 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   await page.getByRole('button', { name: '财富', exact: true }).click();
   await expect(page.getByRole('region', { name: '财富组合摘要' })).toContainText('房产净值');
 });
+
+test('records and shows a reached milestone in the profile', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 10_000;
+    state.simulationMode = 'planning';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '开始本周' }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  const records = page.getByRole('region', { name: '里程碑记录' });
+  await expect(records).toContainText('第一万现金');
+  await expect(records).toContainText('已达成');
+
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一万现金');
+});

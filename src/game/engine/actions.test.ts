@@ -539,4 +539,16 @@ describe('game action dispatcher', () => {
     expect(advanced.state.opportunities).toEqual(expect.arrayContaining([expect.objectContaining({ jobId: 'job.delivery-shift', source: '徐可的朋友推荐' })]));
     expect(advanced.state.lifeHistory.at(-1)).toMatchObject({ category: 'relationship', sourceId: 'storyline.remote-connection' });
   });
+
+  it('completes a reached milestone with its reward, history, and monthly highlight', () => {
+    const state = { ...createInitialState(contentRegistry, balanceConfig, 12), cash: 10_000 };
+    const result = dispatchGameAction(state, { type: 'start_week' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.completedMilestones).toContain('milestone.cash-10000');
+    expect(result.state.reputation).toBe(state.reputation + 3);
+    expect(result.state.lifeHistory.at(-1)).toMatchObject({ category: 'event', sourceId: 'milestone.cash-10000', title: '达成里程碑：第一万现金' });
+    expect(result.state.monthlyHighlights).toEqual(expect.arrayContaining([expect.objectContaining({ kind: 'attribute_milestone', sourceId: 'milestone.cash-10000' })]));
+    expect(result.effects).toEqual(expect.arrayContaining([expect.objectContaining({ type: 'message', text: '达成里程碑：第一万现金' })]));
+  });
 });
