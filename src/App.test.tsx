@@ -246,6 +246,16 @@ describe('余量 app flow', () => {
     expect(screen.getByText('出售实用二手小车')).toBeInTheDocument();
   });
 
+  it('shows persisted vehicle maintenance records in the wealth view', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, assets: { 'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 35000, purchaseDay: 1, currentValuation: 34900 } }, financialLedger: { month: 2, nextSequence: 2, entries: [{ id: 'ledger.vehicle.1', day: 28, direction: 'expense', group: 'consumption', category: 'maintenance', amount: 300, cashDelta: -300, sourceType: 'vehicle', sourceId: 'asset.used-compact', label: '实用二手小车车辆成本' }], cashStart: 50000, netWorthStart: 50000 } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    expect(screen.getByRole('region', { name: '车辆维护记录' })).toHaveTextContent('实用二手小车车辆成本');
+  });
+
   it('buys and sells a reachable home through the life view', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
