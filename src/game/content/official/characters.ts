@@ -58,6 +58,11 @@ export const officialCharacters = [
     "preferredGiftTags": ["flower", "dessert"],
     "preferredActivityTags": ["film", "culture"],
     "initialRelationship": 5,
+    "careerHistory": [
+      { "startYear": 1, "title": "社区运营专员", "companyId": "company.yuanwang" },
+      { "startYear": 4, "title": "城市生活项目负责人", "companyId": "company.yuanwang" },
+      { "startYear": 8, "title": "独立生活顾问" }
+    ],
     "locationId": "location.riverside",
     "stages": [
       {
@@ -97,6 +102,11 @@ export const officialCharacters = [
     "preferredInteractionCategories": ["meal"],
     "preferredGiftTags": ["coffee"],
     "initialRelationship": 0,
+    "careerHistory": [
+      { "startYear": 1, "title": "招聘助理", "companyId": "company.clearview-consulting" },
+      { "startYear": 5, "title": "招聘顾问", "companyId": "company.clearview-consulting" },
+      { "startYear": 9, "title": "独立职业顾问" }
+    ],
     "locationId": "location.central",
     "stages": [
       {
@@ -129,6 +139,11 @@ export const officialCharacters = [
     "identity": "数码店店主",
     "preferredInteractionCategories": ["work"],
     "initialRelationship": 0,
+    "careerHistory": [
+      { "startYear": 1, "title": "技术支持", "companyId": "company.xinghe" },
+      { "startYear": 4, "title": "数码店主" },
+      { "startYear": 8, "title": "远程项目合伙人" }
+    ],
     "locationId": "location.central",
     "stages": [
       {
@@ -167,6 +182,10 @@ export const officialCharacters = [
     "identity": "房产经纪",
     "preferredInteractionCategories": ["meal"],
     "initialRelationship": 0,
+    "careerHistory": [
+      { "startYear": 1, "title": "房产顾问", "companyId": "company.yuanwang" },
+      { "startYear": 5, "title": "独立房产经纪" }
+    ],
     "locationId": "location.riverside",
     "stages": [
       {
@@ -202,6 +221,10 @@ export const officialCharacters = [
     ],
     "identity": "资深招聘顾问 / 猎头",
     "initialRelationship": 0,
+    "careerHistory": [
+      { "startYear": 1, "title": "招聘顾问", "companyId": "company.clearview-consulting" },
+      { "startYear": 7, "title": "资深猎头" }
+    ],
     "locationId": "location.central",
     "stages": [
       {
@@ -231,6 +254,11 @@ export const officialCharacters = [
     "identity": "咨询项目负责人",
     "preferredInteractionCategories": ["work"],
     "initialRelationship": 0,
+    "careerHistory": [
+      { "startYear": 1, "title": "研究顾问", "companyId": "company.clearview-consulting" },
+      { "startYear": 4, "title": "项目负责人", "companyId": "company.clearview-consulting" },
+      { "startYear": 9, "title": "清简咨询合伙人" }
+    ],
     "locationId": "location.central",
     "stages": [
       { "threshold": 0, "label": "项目联系" },
