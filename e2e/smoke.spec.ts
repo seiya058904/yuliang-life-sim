@@ -291,6 +291,42 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
     state.assets = {
       'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 1_200, purchaseDay: 1, currentValuation: 1_000 },
     };
+    state.financialHistory = [
+      {
+        month: 2,
+        income: { group: 'income', amount: 50, categories: { investment_dividend: 50 } },
+        consumption: { group: 'consumption', amount: 300, categories: { living: 300 } },
+        assetAllocation: { group: 'asset_allocation', amount: 1_000, categories: { investment_transfer: 1_000 } },
+        assetLiquidation: { group: 'asset_liquidation', amount: 0, categories: {} },
+        totalIncome: 50,
+        totalConsumption: 300,
+        totalAssetAllocation: 1_000,
+        totalAssetLiquidation: 0,
+        cashStart: 10_000,
+        cashEnd: 9_700,
+        cashChange: -300,
+        netWorthStart: 12_000,
+        netWorthEnd: 12_450,
+        netWorthChange: 450,
+      },
+      {
+        month: 3,
+        income: { group: 'income', amount: 80, categories: { investment_dividend: 80 } },
+        consumption: { group: 'consumption', amount: 300, categories: { living: 300 } },
+        assetAllocation: { group: 'asset_allocation', amount: 0, categories: {} },
+        assetLiquidation: { group: 'asset_liquidation', amount: 0, categories: {} },
+        totalIncome: 80,
+        totalConsumption: 300,
+        totalAssetAllocation: 0,
+        totalAssetLiquidation: 0,
+        cashStart: 9_700,
+        cashEnd: 9_900,
+        cashChange: 200,
+        netWorthStart: 12_450,
+        netWorthEnd: 12_300,
+        netWorthChange: -150,
+      },
+    ];
     state.simulationMode = 'paused';
     localStorage.setItem(key, JSON.stringify(state));
   }, { key: saveKey, state: initial });
@@ -308,10 +344,18 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   await expect(summary).toContainText('¥1,100');
   await expect(summary).toContainText('车辆与收藏');
   await expect(summary).toContainText('¥1,000');
+  const history = page.getByRole('region', { name: '财富组合历史' });
+  await expect(history).toContainText('第 2 月');
+  await expect(history).toContainText('第 3 月');
+  await expect(history).toContainText('现金 ¥10,000 → ¥9,700');
+  await expect(history).toContainText('净资产 ¥12,450 → ¥12,300');
+  await expect(history).toContainText('投资配置 ¥1,000');
+  await expect(history).toContainText('分红 ¥80');
 
   await page.reload();
   await page.getByRole('button', { name: '财富', exact: true }).click();
   await expect(page.getByRole('region', { name: '财富组合摘要' })).toContainText('房产净值');
+  await expect(page.getByRole('region', { name: '财富组合历史' })).toContainText('第 3 月');
 });
 
 test('records and shows a reached milestone in the profile', async ({ page }) => {

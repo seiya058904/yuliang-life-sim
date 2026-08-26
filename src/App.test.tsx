@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, beforeEach } from 'vitest';
 import App from './App';
 import { appStore } from './App';
+import type { MonthlyFinancialSummary } from './game/content/contracts';
 
 describe('余量 app flow', () => {
   beforeEach(() => { localStorage.clear(); appStore.getState().reset(1); localStorage.clear(); });
@@ -425,6 +426,39 @@ describe('余量 app flow', () => {
     expect(summary).toHaveTextContent('¥1,100');
     expect(summary).toHaveTextContent('车辆与收藏');
     expect(summary).toHaveTextContent('¥1,000');
+  });
+
+  it('shows persisted monthly portfolio history in the wealth view', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    const summary = (month: number, cashStart: number, cashEnd: number, netWorthStart: number, netWorthEnd: number, investmentTransfer: number, dividend: number): MonthlyFinancialSummary => ({
+      month,
+      income: { group: 'income', amount: dividend, categories: { investment_dividend: dividend } },
+      consumption: { group: 'consumption', amount: 300, categories: { living: 300 } },
+      assetAllocation: { group: 'asset_allocation', amount: investmentTransfer, categories: { investment_transfer: investmentTransfer } },
+      assetLiquidation: { group: 'asset_liquidation', amount: 0, categories: {} },
+      totalIncome: dividend,
+      totalConsumption: 300,
+      totalAssetAllocation: investmentTransfer,
+      totalAssetLiquidation: 0,
+      cashStart,
+      cashEnd,
+      cashChange: cashEnd - cashStart,
+      netWorthStart,
+      netWorthEnd,
+      netWorthChange: netWorthEnd - netWorthStart,
+    });
+    appStore.setState({ game: { ...game, financialHistory: [summary(2, 10_000, 9_700, 12_000, 12_450, 1_000, 50), summary(3, 9_700, 9_900, 12_450, 12_300, 0, 80)] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    const history = screen.getByRole('region', { name: '财富组合历史' });
+    expect(history).toHaveTextContent('第 2 月');
+    expect(history).toHaveTextContent('第 3 月');
+    expect(history).toHaveTextContent('现金 ¥10,000 → ¥9,700');
+    expect(history).toHaveTextContent('净资产 ¥12,450 → ¥12,300');
+    expect(history).toHaveTextContent('投资配置 ¥1,000');
+    expect(history).toHaveTextContent('分红 ¥80');
   });
 
   it('shows completed content milestones in the profile', async () => {
