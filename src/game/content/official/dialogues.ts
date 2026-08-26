@@ -87,4 +87,12 @@ export const officialDialogues = [
     tags: ['career'],
     lines: [{ id: 'question', speakerName: '合作公司负责人', text: '你有没有考虑过换个环境？' }],
   },
+  {
+    id: 'dialogue.employee-purchase-entry',
+    contentStatus: 'official',
+    name: '员工内部购买计划',
+    description: '一屿生活科技开放新一批产品内部体验计划。',
+    tags: ['career'],
+    lines: [{ id: 'notice', speakerName: '一屿产品团队', text: '新一批产品内部体验计划开放了，你可以选择折扣购买，或者先试用一套。' }],
+  },
 ] satisfies readonly DialogueDefinition[];

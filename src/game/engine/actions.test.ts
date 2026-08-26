@@ -723,6 +723,16 @@ describe('game action dispatcher', () => {
     expect(chosen.state.lifeHistory.at(-1)).toMatchObject({ title: '客户想把你挖走：听听条件' });
   });
 
+  it('settles the employee purchase plan as a technology discount', () => {
+    const initial = createInitialState(contentRegistry, balanceConfig, 15);
+    const state = { ...initial, reputation: 12, currentJobId: 'job.customer-experience-assistant', employment: { ...initial.employment!, jobId: 'job.customer-experience-assistant', companyId: 'company.isle-lifestyle' } };
+    const started = dispatchGameAction(state, { type: 'start_storyline', storylineId: 'storyline.employee-purchase' }, contentRegistry, balanceConfig);
+    const chosen = dispatchGameAction(started.state, { type: 'choose_storyline_branch', storylineId: 'storyline.employee-purchase', branchId: 'discount' }, contentRegistry, balanceConfig);
+    expect(chosen.error).toBeUndefined();
+    expect(chosen.state.discounts).toEqual(expect.arrayContaining([expect.objectContaining({ percent: 25, tags: ['technology'] })]));
+    expect(chosen.state.flags.employee_purchase_access).toBe(true);
+  });
+
   it('completes a reached milestone with its reward, history, and monthly highlight', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 12), cash: 10_000 };
     const result = dispatchGameAction(state, { type: 'start_week' }, contentRegistry, balanceConfig);

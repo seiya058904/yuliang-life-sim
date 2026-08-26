@@ -807,6 +807,33 @@ test('turns a client poaching storyline into a persisted referral opportunity', 
   await expect(page.getByText('合作公司负责人私下邀请')).toBeVisible();
 });
 
+test('uses the employee purchase plan to buy a discounted smart-home set', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 5_000;
+    state.reputation = 12;
+    state.currentJobId = 'job.customer-experience-assistant';
+    state.employment = { ...(state.employment ?? {}), jobId: 'job.customer-experience-assistant', companyId: 'company.isle-lifestyle', startedDay: 1 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const storyline = page.getByRole('heading', { name: '员工内部购买计划' }).locator('..').locator('..');
+  await storyline.getByRole('button', { name: '开始故事' }).click();
+  await storyline.getByRole('button', { name: '折扣购买' }).click();
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const item = page.locator('article.item-card').filter({ hasText: '智能家居套装' });
+  await expect(item).toContainText('¥4,499');
+  await item.getByRole('button', { name: '加入购物袋：智能家居套装' }).click();
+  await page.getByRole('button', { name: '一次购买' }).click();
+  await expect(page.getByRole('heading', { name: '智能家居套装' }).first()).toBeVisible();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('购买智能家居套装')).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

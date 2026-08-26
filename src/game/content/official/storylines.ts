@@ -147,4 +147,24 @@ export const officialStorylines = [
       { id: 'complete' },
     ],
   },
+  {
+    id: 'storyline.employee-purchase',
+    contentStatus: 'official',
+    name: '员工内部购买计划',
+    description: '在一屿生活科技的内部体验计划中，决定如何把工作经验带回自己的生活。',
+    tags: ['career'],
+    conditions: { type: 'all', conditions: [{ type: 'any', conditions: [{ type: 'current_job', jobId: 'job.customer-experience-assistant' }, { type: 'current_job', jobId: 'job.lifestyle-product-operations' }] }, { type: 'reputation_at_least', amount: 10 }] },
+    initialStageId: 'notice',
+    stages: [
+      {
+        id: 'notice',
+        dialogueId: 'dialogue.employee-purchase-entry',
+        branches: [
+          { id: 'discount', text: '折扣购买', nextStageId: 'complete', effects: [{ type: 'discount', percent: 25, tags: ['technology'] }, { type: 'set_flag', flag: 'employee_purchase_access' }] },
+          { id: 'trial', text: '免费体验', nextStageId: 'complete', effects: [{ type: 'item', itemId: 'item.smart-home-set', quantity: 1 }, { type: 'set_flag', flag: 'employee_purchase_trial' }] },
+        ],
+      },
+      { id: 'complete' },
+    ],
+  },
 ] satisfies readonly StorylineDefinition[];
