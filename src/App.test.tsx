@@ -95,6 +95,24 @@ describe('余量 app flow', () => {
     expect(within(screen.getByRole('region', { name: '人生记录' })).getByText(/查看消息：徐可发来新消息/)).toBeInTheDocument();
   });
 
+  it('buys and gives a preference-matching gift through the social view', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 1000 } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const flowers = screen.getByRole('heading', { name: '一束花' }).closest('article') as HTMLElement;
+    await user.click(within(flowers).getByRole('button', { name: '加入购物袋：一束花' }));
+    await user.click(screen.getByRole('button', { name: '一次购买' }));
+    await user.click(screen.getByRole('button', { name: '社交' }));
+    const gifts = screen.getByRole('region', { name: '礼物' });
+    await user.click(within(gifts).getAllByRole('button', { name: '送 一束花（×1）' })[0]);
+    expect(gifts).toHaveTextContent('准备一份礼物');
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('送给林晨：一束花')).toBeInTheDocument();
+  });
+
   it('starts and advances the official relationship storyline from social', async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -846,6 +846,21 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       effects.push({ type: 'message', text: `${interaction.name}完成，${preferred ? '符合对方偏好，' : ''}关系留下了新的进展` });
       break;
     }
+    case 'gift_item': {
+      const character = content.characters.find((entry) => entry.id === action.characterId);
+      const item = content.items.find((entry) => entry.id === action.itemId);
+      if (!character || !item || !item.giftable) return fail(input, '这件商品不能作为礼物赠送');
+      if ((state.inventory[item.id] ?? 0) < 1) return fail(input, '库存里没有这件礼物');
+      state.inventory[item.id] -= 1;
+      const liked = item.giftTags?.some((tag) => character.preferredGiftTags?.includes(tag)) ?? false;
+      const recentGifts = (state.lifeHistory ?? []).filter((entry) => entry.category === 'relationship' && entry.sourceId === item.id && entry.detail?.includes(character.name) && entry.day >= state.time.day - 30).length;
+      const relationshipGain = Math.max(1, (liked ? 3 : 1) - recentGifts);
+      applyContentEffects(state, [{ type: 'relation', characterId: character.id, amount: relationshipGain }], content, balance, effects);
+      addLifeRecord(state, { category: 'relationship', title: `送给${character.name}：${item.name}`, detail: `${character.name}收到礼物${liked ? '，符合对方偏好' : ''}；关系 +${relationshipGain}`, sourceId: item.id });
+      state.messages = [...(state.messages ?? []), { id: `message.gift.${item.id}.${character.id}.${state.time.day}.${(state.messages ?? []).length + 1}`, day: state.time.day, characterId: character.id, title: `${character.name}收到礼物`, body: liked ? `这份${item.name}很合心意。` : `谢谢你的${item.name}。`, sourceId: item.id, read: false }].slice(-30);
+      effects.push({ type: 'message', text: `已送给${character.name}，关系 +${relationshipGain}` });
+      break;
+    }
     case 'read_message': {
       const message = state.messages?.find((entry) => entry.id === action.messageId);
       if (!message) return fail(input, '找不到这条消息');

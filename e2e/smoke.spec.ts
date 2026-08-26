@@ -136,6 +136,29 @@ test('discovers and plans the friend-specific cafe activity', async ({ page }) =
   await expect(page.getByText('去咖啡馆坐一会 · with-chenyu')).toBeVisible();
 });
 
+test('buys and gives a preference-matching gift with persisted social history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 1000;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const flowers = page.locator('article').filter({ hasText: '一束花' }).first();
+  await flowers.getByRole('button', { name: '加入购物袋：一束花' }).click();
+  await page.getByRole('button', { name: '一次购买' }).click();
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  const gifts = page.getByRole('region', { name: '礼物' });
+  await gifts.getByRole('button', { name: '送 一束花（×1）' }).first().click();
+  await expect(page.getByRole('region', { name: '消息' })).toContainText('林晨收到礼物');
+  await page.reload();
+  await page.getByRole('button', { name: '社交', exact: true }).click();
+  await expect(page.getByRole('region', { name: '消息' })).toContainText('林晨收到礼物');
+});
+
 test('settles a city development event and keeps the location change after reload', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

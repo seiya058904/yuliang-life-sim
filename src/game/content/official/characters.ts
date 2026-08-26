@@ -11,6 +11,7 @@ export const officialCharacters = [
       "career"
     ],
     "identity": "同事",
+    "preferredGiftTags": ["dessert", "flower"],
     "initialRelationship": 8,
     "locationId": "location.central",
     "stages": [
@@ -48,6 +49,7 @@ export const officialCharacters = [
       "business"
     ],
     "identity": "邻居",
+    "preferredGiftTags": ["flower", "dessert"],
     "initialRelationship": 5,
     "locationId": "location.riverside",
     "stages": [
@@ -86,6 +88,7 @@ export const officialCharacters = [
     ],
     "identity": "招聘顾问",
     "preferredInteractionCategories": ["meal"],
+    "preferredGiftTags": ["coffee"],
     "initialRelationship": 0,
     "locationId": "location.central",
     "stages": [

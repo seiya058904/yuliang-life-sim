@@ -222,6 +222,8 @@ export interface ItemDefinition extends ContentMeta {
   requirements?: ConditionDefinition;
   housingTags?: readonly ContentTag[];
   effects?: readonly EffectDefinition[];
+  giftable?: boolean;
+  giftTags?: readonly string[];
 }
 
 export interface ServiceDefinition extends ContentMeta {
@@ -397,6 +399,7 @@ export interface CharacterDefinition extends ContentMeta {
   stages: readonly RelationshipStageDefinition[];
   locationId?: ContentId;
   preferredInteractionCategories?: readonly RelationshipInteractionDefinition['category'][];
+  preferredGiftTags?: readonly string[];
 }
 
 export interface EventOpportunityDefinition {
@@ -847,6 +850,7 @@ export type GameAction =
   | { type: 'use_item'; itemId: ContentId; quantity?: number }
   | { type: 'sell_item'; itemId: ContentId; quantity: number }
   | { type: 'manage_wishlist'; itemId: ContentId; enabled: boolean }
+  | { type: 'gift_item'; characterId: ContentId; itemId: ContentId }
   | { type: 'use_service'; serviceId: ContentId }
   | { type: 'manage_subscription'; subscriptionId: ContentId; enabled: boolean }
   | { type: 'move_housing'; housingId: ContentId; mode: 'rent' | 'owned' }

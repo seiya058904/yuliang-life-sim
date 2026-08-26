@@ -550,6 +550,50 @@ export const officialItems = [
     "sellable": true,
     "resaleRatio": 0.75,
     "lifestyleDelta": 9
+  },
+  {
+    "id": "gift.flowers",
+    "contentStatus": "official",
+    "name": "一束花",
+    "description": "不必等到特殊日子，也可以带一点轻松的心意。",
+    "tags": ["gift", "life"],
+    "category": "leisure_item",
+    "price": 120,
+    "consumable": false,
+    "sellable": false,
+    "resaleRatio": 0,
+    "lifestyleDelta": 0,
+    "giftable": true,
+    "giftTags": ["flower"]
+  },
+  {
+    "id": "gift.dessert-box",
+    "contentStatus": "official",
+    "name": "精品甜点礼盒",
+    "description": "适合拜访朋友或同事时带上的小礼物。",
+    "tags": ["gift", "life"],
+    "category": "leisure_item",
+    "price": 98,
+    "consumable": false,
+    "sellable": false,
+    "resaleRatio": 0,
+    "lifestyleDelta": 0,
+    "giftable": true,
+    "giftTags": ["dessert"]
+  },
+  {
+    "id": "gift.coffee-set",
+    "contentStatus": "official",
+    "name": "咖啡豆礼盒",
+    "description": "一份不夸张、但能让熟悉的人会心一笑的礼物。",
+    "tags": ["gift", "life"],
+    "category": "leisure_item",
+    "price": 188,
+    "consumable": false,
+    "sellable": false,
+    "resaleRatio": 0,
+    "lifestyleDelta": 0,
+    "giftable": true,
+    "giftTags": ["coffee"]
   }
 ] satisfies readonly ItemDefinition[];
-

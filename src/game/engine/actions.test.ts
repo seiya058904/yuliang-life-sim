@@ -411,6 +411,19 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory.at(-1)).toMatchObject({ detail: '符合对方偏好，关系进展更顺利' });
   });
 
+  it('consumes a gift, applies the recipient preference, and queues a message', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.inventory['gift.flowers'] = 1;
+
+    const result = dispatchGameAction(state, { type: 'gift_item', characterId: 'character.seed-lin', itemId: 'gift.flowers' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.inventory['gift.flowers']).toBe(0);
+    expect(result.state.relationships['character.seed-lin']).toBe(11);
+    expect(result.state.lifeHistory.at(-1)).toMatchObject({ title: '送给林晨：一束花', detail: expect.stringContaining('符合对方偏好') });
+    expect(result.state.messages?.at(-1)).toMatchObject({ characterId: 'character.seed-lin', read: false });
+  });
+
   it('settles the official business interaction with Zhou and queues a persisted message', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 500;
