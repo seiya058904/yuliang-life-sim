@@ -157,6 +157,14 @@ describe('game action dispatcher', () => {
     expect(holding.equityPercent).toBe(80);
     expect(funded.state.financialLedger?.entries.filter((entry) => entry.sourceId === 'business.seed-kiosk' && entry.category === 'business_transfer')).toHaveLength(3);
     expect(funded.state.lifeHistory.filter((entry) => entry.sourceId === 'business.seed-kiosk')).toHaveLength(3);
+
+    const second = dispatchGameAction(funded.state, { type: 'raise_business_funding', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    const third = dispatchGameAction(second.state, { type: 'raise_business_funding', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    const fourth = dispatchGameAction(third.state, { type: 'raise_business_funding', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
+    expect(second.error).toBeUndefined();
+    expect(third.error).toBeUndefined();
+    expect(third.state.businesses['business.seed-kiosk']).toMatchObject({ fundingRound: 3, equityPercent: 50 });
+    expect(fourth.error).toBe('这项企业已达到融资轮次上限');
   });
 
   it('exits a funded business at its equity-adjusted valuation', () => {

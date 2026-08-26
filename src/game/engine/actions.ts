@@ -537,12 +537,13 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const holding = state.businesses[action.businessId];
       const business = find(content.businesses, action.businessId);
       if (!holding || !business) return fail(input, '还没有这项生意');
-      if ((holding.fundingRound ?? 0) >= 1) return fail(input, '这项企业本轮融资已经完成');
-      const amount = Math.max(1000, Math.round(business.price * 0.75));
+      const fundingRound = holding.fundingRound ?? 0;
+      if (fundingRound >= 3) return fail(input, '这项企业已达到融资轮次上限');
+      const amount = Math.max(1000, Math.round(business.price * [0.75, 1, 1.5][fundingRound]));
       const previousEquity = holding.equityPercent ?? 100;
-      const dilution = 20;
+      const dilution = [20, 15, 15][fundingRound];
       holding.fundingRaised = (holding.fundingRaised ?? 0) + amount;
-      holding.fundingRound = (holding.fundingRound ?? 0) + 1;
+      holding.fundingRound = fundingRound + 1;
       holding.equityPercent = Math.max(0, previousEquity - dilution);
       state.cash += amount;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount, label: `${business.name}完成融资`, sourceType: 'business', sourceId: business.id, cashDelta: amount });
