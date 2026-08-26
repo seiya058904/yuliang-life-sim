@@ -27,6 +27,14 @@ describe('seed content registry', () => {
       'activity.specialty-cafe',
       'activity.home-gaming',
       'activity.concert',
+      'activity.weekend-brunch',
+      'activity.late-night-food',
+      'activity.premium-cinema',
+      'activity.home-movie',
+      'activity.new-game-night',
+      'activity.gym-session',
+      'activity.personal-training',
+      'activity.city-run',
       'activity.brand-film-project',
     ]);
   });
