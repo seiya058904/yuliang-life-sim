@@ -348,6 +348,43 @@ test('discovers the expanded daily services and subscriptions', async ({ page })
   await expect(video.getByRole('button', { name: '取消订阅' })).toBeVisible();
 });
 
+test('charges and cancels a monthly subscription with persisted history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 1_000;
+    state.majorEventsThisMonth = 3;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const subscription = page.getByRole('heading', { name: '基础通信套餐' }).locator('..').locator('..');
+  await subscription.getByRole('button', { name: '开通订阅' }).click();
+  await expect(subscription.getByRole('button', { name: '取消订阅' })).toBeVisible();
+
+  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await expect(page.getByRole('dialog')).toContainText('第 1 月', { timeout: 15_000 });
+  await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
+  const chargedState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  expect(chargedState.activeSubscriptions['subscription.mobile-basic']).toBeDefined();
+  expect(chargedState.lifeHistory).toContainEqual(expect.objectContaining({ title: '基础通信套餐月度扣费', amount: -39 }));
+  expect(chargedState.financialHistory).toContainEqual(expect.objectContaining({ consumption: expect.objectContaining({ categories: expect.objectContaining({ service: 39 }) }) }));
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('heading', { name: '基础通信套餐' }).locator('..').locator('..').getByRole('button', { name: '取消订阅' }).click();
+  await expect(subscription.getByRole('button', { name: '开通订阅' })).toBeVisible();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('开通基础通信套餐')).toBeVisible();
+  await expect(page.getByText('取消基础通信套餐')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('基础通信套餐月度扣费')).toBeVisible();
+  await expect(page.getByText('取消基础通信套餐')).toBeVisible();
+});
+
 test('uses the basic fitness assessment service and keeps its history', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   const fitness = page.getByRole('heading', { name: '基础体能评估' }).locator('..').locator('..');

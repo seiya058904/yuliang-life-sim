@@ -191,6 +191,7 @@ describe('automatic simulation', () => {
     expect(result.state.activeSubscriptions?.['subscription.mobile-basic']).toBeDefined();
     expect(result.state.lastFinancialSummary?.consumption.categories.service).toBe(39);
     expect(result.state.lifeHistory.some((entry) => entry.title === '基础通信套餐月度扣费')).toBe(true);
+    expect(result.state.financialHistory?.at(-1)?.consumption.categories.service).toBe(39);
   });
 
   it('pays company-equity dividends as investment income without changing the holding valuation semantics', () => {
