@@ -43,4 +43,12 @@ describe('city locations', () => {
     expect(housingRentPerDay(state, home)).toBe(Math.round(home.rentPerDay * 1.06));
     expect(housingPrice(state, home)).toBe(Math.round(home.price! * 1.09));
   });
+
+  it('reduces cross-region commute with development at the work location', () => {
+    const baseline = createInitialState(contentRegistry, balanceConfig, 3);
+    const developed = structuredClone(baseline);
+    developed.locationDevelopment = { 'location.industrial': 3 };
+
+    expect(commuteCostMultiplier(developed, contentRegistry)).toBeCloseTo(commuteCostMultiplier(baseline, contentRegistry) * 0.97);
+  });
 });

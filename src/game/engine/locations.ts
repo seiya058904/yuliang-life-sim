@@ -26,7 +26,8 @@ export function commuteCostMultiplier(state: GameState, content: ContentRegistry
   const homeId = content.housing.find((home) => home.id === state.housing.housingId)?.locationId;
   const jobLocation = locationForCurrentJob(state, content);
   if (!jobLocation || !homeId || homeId === jobLocation.id) return vehicleFactor;
-  return Math.max(1, jobLocation.transportCostMultiplier) * vehicleFactor;
+  const developmentFactor = 1 - developmentLevel(state, jobLocation.id) * 0.01;
+  return Math.max(1, jobLocation.transportCostMultiplier) * developmentFactor * vehicleFactor;
 }
 
 export function locationSummary(content: ContentRegistry): readonly LocationDefinition[] { return content.locations ?? []; }
