@@ -415,7 +415,7 @@ describe('余量 app flow', () => {
   it('shows persisted annual world snapshots alongside financial review', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
-    appStore.setState({ game: { ...game, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, relationshipValues: { 'character.seed-zhou': 42 }, listedBusinessCount: 1, publicFloatPercent: 35, currentJobId: game.currentJobId }] } });
+    appStore.setState({ game: { ...game, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, relationshipValues: { 'character.seed-zhou': 42 }, characterCareerStates: { 'character.seed-lin': '远望零售 · 门店员工' }, listedBusinessCount: 1, publicFloatPercent: 35, currentJobId: game.currentJobId }] } });
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
@@ -423,6 +423,7 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/第 1 年 · 经营 1 家企业/)).toBeInTheDocument();
     expect(screen.getByText(/访问 3 个地点/)).toBeInTheDocument();
     expect(screen.getByText(/周妍 42/)).toBeInTheDocument();
+    expect(screen.getByText(/林晨：远望零售 · 门店员工/)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '年度公开股权记录' })).toHaveTextContent('公开流通 35%');
   });
 
@@ -558,6 +559,16 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '社交' }));
     expect(screen.getByRole('heading', { name: '人物偏好' })).toBeInTheDocument();
     expect(screen.getAllByText('偏好：吃饭')).toHaveLength(2);
+  });
+
+  it('shows the authored NPC career history available in the current year', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '社交' }));
+    const lin = screen.getByRole('heading', { name: '林晨' }).closest('article') as HTMLElement;
+    expect(lin).toHaveTextContent('职业经历');
+    expect(lin).toHaveTextContent('第 1 年 · 远望零售 · 门店员工');
   });
 
   it('shows the real wealth portfolio summary from homes, debt, investments and rentals', async () => {

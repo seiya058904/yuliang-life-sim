@@ -13,6 +13,12 @@ export const officialCharacters = [
     "identity": "同事",
     "preferredGiftTags": ["dessert", "flower"],
     "initialRelationship": 8,
+    "careerHistory": [
+      { "startYear": 1, "title": "门店员工", "companyId": "company.yuanwang" },
+      { "startYear": 3, "title": "电商运营助理", "companyId": "company.starbridge" },
+      { "startYear": 6, "title": "高级运营", "companyId": "company.starbridge" },
+      { "startYear": 10, "title": "区域运营主管" }
+    ],
     "locationId": "location.central",
     "stages": [
       {

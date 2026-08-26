@@ -405,10 +405,17 @@ export interface CharacterDefinition extends ContentMeta {
   identity: string;
   initialRelationship: number;
   stages: readonly RelationshipStageDefinition[];
+  careerHistory?: readonly CharacterCareerEntry[];
   locationId?: ContentId;
   preferredInteractionCategories?: readonly RelationshipInteractionDefinition['category'][];
   preferredGiftTags?: readonly string[];
   preferredActivityTags?: readonly string[];
+}
+
+export interface CharacterCareerEntry {
+  startYear: number;
+  title: string;
+  companyId?: ContentId;
 }
 
 export interface EventOpportunityDefinition {
@@ -715,6 +722,7 @@ export interface WorldSnapshot {
   businessCount: number;
   relationshipCount: number;
   relationshipValues?: Record<ContentId, number>;
+  characterCareerStates?: Record<ContentId, string>;
   visitedLocationCount: number;
   locationDevelopment?: Record<ContentId, number>;
   listedBusinessCount?: number;
