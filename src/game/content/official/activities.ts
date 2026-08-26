@@ -91,6 +91,17 @@ export const officialActivities = [
     options: [{ id: 'exhibition', label: '看一场展览', durationMinutes: 240, cashCost: 220, effects: [] }],
   },
   {
+    id: 'activity.browse-bookstore',
+    contentStatus: 'official',
+    name: '周末逛书店',
+    description: '在旧城书店慢慢翻几本书，让兴趣和知识都留下一点余量。',
+    tags: ['life', 'hobby', 'leisure'],
+    category: 'hobby',
+    financialCategory: 'entertainment',
+    locationId: 'location.old-town',
+    options: [{ id: 'browse', label: '随便逛逛', durationMinutes: 120, cashCost: 55, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] }],
+  },
+  {
     id: 'activity.city-photography',
     contentStatus: 'official',
     name: '城市摄影练习',

@@ -456,6 +456,16 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeInTheDocument();
   });
 
+  it('discovers the bookstore venue and its knowledge activity', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '城市' }));
+    const venue = screen.getByRole('heading', { name: '叶脉书店' }).closest('article') as HTMLElement;
+    expect(venue).toHaveTextContent('周末逛书店');
+    await user.click(within(venue).getByRole('button', { name: '去安排活动' }));
+    expect(screen.getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeInTheDocument();
+  });
+
   it('discovers and schedules the official short trip activity', async () => {
     const user = userEvent.setup();
     render(<App />);

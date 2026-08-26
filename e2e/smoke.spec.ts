@@ -15,6 +15,14 @@ test('discovers a named city venue and reaches its activity entry', async ({ pag
   await expect(page.getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeVisible();
 });
 
+test('discovers the bookstore venue and reaches its knowledge activity', async ({ page }) => {
+  await page.getByRole('button', { name: '城市', exact: true }).click();
+  const venue = page.getByRole('heading', { name: '叶脉书店' }).locator('..');
+  await expect(venue).toContainText('周末逛书店');
+  await venue.getByRole('button', { name: '去安排活动' }).click();
+  await expect(page.getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeVisible();
+});
+
 test('uses the public market, plans a week, pauses for shopping, and restores the save', async ({ page }) => {
   await expect(page.getByRole('heading', { name: '余量' })).toBeVisible();
   await expect(page.getByText('第 1 周', { exact: true })).toBeVisible();

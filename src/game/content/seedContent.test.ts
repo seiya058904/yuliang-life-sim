@@ -17,6 +17,7 @@ describe('seed content registry', () => {
       'activity.industrial-design-exhibition',
       'activity.weekend-getaway',
       'activity.old-town-culture',
+      'activity.browse-bookstore',
       'activity.city-photography',
       'activity.brand-film-project',
     ]);
@@ -139,7 +140,7 @@ describe('seed content registry', () => {
   });
 
   it('exposes official venues that bind to real locations and activities', () => {
-    expect(contentRegistry.venues?.filter((venue) => venue.contentStatus === 'official')).toHaveLength(4);
+    expect(contentRegistry.venues?.filter((venue) => venue.contentStatus === 'official')).toHaveLength(5);
     expect(contentRegistry.venues?.every((venue) => venue.activityIds.every((id) => contentRegistry.activities?.some((activity) => activity.id === id)))).toBe(true);
   });
 
