@@ -423,4 +423,10 @@ test('settles Zhou business interaction and persists the follow-up message', asy
   await page.reload();
   await page.getByRole('button', { name: '社交', exact: true }).click();
   await expect(page.getByRole('region', { name: '消息' })).toContainText('周妍发来新消息');
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  const relationshipHistory = page.getByRole('region', { name: '关系历史' });
+  await expect(relationshipHistory).toContainText('周妍');
+  await expect(relationshipHistory).toContainText('当前关系 12');
+  await expect(relationshipHistory).toContainText('1 次记录');
+  await expect(relationshipHistory).toContainText('一起看看店');
 });

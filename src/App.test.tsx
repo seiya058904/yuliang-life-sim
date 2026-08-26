@@ -92,7 +92,7 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('region', { name: '消息' })).toHaveTextContent('未读 0 条');
     await user.click(screen.getByRole('button', { name: '我的' }));
     expect(screen.getByText('和徐可聊设备 · 聊聊远程工作')).toBeInTheDocument();
-    expect(screen.getByText(/查看消息：徐可发来新消息/)).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: '人生记录' })).getByText(/查看消息：徐可发来新消息/)).toBeInTheDocument();
   });
 
   it('starts and advances the official relationship storyline from social', async () => {
@@ -471,5 +471,22 @@ describe('余量 app flow', () => {
     const records = screen.getByRole('region', { name: '里程碑记录' });
     expect(records).toHaveTextContent('第一万现金');
     expect(records).toHaveTextContent('已达成');
+  });
+
+  it('shows persisted relationship history grouped by contact in the profile', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, lifeHistory: [
+      { id: 'life.relationship.1', day: 8, category: 'relationship', title: '周妍 · 一起看看店', detail: '关系留下了新的进展', sourceId: 'interaction.business-with-zhou' },
+      { id: 'life.relationship.2', day: 9, category: 'relationship', title: '查看消息：周妍发来新消息', detail: '对方想继续和你保持联系。', sourceId: 'interaction.business-with-zhou' },
+    ], relationships: { ...game.relationships, 'character.seed-zhou': 12 } } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    const history = screen.getByRole('region', { name: '关系历史' });
+    expect(history).toHaveTextContent('周妍');
+    expect(history).toHaveTextContent('当前关系 12');
+    expect(history).toHaveTextContent('2 次记录');
+    expect(history).toHaveTextContent('一起看看店');
   });
 });
