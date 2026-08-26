@@ -50,7 +50,6 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     'job.huanliu-warehouse-assistant',
     'job.huanliu-dispatch-coordinator',
     'job.course-operations-assistant',
-    'job.course-teaching-assistant',
     'job.research-assistant',
     'job.travel-product-assistant',
   ];

@@ -47,7 +47,7 @@ describe('career market', () => {
   });
 
   it('connects the education course qualification to the long-term teaching assistant route', () => {
-    const state = createInitialState(contentRegistry, balanceConfig, 31);
+    const state = createInitialState(contentRegistry, balanceConfig, 24);
     const job = contentRegistry.jobs.find((entry) => entry.id === 'job.course-teaching-assistant')!;
     const before = requirementHints(job, state, contentRegistry, balanceConfig);
     const after = requirementHints(job, { ...state, ability: 14, reputation: 3, qualifications: ['qualification.workplace-basics'] }, contentRegistry, balanceConfig);

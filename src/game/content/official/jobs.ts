@@ -503,5 +503,91 @@ export const officialJobs = [
       { "type": "attribute_at_least", "attribute": "knowledge", "amount": 15 }
     ] },
     "isLongTerm": true
+  },
+  {
+    "id": "job.order-operations-assistant",
+    "contentStatus": "official",
+    "name": "订单运营助理",
+    "description": "核对订单、跟进异常，把每天大量的小问题整理成清楚的流程。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 232,
+    "abilityRequired": 12,
+    "reputationRequired": 2,
+    "careerXp": 3,
+    "experienceTags": ["office", "operations"],
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 12 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 12 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.ecommerce-operations-assistant",
+    "contentStatus": "official",
+    "name": "电商运营助理",
+    "description": "协助商品上架、活动配置和数据整理，开始理解一笔订单背后的运营工作。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 272,
+    "abilityRequired": 20,
+    "reputationRequired": 5,
+    "careerXp": 4,
+    "experienceTags": ["operations", "data"],
+    "experienceRequired": { "operations": 20 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 20 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 18 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 12 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.ecommerce-operations-specialist",
+    "contentStatus": "official",
+    "name": "电商运营专员",
+    "description": "负责一条商品线的活动与复盘，把商品、用户和数据连接起来。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 355,
+    "abilityRequired": 32,
+    "reputationRequired": 10,
+    "careerXp": 5,
+    "experienceTags": ["operations", "data", "project"],
+    "experienceRequired": { "operations": 40 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 32 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 26 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 20 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.growth-operations",
+    "contentStatus": "official",
+    "name": "增长运营",
+    "description": "围绕拉新、复购和新渠道测试制定增长计划，承担更完整的运营目标。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 445,
+    "abilityRequired": 42,
+    "reputationRequired": 22,
+    "careerXp": 6,
+    "experienceTags": ["operations", "data", "project"],
+    "experienceRequired": { "operations": 60 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 42 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 36 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 30 }
+    ] },
+    "isLongTerm": true
   }
 ] satisfies readonly JobDefinition[];
