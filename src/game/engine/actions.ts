@@ -480,6 +480,19 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       addLifeRecord(state, { category: 'housing', title: action.mode === 'owned' ? `买下${home.name}` : `搬到${home.name}`, detail: action.mode === 'owned' ? '自有住房' : '租住', sourceId: home.id, amount: price ? -price : undefined });
       break;
     }
+    case 'sell_housing': {
+      const currentHome = find(content.housing, state.housing.housingId);
+      if (!currentHome || state.housing.mode !== 'owned' || !currentHome.price) return fail(input, '当前没有可出售的自有住房');
+      const saleValue = currentHome.valuation || currentHome.price;
+      const fallback = content.housing.find((home) => home.id === balance.startingHousingId && (home.mode === 'rent' || home.mode === 'both')) ?? content.housing.find((home) => home.mode === 'rent' || home.mode === 'both');
+      if (!fallback) return fail(input, '出售后找不到可租住的住房');
+      state.cash += saleValue;
+      state.housing = { housingId: fallback.id, mode: 'rent' };
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: saleValue, label: `出售${currentHome.name}`, sourceType: 'housing', sourceId: currentHome.id, costBasis: currentHome.price });
+      addLifeRecord(state, { category: 'housing', title: `出售${currentHome.name}`, detail: `搬回${fallback.name}租住`, sourceId: currentHome.id, amount: saleValue });
+      effects.push({ type: 'cash', amount: saleValue, reason: '出售住房' });
+      break;
+    }
     case 'buy_business': {
       const business = find(content.businesses, action.businessId);
       if (!business || !state.unlockedBusinessIds.includes(action.businessId)) return fail(input, '这项生意还没有解锁');

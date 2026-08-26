@@ -138,6 +138,22 @@ describe('余量 app flow', () => {
     expect(screen.getByText('出售实用二手小车')).toBeInTheDocument();
   });
 
+  it('buys and sells a reachable home through the life view', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 10000, unlockedHousingIds: [...game.unlockedHousingIds, 'housing.seed-room'] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '生活' }));
+    const home = screen.getByRole('heading', { name: '独立单间' }).closest('.item-row');
+    expect(home).not.toBeNull();
+    await user.click(within(home as HTMLElement).getByRole('button', { name: '买下' }));
+    expect(screen.getByRole('button', { name: '出售' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '出售' }));
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByText('出售独立单间')).toBeInTheDocument();
+  });
+
   it('navigates from a rejected application hint and renders life history newest first', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

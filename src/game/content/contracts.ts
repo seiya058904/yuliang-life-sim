@@ -767,6 +767,7 @@ export type GameAction =
   | { type: 'use_service'; serviceId: ContentId }
   | { type: 'manage_subscription'; subscriptionId: ContentId; enabled: boolean }
   | { type: 'move_housing'; housingId: ContentId; mode: 'rent' | 'owned' }
+  | { type: 'sell_housing' }
   | { type: 'buy_business'; businessId: ContentId }
   | { type: 'update_business'; businessId: ContentId; priceLevel: number; wageLevel: number; inventoryLevel: number }
   | { type: 'buy_asset'; assetId: ContentId }

@@ -109,6 +109,22 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory?.at(-1)).toMatchObject({ title: '买入实用二手小车', category: 'asset' });
   });
 
+  it('sells an owned home, returns its valuation, and moves the player back to rent', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 10000;
+    state.unlockedHousingIds.push('housing.seed-room');
+    const bought = dispatchGameAction(state, { type: 'move_housing', housingId: 'housing.seed-room', mode: 'owned' }, contentRegistry, balanceConfig);
+    expect(bought.error).toBeUndefined();
+
+    const sold = dispatchGameAction(bought.state, { type: 'sell_housing' }, contentRegistry, balanceConfig);
+
+    expect(sold.error).toBeUndefined();
+    expect(sold.state.cash).toBe(10000);
+    expect(sold.state.housing).toEqual({ housingId: 'housing.shared-room', mode: 'rent' });
+    expect(sold.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'asset_liquidation', amount: 5800, sourceId: 'housing.seed-room' });
+    expect(sold.state.lifeHistory?.at(-1)).toMatchObject({ title: '出售独立单间', category: 'housing' });
+  });
+
   it('lets the player claim an event reward and choose whether simulation resumes', () => {
     const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
     const blocked = dispatchGameAction(state, { type: 'advance_simulation', minutes: 1 }, contentRegistry, balanceConfig);
