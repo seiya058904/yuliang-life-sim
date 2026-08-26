@@ -70,6 +70,18 @@ describe('automatic simulation', () => {
     expect(result.state.lifeHistory?.some((entry) => entry.sourceId === 'activity.weekend-getaway' && entry.detail === '自驾出行，交通费用有所减少')).toBe(true);
   });
 
+  it('persists interest familiarity from a completed tagged activity', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const initial = createInitialState(contentRegistry, balance, 23);
+    const plan = structuredClone(initial.weeklyPlan);
+    plan.days[6].day = { kind: 'activity', activityId: 'activity.cinema', optionId: 'standard' };
+    const running = { ...initial, weeklyPlan: plan, autoRepeatPlan: false, simulationMode: 'running' as const };
+    const result = advanceSimulation(running, 6 * 24 * 60, contentRegistry, balance);
+
+    expect(result.state.interestFamiliarity?.film).toBe(1);
+    expect(result.state.lifeHistory.some((entry) => entry.sourceId === 'activity.cinema' && entry.detail?.includes('电影兴趣'))).toBe(true);
+  });
+
   it('settles an owned business project as one-time equity-proportional profit', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const initial = createInitialState(contentRegistry, balance, 23);

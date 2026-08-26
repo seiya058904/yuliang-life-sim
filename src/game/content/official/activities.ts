@@ -21,6 +21,7 @@ export const officialActivities = [
     category: 'film',
     financialCategory: 'entertainment',
     locationId: 'location.central',
+    familiarityTags: ['film'],
     options: [
       { id: 'standard', label: '普通影厅', durationMinutes: 180, cashCost: 68, effects: [{ type: 'attribute', attribute: 'mood', amount: 5 }] },
       { id: 'premium', label: '特别放映', durationMinutes: 180, cashCost: 138, effects: [{ type: 'attribute', attribute: 'mood', amount: 7 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] },

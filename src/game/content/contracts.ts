@@ -290,6 +290,7 @@ export interface ActivityDefinition extends ContentMeta {
   options: readonly ActivityOption[];
   financialCategory?: FinancialCategory;
   locationId?: ContentId;
+  familiarityTags?: readonly string[];
 }
 
 export interface CourseDefinition extends ContentMeta {
@@ -735,6 +736,7 @@ export interface GameState {
   housing: HousingState;
   locationVisits?: Record<ContentId, number>;
   locationDevelopment?: Record<ContentId, number>;
+  interestFamiliarity?: Record<string, number>;
   relationships: Record<ContentId, number>;
   messages?: MessageState[];
   businesses: Record<ContentId, BusinessHolding>;

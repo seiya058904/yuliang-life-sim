@@ -137,6 +137,15 @@ describe('game store persistence', () => {
     expect(restored.locationDevelopment).toEqual({ 'location.central': 3 });
   });
 
+  it('keeps bounded interest familiarity during migration', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, interestFamiliarity: { film: 2, photography: 4, '': -1 } }));
+
+    const restored = loadGameState(contentRegistry, balanceConfig);
+
+    expect(restored.interestFamiliarity).toEqual({ film: 2 });
+  });
+
   it('keeps valid storyline stages and removes unknown storyline state during migration', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, storylineStages: {
