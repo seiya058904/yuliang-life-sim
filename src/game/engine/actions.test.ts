@@ -252,6 +252,13 @@ describe('game action dispatcher', () => {
     expect(relationship.error).toBeUndefined();
     expect(relationship.state.lifeHistory?.at(-1)).toMatchObject({ category: 'relationship', day: 1, sourceId: 'interaction.seed-lin-meal' });
 
+    const message = relationship.state.messages?.[0];
+    expect(message).toMatchObject({ characterId: 'character.seed-lin', read: false });
+    const read = dispatchGameAction(relationship.state, { type: 'read_message', messageId: message!.id }, contentRegistry, balanceConfig);
+    expect(read.error).toBeUndefined();
+    expect(read.state.messages?.[0].read).toBe(true);
+    expect(read.state.lifeHistory?.at(-1)).toMatchObject({ category: 'relationship', title: expect.stringContaining('查看消息') });
+
     const investor = { ...relationship.state, cash: 10_000 };
     const investment = dispatchGameAction(investor, { type: 'buy_investment', investmentId: 'investment.seed-index', units: 1 }, contentRegistry, balanceConfig);
     expect(investment.error).toBeUndefined();

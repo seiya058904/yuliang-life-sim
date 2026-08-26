@@ -54,6 +54,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     housing: { housingId: startHousing?.id ?? '', mode: balance.startingHousingMode },
     locationVisits: {},
     relationships: startingCharacters,
+    messages: [],
     businesses: {},
     assets: {},
     investments: {},

@@ -621,7 +621,18 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'social', amount: option.cashCost, label: `${interaction.name} · ${option.label}`, sourceType: 'relationship', sourceId: interaction.id });
       applyContentEffects(state, option.effects ?? [], content, balance, effects);
       addLifeRecord(state, { category: 'relationship', title: `${interaction.name} · ${option.label}`, sourceId: interaction.id, amount: option.cashCost ? -option.cashCost : undefined });
+      const character = content.characters.find((entry) => entry.id === interaction.characterId);
+      state.messages = [...(state.messages ?? []), { id: `message.${interaction.id}.${state.time.day}.${(state.messages ?? []).length + 1}`, day: state.time.day, characterId: interaction.characterId, title: `${character?.name ?? '联系人'}发来新消息`, body: `${option.label}之后，对方想继续和你保持联系。`, sourceId: interaction.id, read: false }].slice(-30);
       effects.push({ type: 'message', text: `${interaction.name}完成，关系留下了新的进展` });
+      break;
+    }
+    case 'read_message': {
+      const message = state.messages?.find((entry) => entry.id === action.messageId);
+      if (!message) return fail(input, '找不到这条消息');
+      if (!message.read) {
+        message.read = true;
+        addLifeRecord(state, { category: 'relationship', title: `查看消息：${message.title}`, detail: message.body, sourceId: message.sourceId ?? message.characterId });
+      }
       break;
     }
     case 'sell_investment': {

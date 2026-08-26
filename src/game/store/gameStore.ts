@@ -122,6 +122,10 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.careerExperience = Object.fromEntries(Object.entries(candidate.careerExperience ?? {}).filter(([id, value]) => ['office', 'operations', 'customer_service', 'retail', 'logistics', 'data', 'project', 'management', 'media', 'finance'].includes(id) && Number.isFinite(value) && Number(value) >= 0).map(([id, value]) => [id, Number(value)]));
   candidate.qualifications = [...new Set((candidate.qualifications ?? []).filter((id) => typeof id === 'string' && ['office_basics', 'operations_foundation', 'client_service_experience', 'retail_operations_experience', 'logistics_experience', 'data_analysis_foundation', 'project_coordination', 'people_management_basics', 'media_production_experience', 'investment_basics'].includes(id)))];
   candidate.relationships = candidate.relationships ?? {};
+  const characterIds = new Set(content.characters.map((entry) => entry.id));
+  candidate.messages = Array.isArray(candidate.messages)
+    ? candidate.messages.filter((entry) => isRecord(entry) && typeof entry.id === 'string' && Number.isInteger(entry.day) && typeof entry.title === 'string' && typeof entry.body === 'string' && typeof entry.read === 'boolean' && (entry.characterId === undefined || characterIds.has(entry.characterId as string))).slice(-30) as GameState['messages']
+    : [];
   candidate.attributes = migrateAttributes(candidate.attributes, candidate.ability, candidate.lifestyle, candidate.relationships);
   syncLegacyAbility(candidate);
   candidate.eventCooldowns = candidate.eventCooldowns ?? {};

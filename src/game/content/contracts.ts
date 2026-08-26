@@ -188,6 +188,7 @@ export interface AcquiredSideJobState { jobId: ContentId; acquiredDay: number; s
 export interface GigOpportunityState { id: ContentId; jobId: ContentId; validFromDay: number; expiresDay: number; executableDay: number; startMinute: number; endMinute: number; pay: number; source: string; }
 export interface EmploymentHistoryEntry { jobId: ContentId; companyId?: ContentId; startedDay?: number; endedDay?: number; finalPay: number; reason?: string; migrated?: boolean; }
 export interface MonthlyHighlight { id: string; kind: 'new_job' | 'new_contact' | 'side_job_acquired' | 'gig_completed' | 'major_purchase' | 'new_asset' | 'attribute_milestone' | 'storyline_completed'; day: number; label: string; sourceId?: ContentId; }
+export interface MessageState { id: string; day: number; characterId?: ContentId; title: string; body: string; sourceId?: ContentId; read: boolean; }
 
 export type LifeRecordCategory = 'career' | 'purchase' | 'service' | 'activity' | 'housing' | 'relationship' | 'event' | 'business' | 'asset' | 'investment';
 
@@ -715,6 +716,7 @@ export interface GameState {
   housing: HousingState;
   locationVisits?: Record<ContentId, number>;
   relationships: Record<ContentId, number>;
+  messages?: MessageState[];
   businesses: Record<ContentId, BusinessHolding>;
   assets: Record<ContentId, AssetHolding>;
   investments?: Record<ContentId, InvestmentHolding>;
@@ -772,6 +774,7 @@ export type GameAction =
   | { type: 'advance_resignation' }
   | { type: 'choose_resignation'; choice: 'leave' | 'stay' }
   | { type: 'interact_character'; interactionId: ContentId; optionId: string }
+  | { type: 'read_message'; messageId: string }
   | { type: 'continue_after_event' }
   | { type: 'claim_reward'; resume?: boolean }
   | { type: 'work'; jobId: ContentId }

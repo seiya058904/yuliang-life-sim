@@ -71,8 +71,12 @@ describe('余量 app flow', () => {
 
     await user.click(screen.getByRole('button', { name: '社交' }));
     await user.click(screen.getByRole('button', { name: /聊聊远程工作/ }));
+    expect(screen.getByRole('region', { name: '消息' })).toHaveTextContent('未读 1 条');
+    await user.click(screen.getByRole('button', { name: '查看消息' }));
+    expect(screen.getByRole('region', { name: '消息' })).toHaveTextContent('未读 0 条');
     await user.click(screen.getByRole('button', { name: '我的' }));
     expect(screen.getByText('和徐可聊设备 · 聊聊远程工作')).toBeInTheDocument();
+    expect(screen.getByText(/查看消息：徐可发来新消息/)).toBeInTheDocument();
   });
 
   it('trades an official investment through the wealth page and records both sides', async () => {
