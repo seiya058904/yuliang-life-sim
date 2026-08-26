@@ -371,6 +371,25 @@ describe('game action dispatcher', () => {
     expect(bought.state.lifeHistory.at(-1)).toMatchObject({ title: '买入咨询工作室', category: 'business' });
   });
 
+  it('joins the consulting studio partnership after the authored project', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.cash = 15_000;
+    state.ability = 28;
+    state.reputation = 20;
+    state.attributes = { ...state.attributes, professional: 28, knowledge: 28, communication: 28 };
+    state.unlockedCapabilities.push('business_license');
+    state.unlockedBusinessIds.push('business.consulting-studio');
+    state.relationships['character.guqing'] = 40;
+    state.flags.consulting_project_completed = true;
+
+    const joined = dispatchGameAction(state, { type: 'join_business_partnership', businessId: 'business.consulting-studio' }, contentRegistry, balanceConfig);
+
+    expect(joined.error).toBeUndefined();
+    expect(joined.state.businesses['business.consulting-studio']).toMatchObject({ purchasePrice: 12000, equityPercent: 60, partnerCharacterId: 'character.guqing' });
+    expect(joined.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 12000 });
+    expect(joined.state.lifeHistory.at(-1)).toMatchObject({ title: '加入咨询工作室合伙', category: 'business' });
+  });
+
   it('keeps business capital separate and records one dilutive funding round', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 10000;

@@ -593,7 +593,7 @@ test('joins a relationship-gated business partnership and persists the partial h
   await expect(page.getByText('加入线上小店合伙')).toBeVisible();
 });
 
-test('buys and settles the official consulting studio through the business loop', async ({ page }) => {
+test('joins and settles the official consulting studio partnership through the business loop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
   await page.evaluate(({ key, state }) => {
@@ -603,6 +603,8 @@ test('buys and settles the official consulting studio through the business loop'
     state.attributes = { ...(state.attributes ?? {}), professional: 28, knowledge: 28, communication: 28, fitness: 28, appearance: 10, network: 0, mood: 50 };
     state.unlockedCapabilities = ['business_license'];
     state.unlockedBusinessIds = ['business.consulting-studio'];
+    state.relationships = { ...(state.relationships ?? {}), 'character.guqing': 40 };
+    state.flags = { ...(state.flags ?? {}), consulting_project_completed: true };
     state.businesses = {};
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
@@ -611,7 +613,7 @@ test('buys and settles the official consulting studio through the business loop'
   await page.reload();
 
   await page.getByRole('button', { name: '财富', exact: true }).click();
-  await page.getByRole('button', { name: '买入 ¥24,000' }).click();
+  await page.getByRole('button', { name: '加入合伙 ¥12,000' }).click();
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await expect(page.getByText(/咨询工作室/).first()).toBeVisible();
   await page.getByRole('button', { name: '运行 1 个月' }).click();
@@ -619,7 +621,7 @@ test('buys and settles the official consulting studio through the business loop'
   await expect(page.getByRole('dialog')).toContainText('企业收入');
   await page.getByRole('button', { name: '进入下个月' }).click();
   await page.getByRole('button', { name: '我的', exact: true }).click();
-  await expect(page.getByText('买入咨询工作室')).toBeVisible();
+  await expect(page.getByText('加入咨询工作室合伙')).toBeVisible();
   const settledState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
   expect(settledState.financialHistory?.length).toBeGreaterThan(0);
   expect(settledState.financialHistory.at(-1).income.categories.business_income).toBeGreaterThan(0);
@@ -628,7 +630,7 @@ test('buys and settles the official consulting studio through the business loop'
   await page.getByRole('button', { name: '财富', exact: true }).click();
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await page.getByRole('button', { name: '我的', exact: true }).click();
-  await expect(page.getByText('买入咨询工作室')).toBeVisible();
+  await expect(page.getByText('加入咨询工作室合伙')).toBeVisible();
 });
 
 test('completes a wishlist purchase goal and persists its history', async ({ page }) => {

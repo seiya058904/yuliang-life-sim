@@ -230,6 +230,7 @@ describe('seed content registry', () => {
     expect(contentRegistry.businesses.find((business) => business.id === 'business.consulting-studio')).toMatchObject({
       name: '咨询工作室', price: 24000, baseRevenue: 2100, locationId: 'location.central',
       requirements: { type: 'all' },
+      partnership: { characterId: 'character.guqing', playerEquityPercent: 60, entryPrice: 12000, requirements: { type: 'all' } },
     });
   });
 

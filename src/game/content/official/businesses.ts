@@ -189,6 +189,25 @@ export const officialBusinesses = [
           "amount": 20
         }
       ]
+    },
+    "partnership": {
+      "characterId": "character.guqing",
+      "playerEquityPercent": 60,
+      "entryPrice": 12000,
+      "requirements": {
+        "type": "all",
+        "conditions": [
+          {
+            "type": "relationship_at_least",
+            "characterId": "character.guqing",
+            "amount": 40
+          },
+          {
+            "type": "flag",
+            "flag": "consulting_project_completed"
+          }
+        ]
+      }
     }
   }
 ] satisfies readonly BusinessDefinition[];
