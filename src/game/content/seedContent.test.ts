@@ -200,6 +200,15 @@ describe('seed content registry', () => {
     ]));
   });
 
+  it('exposes the official small gold bar collectible asset', () => {
+    expect(contentRegistry.assets.find((asset) => asset.id === 'asset.small-gold-bar')).toMatchObject({
+      contentStatus: 'official',
+      kind: 'collectible',
+      price: 5000,
+      requirements: { type: 'has_capability', capability: 'market_insight' },
+    });
+  });
+
   it('populates distinct quality, SUV, and executive vehicle tiers for the same reachable asset loop', () => {
     expect(contentRegistry.assets.filter((asset) => asset.kind === 'vehicle' && asset.contentStatus === 'official')).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'asset.quality-sedan', price: 236000, monthlyCost: 980, depreciationRate: 0.005 }),

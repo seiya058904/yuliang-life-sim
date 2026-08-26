@@ -54,6 +54,26 @@ export const officialAssets = [
     }
   },
   {
+    "id": "asset.small-gold-bar",
+    "contentStatus": "official",
+    "name": "小金条",
+    "description": "约五千元的实体黄金，兼具保值和收藏意味；买卖会有轻微价差，不保证升值。",
+    "tags": [
+      "asset",
+      "collectible",
+      "luxury"
+    ],
+    "kind": "collectible",
+    "price": 5000,
+    "valuation": 5000,
+    "dailyIncome": 0,
+    "volatility": 0.02,
+    "requirements": {
+      "type": "has_capability",
+      "capability": "market_insight"
+    }
+  },
+  {
     "id": "asset.apartment-rental",
     "contentStatus": "official",
     "name": "小户型出租房",
