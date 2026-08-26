@@ -39,6 +39,15 @@ describe('career market', () => {
     expect(strong.probabilityBand).toBeGreaterThan(minimum.probabilityBand);
   });
 
+  it('surfaces the interest path required by the photography gig', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 31);
+    const job = contentRegistry.jobs.find((entry) => entry.id === 'job.photography-assistant-gig')!;
+
+    expect(requirementHints(job, state, contentRegistry, balanceConfig).some((hint) => hint.requirementId === 'interest:photography')).toBe(true);
+    state.interestFamiliarity = { photography: 2 };
+    expect(requirementHints(job, state, contentRegistry, balanceConfig).some((hint) => hint.requirementId === 'interest:photography')).toBe(false);
+  });
+
   it('keeps a submitted application snapshot after its vacancy expires', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 19);
     const vacancy = state.vacancies!.find((entry) => entry.jobId === 'job.seed-warehouse')!;

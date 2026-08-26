@@ -255,5 +255,23 @@ export const officialJobs = [
       "market_insight"
     ],
     "isLongTerm": false
+  },
+  {
+    "id": "job.photography-assistant-gig",
+    "contentStatus": "official",
+    "name": "摄影协助 Gig",
+    "description": "为一次小型拍摄做现场协助，先把兴趣变成一笔可验证的经验。",
+    "tags": ["work", "photography", "gig"],
+    "kind": "temporary",
+    "employmentKind": "gig",
+    "hours": 4,
+    "basePay": 168,
+    "abilityRequired": 18,
+    "reputationRequired": 4,
+    "careerXp": 2,
+    "experienceTags": ["media"],
+    "requiredItems": ["item.vintage-camera"],
+    "requirements": { "type": "interest_familiarity_at_least", "tag": "photography", "amount": 2 },
+    "isLongTerm": false
   }
 ] satisfies readonly JobDefinition[];

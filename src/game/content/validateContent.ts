@@ -79,6 +79,9 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
       case 'job_experience_at_least':
         if (!known.jobs.has(condition.jobId)) errors.push(`${owner} 引用了未知工作: ${condition.jobId}`);
         break;
+      case 'interest_familiarity_at_least':
+        if (!condition.tag.trim() || !Number.isInteger(condition.amount) || condition.amount < 0 || condition.amount > 3) errors.push(`${owner} 的兴趣熟练度条件无效`);
+        break;
       case 'owns_item':
         if (!known.items.has(condition.itemId)) errors.push(`${owner} 引用了未知商品: ${condition.itemId}`);
         break;

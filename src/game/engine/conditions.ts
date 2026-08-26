@@ -30,6 +30,7 @@ export function evaluateCondition(condition: ConditionDefinition, state: GameSta
     case 'lifestyle_at_least': return state.lifestyle >= condition.amount;
     case 'current_job': return state.currentJobId === condition.jobId;
     case 'job_experience_at_least': return (state.jobExperience[condition.jobId] ?? 0) >= condition.amount;
+    case 'interest_familiarity_at_least': return (state.interestFamiliarity?.[condition.tag] ?? 0) >= condition.amount;
     case 'owns_item': return (state.inventory[condition.itemId] ?? 0) >= (condition.quantity ?? 1);
     case 'has_capability': return state.unlockedCapabilities.includes(condition.capability);
     case 'housing_is': return state.housing.housingId === condition.housingId && (!condition.mode || state.housing.mode === condition.mode);
@@ -65,6 +66,7 @@ export function explainCondition(condition: ConditionDefinition, state: GameStat
     case 'lifestyle_at_least': return state.lifestyle >= condition.amount ? `✓ 生活品质 ≥ ${condition.amount}` : `✕ 生活品质 ≥ ${condition.amount}（当前 ${state.lifestyle}）`;
     case 'has_capability': return state.unlockedCapabilities.includes(condition.capability) ? `✓ 已拥有能力 ${capabilityLabels[condition.capability] ?? condition.capability}` : `✕ 需要能力 ${capabilityLabels[condition.capability] ?? condition.capability}`;
     case 'owns_item': { const itemName = content.items.find((entry) => entry.id === condition.itemId)?.name ?? condition.itemId; return (state.inventory[condition.itemId] ?? 0) >= (condition.quantity ?? 1) ? `✓ 已拥有${itemName}` : `✕ 需要商品 ${itemName}`; }
+    case 'interest_familiarity_at_least': return (state.interestFamiliarity?.[condition.tag] ?? 0) >= condition.amount ? `✓ ${condition.tag}兴趣熟练度 ≥ ${condition.amount}` : `✕ ${condition.tag}兴趣熟练度 ≥ ${condition.amount}（当前 ${state.interestFamiliarity?.[condition.tag] ?? 0}）`;
     default: return evaluateCondition(condition, state, content, balance) ? '✓ 已满足条件' : '✕ 当前条件未满足';
   }
 }

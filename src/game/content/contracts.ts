@@ -54,6 +54,7 @@ export type ConditionDefinition =
   | { type: 'lifestyle_at_least'; amount: number }
   | { type: 'current_job'; jobId: ContentId }
   | { type: 'job_experience_at_least'; jobId: ContentId; amount: number }
+  | { type: 'interest_familiarity_at_least'; tag: string; amount: number }
   | { type: 'owns_item'; itemId: ContentId; quantity?: number }
   | { type: 'has_capability'; capability: CapabilityId }
   | { type: 'housing_is'; housingId: ContentId; mode?: 'rent' | 'owned' }

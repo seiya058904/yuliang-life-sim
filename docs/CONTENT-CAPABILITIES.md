@@ -27,7 +27,7 @@
 
 ## Tag
 
-当前 Tag：`work`、`office`、`remote`、`starter`、`technology`、`clothing`、`furniture`、`luxury`、`collectible`、`housing`、`business`、`project`、`asset`、`relationship`、`life`、`luck`、`career`、`shopping`。
+当前 Tag：`work`、`office`、`remote`、`starter`、`technology`、`clothing`、`furniture`、`luxury`、`collectible`、`housing`、`business`、`project`、`asset`、`relationship`、`life`、`luck`、`career`、`shopping`、`social`、`leisure`、`travel`、`investment`、`low-risk`、`growth`、`hobby`、`photography`、`gig`。
 
 Tag 用于内容筛选、折扣和 modifier 适用范围。新增 Tag 必须注册后使用。
 

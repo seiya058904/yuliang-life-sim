@@ -50,6 +50,18 @@ export const officialActivities = [
     options: [{ id: 'standard', label: '慢慢走走', durationMinutes: 240, cashCost: 360, effects: [{ type: 'attribute', attribute: 'mood', amount: 8 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] }],
   },
   {
+    id: 'activity.city-photography',
+    contentStatus: 'official',
+    name: '城市摄影练习',
+    description: '带着相机走一圈，把兴趣变成可以继续发展的熟练度。',
+    tags: ['life', 'hobby', 'photography'],
+    category: 'culture',
+    financialCategory: 'entertainment',
+    locationId: 'location.central',
+    familiarityTags: ['photography'],
+    options: [{ id: 'walk', label: '街区取景', durationMinutes: 120, cashCost: 40, requirements: { type: 'owns_item', itemId: 'item.vintage-camera' }, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] }],
+  },
+  {
     id: 'activity.brand-film-project',
     contentStatus: 'official',
     name: '品牌短片项目',

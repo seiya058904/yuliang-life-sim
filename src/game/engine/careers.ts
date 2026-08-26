@@ -1,7 +1,7 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AcquisitionHint, ApplicationRoute, ConditionDefinition, ContentId, ContentRegistry, GameState, JobDefinition, VacancyState, VacancyTemplate, ViewId } from '../content/contracts';
 import { getAttribute } from './attributes';
-import { getPlayerStage } from './conditions';
+import { evaluateCondition, getPlayerStage } from './conditions';
 import { requirementForJob } from './careerProgression';
 
 export interface CompetitivenessResult {
@@ -154,6 +154,10 @@ function conditionHints(condition: ConditionDefinition, state: GameState, conten
       const current = state.jobExperience[condition.jobId] ?? 0;
       return current >= condition.amount ? [] : [numericHint(`experience:${condition.jobId}`, '积累相关工作经验', '查看职业安排', 'work', current, condition.amount, condition.jobId)];
     }
+    case 'interest_familiarity_at_least': {
+      const current = state.interestFamiliarity?.[condition.tag] ?? 0;
+      return current >= condition.amount ? [] : [numericHint(`interest:${condition.tag}`, `提升${condition.tag}兴趣熟练度`, '安排相关活动', 'shop', current, condition.amount)];
+    }
     case 'owns_item':
       return (state.inventory[condition.itemId] ?? 0) >= (condition.quantity ?? 1) ? [] : [itemHint(condition.itemId, state, content, condition.quantity ?? 1)];
     case 'has_capability':
@@ -206,6 +210,7 @@ function conditionSatisfied(condition: ConditionDefinition, state: GameState, co
     case 'lifestyle_at_least': return state.lifestyle >= condition.amount;
     case 'current_job': return state.currentJobId === condition.jobId;
     case 'job_experience_at_least': return (state.jobExperience[condition.jobId] ?? 0) >= condition.amount;
+    case 'interest_familiarity_at_least': return (state.interestFamiliarity?.[condition.tag] ?? 0) >= condition.amount;
     case 'owns_item': return (state.inventory[condition.itemId] ?? 0) >= (condition.quantity ?? 1);
     case 'has_capability': return state.unlockedCapabilities.includes(condition.capability);
     case 'housing_is': return state.housing.housingId === condition.housingId && (!condition.mode || state.housing.mode === condition.mode);
@@ -292,6 +297,7 @@ function conditionKey(condition: ConditionDefinition): string {
     case 'lifestyle_at_least': return `lifestyle:${condition.amount}`;
     case 'current_job': return `current_job:${condition.jobId}`;
     case 'job_experience_at_least': return `experience:${condition.jobId}:${condition.amount}`;
+    case 'interest_familiarity_at_least': return `interest:${condition.tag}:${condition.amount}`;
     case 'owns_item': return `item:${condition.itemId}:${condition.quantity ?? 1}`;
     case 'has_capability': return `capability:${condition.capability}`;
     case 'housing_is': return `housing:${condition.housingId}:${condition.mode ?? 'any'}`;
@@ -374,7 +380,12 @@ export function advanceCareerLifecycle(state: GameState, day: number, _content: 
   state.opportunities = (state.opportunities ?? []).filter((opportunity) => opportunity.expiresDay >= day || state.applications?.some((application) => application.opportunityId === opportunity.id));
   state.gigs = (state.gigs ?? []).filter((gig) => gig.expiresDay >= day);
   if (!(state.gigs ?? []).length) {
-    const gigJob = _content.jobs.find((job) => employmentKind(job) === 'gig' && (job.abilityRequired ?? 0) <= state.ability && (job.reputationRequired ?? 0) <= state.reputation);
+    const gigJob = _content.jobs.find((job) => employmentKind(job) === 'gig'
+      && (job.abilityRequired ?? 0) <= state.ability
+      && (job.reputationRequired ?? 0) <= state.reputation
+      && (!job.requirements || evaluateCondition(job.requirements, state, _content, balance))
+      && (job.requiredItems ?? []).every((itemId) => (state.inventory[itemId] ?? 0) > 0)
+      && (job.requiredCapabilities ?? []).every((capability) => state.unlockedCapabilities.includes(capability)));
     if (gigJob) state.gigs = [{ id: `gig.offer.${gigJob.id}.${day}`, jobId: gigJob.id, validFromDay: day, expiresDay: day + 6, executableDay: day, startMinute: 18 * 60, endMinute: 18 * 60 + gigJob.hours * 60, pay: gigJob.basePay, source: '工作市场' }];
   }
 }

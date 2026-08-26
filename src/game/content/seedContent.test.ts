@@ -14,6 +14,7 @@ describe('seed content registry', () => {
       'activity.cinema',
       'activity.cafe-break',
       'activity.weekend-getaway',
+      'activity.city-photography',
       'activity.brand-film-project',
     ]);
   });
