@@ -1251,6 +1251,32 @@ test('settles the authored private-equity exit opportunity', async ({ page }) =>
   await expect(investment).toContainText('买入 1 份');
 });
 
+test('buys and sells independent public company equity with persisted history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 10_000;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  const equity = page.getByRole('heading', { name: '启明服务公开股权' }).locator('..');
+  await expect(equity).toContainText('独立于自营企业');
+  await equity.getByRole('button', { name: '买入 1 份' }).click();
+  await expect(equity).toContainText('持有 1 份');
+  await equity.getByRole('button', { name: '卖出 1 份' }).click();
+  await expect(equity).not.toContainText('持有 1 份');
+
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('买入启明服务公开股权')).toBeVisible();
+  await expect(page.getByText('卖出启明服务公开股权')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByText('卖出启明服务公开股权')).toBeVisible();
+});
+
 test('shows the persisted wealth portfolio summary across the wealth flow', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
