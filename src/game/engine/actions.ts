@@ -397,6 +397,16 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
           }
         }
       } else {
+        if (state.employment) {
+          state.employmentHistory = [...(state.employmentHistory ?? []), {
+            jobId: state.employment.jobId,
+            companyId: state.employment.companyId,
+            startedDay: undefined,
+            endedDay: state.time.day,
+            finalPay: (state.employment.basePay ?? 0) + (state.employment.salaryAdjustment ?? 0),
+            reason: '离职',
+          }];
+        }
         state.currentJobId = undefined;
         state.employment = undefined;
         state.activeResignation = undefined;

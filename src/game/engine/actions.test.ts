@@ -136,6 +136,28 @@ describe('game action dispatcher', () => {
     expect(cancelled.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '取消基础通信套餐' });
   });
 
+  it('negotiates a salary increase and records a voluntary departure', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const jobId = state.currentJobId!;
+    state.jobExperience[jobId] = 20;
+
+    const started = dispatchGameAction(state, { type: 'start_resignation' }, contentRegistry, balanceConfig);
+    const outcome = dispatchGameAction(started.state, { type: 'advance_resignation' }, contentRegistry, balanceConfig);
+    const stayed = dispatchGameAction(outcome.state, { type: 'choose_resignation', choice: 'stay' }, contentRegistry, balanceConfig);
+
+    expect(stayed.error).toBeUndefined();
+    expect(stayed.state.employment?.negotiationStage).toBe(1);
+    expect(stayed.state.employment?.salaryAdjustment).toBe(Math.round((stayed.state.employment?.basePay ?? 0) * 0.05));
+
+    const secondStart = dispatchGameAction(stayed.state, { type: 'start_resignation' }, contentRegistry, balanceConfig);
+    const secondOutcome = dispatchGameAction(secondStart.state, { type: 'advance_resignation' }, contentRegistry, balanceConfig);
+    const left = dispatchGameAction(secondOutcome.state, { type: 'choose_resignation', choice: 'leave' }, contentRegistry, balanceConfig);
+
+    expect(left.error).toBeUndefined();
+    expect(left.state.currentJobId).toBeUndefined();
+    expect(left.state.employmentHistory).toContainEqual(expect.objectContaining({ jobId, reason: '离职', finalPay: (state.employment?.basePay ?? 0) + Math.round((state.employment?.basePay ?? 0) * 0.05) }));
+  });
+
   it('tracks a wishlist item and completes the goal when the item is purchased', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     const added = dispatchGameAction(state, { type: 'manage_wishlist', itemId: 'item.seed-phone', enabled: true }, contentRegistry, balanceConfig);

@@ -108,5 +108,5 @@ function SideJobList({ game, jobs, dispatch }: { game: GameState; jobs: readonly
 }
 
 function HistoryList({ game, jobs }: { game: GameState; jobs: readonly any[] }) {
-  return (game.employmentHistory ?? []).length ? <div className="item-list">{game.employmentHistory!.map((entry) => <div className="item-row" key={entry.jobId + (entry.endedDay ?? 0)}><div><h2>{jobs.find((job) => job.id === entry.jobId)?.name ?? entry.jobId}</h2><p>{entry.migrated ? '旧存档开始前已任职' : '第 ' + entry.startedDay + ' 天至第 ' + (entry.endedDay ?? game.time.day) + ' 天'}</p></div><strong>{money(entry.finalPay)} / 班</strong></div>)}</div> : <p className="muted">职业履历会在换岗或离职后出现。</p>;
+  return (game.employmentHistory ?? []).length ? <div className="item-list">{game.employmentHistory!.map((entry) => <div className="item-row" key={entry.jobId + (entry.endedDay ?? 0)}><div><h2>{jobs.find((job) => job.id === entry.jobId)?.name ?? entry.jobId}</h2><p>{entry.migrated ? '旧存档开始前已任职' : '第 ' + entry.startedDay + ' 天至第 ' + (entry.endedDay ?? game.time.day) + ' 天'}{entry.reason ? ` · ${entry.reason}` : ''}</p></div><strong>{money(entry.finalPay)} / 班</strong></div>)}</div> : <p className="muted">职业履历会在换岗或离职后出现。</p>;
 }

@@ -348,6 +348,39 @@ test('discovers the expanded daily services and subscriptions', async ({ page })
   await expect(video.getByRole('button', { name: '取消订阅' })).toBeVisible();
 });
 
+test('negotiates salary and persists a voluntary departure in career history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.jobExperience = { ...(state.jobExperience ?? {}), 'job.seed-shop-clerk': 20 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '当前工作', exact: true }).click();
+  await page.getByRole('button', { name: '离开当前工作' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: '继续沟通' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: '留下来谈谈' }).click();
+  const negotiated = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  expect(negotiated.employment.salaryAdjustment).toBe(5);
+  expect(negotiated.employment.negotiationStage).toBe(1);
+
+  await page.getByRole('button', { name: '当前工作', exact: true }).click();
+  await page.getByRole('button', { name: '离开当前工作' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: '继续沟通' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: '我想换个方向' }).click();
+  await page.getByRole('button', { name: '职业履历', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '便利店店员' })).toBeVisible();
+  await expect(page.getByText(/至第 1 天 · 离职/)).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '职业履历', exact: true }).click();
+  await expect(page.getByText(/至第 1 天 · 离职/)).toBeVisible();
+});
+
 test('charges and cancels a monthly subscription with persisted history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
