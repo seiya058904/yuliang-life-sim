@@ -62,6 +62,6 @@ describe('annual world snapshots', () => {
     closeMonth(state, 12, contentRegistry, balanceConfig, effects);
 
     expect(state.locationDevelopment).toMatchObject({ 'location.central': 2, 'location.riverside': 0 });
-    expect(state.worldHistory?.[0]).toMatchObject({ year: 1, businessCount: 1, listedBusinessCount: 1, publicFloatPercent: 35, visitedLocationCount: 2, locationDevelopment: { 'location.central': 2, 'location.riverside': 0 }, relationshipValues: { 'character.seed-zhou': 42 }, characterCareerStates: { 'character.seed-lin': '远望零售 · 门店员工' } });
+    expect(state.worldHistory?.[0]).toMatchObject({ year: 1, businessCount: 1, listedBusinessCount: 1, publicFloatPercent: 35, visitedLocationCount: 2, locationDevelopment: { 'location.central': 2, 'location.riverside': 0 }, relationshipValues: { 'character.seed-zhou': 42 }, characterCareerStates: { 'character.seed-lin': '远望零售 · 门店员工' }, companyStates: { 'company.yuanwang': '门店与社区零售' } });
   });
 });

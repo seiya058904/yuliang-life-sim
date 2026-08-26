@@ -340,12 +340,18 @@ export interface InvestmentDefinition extends ContentMeta {
 
 export interface CompanyDefinition extends ContentMeta {
   industry: string;
+  history?: readonly CompanyHistoryEntry[];
   jobIds?: readonly ContentId[];
   characterIds?: readonly ContentId[];
   investmentIds?: readonly ContentId[];
   businessIds?: readonly ContentId[];
   eventIds?: readonly ContentId[];
   locationId?: ContentId;
+}
+
+export interface CompanyHistoryEntry {
+  startYear: number;
+  title: string;
 }
 
 export interface LocationDefinition extends ContentMeta {
@@ -723,6 +729,7 @@ export interface WorldSnapshot {
   relationshipCount: number;
   relationshipValues?: Record<ContentId, number>;
   characterCareerStates?: Record<ContentId, string>;
+  companyStates?: Record<ContentId, string>;
   visitedLocationCount: number;
   locationDevelopment?: Record<ContentId, number>;
   listedBusinessCount?: number;

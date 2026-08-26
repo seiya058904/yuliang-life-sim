@@ -415,7 +415,7 @@ describe('余量 app flow', () => {
   it('shows persisted annual world snapshots alongside financial review', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
-    appStore.setState({ game: { ...game, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, relationshipValues: { 'character.seed-zhou': 42 }, characterCareerStates: { 'character.seed-lin': '远望零售 · 门店员工' }, listedBusinessCount: 1, publicFloatPercent: 35, currentJobId: game.currentJobId }] } });
+    appStore.setState({ game: { ...game, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, relationshipValues: { 'character.seed-zhou': 42 }, characterCareerStates: { 'character.seed-lin': '远望零售 · 门店员工' }, companyStates: { 'company.yuanwang': '持续经营' }, listedBusinessCount: 1, publicFloatPercent: 35, currentJobId: game.currentJobId }] } });
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
@@ -424,6 +424,7 @@ describe('余量 app flow', () => {
     expect(screen.getByText(/访问 3 个地点/)).toBeInTheDocument();
     expect(screen.getByText(/周妍 42/)).toBeInTheDocument();
     expect(screen.getByText(/林晨：远望零售 · 门店员工/)).toBeInTheDocument();
+    expect(screen.getByText(/远望零售：持续经营/)).toBeInTheDocument();
     expect(screen.getByRole('region', { name: '年度公开股权记录' })).toHaveTextContent('公开流通 35%');
   });
 

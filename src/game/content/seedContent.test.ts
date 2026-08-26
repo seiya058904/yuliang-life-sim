@@ -98,6 +98,12 @@ describe('seed content registry', () => {
     expect(characters.every((character) => (character.careerHistory?.length ?? 0) >= 1)).toBe(true);
   });
 
+  it('populates bounded company histories for every official company', () => {
+    const companies = contentRegistry.companies?.filter((company) => company.contentStatus === 'official') ?? [];
+    expect(companies).toHaveLength(11);
+    expect(companies.every((company) => (company.history?.length ?? 0) >= 1)).toBe(true);
+  });
+
   it('exposes official investment products from the content registry', () => {
     expect(contentRegistry.investments?.filter((investment) => investment.contentStatus === 'official').map((investment) => investment.id)).toEqual([
       'investment.flexible-savings',

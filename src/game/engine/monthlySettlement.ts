@@ -112,6 +112,10 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
         const company = entry.companyId ? content.companies?.find((candidate) => candidate.id === entry.companyId)?.name : undefined;
         return [[character.id, company ? `${company} · ${entry.title}` : entry.title]];
       })),
+      companyStates: Object.fromEntries((content.companies ?? []).flatMap((company) => {
+        const entry = [...(company.history ?? [])].filter((history) => history.startYear <= annual.year).sort((a, b) => b.startYear - a.startYear)[0];
+        return entry ? [[company.id, entry.title]] : [];
+      })),
       visitedLocationCount: Object.values(state.locationVisits ?? {}).filter((value) => value > 0).length,
       locationDevelopment: { ...development },
       listedBusinessCount: Object.values(state.businesses).filter((holding) => holding.listed).length,
