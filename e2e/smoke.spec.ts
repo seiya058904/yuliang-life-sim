@@ -36,6 +36,7 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
 
   const pausedClock = await page.getByTestId('clock-value').innerText();
   await page.getByRole('button', { name: '商店' }).click();
+  await expect(page.getByRole('heading', { name: '周末短途旅行 · 临江夜游' })).toBeVisible();
   await page.getByRole('button', { name: '加入购物袋：现磨咖啡' }).click();
   await page.getByRole('button', { name: '加入购物袋：实用手机' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();

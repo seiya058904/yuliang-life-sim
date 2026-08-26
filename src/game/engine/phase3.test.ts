@@ -21,6 +21,14 @@ describe('phase 3 additive systems', () => {
     expect(activityDiscountLabel(state, activity, contentRegistry)).toBe('地点发展优惠');
   });
 
+  it('keeps the alternate travel option discoverable with its own duration and cost', () => {
+    const activity = contentRegistry.activities?.find((entry) => entry.id === 'activity.weekend-getaway')!;
+    const option = getActivityOption(activity, 'evening-walk');
+
+    expect(option).toMatchObject({ label: '临江夜游', durationMinutes: 240, cashCost: 520 });
+    expect(activityCashCost(createInitialState(contentRegistry, balanceConfig, 7), activity, option!, contentRegistry)).toBe(520);
+  });
+
   it('keeps legacy ability synchronized with fine attributes', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 7);
     expect(calculateLegacyAbility(state.attributes!)).toBe(state.ability);

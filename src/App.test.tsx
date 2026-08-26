@@ -388,6 +388,7 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '商店' }));
     const getaway = screen.getByRole('heading', { name: '周末短途旅行 · 慢慢走走' }).closest('article');
     expect(getaway).not.toBeNull();
+    expect(screen.getByRole('heading', { name: '周末短途旅行 · 临江夜游' })).toBeInTheDocument();
     await user.click(within(getaway as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
     expect(screen.getByText(/周末短途旅行 · 慢慢走走/)).toBeInTheDocument();
   });

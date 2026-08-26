@@ -47,7 +47,10 @@ export const officialActivities = [
     category: 'travel',
     financialCategory: 'travel',
     locationId: 'location.riverside',
-    options: [{ id: 'standard', label: '慢慢走走', durationMinutes: 240, cashCost: 360, effects: [{ type: 'attribute', attribute: 'mood', amount: 8 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] }],
+    options: [
+      { id: 'standard', label: '慢慢走走', durationMinutes: 240, cashCost: 360, effects: [{ type: 'attribute', attribute: 'mood', amount: 8 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] },
+      { id: 'evening-walk', label: '临江夜游', durationMinutes: 240, cashCost: 520, effects: [{ type: 'attribute', attribute: 'mood', amount: 10 }, { type: 'attribute', attribute: 'network', amount: 1 }] },
+    ],
   },
   {
     id: 'activity.city-photography',
