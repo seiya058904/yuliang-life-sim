@@ -179,5 +179,8 @@ describe('automatic simulation', () => {
     expect(state.annualHistory).toHaveLength(5);
     expect(state.annualHistory?.map((entry) => entry.year)).toEqual([1, 2, 3, 4, 5]);
     expect(state.annualHistory?.every((entry) => entry.months === 12)).toBe(true);
+    expect(state.worldHistory).toHaveLength(5);
+    expect(state.worldHistory?.map((entry) => entry.year)).toEqual([1, 2, 3, 4, 5]);
+    expect(state.worldHistory?.every((entry) => entry.day > 0 && entry.businessCount >= 0)).toBe(true);
   });
 });

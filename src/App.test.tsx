@@ -328,6 +328,18 @@ describe('余量 app flow', () => {
     expect(screen.queryByRole('heading', { name: '第 1 年' })).not.toBeInTheDocument();
   });
 
+  it('shows persisted annual world snapshots alongside financial review', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 2, visitedLocationCount: 3, currentJobId: game.currentJobId }] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    expect(screen.getByRole('heading', { name: '世界记录' })).toBeInTheDocument();
+    expect(screen.getByText(/第 1 年 · 经营 1 家企业/)).toBeInTheDocument();
+    expect(screen.getByText(/访问 3 个地点/)).toBeInTheDocument();
+  });
+
   it('shows the long-term wealth tier without ending the life simulation', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;

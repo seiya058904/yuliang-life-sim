@@ -657,6 +657,15 @@ export interface AnnualSummary {
   totalConsumption: number;
   months: number;
 }
+export interface WorldSnapshot {
+  year: number;
+  day: number;
+  netWorth: number;
+  businessCount: number;
+  relationshipCount: number;
+  visitedLocationCount: number;
+  currentJobId?: ContentId;
+}
 export interface PendingMonthlySummary { month: number; summary: MonthlySummary; financial?: MonthlyFinancialSummary; resumeMode: 'running' | 'planning' | 'paused'; highlights: MonthlyHighlight[]; }
 
 export interface RecruitmentState {
@@ -707,6 +716,7 @@ export interface GameState {
   financialLedger?: FinancialLedgerState;
   financialHistory?: MonthlyFinancialSummary[];
   annualHistory?: AnnualSummary[];
+  worldHistory?: WorldSnapshot[];
   lastFinancialSummary?: MonthlyFinancialSummary;
   pendingMonthlySummary?: PendingMonthlySummary;
   jobExperience: Record<ContentId, number>;

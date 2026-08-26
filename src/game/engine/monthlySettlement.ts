@@ -1,5 +1,5 @@
 import type { BalanceConfig } from '../balance/config';
-import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary } from '../content/contracts';
+import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary, WorldSnapshot } from '../content/contracts';
 import { calculateNetWorth } from './economy';
 import { emptyFinancialLedger, projectLegacyMonthlyLedger, summarizeFinancialLedger } from './financialLedger';
 import { appendLifeRecord } from './lifeHistory';
@@ -46,6 +46,16 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       months: yearMonths.length,
     };
     state.annualHistory = [...(state.annualHistory ?? []).filter((entry) => entry.year !== annual.year), annual].slice(-10);
+    const snapshot: WorldSnapshot = {
+      year: annual.year,
+      day: state.time.day,
+      netWorth: netWorthEnd,
+      businessCount: Object.keys(state.businesses).length,
+      relationshipCount: Object.values(state.relationships).filter((value) => value > 0).length,
+      visitedLocationCount: Object.values(state.locationVisits ?? {}).filter((value) => value > 0).length,
+      currentJobId: state.currentJobId,
+    };
+    state.worldHistory = [...(state.worldHistory ?? []).filter((entry) => entry.year !== snapshot.year), snapshot].slice(-10);
   }
   state.financialLedger = emptyFinancialLedger(state.calendar.month, state.cash, netWorthEnd);
   state.monthlyLedger = emptyMonthlyLedger(ledger.netWorthEnd);

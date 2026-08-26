@@ -39,6 +39,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     financialLedger: emptyFinancialLedger(calendar.month, balance.initialCash, balance.initialCash),
     financialHistory: [],
     annualHistory: [],
+    worldHistory: [],
     jobExperience: {},
     courseProgress: {},
     careerExperience: {},
