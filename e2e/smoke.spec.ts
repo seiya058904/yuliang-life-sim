@@ -422,6 +422,35 @@ test('runs a business from purchase through funding, listing, daily profit and p
   await expect(page.getByRole('region', { name: '公开股权' })).toContainText('早餐与咖啡档');
 });
 
+test('executes an offered gig and persists its income and career history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 2_000;
+    const day = state.time?.day ?? 1;
+    state.gigs = [{ id: 'gig.e2e-delivery', jobId: 'job.delivery-shift', validFromDay: day, expiresDay: day + 6, executableDay: day, startMinute: 1080, endMinute: 1320, pay: 76, source: '公开市场' }];
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '工作机会' }).click();
+  const gig = page.getByRole('heading', { name: '同城配送' }).locator('xpath=ancestor::article[1]');
+  await expect(gig).toContainText('结算 ¥76');
+  await gig.getByRole('button', { name: '执行一次' }).click();
+  await expect(page.getByText('+¥76')).toBeVisible();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '完成同城配送' })).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '完成同城配送' })).toBeVisible();
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByRole('button', { name: '工作机会' }).click();
+  await expect(page.getByRole('heading', { name: '同城配送' })).not.toBeVisible();
+});
+
 test('applies the industrial hub city event and persists its development', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
