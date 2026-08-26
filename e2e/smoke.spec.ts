@@ -95,6 +95,12 @@ test('discovers the expanded daily services and subscriptions', async ({ page })
   await expect(video.getByRole('button', { name: '取消订阅' })).toBeVisible();
 });
 
+test('discovers the riverside night market activity', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const market = page.locator('article.activity-card').filter({ hasText: '河畔夜市 · 逛一圈' });
+  await expect(market.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

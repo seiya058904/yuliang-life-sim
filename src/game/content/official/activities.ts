@@ -43,6 +43,17 @@ export const officialActivities = [
     ],
   },
   {
+    id: 'activity.riverside-night-market',
+    contentStatus: 'official',
+    name: '河畔夜市',
+    description: '沿着临江区的灯光走一圈，买一点小吃，也看看这座城市下班后的样子。',
+    tags: ['life', 'social', 'leisure'],
+    category: 'nightlife',
+    financialCategory: 'entertainment',
+    locationId: 'location.riverside',
+    options: [{ id: 'market', label: '逛一圈', durationMinutes: 120, cashCost: 96, effects: [{ type: 'attribute', attribute: 'mood', amount: 4 }, { type: 'attribute', attribute: 'network', amount: 1 }] }],
+  },
+  {
     id: 'activity.weekend-getaway',
     contentStatus: 'official',
     name: '周末短途旅行',
