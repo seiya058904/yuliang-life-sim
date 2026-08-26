@@ -383,6 +383,17 @@ describe('game action dispatcher', () => {
     expect(chosen.state.pendingReward?.lines).toContain('临江区发展 +2');
   });
 
+  it('applies the industrial hub event to the persisted location state', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.pendingEventId = 'event.industrial-hub-upgrade';
+    state.simulationMode = 'event';
+    const result = dispatchGameAction(state, { type: 'choose_event', eventId: 'event.industrial-hub-upgrade', choiceId: 'support' }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.locationDevelopment?.['location.industrial']).toBe(1);
+    expect(result.state.lifeHistory.at(-1)).toMatchObject({ category: 'event', sourceId: 'event.industrial-hub-upgrade' });
+  });
+
   it('turns a company expansion choice into an internal consultant opportunity', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.currentJobId = 'job.category-operations-expert';

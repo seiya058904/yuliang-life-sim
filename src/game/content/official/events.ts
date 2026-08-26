@@ -47,6 +47,35 @@ export const officialEvents = [
     "tags": ["career", "work"]
   },
   {
+    "id": "event.industrial-hub-upgrade",
+    "contentStatus": "official",
+    "name": "北部产业区物流枢纽升级",
+    "description": "北部产业区正在升级物流枢纽，新的公共设施会改变工作与生活的连接方式。",
+    "title": "北部产业区的物流枢纽升级",
+    "body": "环流物流和附近社区正在讨论一项物流枢纽升级。你可以投入一点时间支持，也可以把精力留给自己的安排。",
+    "category": "life",
+    "weight": 0.24,
+    "cooldownDays": 280,
+    "conditions": { "type": "day_at_least", "day": 180 },
+    "choices": [
+      {
+        "id": "support",
+        "text": "支持这项升级",
+        "effects": [
+          { "type": "location_development", "locationId": "location.industrial", "amount": 1 }
+        ]
+      },
+      {
+        "id": "observe",
+        "text": "先观察变化",
+        "effects": [
+          { "type": "stat", "stat": "lifestyle", "amount": 1 }
+        ]
+      }
+    ],
+    "tags": ["life", "city", "logistics"]
+  },
+  {
     "id": "event.city-transit-upgrade",
     "contentStatus": "official",
     "name": "临江区公共空间升级",

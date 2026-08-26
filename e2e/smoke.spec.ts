@@ -132,6 +132,28 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   await expect(page.getByText('持股 70%')).toBeVisible();
 });
 
+test('applies the industrial hub city event and persists its development', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.time = { ...state.time, day: 180 };
+    state.pendingEventId = 'event.industrial-hub-upgrade';
+    state.simulationMode = 'event';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await expect(page.getByRole('dialog')).toContainText('北部产业区的物流枢纽升级');
+  await page.getByRole('dialog').getByRole('button', { name: /支持这项升级/ }).click();
+  await expect(page.getByRole('dialog')).toContainText('北部产业区发展 +1');
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '城市' }).click();
+  await expect(page.getByText('北部产业区')).toBeVisible();
+  await page.reload();
+  await page.getByRole('button', { name: '城市' }).click();
+  await expect(page.getByText('发展阶段 1/5')).toBeVisible();
+});
+
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

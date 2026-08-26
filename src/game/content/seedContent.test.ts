@@ -110,6 +110,12 @@ describe('seed content registry', () => {
     expect(event?.choices.find((choice) => choice.id === 'support')?.effects).toContainEqual({ type: 'location_development', locationId: 'location.riverside', amount: 1 });
   });
 
+  it('exposes the official industrial district development event with a real location effect', () => {
+    const event = contentRegistry.events.find((entry) => entry.id === 'event.industrial-hub-upgrade');
+    expect(event?.contentStatus).toBe('official');
+    expect(event?.choices.find((choice) => choice.id === 'support')?.effects).toContainEqual({ type: 'location_development', locationId: 'location.industrial', amount: 1 });
+  });
+
   it('exposes a gated high-value collectible asset through the investment entry event', () => {
     expect(contentRegistry.assets.find((asset) => asset.id === 'asset.vintage-watch')).toMatchObject({ kind: 'collectible', price: 18000, requirements: { type: 'has_capability', capability: 'market_insight' } });
     const event = contentRegistry.events.find((entry) => entry.id === 'event.investment-note');
