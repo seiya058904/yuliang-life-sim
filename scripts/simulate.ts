@@ -60,7 +60,7 @@ function run(strategy: Strategy): { strategy: Strategy; day: number; cash: numbe
   let errors = 0;
   const majorEventDays: number[] = [];
   let guard = 0;
-  while (state.time.day <= 1681 && guard < 250000) {
+  while (state.time.day <= 1824 && guard < 300000) {
     const action = chooseAction(state, strategy);
     const result = dispatchGameAction(state, action, contentRegistry, balanceConfig);
     if (result.error) {
