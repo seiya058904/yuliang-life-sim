@@ -153,6 +153,15 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes the frame media route with stable production content IDs', () => {
+    expect(contentRegistry.companies).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'company.frame-media', name: '映界传媒', jobIds: expect.arrayContaining(['job.production-assistant', 'job.content-editor', 'job.video-operations']) }),
+    ]));
+    expect(contentRegistry.vacancyTemplates?.filter((vacancy) => vacancy.companyId === 'company.frame-media').map((vacancy) => vacancy.jobId)).toEqual([
+      'job.production-assistant', 'job.content-editor', 'job.video-operations',
+    ]);
+  });
+
   it('exposes the official headhunter contact and its opportunity-bearing choice', () => {
     expect(contentRegistry.characters.find((character) => character.id === 'character.xuheng')).toMatchObject({ identity: '资深招聘顾问 / 猎头' });
     expect(contentRegistry.events.find((event) => event.id === 'event.headhunter-contact')?.choices[0]).toMatchObject({

@@ -101,7 +101,7 @@ test('turns the education course qualification into a persistent teaching assist
     state.ability = 14;
     state.reputation = 3;
     state.qualifications = [...new Set([...(state.qualifications ?? []), 'qualification.workplace-basics'])];
-    state.rng = { ...(state.rng ?? {}), seed: 24 };
+    state.rng = { ...(state.rng ?? {}), seed: 24, cursor: 0 };
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
     localStorage.setItem(key, JSON.stringify(state));
@@ -155,7 +155,7 @@ test('discovers the travel product assistant route in the public market', async 
     state.attributes = { ...(state.attributes ?? {}), professional: 18, knowledge: 18, communication: 18, fitness: 18 };
     state.ability = 18;
     state.reputation = 5;
-    state.rng = { ...(state.rng ?? {}), seed: 1 };
+    state.rng = { ...(state.rng ?? {}), seed: 1, cursor: 0 };
     state.simulationMode = 'paused';
     localStorage.setItem(key, JSON.stringify(state));
   }, { key: saveKey, state: initial });
@@ -178,7 +178,7 @@ test('discovers the low-barrier ecommerce operations route in the public market'
     state.attributes = { ...(state.attributes ?? {}), professional: 12, knowledge: 12, communication: 12, fitness: 12 };
     state.ability = 12;
     state.reputation = 2;
-    state.rng = { ...(state.rng ?? {}), seed: 37 };
+    state.rng = { ...(state.rng ?? {}), seed: 37, cursor: 0 };
     state.simulationMode = 'paused';
     localStorage.setItem(key, JSON.stringify(state));
   }, { key: saveKey, state: initial });
@@ -201,7 +201,7 @@ test('discovers the neworder automotive service route in the public market', asy
     state.attributes = { ...(state.attributes ?? {}), professional: 12, knowledge: 12, communication: 10, fitness: 12, appearance: 8, network: 4 };
     state.ability = 12;
     state.reputation = 2;
-    state.rng = { ...(state.rng ?? {}), seed: 29 };
+    state.rng = { ...(state.rng ?? {}), seed: 17, cursor: 0 };
     state.simulationMode = 'paused';
     localStorage.setItem(key, JSON.stringify(state));
   }, { key: saveKey, state: initial });
@@ -215,6 +215,29 @@ test('discovers the neworder automotive service route in the public market', asy
   await vacancy.getByRole('button', { name: '申请职位' }).click();
   await page.getByRole('button', { name: '我的申请' }).click();
   await expect(page.getByRole('heading', { name: '门店服务助理' })).toBeVisible();
+});
+
+test('discovers the frame media production route in the public market', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.attributes = { ...(state.attributes ?? {}), professional: 12, knowledge: 12, communication: 12, fitness: 12, appearance: 10, network: 4 };
+    state.ability = 12;
+    state.reputation = 2;
+    state.rng = { ...(state.rng ?? {}), seed: 83, cursor: 0 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await page.getByLabel('搜索岗位或公司').fill('映界');
+  const vacancy = page.getByRole('heading', { name: '制作助理' }).locator('xpath=ancestor::article[1]');
+  await expect(vacancy).toContainText('映界传媒');
+  await expect(vacancy).toContainText('符合条件');
+  await vacancy.getByRole('button', { name: '申请职位' }).click();
+  await page.getByRole('button', { name: '我的申请' }).click();
+  await expect(page.getByRole('heading', { name: '制作助理' })).toBeVisible();
 });
 
 test('enforces the persisted travel cooldown in the activity market', async ({ page }) => {

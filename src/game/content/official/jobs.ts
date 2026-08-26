@@ -666,5 +666,63 @@ export const officialJobs = [
       { "type": "attribute_at_least", "attribute": "network", "amount": 18 }
     ] },
     "isLongTerm": true
+  },
+  {
+    "id": "job.production-assistant",
+    "contentStatus": "official",
+    "name": "制作助理",
+    "description": "协助拍摄准备、素材整理和现场沟通，从内容制作的日常节奏开始积累经验。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 153,
+    "careerXp": 3,
+    "experienceTags": ["media", "office"],
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 12 },
+      { "type": "attribute_at_least", "attribute": "fitness", "amount": 10 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.content-editor",
+    "contentStatus": "official",
+    "name": "内容编辑",
+    "description": "整理内容素材、校对文案并协助形成可发布的内容，连接知识与专业判断。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 200,
+    "careerXp": 4,
+    "experienceTags": ["media", "office"],
+    "experienceRequired": { "media": 20 },
+    "requiredItems": ["item.seed-laptop"],
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 26 },
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 20 }
+    ] },
+    "isLongTerm": true
+  },
+  {
+    "id": "job.video-operations",
+    "contentStatus": "official",
+    "name": "视频运营",
+    "description": "跟进视频发布、数据反馈和内容迭代，让作品在发布之后继续产生真实反馈。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 232,
+    "careerXp": 5,
+    "experienceTags": ["media", "operations", "data"],
+    "experienceRequired": { "media": 40 },
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "professional", "amount": 30 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 26 },
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 20 }
+    ] },
+    "isLongTerm": true
   }
 ] satisfies readonly JobDefinition[];
