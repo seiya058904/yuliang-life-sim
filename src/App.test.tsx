@@ -283,6 +283,9 @@ describe('余量 app flow', () => {
     const newest = screen.getByText('接受仓库助理 Offer');
     const oldest = screen.getByText('购买现磨咖啡');
     expect(newest.compareDocumentPosition(oldest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(within(screen.getByLabelText('人生记录')).getByRole('button', { name: '职业' }));
+    expect(screen.getByText('接受仓库助理 Offer')).toBeInTheDocument();
+    expect(screen.queryByText('购买现磨咖啡')).not.toBeInTheDocument();
   });
 
   it('shows persisted annual records in the profile view', async () => {
