@@ -23,6 +23,14 @@ describe('seed content registry', () => {
     ]);
   });
 
+  it('exposes official services with repeat-use cooldown metadata', () => {
+    expect(contentRegistry.services?.filter((service) => service.contentStatus === 'official')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'service.haircut-basic', cooldownDays: 14 }),
+      expect.objectContaining({ id: 'service.laundry', cooldownDays: 7 }),
+      expect.objectContaining({ id: 'service.fitness-assessment', cooldownDays: 60 }),
+    ]));
+  });
+
   it('exposes official character-specific interactions from the content registry', () => {
     expect(contentRegistry.relationshipInteractions?.filter((interaction) => interaction.contentStatus === 'official').map((interaction) => interaction.id)).toEqual([
       'interaction.coffee-with-recruiter',

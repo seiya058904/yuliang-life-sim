@@ -76,6 +76,19 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory?.at(-1)).toMatchObject({ category: 'service', title: '基础理发' });
   });
 
+  it('blocks a service during its cooldown and allows it again after the cooldown', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const first = dispatchGameAction(state, { type: 'use_service', serviceId: 'service.haircut-basic' }, contentRegistry, balanceConfig);
+    const blocked = dispatchGameAction(first.state, { type: 'use_service', serviceId: 'service.haircut-basic' }, contentRegistry, balanceConfig);
+
+    expect(blocked.error).toContain('冷却中');
+    expect(blocked.state.cash).toBe(first.state.cash);
+
+    const ready = dispatchGameAction({ ...blocked.state, time: { ...blocked.state.time, day: 15 } }, { type: 'use_service', serviceId: 'service.haircut-basic' }, contentRegistry, balanceConfig);
+    expect(ready.error).toBeUndefined();
+    expect(ready.state.lifeHistory?.filter((record) => record.sourceId === 'service.haircut-basic')).toHaveLength(2);
+  });
+
   it('uses the vehicle annual service only when a vehicle is owned', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 1000;

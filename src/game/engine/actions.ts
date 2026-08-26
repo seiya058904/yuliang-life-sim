@@ -16,6 +16,7 @@ import { careerRequirementsSatisfied } from './careerProgression';
 import { applyCareerExperience } from './careerProgression';
 import { housingMortgageTerms, housingPrice, housingRentPerDay, recordLocationVisit } from './locations';
 import { absoluteMinute } from './time';
+import { serviceCooldownRemaining } from './services';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
 const find = <T extends { id: string }>(entries: readonly T[], id: string): T | undefined => entries.find((entry) => entry.id === id);
@@ -521,6 +522,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
     case 'use_service': {
       const service = content.services?.find((entry) => entry.id === action.serviceId);
       if (!service) return fail(input, '找不到这项服务');
+      const cooldown = serviceCooldownRemaining(state, service);
+      if (cooldown > 0) return fail(input, `${service.name}仍在冷却中，还需要 ${cooldown} 天`);
       if (!hasRequirements(state, service.requirements, content, balance)) return fail(input, '当前条件还不满足');
       if (state.cash < service.price) return fail(input, '现金不足以使用这项服务');
       state.cash -= service.price;

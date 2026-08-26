@@ -205,6 +205,11 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     checkEffects(job.rewards, `工作 ${job.id}`);
     job.relatedCharacters?.forEach((id) => { if (!known.characters.has(id)) errors.push(`工作 ${job.id} 引用了未知人物: ${id}`); });
   });
+  (registry.services ?? []).forEach((service) => {
+    if (service.price < 0 || (service.cooldownDays !== undefined && (!Number.isInteger(service.cooldownDays) || service.cooldownDays < 0))) errors.push(`服务 ${service.id} 的价格或冷却天数无效`);
+    checkCondition(service.requirements, `服务 ${service.id}`);
+    checkEffects(service.effects, `服务 ${service.id}`);
+  });
   registry.items.forEach((item) => {
     if (item.price < 0 || item.resaleRatio < 0 || item.resaleRatio > 1) errors.push(`商品 ${item.id} 的价格或出售比例无效`);
     checkCondition(item.requirements, `商品 ${item.id}`); checkEffects(item.effects, `商品 ${item.id}`);

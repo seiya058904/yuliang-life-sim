@@ -103,6 +103,16 @@ test('shows the persisted service history beside the service market', async ({ p
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础理发');
 });
 
+test('applies and persists a cooldown after using a repeatable service', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const haircut = page.getByRole('heading', { name: '基础理发' }).locator('..').locator('..');
+  await haircut.getByRole('button', { name: '使用服务' }).click();
+  await expect(haircut.getByRole('button', { name: '冷却中 · 还需 14 天' })).toBeDisabled();
+  await page.reload();
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '基础理发' }).locator('..').locator('..').getByRole('button', { name: '冷却中 · 还需 14 天' })).toBeDisabled();
+});
+
 test('discovers the expanded daily services and subscriptions', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   const styling = page.getByRole('heading', { name: '专业形象咨询' }).locator('..').locator('..');

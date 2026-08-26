@@ -229,6 +229,7 @@ export interface ItemDefinition extends ContentMeta {
 export interface ServiceDefinition extends ContentMeta {
   price: number;
   financialCategory?: 'service' | 'maintenance';
+  cooldownDays?: number;
   requirements?: ConditionDefinition;
   effects?: readonly EffectDefinition[];
 }
