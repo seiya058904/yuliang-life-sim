@@ -483,5 +483,25 @@ export const officialJobs = [
       { "type": "attribute_at_least", "attribute": "communication", "amount": 30 }
     ] },
     "isLongTerm": true
+  },
+  {
+    "id": "job.travel-product-assistant",
+    "contentStatus": "official",
+    "name": "旅行产品助理",
+    "description": "整理旅行线路、核对活动细节，让一次出发少一些临时决定。",
+    "tags": ["work", "office", "career"],
+    "kind": "regular",
+    "employmentKind": "full_time",
+    "hours": 7,
+    "basePay": 260,
+    "abilityRequired": 18,
+    "reputationRequired": 5,
+    "careerXp": 4,
+    "experienceTags": ["office", "customer_service"],
+    "requirements": { "type": "all", "conditions": [
+      { "type": "attribute_at_least", "attribute": "communication", "amount": 18 },
+      { "type": "attribute_at_least", "attribute": "knowledge", "amount": 15 }
+    ] },
+    "isLongTerm": true
   }
 ] satisfies readonly JobDefinition[];

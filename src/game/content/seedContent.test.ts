@@ -126,6 +126,15 @@ describe('seed content registry', () => {
     ]));
   });
 
+  it('exposes the first travel career route with a reachable public vacancy', () => {
+    expect(contentRegistry.companies).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'company.harbor-travel', name: '栖岸文旅', jobIds: ['job.travel-product-assistant'] }),
+    ]));
+    expect(contentRegistry.vacancyTemplates).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'vacancy-template.travel-assistant-harbor', jobId: 'job.travel-product-assistant', companyId: 'company.harbor-travel' }),
+    ]));
+  });
+
   it('exposes the official headhunter contact and its opportunity-bearing choice', () => {
     expect(contentRegistry.characters.find((character) => character.id === 'character.xuheng')).toMatchObject({ identity: '资深招聘顾问 / 猎头' });
     expect(contentRegistry.events.find((event) => event.id === 'event.headhunter-contact')?.choices[0]).toMatchObject({

@@ -52,6 +52,7 @@ export function generateVacancies(state: GameState, content: ContentRegistry, ba
     'job.course-operations-assistant',
     'job.course-teaching-assistant',
     'job.research-assistant',
+    'job.travel-product-assistant',
   ];
   const protectedJobIds = new Set([currentJobTemplate?.jobId, starterTemplate?.jobId, ...officeTemplates.map((template) => template.jobId)]);
   for (const jobId of guaranteedRoutes) {
