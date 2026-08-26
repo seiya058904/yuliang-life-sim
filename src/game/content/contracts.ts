@@ -648,6 +648,7 @@ export interface JobSchedule {
 
 export interface EmploymentState {
   jobId: ContentId;
+  startedDay?: number;
   schedule: JobSchedule;
   effectiveWeek: number;
   pendingJobId?: ContentId;

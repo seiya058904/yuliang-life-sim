@@ -158,9 +158,9 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (state.employment?.pendingJobId) {
         const nextJob = find(content.jobs, state.employment.pendingJobId);
         if (nextJob) {
-          state.employmentHistory = [...(state.employmentHistory ?? []), { jobId: state.employment.jobId, companyId: state.employment.companyId, startedDay: undefined, endedDay: state.time.day - 1, finalPay: (state.employment.basePay ?? 0) + (state.employment.salaryAdjustment ?? 0), reason: '换岗' }];
+          state.employmentHistory = [...(state.employmentHistory ?? []), { jobId: state.employment.jobId, companyId: state.employment.companyId, startedDay: state.employment.startedDay, endedDay: state.time.day - 1, finalPay: (state.employment.basePay ?? 0) + (state.employment.salaryAdjustment ?? 0), reason: '换岗' }];
           state.currentJobId = nextJob.id;
-          state.employment = { jobId: nextJob.id, companyId: state.employment.pendingCompanyId, basePay: state.employment.pendingBasePay ?? nextJob.basePay, salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(nextJob), effectiveWeek: state.calendar.week };
+          state.employment = { jobId: nextJob.id, startedDay: state.time.day, companyId: state.employment.pendingCompanyId, basePay: state.employment.pendingBasePay ?? nextJob.basePay, salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(nextJob), effectiveWeek: state.calendar.week };
         }
       }
       state.simulationMode = 'running';
@@ -307,7 +307,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       }
       else {
         state.currentJobId = job.id;
-        state.employment = { jobId: job.id, companyId: application.companyId, basePay: application.salaryRange[0], salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
+        state.employment = { jobId: job.id, startedDay: state.time.day, companyId: application.companyId, basePay: application.salaryRange[0], salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
       }
       state.monthlyHighlights = [...(state.monthlyHighlights ?? []), { id: `job.${application.applicationId}`, kind: 'new_job', day: state.time.day, label: job.name, sourceId: job.id }];
       addLifeRecord(state, { category: 'career', title: `接受${job.name} Offer`, detail: `${application.companyId} · ${application.route}`, sourceId: job.id, amount: application.salaryRange[0] });
@@ -340,10 +340,10 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         if (state.simulationMode !== 'planning' && state.simulationMode !== 'week_complete') {
           state.employment = state.employment
             ? { ...state.employment, pendingJobId: job.id }
-            : { jobId: state.currentJobId ?? job.id, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week, pendingJobId: job.id };
+            : { jobId: state.currentJobId ?? job.id, startedDay: state.time.day, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week, pendingJobId: job.id };
         } else {
           state.currentJobId = job.id;
-          state.employment = { jobId: job.id, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
+          state.employment = { jobId: job.id, startedDay: state.time.day, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
         }
       }
       if (!state.unlockedJobIds.includes(job.id)) state.unlockedJobIds.push(job.id);
@@ -401,7 +401,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
           state.employmentHistory = [...(state.employmentHistory ?? []), {
             jobId: state.employment.jobId,
             companyId: state.employment.companyId,
-            startedDay: undefined,
+            startedDay: state.employment.startedDay,
             endedDay: state.time.day,
             finalPay: (state.employment.basePay ?? 0) + (state.employment.salaryAdjustment ?? 0),
             reason: '离职',

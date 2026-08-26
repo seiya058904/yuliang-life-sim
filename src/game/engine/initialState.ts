@@ -16,7 +16,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
   const calendar = calendarForDay(time.day);
   const weeklyPlan = createDefaultWeeklyPlan();
   const currentJob = content.jobs.find((job) => job.id === starterJobs[0]);
-  const employment = currentJob?.kind === 'regular' ? { jobId: currentJob.id, schedule: defaultJobSchedule(currentJob), effectiveWeek: calendar.week, basePay: currentJob.basePay, salaryAdjustment: 0, negotiationStage: 0 as const } : undefined;
+  const employment = currentJob?.kind === 'regular' ? { jobId: currentJob.id, startedDay: balance.initialDay, schedule: defaultJobSchedule(currentJob), effectiveWeek: calendar.week, basePay: currentJob.basePay, salaryAdjustment: 0, negotiationStage: 0 as const } : undefined;
   const state: GameState = {
     version: balance.saveVersion,
     contentVersion: balance.contentVersion,

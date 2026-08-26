@@ -229,6 +229,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
         : defaultJobSchedule(job);
       candidate.employment = {
         jobId: job.id,
+        startedDay: Number.isInteger(rawEmployment.startedDay) ? Number(rawEmployment.startedDay) : undefined,
         schedule,
         effectiveWeek: Number.isInteger(rawEmployment.effectiveWeek) ? Number(rawEmployment.effectiveWeek) : candidate.calendar.week,
         pendingJobId: typeof rawEmployment.pendingJobId === 'string' && jobIds.has(rawEmployment.pendingJobId) ? rawEmployment.pendingJobId : undefined,

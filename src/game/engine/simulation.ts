@@ -74,6 +74,7 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
             state.employmentHistory = [...(state.employmentHistory ?? []), {
               jobId: previousEmployment.jobId,
               companyId: previousEmployment.companyId,
+              startedDay: previousEmployment.startedDay,
               endedDay: state.time.day - 1,
               finalPay: (previousEmployment.basePay ?? 0) + (previousEmployment.salaryAdjustment ?? 0),
               reason: '换岗',
@@ -81,6 +82,7 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
             state.currentJobId = nextJob.id;
             state.employment = {
               jobId: nextJob.id,
+              startedDay: state.time.day,
               companyId: previousEmployment.pendingCompanyId,
               basePay: previousEmployment.pendingBasePay ?? nextJob.basePay,
               salaryAdjustment: 0,

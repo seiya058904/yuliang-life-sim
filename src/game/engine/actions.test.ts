@@ -155,7 +155,7 @@ describe('game action dispatcher', () => {
 
     expect(left.error).toBeUndefined();
     expect(left.state.currentJobId).toBeUndefined();
-    expect(left.state.employmentHistory).toContainEqual(expect.objectContaining({ jobId, reason: '离职', finalPay: (state.employment?.basePay ?? 0) + Math.round((state.employment?.basePay ?? 0) * 0.05) }));
+    expect(left.state.employmentHistory).toContainEqual(expect.objectContaining({ jobId, startedDay: 1, endedDay: 1, reason: '离职', finalPay: (state.employment?.basePay ?? 0) + Math.round((state.employment?.basePay ?? 0) * 0.05) }));
   });
 
   it('tracks a wishlist item and completes the goal when the item is purchased', () => {
