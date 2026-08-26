@@ -41,6 +41,18 @@ describe('seed content registry', () => {
     });
   });
 
+  it('exposes the diamond pendant as a bounded jewelry collectible', () => {
+    expect(contentRegistry.items.find((item) => item.id === 'item.diamond-pendant')).toMatchObject({
+      contentStatus: 'official',
+      name: '小型钻石吊坠',
+      price: 15800,
+      category: 'collectible',
+      sellable: true,
+      resaleRatio: 0.74,
+      attributeEffects: { appearance: 7 },
+    });
+  });
+
   it('exposes official services with repeat-use cooldown metadata', () => {
     expect(contentRegistry.services?.filter((service) => service.contentStatus === 'official')).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'service.haircut-basic', cooldownDays: 14 }),

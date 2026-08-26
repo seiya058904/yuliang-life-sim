@@ -65,6 +65,21 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory?.at(-1)).toMatchObject({ title: '出售实用手机', category: 'purchase', amount: 189 });
   });
 
+  it('buys and resells the official diamond pendant with appearance feedback', () => {
+    const state = { ...createInitialState(contentRegistry, balanceConfig, 1), cash: 20_000 };
+    const bought = dispatchGameAction(state, { type: 'purchase_items', items: { 'item.diamond-pendant': 1 } }, contentRegistry, balanceConfig);
+    expect(bought.error).toBeUndefined();
+    expect(bought.state.inventory['item.diamond-pendant']).toBe(1);
+    expect(bought.state.attributes?.appearance).toBe((state.attributes?.appearance ?? 0) + 7);
+    expect(bought.state.lifeHistory?.at(-1)).toMatchObject({ title: '购买小型钻石吊坠' });
+
+    const sold = dispatchGameAction(bought.state, { type: 'sell_item', itemId: 'item.diamond-pendant', quantity: 1 }, contentRegistry, balanceConfig);
+    expect(sold.error).toBeUndefined();
+    expect(sold.state.inventory['item.diamond-pendant']).toBe(0);
+    expect(sold.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'asset_liquidation', amount: 11692 });
+    expect(sold.state.lifeHistory?.at(-1)).toMatchObject({ title: '出售小型钻石吊坠' });
+  });
+
   it('uses a service without advancing time and records the service expense', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     const result = dispatchGameAction(state, { type: 'use_service', serviceId: 'service.haircut-basic' }, contentRegistry, balanceConfig);

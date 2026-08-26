@@ -921,6 +921,30 @@ test('unlocks and trades the high-value collectible through the wealth flow', as
   await expect(page.getByRole('button', { name: '买入 ¥28,000' })).toBeVisible();
 });
 
+test('buys and resells the official diamond pendant with persisted purchase history', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 20_000;
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const product = page.getByRole('heading', { name: '小型钻石吊坠' }).locator('xpath=ancestor::article[1]');
+  await product.getByRole('button', { name: '加入购物袋：小型钻石吊坠' }).click();
+  await page.getByRole('button', { name: '一次购买' }).click();
+  await expect(page.getByText('库存 ×1')).toBeVisible();
+  await page.getByRole('button', { name: '出售一次' }).click();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('region', { name: '人生记录' })).toContainText('购买小型钻石吊坠');
+  await expect(page.getByRole('region', { name: '人生记录' })).toContainText('出售小型钻石吊坠');
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await expect(page.getByRole('region', { name: '人生记录' })).toContainText('出售小型钻石吊坠');
+});
+
 test('shows persisted wealth milestones in the profile on desktop and mobile', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);

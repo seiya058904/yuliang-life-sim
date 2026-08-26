@@ -552,6 +552,25 @@ export const officialItems = [
     "lifestyleDelta": 9
   },
   {
+    "id": "item.diamond-pendant",
+    "contentStatus": "official",
+    "name": "小型钻石吊坠",
+    "description": "一件可以长期佩戴的精致收藏，也保留着可出售的资产价值。",
+    "tags": [
+      "luxury",
+      "collectible"
+    ],
+    "category": "collectible",
+    "price": 15800,
+    "consumable": false,
+    "sellable": true,
+    "resaleRatio": 0.74,
+    "lifestyleDelta": 2,
+    "attributeEffects": {
+      "appearance": 7
+    }
+  },
+  {
     "id": "gift.flowers",
     "contentStatus": "official",
     "name": "一束花",
