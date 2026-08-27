@@ -44,7 +44,28 @@ const companyName = (id: string) => displayContentName(id, contentRegistry.compa
 const jobArtByCategory: Record<string, PixelIllustrationName> = {
   basic: 'career-market', office: 'phone', technical: 'chart', sales: 'bag', service: 'coffee', management: 'users',
 };
+const jobArtById: Record<string, PixelIllustrationName> = {
+  'job.seed-shop-clerk': 'coffee',
+  'job.seed-warehouse': 'suitcase',
+  'job.order-operations-assistant': 'laptop',
+  'job.huanliu-warehouse-assistant': 'city',
+  'job.huanliu-dispatch-coordinator': 'mountain',
+  'job.customer-experience-assistant': 'users',
+  'job.cafe-assistant': 'coffee',
+  'job.delivery-shift': 'mountain',
+  'job.seed-office': 'desk',
+  'job.customer-service': 'phone',
+  'job.data-entry': 'laptop',
+  'job.seed-remote': 'book',
+  'job.photography-assistant-gig': 'camera',
+  'job.travel-product-assistant': 'mountain',
+  'job.research-assistant': 'chart',
+  'job.course-operations-assistant': 'book',
+  'job.learning-consultant': 'users',
+};
 const jobArtFor = (job: JobDefinition): PixelIllustrationName => {
+  const directArt = jobArtById[job.id];
+  if (directArt) return directArt;
   const tags = new Set([...(job.tags ?? []), ...(job.experienceTags ?? [])]);
   if (tags.has('management')) return 'users';
   if (tags.has('logistics')) return 'city';
@@ -155,7 +176,10 @@ function VacancyCard({ game, vacancy, job, dispatch, selected, onSelect }: { gam
   const acquired = game.acquiredSideJobs?.[job.id];
   const eligible = isJobEligible(job, game);
   const hints = requirementHints(job, game, contentRegistry, balanceConfig);
-  return <article className={selected ? 'job-card selected' : 'job-card'} data-catalog-card><button className="card-select" onClick={onSelect} aria-label={`查看岗位详情：${job.name}`}><div className="career-card-art"><PixelIllustration name={jobArtFor(job)} size={76} /></div><div className="job-card-head"><span className="job-kind">{job.category ?? '岗位'}</span><span className="muted">{companyName(vacancy.companyId)}</span></div><h2>{job.name}</h2><p>{job.description}</p></button><div className="job-facts"><span>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])} / 班</span><span>第 {vacancy.expiresDay} 天截止</span></div>{hints.length > 0 && <div className="requirement-box"><strong>还需准备</strong>{hints.map((hint) => <span key={hint.requirementId}>{hint.actionLabel} · {hint.label}{hint.currentValue !== undefined ? ` ${hint.currentValue}/${hint.requiredValue}` : ''}</span>)}</div>}<div className="requirement-box"><strong>{eligible ? '符合条件' : '仍需准备'}</strong><span>{acquired ? '已获得' : application ? displayMappedLabel(application.status, applicationStatusLabels) : '可申请'}</span></div>{acquired ? <button className="secondary-button" disabled>安排到本周</button> : <button className="primary-button" disabled={!eligible || Boolean(application)} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{application ? '已申请' : '申请职位'}</button>}</article>;
+  const company = contentRegistry.companies?.find((entry) => entry.id === vacancy.companyId);
+  const location = company?.locationId ? displayContentName(company.locationId, contentRegistry.locations ?? [], '工作地点') : '地点未注明';
+  const employmentLabel = employmentKind(job) === 'full_time' ? '正式岗位' : employmentKind(job) === 'gig' ? 'Gig' : '长期兼职';
+  return <article className={selected ? 'job-card selected' : 'job-card'} data-catalog-card><button className="card-select" onClick={onSelect} aria-label={`查看岗位详情：${job.name}`}><div className="career-card-art"><PixelIllustration name={jobArtFor(job)} size={76} /></div><div className="job-card-head"><span className="job-kind">{job.category ?? '岗位'}</span><span className="muted">{companyName(vacancy.companyId)}</span></div><h2>{job.name}</h2><p>{job.description}</p></button><div className="job-facts" aria-label="岗位关键信息"><span className="job-fact" data-fact="salary"><PixelIcon name="cash" size={13} /><span>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])} / 班</span></span><span className="job-fact" data-fact="type"><PixelIcon name="career" size={13} /><span>{employmentLabel}</span></span><span className="job-fact" data-fact="location"><PixelIcon name="city" size={13} /><span>{location}</span></span></div>{hints.length > 0 && <div className="requirement-box"><strong>还需准备</strong>{hints.map((hint) => <span key={hint.requirementId}>{hint.actionLabel} · {hint.label}{hint.currentValue !== undefined ? ` ${hint.currentValue}/${hint.requiredValue}` : ''}</span>)}</div>}<div className="requirement-box"><strong>{eligible ? '符合条件' : '仍需准备'}</strong><span>{acquired ? '已获得' : application ? displayMappedLabel(application.status, applicationStatusLabels) : '可申请'}</span></div>{acquired ? <button className="secondary-button" disabled>安排到本周</button> : <button className="primary-button" disabled={!eligible || Boolean(application)} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{application ? '已申请' : '申请职位'}</button>}</article>;
 }
 
 function VacancyDetail({ game, vacancy, job, dispatch }: { game: GameState; vacancy: any; job: JobDefinition; dispatch: (action: GameAction) => void }) {

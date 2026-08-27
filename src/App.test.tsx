@@ -94,6 +94,33 @@ describe('余量 app flow', () => {
     expect(within(detail).getByRole('button', { name: '申请岗位' })).toHaveClass('primary-button');
   });
 
+  it('gives visible career cards a three-row semantic fact strip', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const cards = Array.from(screen.getByRole('region', { name: '招聘市场布局' }).querySelectorAll<HTMLElement>('.career-results .job-card'));
+    expect(cards).toHaveLength(6);
+    cards.forEach((card) => {
+      const facts = card.querySelector('.job-facts');
+      expect(facts).toHaveAttribute('aria-label', '岗位关键信息');
+      expect(facts?.querySelectorAll('.job-fact')).toHaveLength(3);
+      expect(facts?.querySelector('[data-fact="salary"] .pixel-icon')).not.toBeNull();
+      expect(facts?.querySelector('[data-fact="type"] .pixel-icon')).not.toBeNull();
+      expect(facts?.querySelector('[data-fact="location"] .pixel-icon')).not.toBeNull();
+    });
+  });
+
+  it('uses role-specific one-bit silhouettes across the visible career cards', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const cards = Array.from(screen.getByRole('region', { name: '招聘市场布局' }).querySelectorAll<HTMLElement>('.career-results .job-card'));
+    const silhouettes = new Set(cards.map((card) => Array.from(card.querySelector('.career-card-art .pixel-illustration')?.classList ?? []).find((name) => name.startsWith('il-'))));
+    expect(silhouettes.size).toBeGreaterThanOrEqual(5);
+  });
+
   it('keeps career page navigation out of the filter rail and exposes it from a compact toolbar menu', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -527,6 +554,17 @@ describe('余量 app flow', () => {
     await user.click(within(shop).getByRole('button', { name: '下一页活动' }));
     expect(grid?.children.length).toBeGreaterThan(0);
     expect(grid?.querySelector('h3')?.textContent).not.toBe(firstPageTitle);
+  });
+
+  it('uses activity-specific one-bit silhouettes across the visible entertainment cards', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '娱乐' }));
+
+    const cards = Array.from(screen.getByRole('region', { name: '商品目录布局' }).querySelectorAll<HTMLElement>('.activity-card[data-catalog-card]'));
+    const silhouettes = new Set(cards.map((card) => Array.from(card.querySelector('.card-art .pixel-illustration')?.classList ?? []).find((name) => name.startsWith('il-'))));
+    expect(silhouettes.size).toBeGreaterThanOrEqual(5);
   });
 
   it('gives shop cards one clear primary action and a semantic pixel silhouette', async () => {

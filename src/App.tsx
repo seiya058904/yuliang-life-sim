@@ -323,6 +323,20 @@ const activitySceneByCategory: Record<string, PixelIllustrationName> = {
   travel: 'mountain', social: 'users', game: 'controller', film: 'film', nightlife: 'city',
   fitness: 'dumbbell', culture: 'painting', hobby: 'book', food: 'meal', premium: 'meal',
 };
+const activitySceneById: Record<string, PixelIllustrationName> = {
+  'activity.cinema': 'film',
+  'activity.premium-cinema': 'camera',
+  'activity.home-movie': 'record',
+  'activity.home-gaming': 'controller',
+  'activity.new-game-night': 'controller',
+  'activity.riverside-night-market': 'city',
+  'activity.gym-session': 'dumbbell',
+  'activity.personal-training': 'dumbbell',
+  'activity.city-run': 'dumbbell',
+};
+function activitySceneFor(activity: { id: string; category: string }): PixelIllustrationName {
+  return activitySceneById[activity.id] ?? activitySceneByCategory[activity.category] ?? 'controller';
+}
 
 function activityKinds(activity: PlannedActivity | NonNullable<GameState['currentActivity']>): PixelIllustrationName {
   if (activity.kind === 'work') return 'work';
@@ -331,7 +345,7 @@ function activityKinds(activity: PlannedActivity | NonNullable<GameState['curren
   if (activity.kind === 'side_job') return 'coin';
   if (activity.kind === 'activity') {
     const definition = contentRegistry.activities?.find((entry) => entry.id === activity.activityId);
-    return definition ? activitySceneByCategory[definition.category] ?? 'controller' : 'controller';
+    return definition ? activitySceneFor(definition) : 'controller';
   }
   return 'life-main';
 }
@@ -776,7 +790,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
       const cooldown = activityCooldownRemaining(game, definition, option);
       const durationLabel = option.durationMinutes >= 2880 ? `${option.durationMinutes / 1440} 天` : `${option.durationMinutes / 60} 小时`;
       detail = {
-        icon: activitySceneByCategory[definition.category] ?? 'controller',
+        icon: activitySceneFor(definition),
         title: `${definition.name} · ${option.label}`,
         desc: definition.description,
         facts: [`时长 ${durationLabel}`, `费用 ${money(cost)}`, effectTexts(option.effects).join(' · ') || '给生活留一点空间', cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '本周可安排'],
@@ -814,7 +828,38 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
           {detail && <section className="shop-detail inverse pixel-corners" aria-label="已选商品详情"><PixelIllustration name={detail.icon} size={72} /><div><span className="eyebrow">已选商品</span><h2>{detail.title}</h2><p>{detail.desc}</p><ul>{detail.facts.filter(Boolean).map((fact, index) => <li key={index}>{fact}</li>)}</ul></div><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section>}
         </>}
         {tab === 'services' && <ServiceMarket game={game} dispatch={dispatch} />}
-        {pagedActivityEntries.length > 0 && <><div className="section-heading compact"><div><span className="eyebrow">不为赚钱服务的时间</span><h2>娱乐与生活活动</h2></div><p>活动会占用周计划中的自由时间；每个 Option 都有自己的时长、费用和效果。</p></div><div className="activity-grid">{pagedActivityEntries.map(({ activity, option }) => { const project = option.businessProject; const projectReady = !project || Boolean(game.businesses[project.businessId]); const projectDone = Boolean(project && game.completedBusinessProjects?.includes(`${activity.id}.${option.id}`)); const cost = activityCashCost(game, activity, option, contentRegistry); const cooldownRemaining = activityCooldownRemaining(game, activity, option); const durationLabel = option.durationMinutes >= 2880 ? `${option.durationMinutes / 1440} 天` : `${option.durationMinutes / 60} 小时`; const effects = effectTexts(option.effects); const effectLabel = project ? `企业项目利润 · ${projectDone ? '已完成' : projectReady ? '可承接' : '需要对应企业'}` : `${effects.join(' · ') || '给生活留一点空间'}${activityDiscountLabel(game, activity, contentRegistry) ? ` · ${activityDiscountLabel(game, activity, contentRegistry)}` : ''}`; return <article className={selectedKey === `act:${activity.id}|${option.id}` ? 'activity-card selected' : 'activity-card'} key={`${activity.id}-${option.id}`} data-catalog-card><button className="card-overlay" onClick={() => setSelectedKey(`act:${activity.id}|${option.id}`)} aria-label={`查看详情：${activity.name} ${option.label}`} /><div className="card-art"><PixelIllustration name={activitySceneByCategory[activity.category] ?? 'controller'} size={52} /></div><div className="activity-card-body"><div className="item-card-head"><span className="catalog-badge">{activityCategoryLabels[activity.category] ?? activity.category}</span><span className="catalog-card-status">{projectDone ? <span className="current-label">已完成</span> : cooldownRemaining > 0 ? <span className="requirement-missing">冷却中</span> : null}</span></div><h3>{activity.name} · {option.label}</h3><strong className="catalog-price">{money(cost)}</strong><p>{activity.description}</p><CatalogFacts facts={[['时间', durationLabel], ['效果', effectLabel], ['前提', option.requirements ? explainCondition(option.requirements, game, contentRegistry, balanceConfig) : project ? '对应企业' : '无'], ['类型', `${activityCategoryLabels[activity.category] ?? activity.category}活动`]]} ariaLabel={`${activity.name} ${option.label} 活动信息`} /><CatalogMeters metrics={activityCatalogMeters(option, cost)} ariaLabel={`${activity.name} ${option.label} 影响计量`} />{cooldownRemaining > 0 && <span className="requirement-missing">冷却中 · 还需 {cooldownRemaining} 天</span>}<button className="secondary-button" disabled={!projectReady || projectDone || cooldownRemaining > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleActivity(activity.id, option.id)}>{projectDone ? '项目已完成' : cooldownRemaining > 0 ? `冷却中 · 还需 ${cooldownRemaining} 天` : '安排到本周自由时间'}</button></div></article>; })}</div>{activityPageCount > 1 && <nav className="catalog-pager" aria-label="活动分页"><button className="text-button" disabled={safeActivityPage === 0} aria-label="上一页活动" onClick={() => setActivityPage(Math.max(0, safeActivityPage - 1))}>←</button>{Array.from({ length: activityPageCount }, (_, page) => <button key={page} className={page === safeActivityPage ? 'filter-button selected' : 'filter-button'} aria-current={page === safeActivityPage ? 'page' : undefined} onClick={() => setActivityPage(page)}>{page + 1}</button>)}<button className="text-button" disabled={safeActivityPage === activityPageCount - 1} aria-label="下一页活动" onClick={() => setActivityPage(Math.min(activityPageCount - 1, safeActivityPage + 1))}>→</button></nav>}</>}
+        {tab !== 'goods' && tab !== 'services' && pagedActivityEntries.length > 0 && <>
+          <div className="section-heading compact"><div><span className="eyebrow">不为赚钱服务的时间</span><h2>娱乐与生活活动</h2></div><p>活动会占用周计划中的自由时间；每个 Option 都有自己的时长、费用和效果。</p></div>
+          <div className="activity-grid">
+            {pagedActivityEntries.map(({ activity, option }) => {
+              const project = option.businessProject;
+              const projectReady = !project || Boolean(game.businesses[project.businessId]);
+              const projectDone = Boolean(project && game.completedBusinessProjects?.includes(`${activity.id}.${option.id}`));
+              const cost = activityCashCost(game, activity, option, contentRegistry);
+              const cooldownRemaining = activityCooldownRemaining(game, activity, option);
+              const durationLabel = option.durationMinutes >= 2880 ? `${option.durationMinutes / 1440} 天` : `${option.durationMinutes / 60} 小时`;
+              const effects = effectTexts(option.effects);
+              const effectLabel = project
+                ? `企业项目利润 · ${projectDone ? '已完成' : projectReady ? '可承接' : '需要对应企业'}`
+                : `${effects.join(' · ') || '给生活留一点空间'}${activityDiscountLabel(game, activity, contentRegistry) ? ` · ${activityDiscountLabel(game, activity, contentRegistry)}` : ''}`;
+              return <article className={selectedKey === `act:${activity.id}|${option.id}` ? 'activity-card selected' : 'activity-card'} key={`${activity.id}-${option.id}`} data-catalog-card>
+                <button className="card-overlay" onClick={() => setSelectedKey(`act:${activity.id}|${option.id}`)} aria-label={`查看详情：${activity.name} ${option.label}`} />
+                <div className="card-art"><PixelIllustration name={activitySceneFor(activity)} size={52} /></div>
+                <div className="activity-card-body">
+                  <div className="item-card-head"><span className="catalog-badge">{activityCategoryLabels[activity.category] ?? activity.category}</span><span className="catalog-card-status">{projectDone ? <span className="current-label">已完成</span> : cooldownRemaining > 0 ? <span className="requirement-missing">冷却中</span> : null}</span></div>
+                  <h3>{activity.name} · {option.label}</h3>
+                  <strong className="catalog-price">{money(cost)}</strong>
+                  <p>{activity.description}</p>
+                  <CatalogFacts facts={[['时间', durationLabel], ['效果', effectLabel], ['前提', option.requirements ? explainCondition(option.requirements, game, contentRegistry, balanceConfig) : project ? '对应企业' : '无'], ['类型', `${activityCategoryLabels[activity.category] ?? activity.category}活动`]]} ariaLabel={`${activity.name} ${option.label} 活动信息`} />
+                  <CatalogMeters metrics={activityCatalogMeters(option, cost)} ariaLabel={`${activity.name} ${option.label} 影响计量`} />
+                  {cooldownRemaining > 0 && <span className="requirement-missing">冷却中 · 还需 {cooldownRemaining} 天</span>}
+                  <button className="secondary-button" disabled={!projectReady || projectDone || cooldownRemaining > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleActivity(activity.id, option.id)}>{projectDone ? '项目已完成' : cooldownRemaining > 0 ? `冷却中 · 还需 ${cooldownRemaining} 天` : '安排到本周自由时间'}</button>
+                </div>
+              </article>;
+            })}
+          </div>
+          {activityPageCount > 1 && <nav className="catalog-pager" aria-label="活动分页"><button className="text-button" disabled={safeActivityPage === 0} aria-label="上一页活动" onClick={() => setActivityPage(Math.max(0, safeActivityPage - 1))}>←</button>{Array.from({ length: activityPageCount }, (_, page) => <button key={page} className={page === safeActivityPage ? 'filter-button selected' : 'filter-button'} aria-current={page === safeActivityPage ? 'page' : undefined} onClick={() => setActivityPage(page)}>{page + 1}</button>)}<button className="text-button" disabled={safeActivityPage === activityPageCount - 1} aria-label="下一页活动" onClick={() => setActivityPage(Math.min(activityPageCount - 1, safeActivityPage + 1))}>→</button></nav>}
+        </>}
       </div>
       <aside className="shop-rail">
         <section className="rail-module" aria-label="购物清单"><header><PixelIcon name="bag" size={16} /><h3>购物袋（{cartCount}）</h3></header>

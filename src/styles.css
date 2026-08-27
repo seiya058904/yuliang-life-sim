@@ -3788,6 +3788,38 @@ button, input, select { border-radius: 0; }
   margin: 0;
 }
 
+/* Career cards mirror the reference's compact three-line metadata strip:
+   each fact keeps its meaning visible even when the surrounding copy is
+   compressed for the one-screen market grid. */
+.career-results .job-card .job-facts {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-content: stretch;
+  gap: 3px;
+  min-width: 0;
+  color: #c7c7c0;
+}
+.career-results .job-card .job-fact {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: #ddd;
+  line-height: 1.15;
+}
+.career-results .job-card .job-fact .pixel-icon {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  color: #f4f4ef;
+}
+.career-results .job-card .job-fact > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (min-width: 1181px) {
   .view-life .life-hero-grid {
     grid-template-columns: minmax(0, 1fr) 304px;
