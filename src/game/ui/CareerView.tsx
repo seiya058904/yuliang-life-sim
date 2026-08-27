@@ -15,6 +15,27 @@ import { displayContentName, displayMappedLabel, humanizeContentId } from './pix
 const categories = ['全部', '基础岗位', '办公室', '技术', '销售', '服务', '管理', '兼职'] as const;
 const states = ['全部', '符合条件', '接近条件', '已申请', '冷却中'] as const;
 const sorts = ['匹配度', '薪资最高', '截止最早', '最新发布'] as const;
+const regionOptions = [
+  { value: 'all', label: '全部地区' },
+  { value: 'location.central', label: '中央区' },
+  { value: 'location.riverside', label: '临江区' },
+  { value: 'location.industrial', label: '北部产业区' },
+  { value: 'location.old-town', label: '旧城文化区' },
+  { value: 'location.south-residential', label: '南岸居住区' },
+  { value: 'location.tech-park', label: '澄川科技园' },
+] as const;
+const salaryOptions = [
+  { value: 'all', label: '全部薪资' },
+  { value: 'entry', label: '¥0–¥200' },
+  { value: 'mid', label: '¥201–¥500' },
+  { value: 'high', label: '¥501+' },
+] as const;
+const durationOptions = [
+  { value: 'all', label: '全部时长' },
+  { value: 'full_time', label: '正式岗位' },
+  { value: 'repeatable_side_job', label: '长期兼职' },
+  { value: 'gig', label: 'Gig' },
+] as const;
 type CareerTab = 'current' | 'market' | 'opportunities' | 'applications' | 'side-jobs' | 'history' | 'mobility';
 const categoryMap: Record<string, string> = { 基础岗位: 'basic', 办公室: 'office', 技术: 'technical', 销售: 'sales', 服务: 'service', 管理: 'management' };
 
@@ -79,6 +100,9 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }:
   const [category, setCategory] = useState<(typeof categories)[number]>('全部');
   const [state, setState] = useState<(typeof states)[number]>('全部');
   const [sort, setSort] = useState<(typeof sorts)[number]>('匹配度');
+  const [region, setRegion] = useState<(typeof regionOptions)[number]['value']>('all');
+  const [salaryBand, setSalaryBand] = useState<(typeof salaryOptions)[number]['value']>('all');
+  const [duration, setDuration] = useState<(typeof durationOptions)[number]['value']>('all');
   const [selectedId, setSelectedId] = useState<string | undefined>(game.vacancies?.[0]?.vacancyId);
   const [page, setPage] = useState(0);
   const [pageMenuOpen, setPageMenuOpen] = useState(false);
@@ -91,8 +115,17 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }:
     const cooldown = game.applications?.some((entry) => entry.jobId === job.id && entry.companyId === row.vacancy.companyId && (entry.nextEligibleDay ?? 0) > game.time.day);
     const categoryMatches = category === '全部' || (category === '兼职' ? employmentKind(job) !== 'full_time' : job.category === categoryMap[category]);
     const stateMatches = state === '全部' || (state === '符合条件' && eligible) || (state === '接近条件' && close) || (state === '已申请' && Boolean(application)) || (state === '冷却中' && Boolean(cooldown));
-    return categoryMatches && stateMatches && (job.name + companyName(row.vacancy.companyId)).toLowerCase().includes(query.toLowerCase());
-  }).sort((left, right) => sort === '薪资最高' ? right.vacancy.salaryRange[1] - left.vacancy.salaryRange[1] : sort === '截止最早' ? left.vacancy.expiresDay - right.vacancy.expiresDay : left.job!.name.localeCompare(right.job!.name, 'zh-CN')), [category, game, jobs, query, sort, state]);
+    const company = contentRegistry.companies?.find((entry) => entry.id === row.vacancy.companyId);
+    const regionMatches = region === 'all' || company?.locationId === region;
+    const maxSalary = row.vacancy.salaryRange[1];
+    const minSalary = row.vacancy.salaryRange[0];
+    const salaryMatches = salaryBand === 'all'
+      || (salaryBand === 'entry' && maxSalary <= 200)
+      || (salaryBand === 'mid' && maxSalary > 200 && minSalary <= 500)
+      || (salaryBand === 'high' && minSalary > 500);
+    const durationMatches = duration === 'all' || employmentKind(job) === duration;
+    return categoryMatches && stateMatches && regionMatches && salaryMatches && durationMatches && (job.name + companyName(row.vacancy.companyId)).toLowerCase().includes(query.toLowerCase());
+  }).sort((left, right) => sort === '薪资最高' ? right.vacancy.salaryRange[1] - left.vacancy.salaryRange[1] : sort === '截止最早' ? left.vacancy.expiresDay - right.vacancy.expiresDay : left.job!.name.localeCompare(right.job!.name, 'zh-CN')), [category, duration, game, jobs, query, region, salaryBand, sort, state]);
   const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
   const safePage = Math.min(page, pageCount - 1);
   const pagedRows = rows.slice(safePage * pageSize, safePage * pageSize + pageSize);
@@ -104,7 +137,7 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }:
   };
   return <div className="career-market-shell" role="region" aria-label="招聘市场布局">
     <aside className="career-filters"><div className="career-market-identity"><span className="eyebrow">职业</span><h1>招聘市场</h1><p>发现你的下一份机会</p></div><label>搜索岗位 / 公司<input aria-label="搜索岗位或公司" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入关键词" /></label><strong>岗位类型</strong>{categories.map((entry) => <button key={entry} className={category === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setCategory(entry)}>{entry}</button>)}<strong>申请状态</strong>{states.map((entry) => <button key={entry} className={state === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setState(entry)}>{entry}</button>)}</aside>
-    <div className="career-results"><div className="career-toolbar"><div className="career-toolbar-leading"><button type="button" className="career-page-menu-trigger" aria-expanded={pageMenuOpen} aria-controls="career-page-menu" onClick={() => setPageMenuOpen((open) => !open)}>职业页面</button><strong>公开机会 {rows.length}</strong></div><div className="career-toolbar-actions">{onOpenTools && <button type="button" className="career-tools-trigger" onClick={onOpenTools}>安排本周与课程</button>}{sorts.map((entry) => <button key={entry} className={sort === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setSort(entry)}>{entry}</button>)}</div>{pageMenuOpen && <nav id="career-page-menu" className="career-page-menu" aria-label="职业页面导航">{Object.entries(labels).map(([id, label]) => <button key={id} type="button" className={id === 'market' ? 'filter-button selected' : 'filter-button'} onClick={() => openCareerPage(id as CareerTab)}>{label}</button>)}</nav>}</div><div className="job-grid">{pagedRows.map(({ vacancy, job }) => <VacancyCard key={vacancy.vacancyId} game={game} vacancy={vacancy} job={job!} dispatch={dispatch} selected={vacancy.vacancyId === selected?.vacancy.vacancyId} onSelect={() => setSelectedId(vacancy.vacancyId)} />)}</div>
+    <div className="career-results"><div className="career-toolbar"><div className="career-toolbar-leading"><button type="button" className="career-page-menu-trigger" aria-expanded={pageMenuOpen} aria-controls="career-page-menu" onClick={() => setPageMenuOpen((open) => !open)}>职业页面</button><strong>公开机会 {rows.length}</strong></div><div className="career-market-filters" aria-label="招聘筛选">{[ ['地区', region, regionOptions, setRegion], ['薪资范围', salaryBand, salaryOptions, setSalaryBand], ['时长', duration, durationOptions, setDuration] ].map(([label, value, options, setValue]) => <label className="career-toolbar-select" key={label as string}><span>{label as string}</span><select aria-label={label as string} value={value as string} onChange={(event) => { (setValue as (next: string) => void)(event.target.value); setPage(0); }}>{(options as readonly { value: string; label: string }[]).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>)}</div><div className="career-toolbar-actions">{onOpenTools && <button type="button" className="career-tools-trigger" onClick={onOpenTools}>安排本周与课程</button>}{sorts.map((entry) => <button key={entry} className={sort === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setSort(entry)}>{entry}</button>)}</div>{pageMenuOpen && <nav id="career-page-menu" className="career-page-menu" aria-label="职业页面导航">{Object.entries(labels).map(([id, label]) => <button key={id} type="button" className={id === 'market' ? 'filter-button selected' : 'filter-button'} onClick={() => openCareerPage(id as CareerTab)}>{label}</button>)}</nav>}</div><div className="job-grid">{pagedRows.map(({ vacancy, job }) => <VacancyCard key={vacancy.vacancyId} game={game} vacancy={vacancy} job={job!} dispatch={dispatch} selected={vacancy.vacancyId === selected?.vacancy.vacancyId} onSelect={() => setSelectedId(vacancy.vacancyId)} />)}</div>
       {pageCount > 1 && <div className="pager-row" role="navigation" aria-label="岗位列表分页">
         <span className="pager-fill" aria-hidden="true" />
         <button type="button" className="pager-arrow" disabled={safePage === 0} onClick={() => goPage(safePage - 1)} aria-label="上一页">‹</button>

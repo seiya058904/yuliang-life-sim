@@ -96,6 +96,27 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('heading', { name: '当前工作' })).toBeInTheDocument();
   });
 
+  it('filters the career market from the compact region, salary, and duration toolbar', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const market = screen.getByRole('region', { name: '招聘市场布局' });
+    const toolbar = market.querySelector('.career-toolbar') as HTMLElement;
+    const region = within(toolbar).getByRole('combobox', { name: '地区' });
+    const salary = within(toolbar).getByRole('combobox', { name: '薪资范围' });
+    const duration = within(toolbar).getByRole('combobox', { name: '时长' });
+
+    expect(region).toHaveValue('all');
+    expect(salary).toHaveValue('all');
+    expect(duration).toHaveValue('all');
+    expect(toolbar).toHaveTextContent('公开机会 18');
+
+    await user.selectOptions(region, 'location.central');
+    expect(region).toHaveValue('location.central');
+    expect(toolbar.textContent).not.toContain('公开机会 18');
+  });
+
   it('keeps Life secondary finance and housing details reachable without stacking them into the home dashboard', async () => {
     const user = userEvent.setup();
     render(<App />);

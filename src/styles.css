@@ -3183,6 +3183,7 @@ button, input, select { border-radius: 0; }
    band. Let the band use the middle activity panel instead of leaving a
    misleading gap between the time range and the progress data. */
 @media (min-width: 1181px) {
+  .career-toolbar { justify-content: flex-start; }
   .hero-activity {
     display: grid;
     grid-template-columns: 112px minmax(0, 1fr);
@@ -3204,4 +3205,124 @@ button, input, select { border-radius: 0; }
   /* Keep the plan's secondary line readable in the actual rendered UI; an
      older narrow-density rule at the end of the stylesheet used to win. */
   .life-planning-section .plan-cell small { font-size: 13px !important; }
+}
+
+/* Round 2: keep the activity readout grouped, and give the two reference
+   surfaces that carry the most catalog data a stronger black/white rhythm. */
+@media (min-width: 1181px) {
+  .hero-activity {
+    grid-template-rows: auto auto auto 84px auto minmax(0, 1fr);
+  }
+  .hero-activity .activity-progress {
+    align-self: end;
+    margin-top: 0;
+  }
+  .hero-activity .hero-next {
+    align-self: end;
+  }
+
+  .career-toolbar > .career-market-filters {
+    display: grid;
+    grid-template-columns: 76px 78px 66px;
+    align-items: end;
+    gap: 4px;
+    flex: 0 1 224px;
+    min-width: 0;
+    justify-content: start;
+  }
+  .career-toolbar-select {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    color: #aaa;
+    font-size: 9px;
+    line-height: 1;
+  }
+  .career-toolbar-select span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .career-toolbar-select select {
+    width: 100%;
+    min-width: 0;
+    height: 27px;
+    padding: 4px 14px 4px 5px;
+    color: #070707;
+    background: #f4f4f0;
+    border: 1px solid #f4f4f0;
+    border-radius: 0;
+    font: inherit;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .career-toolbar-select select:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 1px;
+  }
+  .career-toolbar-actions .filter-button {
+    min-width: 0;
+    padding: 5px 6px;
+    font-size: 9px;
+  }
+
+  .view-shop .shop-detail.inverse {
+    color: #f4f4ef;
+    background: #090909;
+    border: 1px solid #c7c7c0;
+    outline: 1px solid #090909;
+    --il-knock: #090909;
+  }
+  .view-shop .shop-detail.inverse .pixel-illustration {
+    color: #f4f4ef;
+    background: #111;
+    border-color: #777;
+  }
+  .view-shop .shop-detail.inverse .eyebrow,
+  .view-shop .shop-detail.inverse h2 { color: #f4f4ef; }
+  .view-shop .shop-detail.inverse p { color: #c7c7c0; }
+  .view-shop .shop-detail.inverse ul { color: #eee; }
+  .view-shop .shop-detail.inverse ul li::before { color: #f4f4ef; }
+  .view-shop .shop-detail.inverse .primary-button {
+    color: #070707;
+    background: #f4f4f0;
+    border-color: #f4f4f0;
+  }
+
+  .view-shop .shop-rail .rail-module {
+    color: #070707;
+    background: #f4f4f0;
+    border-color: #070707;
+  }
+  .view-shop .shop-rail .rail-module > header { border-bottom-color: #777; }
+  .view-shop .shop-rail .rail-module > header .pixel-icon,
+  .view-shop .shop-rail .rail-module h3,
+  .view-shop .shop-rail .rail-module p,
+  .view-shop .shop-rail .rail-module .muted { color: #070707; }
+  .view-shop .shop-rail .rail-rows li { color: #222; border-bottom-color: #aaa; }
+  .view-shop .shop-rail .rail-rows li small { color: #555; }
+  .view-shop .shop-rail .rail-fill .detail-panel { color: #070707; }
+  .view-shop .shop-rail .rail-fill .detail-panel .section-heading { border-bottom-color: #777; }
+  .view-shop .shop-rail .rail-fill .detail-panel .section-heading h2,
+  .view-shop .shop-rail .rail-fill .detail-panel .section-heading .eyebrow,
+  .view-shop .shop-rail .rail-fill .detail-panel h2,
+  .view-shop .shop-rail .rail-fill .detail-panel h3 { color: #070707; }
+  .view-shop .shop-rail .rail-fill .detail-panel > .muted { color: #555; border-color: #aaa; }
+  .view-shop .shop-rail .rail-module .primary-button {
+    color: #f4f4f0;
+    background: #070707;
+    border-color: #070707;
+  }
+  .view-shop .shop-rail .rail-module .text-button { color: #070707; border-color: #555; }
+}
+
+@media (max-width: 1180px) {
+  .career-market-filters {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+  .career-toolbar-select { display: grid; gap: 2px; color: #aaa; font-size: 9px; }
+  .career-toolbar-select select { min-width: 0; padding: 5px; color: #070707; background: #f4f4f0; border: 1px solid #f4f4f0; border-radius: 0; font-size: 10px; }
 }
