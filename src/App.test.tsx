@@ -6,21 +6,71 @@ import { appStore } from './App';
 import type { MonthlyFinancialSummary } from './game/content/contracts';
 
 describe('余量 app flow', () => {
-  beforeEach(() => { localStorage.clear(); appStore.getState().reset(1); localStorage.clear(); });
+  beforeEach(() => {
+    localStorage.clear();
+    appStore.getState().reset(1);
+    appStore.setState({ activeView: 'work' });
+    localStorage.clear();
+  });
 
   it('shows the living clock and lets the player plan, start, and pause a week', async () => {
     const user = userEvent.setup();
     render(<App />);
     expect(screen.getByRole('heading', { name: '余量' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: '主导航' })).toHaveAttribute('data-pixel-nav', 'true');
+    expect(screen.getByRole('button', { current: 'page' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('region', { name: '角色状态' })).toHaveTextContent('体能');
     expect(screen.getByText('第 1 周')).toBeInTheDocument();
     expect(screen.getByText('便利店店员')).toBeInTheDocument();
 
+    await user.click(screen.getByRole('button', { name: '生活' }));
     await user.click(screen.getByRole('button', { name: /周一晚间计划/ }));
     expect(screen.getByText(/学习 4 小时/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '开始本周' }));
     expect(screen.getByText('运行中')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '暂停' }));
     expect(screen.getByText('已暂停')).toBeInTheDocument();
+  });
+
+  it('groups the four reference-driven surfaces into stable visual regions', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '生活' }));
+    expect(screen.getByRole('region', { name: '生活主控制台' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '生活信息面板' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '职业' }));
+    expect(screen.getByRole('region', { name: '招聘市场布局' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    expect(screen.getByRole('region', { name: '商品目录布局' })).toBeInTheDocument();
+  });
+
+  it('separates canonical cash flow and asset movement in month settlement', () => {
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, simulationMode: 'monthly_summary', pendingMonthlySummary: {
+      month: 1,
+      resumeMode: 'planning',
+      summary: { month: 1, ledger: { wageIncome: 1000, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 200, purchaseExpense: 0, livingExpense: 100, netWorthStart: 500, netWorthEnd: 1250 } },
+      financial: {
+        month: 1,
+        income: { group: 'income', amount: 1000, categories: { wage: 1000, realized_gain: 50 } },
+        consumption: { group: 'consumption', amount: 300, categories: { housing: 200, living: 100 } },
+        assetAllocation: { group: 'asset_allocation', amount: 200, categories: { investment_transfer: 200 } },
+        assetLiquidation: { group: 'asset_liquidation', amount: 25, categories: { asset_liquidation: 25 } },
+        totalIncome: 1000, totalConsumption: 300, totalAssetAllocation: 200, totalAssetLiquidation: 25,
+        cashStart: 500, cashEnd: 1025, cashChange: 525, netWorthStart: 500, netWorthEnd: 1250, netWorthChange: 750,
+      },
+      highlights: [{ id: 'highlight-1', kind: 'new_job', day: 28, label: '新工作 · 便利店店员' }],
+    } } });
+
+    render(<App />);
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveTextContent('资产配置');
+    expect(dialog).toHaveTextContent('资产变现');
+    expect(dialog).toHaveTextContent('已实现收益');
+    expect(dialog).toHaveTextContent('净资产变化');
   });
 
   it('discovers an official course and schedules it into a free planning slot', async () => {
@@ -190,8 +240,10 @@ describe('余量 app flow', () => {
     expect(screen.getByText('加入线上小店合伙')).toBeInTheDocument();
   });
 
-  it('exposes long-run period controls from the time console', () => {
+  it('exposes long-run period controls from the time console', async () => {
+    const user = userEvent.setup();
     render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
 
     expect(screen.getByRole('button', { name: '运行 1 个月' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '运行 3 个月' })).toBeInTheDocument();

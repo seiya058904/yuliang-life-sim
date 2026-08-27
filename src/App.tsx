@@ -14,6 +14,8 @@ import { investmentUnitValue } from './game/engine/investments';
 import { summarizeFinancialLedger } from './game/engine/financialLedger';
 import { CareerView } from './game/ui/CareerView';
 import { LifeHistoryList } from './game/ui/LifeHistoryList';
+import { PixelIcon, type PixelIconName } from './game/ui/pixel/PixelIcon';
+import { PersistentStatusBar } from './game/ui/pixel/PersistentStatusBar';
 import { forecastWeeklyPlan } from './game/engine/forecast';
 import { housingMortgageTerms, housingPrice, housingRentPerDay, locationSummary, locationForCurrentJob } from './game/engine/locations';
 import { getStorylineStage } from './game/engine/storylines';
@@ -38,8 +40,8 @@ if (typeof window !== 'undefined' && window.localStorage.getItem('yuliang-e2e-ho
   }
   (window as unknown as { __yuliang?: unknown }).__yuliang = { store: appStore, eventChoices };
 }
-const navItems = [
-  ['life', '生活'], ['work', '职业'], ['shop', '商店'], ['wealth', '财富'], ['relations', '社交'], ['city', '城市'], ['profile', '我的'],
+const navItems: ReadonlyArray<readonly [ViewId, string, PixelIconName]> = [
+  ['life', '生活', 'home'], ['work', '职业', 'career'], ['shop', '商店', 'shop'], ['wealth', '财富', 'wealth'], ['relations', '社交', 'social'], ['city', '城市', 'city'], ['profile', '我的', 'profile'],
 ] as const;
 const speedMinutesPerSecond = { 1: 360, 2: 720, 4: 1440 } as const;
 
@@ -138,35 +140,37 @@ function App() {
   const activeRecruitment = game.activeRecruitment ? contentRegistry.jobs.find((job) => job.id === game.activeRecruitment?.jobId) : undefined;
 
   return (
-    <div className={`app-shell mode-${game.simulationMode}`}>
+    <div className={`app-shell mode-${game.simulationMode} view-${activeView}`}>
       <header className="topbar">
-        <div className="brand-block"><h1 className="brand-mark">余量</h1><span className="brand-subtitle">自动人生循环</span></div>
+        <div className="brand-block"><h1 className="brand-mark">余量</h1><span className="brand-subtitle">人生模拟</span><span className="brand-pixel" aria-hidden="true">◇</span></div>
         <div className="status-line" aria-label="当前状态">
-          <span data-testid="date-value">{formatDate(game.time)}</span>
-          <span><b>第 {game.calendar.week} 周</b> · 周{weekdayLabel(game.calendar.weekday)}</span>
-          <span data-testid="cash-value"><b>现金</b> {money(game.cash)}</span>
-          <span><b>净资产</b> {money(netWorth)}</span>
+          <span className="status-date"><PixelIcon name="calendar" /><span><b><span>第 {game.calendar.week} 周</span> · 周{weekdayLabel(game.calendar.weekday)}</b><small data-testid="date-value">{formatDate(game.time)}</small></span></span>
+          <span className="status-clock"><PixelIcon name="clock" /><b>{formatClock(game.time.hour, game.time.minute)}</b><small>{game.simulationMode === 'running' ? '自动中' : '等待开始'}</small></span>
+          <span><PixelIcon name="cash" /><b data-testid="cash-value">现金 {money(game.cash)}</b></span>
+          <span><PixelIcon name="wealth" /><span><small>净资产</small><b>{money(netWorth)}</b></span></span>
+          <span className="settings-button" aria-label="设置"><PixelIcon name="settings" /></span>
         </div>
       </header>
 
-      <nav className="main-nav" aria-label="主导航">
-        {navItems.map(([id, label]) => <button key={id} className={activeView === id ? 'nav-item active' : 'nav-item'} onClick={() => setView(id)}>{label}</button>)}
+      <nav className="main-nav" aria-label="主导航" data-pixel-nav="true">
+        {navItems.map(([id, label, icon]) => <button key={id} className={activeView === id ? 'nav-item active' : 'nav-item'} aria-current={activeView === id ? 'page' : undefined} onClick={() => setView(id)}><PixelIcon name={icon} />{label}</button>)}
       </nav>
 
       <main className="main-content">
-        <TimeConsole game={game} dispatch={dispatch} />
+        {activeView === 'life' ? <section className="life-hero-grid" aria-label="生活主控制台"><TimeConsole game={game} dispatch={dispatch} /><ForecastPanel game={game} /></section> : <TimeConsole game={game} dispatch={dispatch} />}
         <section className="metric-strip" aria-label="成长指标">
           <Metric label="生活水平" value={lifestyle} /><Metric label="能力" value={game.ability} /><Metric label="声誉" value={game.reputation} /><Metric label="关系" value={Object.values(game.relationships).reduce((sum, value) => sum + value, 0)} />
         </section>
         {lastError && <div className="notice error" role="alert">{lastError}</div>}
         {activeView === 'life' && <><LifeView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="life" /></>}
         {activeView === 'work' && <><CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={setView} /><section className="planning-section"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><CourseMarket game={game} dispatch={dispatch} /><ForecastPanel game={game} /></>}
-        {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><WishlistPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></>}
+        {activeView === 'shop' && <section className="shop-page" aria-label="商品目录布局"><ShopView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><WishlistPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></section>}
         {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="wealth" /><BusinessGroupView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessPublicFloatView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /><PortfolioAllocation game={game} /><PortfolioHistory game={game} /></>}
         {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><GiftPanel game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></>}
         {activeView === 'city' && <CityView game={game} onNavigate={setView} />}
         {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><WealthMilestoneView game={game} /><MilestoneProgressView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /><WorldEquityHistoryView game={game} /></>}
       </main>
+      <PersistentStatusBar game={game} />
 
       <footer className="footer-note">你负责规划，世界负责继续运行。</footer>
       {pendingEvent && <EventModal event={pendingEvent} onChoose={(choiceId) => dispatch({ type: 'choose_event', eventId: pendingEvent.id, choiceId })} />}
@@ -259,7 +263,7 @@ function LifeView({ game, dispatch }: { game: GameState; dispatch: (action: Game
   const lifestyleFactor = Math.min(balanceConfig.lifestyleCostFactorCap, Math.max(0, lifestyleScore * balanceConfig.lifestyleCostFactor));
   const dailyRent = home ? housingRentPerDay(game, home) : 0;
   const fixed = dailyRent * 28 + Math.round(balanceConfig.dailyLivingCost * (1 + lifestyleFactor) * 28) + Math.round(balanceConfig.dailyTransportCost * (1 + lifestyleFactor / 2) * 28) + balanceConfig.monthlyCommunicationCost + (home?.fixedMonthlyCost ?? 0);
-  return <><section className="forecast-strip"><div><span className="eyebrow">本月预计</span><h2>先看余量，再安排生活</h2></div><div><span>固定支出</span><strong>{money(fixed)}</strong></div><div><span>房租</span><strong>{money(dailyRent * 28)}</strong></div><div><span>生活与交通</span><strong>{money(fixed - dailyRent * 28 - balanceConfig.monthlyCommunicationCost)}</strong></div></section><HousingView game={game} dispatch={dispatch} /><FinancialSummaryView game={game} compact /></>;
+  return <><section className="life-planning-section"><div className="section-heading compact"><div><span className="eyebrow">本周计划</span><h1>把时间留给什么</h1></div><p>正式工作自动占用；学习、活动、兼职和自由时间由你规划。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><section className="life-info-grid" aria-label="生活信息面板"><section className="forecast-strip monthly-forecast"><div><span className="eyebrow">本月预计</span><h2>先看余量，再安排生活</h2></div><div><span>固定支出</span><strong>{money(fixed)}</strong></div><div><span>房租</span><strong>{money(dailyRent * 28)}</strong></div><div><span>生活与交通</span><strong>{money(fixed - dailyRent * 28 - balanceConfig.monthlyCommunicationCost)}</strong></div></section><FinancialSummaryView game={game} compact /></section><HousingView game={game} dispatch={dispatch} /></>;
 }
 
 function WorkView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
@@ -508,7 +512,20 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
   const pending = game.pendingMonthlySummary!;
   const financial = pending.financial;
   const incomeSources = Object.entries(financial?.income.categories ?? {}).filter(([, amount]) => amount > 0);
-  return <div className="modal-backdrop event-paused"><section className="event-modal monthly-summary" role="dialog" aria-modal="true" aria-labelledby="monthly-title"><span className="eyebrow">月度结算 · 世界已暂停</span><h2 id="monthly-title">第 {pending.month} 月</h2><div className="summary-total"><span>收入</span><strong>{money(financial?.totalIncome ?? pending.summary.ledger.wageIncome + pending.summary.ledger.sideJobIncome)}</strong><span>消费支出</span><strong>{money(financial?.totalConsumption ?? pending.summary.ledger.livingExpense + pending.summary.ledger.rentExpense)}</strong><span>现金变化</span><strong>{financial ? money(financial.cashChange) : '—'}</strong><span>净资产</span><strong>{money(pending.summary.ledger.netWorthStart)} → {money(pending.summary.ledger.netWorthEnd)}</strong></div>{incomeSources.length > 0 && <div className="ledger-detail"><span>收入来源</span><small>{incomeSources.map(([category, amount]) => `${financialLabels[category] ?? category} ${money(amount)}`).join(' · ')}</small></div>}<div className="reward-lines">{pending.highlights.map((highlight) => <div key={highlight.id}>{highlight.label}</div>)}</div><button className="primary-button" onClick={() => dispatch({ type: 'acknowledge_monthly_summary' })}>进入下个月</button></section></div>;
+  const realizedGain = financial?.income.categories.realized_gain ?? 0;
+  const realizedLoss = financial?.consumption.categories.realized_loss ?? 0;
+  return <div className="modal-backdrop event-paused"><section className="event-modal monthly-summary" role="dialog" aria-modal="true" aria-labelledby="monthly-title">
+    <header className="settlement-heading"><span className="eyebrow">月度结算 · 世界已暂停</span><h2 id="monthly-title">第 {pending.month} 月结算</h2><p>时间在流逝，你的选择创造了结果</p></header>
+    <div className="settlement-grid">
+      <section className="settlement-card"><span>收入</span><strong>+{money(financial?.totalIncome ?? pending.summary.ledger.wageIncome + pending.summary.ledger.sideJobIncome)}</strong><small>{incomeSources.map(([category, amount]) => `${financialLabels[category] ?? category} ${money(amount)}`).join(' · ') || '本月没有收入'}</small></section>
+      <section className="settlement-card"><span>消费支出</span><strong>-{money(financial?.totalConsumption ?? pending.summary.ledger.livingExpense + pending.summary.ledger.rentExpense)}</strong><small>住房、生活与主动消费</small></section>
+      <section className="settlement-card"><span>资产配置</span><strong>{money(financial?.totalAssetAllocation ?? 0)}</strong><small>现金转入投资、房产、企业或收藏</small></section>
+      <section className="settlement-card settlement-net"><span>净资产变化</span><strong>{financial && financial.netWorthChange >= 0 ? '+' : ''}{money(financial?.netWorthChange ?? pending.summary.ledger.netWorthEnd - pending.summary.ledger.netWorthStart)}</strong><small>{money(pending.summary.ledger.netWorthStart)} → {money(pending.summary.ledger.netWorthEnd)}</small></section>
+    </div>
+    <div className="settlement-secondary"><div><span>现金变化</span><strong>{financial ? money(financial.cashChange) : '—'}</strong></div><div><span>已实现收益</span><strong>{money(realizedGain - realizedLoss)}</strong></div><div><span>资产变现</span><strong>{money(financial?.totalAssetLiquidation ?? 0)}</strong></div></div>
+    <section className="settlement-highlights"><span className="eyebrow">本月重要收获</span><div className="reward-lines">{pending.highlights.length ? pending.highlights.map((highlight) => <div key={highlight.id}>{highlight.label}</div>) : <div>这个月平稳地过去了</div>}</div></section>
+    <footer className="settlement-footer"><span>你比上个月又向前走了一段。</span><button className="primary-button" onClick={() => dispatch({ type: 'acknowledge_monthly_summary' })}>进入下个月</button></footer>
+  </section></div>;
 }
 
 function EventModal({ event, onChoose }: { event: (typeof contentRegistry.events)[number]; onChoose: (choiceId: string) => void }) { return <div className="modal-backdrop event-paused"><section className="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-title"><span className="eyebrow">世界已暂停 · 发生了一件事</span><h2 id="event-title">{event.title}</h2><p>{event.body}</p><div className="event-choices">{event.choices.map((choice) => <button key={choice.id} className="choice-button" onClick={() => onChoose(choice.id)}>{choice.text}<span>选择</span></button>)}</div></section></div>; }
