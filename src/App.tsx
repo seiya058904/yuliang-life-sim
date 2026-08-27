@@ -405,7 +405,7 @@ function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (
   const action = primaryAction(game.simulationMode);
   return <>
     <section className="life-primary-dashboard" aria-label="生活核心面板">
-      <section className="life-planning-section"><div className="section-heading compact"><div><span className="eyebrow">本周计划</span><h1>本周计划</h1></div><p>工作自动占用；其他时间由你安排。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section>
+      <section className="life-planning-section"><div className="section-heading compact"><div><span className="eyebrow">本周计划</span><h1>本周计划</h1></div><div className="planner-heading-side"><p>工作自动占用；其他时间由你安排。</p><PlanLegend /></div></div><WeekPlanner game={game} dispatch={dispatch} /></section>
       <InboxGrid game={game} onNavigate={onNavigate} />
     </section>
     <section className="life-secondary-drawer" aria-label="生活详情">
@@ -418,6 +418,16 @@ function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (
       </div>}
     </section>
   </>;
+}
+
+const planLegend: ReadonlyArray<readonly [PixelIconName, string]> = [
+  ['career', '工作'], ['book', '学习'], ['users', '社交'], ['cup', '生活'], ['controller', '自由'], ['spark', '其他'],
+];
+
+function PlanLegend() {
+  return <div className="planner-legend" role="list" aria-label="计划类型图例">
+    {planLegend.map(([icon, label]) => <span role="listitem" key={label}><PixelIcon name={icon} size={14} /><span>{label}</span></span>)}
+  </div>;
 }
 
 interface InboxItem { icon: PixelIconName; title: string; meta?: string; unread?: boolean }
@@ -1020,6 +1030,7 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
   const liquidation = financial?.totalAssetLiquidation ?? 0;
   const allocationScale = Math.max(1, ...allocationRows.map(([, amount]) => Math.abs(amount)));
   const highlightCount = Math.min(pending.highlights.length, 5);
+  const highlightPlaceholders = ['工作与机会', '关系变化', '能力与资格', '住房与资产', '投资与机会'];
   const attributes: Array<[string, number]> = [
     ['专业', game.attributes?.professional ?? game.ability], ['知识', game.attributes?.knowledge ?? game.ability],
     ['沟通', game.attributes?.communication ?? game.ability], ['体能', game.attributes?.fitness ?? 50],
@@ -1080,11 +1091,15 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
     <div className="settle-highlights">
       <header className="settle-highlights-head"><PixelIcon name="spark" size={14} /><span>本月重要收获</span><i className="dotted-line" aria-hidden="true" /></header>
       <div className={`highlight-row highlight-row-${highlightCount}`}>
-        {pending.highlights.slice(0, 5).map((highlight, index) => <article className="highlight-card" key={highlight.id}>
+        {Array.from({ length: 5 }, (_, index) => pending.highlights[index] ? <article className="highlight-card" key={pending.highlights[index].id}>
           <i className="new-ribbon" aria-hidden="true">NEW</i>
-          <PixelIcon name={highlightKindIcon[highlight.kind] ?? 'spark'} size={22} />
-          <h3>{highlight.label}</h3>
-          <small>第 {highlight.day} 天 · 记录 {index + 1}</small>
+          <PixelIcon name={highlightKindIcon[pending.highlights[index].kind] ?? 'spark'} size={22} />
+          <h3>{pending.highlights[index].label}</h3>
+          <small>第 {pending.highlights[index].day} 天 · 记录 {index + 1}</small>
+        </article> : <article className="highlight-card placeholder" key={`placeholder-${index}`} aria-label={`${highlightPlaceholders[index]}尚未记录`}>
+          <PixelIcon name="spark" size={22} />
+          <h3>{highlightPlaceholders[index]}</h3>
+          <small>发生真实变化后显示</small>
         </article>)}
         <article className="highlight-card reflection" aria-label="本月回顾">
           <h3>本月回顾</h3>

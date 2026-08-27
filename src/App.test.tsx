@@ -131,6 +131,21 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('region', { name: '生活信息面板' })).toBeInTheDocument();
   });
 
+  it('keeps the weekly plan legend visible beside the compact planning board', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+
+    const legend = screen.getByRole('list', { name: '计划类型图例' });
+    expect(within(legend).getAllByRole('listitem')).toHaveLength(6);
+    expect(legend).toHaveTextContent('工作');
+    expect(legend).toHaveTextContent('学习');
+    expect(legend).toHaveTextContent('社交');
+    expect(legend).toHaveTextContent('生活');
+    expect(legend).toHaveTextContent('自由');
+    expect(legend).toHaveTextContent('其他');
+  });
+
   it('groups the four reference-driven surfaces into stable visual regions', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -174,6 +189,7 @@ describe('余量 app flow', () => {
     expect(dialog).toHaveTextContent('净资产变化');
     expect(within(dialog).getByRole('region', { name: '净资产结果' })).toHaveClass('settle-result-inverse');
     expect(dialog.querySelector('.highlight-row')).toHaveClass('highlight-row-1');
+    expect(dialog.querySelectorAll('.highlight-card.placeholder')).toHaveLength(4);
     expect(dialog).not.toHaveTextContent('✦');
     expect(dialog).not.toHaveTextContent('✧');
   });

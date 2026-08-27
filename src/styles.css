@@ -3326,3 +3326,67 @@ button, input, select { border-radius: 0; }
   .career-toolbar-select { display: grid; gap: 2px; color: #aaa; font-size: 9px; }
   .career-toolbar-select select { min-width: 0; padding: 5px; color: #070707; background: #f4f4f0; border: 1px solid #f4f4f0; border-radius: 0; font-size: 10px; }
 }
+
+/* Round 3: restore the reference board's visual weight without changing the
+   underlying weekly plan or settlement records. */
+@media (min-width: 1181px) {
+  .life-planning-section > .section-heading {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+  }
+  .life-planning-section > .section-heading > div:first-child { min-width: 0; }
+  .planner-heading-side {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    min-width: 0;
+  }
+  .planner-heading-side p {
+    flex: 0 1 250px;
+    max-width: 250px;
+    margin: 0;
+    color: #999991;
+    font-size: 10px;
+    line-height: 1.25;
+    text-align: right;
+  }
+  .planner-legend {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 9px;
+    min-width: 0;
+    color: #c7c7c0;
+    font-size: 10px;
+    white-space: nowrap;
+  }
+  .planner-legend > [role='listitem'] {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .planner-legend .pixel-icon { flex: none; color: #f4f4f0; }
+
+  .life-planning-section .planner-head { height: 36px; min-height: 36px; }
+  .life-planning-section .planner-row,
+  .life-planning-section .plan-cell { height: 62px; min-height: 62px; }
+  .life-planning-section .plan-cell { gap: 3px; padding: 6px 5px; }
+  .life-planning-section .plan-cell .pixel-icon { width: 18px; height: 18px; }
+  .life-planning-section .planner-actions { height: 42px; min-height: 42px; padding-block: 6px; }
+  .life-primary-dashboard .inbox-panel { height: 220px; min-height: 220px; }
+
+  /* Always reserve the six reference slots: five real records plus a neutral
+     review card. Missing records remain visibly honest placeholders. */
+  .monthly-summary.fullframe .highlight-row { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .monthly-summary.fullframe .highlight-card.placeholder {
+    color: #999;
+    background: #0a0a0a;
+    border-style: dotted;
+  }
+  .monthly-summary.fullframe .highlight-card.placeholder .pixel-icon { color: #777; }
+  .monthly-summary.fullframe .highlight-card.placeholder h3 { color: #aaa; }
+  .monthly-summary.fullframe .highlight-card.placeholder small { color: #666; }
+}
