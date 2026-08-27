@@ -80,6 +80,17 @@ describe('余量 app flow', () => {
     expect(screen.queryByRole('dialog', { name: '职业工具' })).not.toBeInTheDocument();
   });
 
+  it('gives the career detail a dark match band and a distinct application action bar', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const detail = screen.getByRole('complementary', { name: '岗位详情' });
+    expect(detail.querySelector('.career-detail-match')).toHaveClass('career-detail-match');
+    expect(detail.querySelector('.career-detail-apply-bar')).not.toBeNull();
+    expect(within(detail).getByRole('button', { name: '申请岗位' })).toHaveClass('primary-button');
+  });
+
   it('keeps career page navigation out of the filter rail and exposes it from a compact toolbar menu', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -508,6 +519,46 @@ describe('余量 app flow', () => {
     expect(itemCard.querySelectorAll('button.primary-button')).toHaveLength(1);
     expect(itemCard.querySelector('.button-pair')).toBeNull();
     expect(itemCard.querySelector('.catalog-secondary-action')).not.toBeNull();
+  });
+
+  it('renders the reference product-card anatomy with honest definition facts', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '商店' }));
+
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    const itemCard = screen.getByRole('heading', { name: '实用手机' }).closest('[data-catalog-card]') as HTMLElement;
+    expect(itemCard.querySelector('.catalog-badge')).toHaveTextContent('科技');
+    expect(itemCard.querySelector('.catalog-facts')).not.toBeNull();
+    expect(itemCard.querySelectorAll('.catalog-facts dt')).toHaveLength(4);
+    expect(itemCard.querySelector('.catalog-facts')).toHaveTextContent('时间');
+    expect(itemCard.querySelector('.catalog-facts')).toHaveTextContent('不消耗');
+    expect(itemCard.querySelector('.catalog-facts')).toHaveTextContent('效果');
+    expect(itemCard.querySelector('.catalog-facts')).toHaveTextContent('前提');
+    expect(itemCard.querySelector('.catalog-facts')).toHaveTextContent('类型');
+
+    await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
+    const activityCard = shop.querySelector('[data-catalog-card]') as HTMLElement;
+    expect(activityCard.querySelector('.catalog-facts')).not.toBeNull();
+    expect(activityCard.querySelectorAll('.catalog-facts dt')).toHaveLength(4);
+    expect(activityCard.querySelector('.catalog-facts')).toHaveTextContent('时间');
+    expect(activityCard.querySelector('.catalog-facts')).toHaveTextContent('效果');
+    expect(activityCard.querySelector('.catalog-facts')).toHaveTextContent('前提');
+    expect(activityCard.querySelector('.catalog-facts')).toHaveTextContent('类型');
+  });
+
+  it('keeps an activity heading, facts, and action inside one semantic card body', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
+
+    const card = shop.querySelector('.activity-card') as HTMLElement;
+    const heading = card.querySelector('h3') as HTMLElement;
+    expect(heading.parentElement).toHaveClass('activity-card-body');
+    expect(within(heading.parentElement as HTMLElement).getByText('效果')).toBeInTheDocument();
+    expect(within(heading.parentElement as HTMLElement).getByRole('button', { name: '安排到本周自由时间' })).toBeInTheDocument();
   });
 
   it('keeps the Life plan header compact instead of presenting a webpage slogan', async () => {

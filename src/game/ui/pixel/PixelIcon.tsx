@@ -16,7 +16,7 @@ const paths: Record<PixelIconName, string[]> = {
   cash: ['M4 6h16v12H4Z', 'M8 12h8M12 9v6'],
   calendar: ['M4 5h16v16H4ZM8 3v4M16 3v4M4 10h16'],
   clock: ['M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7v6l4 2'],
-  settings: ['M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z', 'M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2'],
+  settings: ['M9 2h6v3l3 1 2-2 3 5-3 2v3l3 2-3 5-2-2-3 1v3H9v-3l-3-1-2 2-3-5 3-2V9L1 7l3-5 2 2 3-1Z', 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z'],
   sleep: ['M3 20h18M4 13h12v7M16 13v7M6 15h4'],
   book: ['M5 4h9l5 5v11H8l-3 -3Z', 'M14 4v5h5', 'M8 13h6M8 16h4'],
   controller: ['M7 8h10l3 9h-4l-2-3h-4l-2 3H4Z', 'M8 11h3M9.5 9.5v3M15 10h.01M16.5 12h.01'],
