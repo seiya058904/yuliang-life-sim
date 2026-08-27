@@ -2537,7 +2537,7 @@ button, input, select { border-radius: 0; }
   .view-shop .shop-main > .detail-panel[aria-label="服务与订阅"] > .ledger-detail { margin-top: 6px; }
 
   .view-shop .shop-main .item-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-  .view-shop .shop-main .activity-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .view-shop .shop-main .activity-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 
   .view-shop .item-card .card-art .pixel-illustration,
   .view-shop .activity-card .card-art .pixel-illustration { width: 52px; height: 52px; }
@@ -3094,4 +3094,114 @@ button, input, select { border-radius: 0; }
   .career-tools-content > .planning-section,
   .career-tools-content > .market-section,
   .career-tools-content > .forecast-strip { grid-column: 1; }
+}
+
+/* Keep the market rail dedicated to real filters. Secondary career pages are
+   still one click away, but the menu now shares the compact toolbar grammar
+   instead of competing with the first-screen filter stack. */
+.career-toolbar { position: relative; flex-wrap: wrap; }
+.career-toolbar > .career-toolbar-leading,
+.career-toolbar > .career-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.career-toolbar > .career-toolbar-leading { justify-content: flex-start; }
+.career-toolbar > .career-toolbar-actions { margin-left: auto; justify-content: flex-end; }
+.career-page-menu-trigger {
+  min-height: 26px;
+  padding: 5px 8px;
+  color: #070707;
+  background: #f4f4f0;
+  border: 1px solid #f4f4f0;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+}
+.career-page-menu-trigger::after { content: ' ▾'; }
+.career-page-menu-trigger[aria-expanded='true'] { color: #f4f4ef; background: #070707; border-color: #f4f4ef; }
+.career-page-menu {
+  flex: 1 0 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  min-width: 0;
+  padding-top: 6px;
+  border-top: 1px dotted #777772;
+}
+.career-page-menu .filter-button { min-width: 0; min-height: 26px; padding: 5px 7px; font-size: 10px; }
+
+/* A product card keeps one unmistakable purchase action. Wishlist remains a
+   quiet context action so the real goal flow stays reachable without turning
+   every card into a two-button toolbar. */
+.view-shop .item-card .item-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.view-shop .item-card .item-card-actions .primary-button { flex: 1 1 auto; min-width: 0; }
+.view-shop .item-card .catalog-secondary-action {
+  flex: none;
+  min-width: 0;
+  padding: 4px 0;
+  color: #aaa;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dotted #777;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.view-shop .item-card .catalog-secondary-action:hover,
+.view-shop .item-card .catalog-secondary-action:focus-visible,
+.view-shop .item-card .catalog-secondary-action[aria-pressed='true'] { color: #fff; border-bottom-color: #fff; }
+
+@media (min-width: 1181px) {
+  .view-shop .shop-main .activity-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .view-shop .activity-card {
+    height: 150px;
+    min-height: 150px;
+    overflow: hidden;
+  }
+  .view-shop .activity-card .card-art,
+  .view-shop .activity-card .card-art .pixel-illustration { width: 48px; height: 48px; }
+  .view-shop .activity-card .activity-facts { padding-top: 2px; }
+  .view-shop .activity-card .activity-effect { padding-block: 2px; }
+  .view-shop .activity-card .catalog-meter-stack { gap: 2px; }
+  .view-shop .activity-card > .secondary-button { min-height: 24px; padding-block: 4px; }
+}
+
+@media (max-width: 700px) {
+  .career-toolbar > .career-toolbar-actions { margin-left: 0; justify-content: flex-start; }
+  .career-page-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* The desktop reference gives the activity readout one continuous progress
+   band. Let the band use the middle activity panel instead of leaving a
+   misleading gap between the time range and the progress data. */
+@media (min-width: 1181px) {
+  .hero-activity {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+    column-gap: 14px;
+    align-content: stretch;
+  }
+  .hero-activity .pixel-illustration {
+    grid-column: 1;
+    grid-row: 2 / span 2;
+  }
+  .hero-activity .activity-progress,
+  .hero-activity .progress-caption,
+  .hero-activity .hero-next { grid-column: 1 / -1; }
+  .hero-activity .activity-progress { grid-row: 4; align-self: end; }
+  .hero-activity .progress-caption { grid-row: 5; }
+  .hero-activity .hero-next { grid-row: 6; }
+
+  /* Keep the plan's secondary line readable in the actual rendered UI; an
+     older narrow-density rule at the end of the stylesheet used to win. */
+  .life-planning-section .plan-cell small { font-size: 13px !important; }
 }

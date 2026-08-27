@@ -23,8 +23,8 @@ async function runLongPeriod(page: import('@playwright/test').Page, months: 1 | 
 
 async function openCareerTools(page: import('@playwright/test').Page) {
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
-  const market = page.getByRole('button', { name: '招聘市场', exact: true });
-  if (await market.isVisible()) await market.click();
+  const pageMenu = page.getByRole('button', { name: /^职业页面/ });
+  if (!(await pageMenu.count())) await page.getByRole('button', { name: '招聘市场', exact: true }).click();
   await page.getByRole('button', { name: '安排本周与课程' }).click();
   await expect(page.getByRole('dialog', { name: '职业工具' })).toBeVisible();
 }
@@ -32,6 +32,16 @@ async function openCareerTools(page: import('@playwright/test').Page) {
 async function closeCareerTools(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: '关闭职业工具' }).click();
   await expect(page.getByRole('dialog', { name: '职业工具' })).toHaveCount(0);
+}
+
+async function openCareerPage(page: import('@playwright/test').Page, label: string) {
+  const pageMenu = page.getByRole('button', { name: /^职业页面/ });
+  if (await pageMenu.count()) {
+    await pageMenu.click();
+    await page.getByRole('navigation', { name: '职业页面导航' }).getByRole('button', { name: label, exact: true }).click();
+    return;
+  }
+  await page.getByRole('button', { name: label, exact: true }).click();
 }
 
 test('discovers a named city venue and reaches its activity entry', async ({ page }) => {
@@ -74,9 +84,9 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
   await expect(page.getByRole('heading', { name: '环流物流协调员' })).toBeVisible();
   await page.getByLabel('搜索岗位或公司').fill('');
   await page.getByRole('button', { name: '申请职位' }).first().click();
-  await page.getByRole('button', { name: '我的申请' }).click();
+  await openCareerPage(page, '我的申请');
   await expect(page.getByText(/当前竞争力：/)).toBeVisible();
-  await page.getByRole('button', { name: '工作机会' }).click();
+  await openCareerPage(page, '工作机会');
   await expect(page.getByText(/人物推荐、内部转岗、猎头和剧情机会/)).toBeVisible();
 
   await page.getByRole('button', { name: '生活', exact: true }).click();
@@ -125,11 +135,11 @@ test('discovers and applies to the official education operations route', async (
   await expect(vacancy).toContainText('青禾教育科技');
   await expect(vacancy).toContainText('符合条件');
   await vacancy.getByRole('button', { name: '申请职位' }).click();
-  await page.getByRole('button', { name: '我的申请' }).click();
+  await openCareerPage(page, '我的申请');
   await expect(page.getByRole('heading', { name: '课程运营助理' })).toBeVisible();
   await page.reload();
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '我的申请' }).click();
+  await openCareerPage(page, '我的申请');
   await expect(page.getByRole('heading', { name: '课程运营助理' })).toBeVisible();
 });
 
@@ -154,10 +164,10 @@ test('turns the education course qualification into a persistent teaching assist
   const vacancy = page.getByRole('heading', { name: '线上课程助教' }).locator('xpath=ancestor::article[1]');
   await expect(vacancy).toContainText('符合条件');
   await vacancy.getByRole('button', { name: '申请职位' }).click();
-  await page.getByRole('button', { name: '我的申请' }).click();
+  await openCareerPage(page, '我的申请');
   await expect(page.getByRole('heading', { name: '线上课程助教' })).toBeVisible();
   await page.getByRole('button', { name: '接受 Offer' }).click();
-  await page.getByRole('button', { name: '我的兼职' }).click();
+  await openCareerPage(page, '我的兼职');
   await expect(page.getByRole('heading', { name: '线上课程助教' })).toBeVisible();
   await page.getByRole('button', { name: '安排到本周' }).click();
   await openCareerTools(page);
@@ -171,7 +181,7 @@ test('turns the education course qualification into a persistent teaching assist
   await expect(page.getByRole('heading', { name: '完成线上课程助教' }).first()).toBeVisible();
   await page.reload();
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '我的兼职' }).click();
+  await openCareerPage(page, '我的兼职');
   await expect(page.getByRole('heading', { name: '线上课程助教' })).toBeVisible();
 });
 
@@ -218,7 +228,7 @@ test('discovers the travel product assistant route in the public market', async 
   await expect(vacancy).toContainText('栖岸文旅');
   await expect(vacancy).toContainText('符合条件');
   await vacancy.getByRole('button', { name: '申请职位' }).click();
-  await page.getByRole('button', { name: '我的申请' }).click();
+  await openCareerPage(page, '我的申请');
   await expect(page.getByRole('heading', { name: '旅行产品助理' })).toBeVisible();
 });
 
@@ -241,7 +251,7 @@ test('discovers the low-barrier ecommerce operations route in the public market'
   await expect(vacancy).toContainText('星桥电商');
   await expect(vacancy).toContainText('符合条件');
   await vacancy.getByRole('button', { name: '申请职位' }).click();
-  await page.getByRole('button', { name: '我的申请' }).click();
+  await openCareerPage(page, '我的申请');
   await expect(page.getByRole('heading', { name: '订单运营助理' })).toBeVisible();
 });
 
@@ -264,7 +274,7 @@ test('discovers the neworder automotive service route in the public market', asy
   await expect(vacancy).toContainText('新序汽车服务');
   await expect(vacancy).toContainText('符合条件');
   await vacancy.getByRole('button', { name: '申请职位' }).click();
-  await page.getByRole('button', { name: '我的申请' }).click();
+  await openCareerPage(page, '我的申请');
   await expect(page.getByRole('heading', { name: '门店服务助理' })).toBeVisible();
 });
 
@@ -287,7 +297,7 @@ test('discovers the frame media production route in the public market', async ({
   await expect(vacancy).toContainText('映界传媒');
   await expect(vacancy).toContainText('符合条件');
   await vacancy.getByRole('button', { name: '申请职位' }).click();
-  await page.getByRole('button', { name: '我的申请' }).click();
+  await openCareerPage(page, '我的申请');
   await expect(page.getByRole('heading', { name: '制作助理' })).toBeVisible();
 });
 
@@ -310,7 +320,7 @@ test('discovers the isle lifestyle customer experience route in the public marke
   await expect(vacancy).toContainText('一屿生活科技');
   await expect(vacancy).toContainText('符合条件');
   await vacancy.getByRole('button', { name: '申请职位' }).click();
-  await page.getByRole('button', { name: '我的申请' }).click();
+  await openCareerPage(page, '我的申请');
   await expect(page.getByRole('heading', { name: '客户体验助理' })).toBeVisible();
 });
 
@@ -411,7 +421,7 @@ test('negotiates salary and persists a voluntary departure in career history', a
   await page.reload();
 
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '当前工作', exact: true }).click();
+  await openCareerPage(page, '当前工作');
   await page.getByRole('button', { name: '离开当前工作' }).click();
   await page.getByRole('dialog').getByRole('button', { name: '继续沟通' }).click();
   await page.getByRole('dialog').getByRole('button', { name: '留下来谈谈' }).click();
@@ -419,17 +429,17 @@ test('negotiates salary and persists a voluntary departure in career history', a
   expect(negotiated.employment.salaryAdjustment).toBe(5);
   expect(negotiated.employment.negotiationStage).toBe(1);
 
-  await page.getByRole('button', { name: '当前工作', exact: true }).click();
+  await openCareerPage(page, '当前工作');
   await page.getByRole('button', { name: '离开当前工作' }).click();
   await page.getByRole('dialog').getByRole('button', { name: '继续沟通' }).click();
   await page.getByRole('dialog').getByRole('button', { name: '我想换个方向' }).click();
-  await page.getByRole('button', { name: '职业履历', exact: true }).click();
+  await openCareerPage(page, '职业履历');
   await expect(page.getByRole('heading', { name: '便利店店员' })).toBeVisible();
   await expect(page.getByText(/至第 1 天 · 离职/)).toBeVisible();
 
   await page.reload();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '职业履历', exact: true }).click();
+  await openCareerPage(page, '职业履历');
   await expect(page.getByText(/至第 1 天 · 离职/)).toBeVisible();
 });
 
@@ -793,7 +803,7 @@ test('executes an offered gig and persists its income and career history', async
   await page.reload();
 
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '工作机会' }).click();
+  await openCareerPage(page, '工作机会');
   const gig = page.getByRole('heading', { name: '同城配送' }).locator('xpath=ancestor::article[1]');
   await expect(gig).toContainText('结算 ¥76');
   await gig.getByRole('button', { name: '执行一次' }).click();
@@ -805,7 +815,7 @@ test('executes an offered gig and persists its income and career history', async
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByRole('heading', { name: '完成同城配送' })).toBeVisible();
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '工作机会' }).click();
+  await openCareerPage(page, '工作机会');
   await expect(page.getByRole('heading', { name: '同城配送' })).not.toBeVisible();
 });
 
@@ -942,13 +952,13 @@ test('unlocks the warehouse-to-office career storyline opportunity', async ({ pa
   await expect(storyline).toContainText('有没有想过以后做调度');
   await storyline.getByRole('button', { name: '有兴趣' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '工作机会', exact: true }).click();
+  await openCareerPage(page, '工作机会');
   const opportunity = page.getByRole('heading', { name: '环流物流协调员' }).locator('..');
   await expect(opportunity).toContainText('环流物流内部调度机会');
   await expect(opportunity.getByRole('button', { name: '申请机会' })).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '工作机会', exact: true }).click();
+  await openCareerPage(page, '工作机会');
   await expect(page.getByText('环流物流内部调度机会')).toBeVisible();
 });
 
@@ -1015,11 +1025,11 @@ test('turns a client poaching storyline into a persisted referral opportunity', 
   await storyline.getByRole('button', { name: '开始故事' }).click();
   await storyline.getByRole('button', { name: '听听条件' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '工作机会', exact: true }).click();
+  await openCareerPage(page, '工作机会');
   await expect(page.getByText('合作公司负责人私下邀请')).toBeVisible();
   await page.reload();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '工作机会', exact: true }).click();
+  await openCareerPage(page, '工作机会');
   await expect(page.getByText('合作公司负责人私下邀请')).toBeVisible();
 });
 
@@ -1233,7 +1243,7 @@ test('turns a company expansion event into a visible internal career opportunity
   const changedState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
   expect(changedState.flags?.xinghe_service_line_launched).toBe(true);
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '工作机会' }).click();
+  await openCareerPage(page, '工作机会');
   await expect(page.getByText('星河科技业务扩展')).toBeVisible();
   await expect(page.getByText('独立项目顾问')).toBeVisible();
 });
@@ -1274,13 +1284,13 @@ test('turns a qualifying manager state into a persisted headhunter opportunity',
   await page.getByRole('dialog').getByRole('button', { name: '听听看' }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '工作机会' }).click();
+  await openCareerPage(page, '工作机会');
   await expect(page.getByText('许衡主动联系')).toBeVisible();
   await expect(page.getByText('品类运营专家')).toBeVisible();
 
   await page.reload();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '工作机会' }).click();
+  await openCareerPage(page, '工作机会');
   await expect(page.getByText('许衡主动联系')).toBeVisible();
 });
 
@@ -1896,15 +1906,15 @@ test('shows cross-industry mobility distance and a senior expert ladder', async 
   await page.getByRole('button', { name: '进入下个月' }).click();
 
   // Dedicated tab keeps the market list untouched while framing movement between industries.
-  await page.getByRole('button', { name: /招聘市场|当前工作|工作机会/ }).first().click();
-  await page.getByRole('button', { name: '跨行业', exact: true }).click();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await openCareerPage(page, '跨行业');
   const mobility = page.locator('section[aria-label="跨行业流动"]');
   await expect(mobility).toContainText('换行业的距离');
   await expect(mobility).toContainText('还差');
   await expect(mobility).toContainText('可迁移基础');
 
   // Senior anchors remain reachable in the regenerated public market with real hints.
-  await page.getByRole('button', { name: '招聘市场', exact: true }).first().click();
+  await openCareerPage(page, '招聘市场');
   await page.getByLabel('搜索岗位或公司').fill('首席分析专家');
   const seniorCard = page.locator('.job-card', { hasText: '首席分析专家' });
   await expect(seniorCard).toBeVisible();
@@ -1913,7 +1923,7 @@ test('shows cross-industry mobility distance and a senior expert ladder', async 
 
   await page.reload();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '跨行业', exact: true }).click();
+  await openCareerPage(page, '跨行业');
   await expect(page.locator('section[aria-label="跨行业流动"]')).toContainText('换行业的距离');
 });
 test('starts the old-photo storyline with song-yuran and persists its branch', async ({ page }) => {

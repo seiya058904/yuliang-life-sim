@@ -80,6 +80,22 @@ describe('余量 app flow', () => {
     expect(screen.queryByRole('dialog', { name: '职业工具' })).not.toBeInTheDocument();
   });
 
+  it('keeps career page navigation out of the filter rail and exposes it from a compact toolbar menu', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const market = screen.getByRole('region', { name: '招聘市场布局' });
+    const filters = market.querySelector('.career-filters') as HTMLElement;
+    expect(within(filters).queryByRole('button', { name: '当前工作' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: '职业页面导航' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '职业页面' }));
+    expect(screen.getByRole('navigation', { name: '职业页面导航' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '当前工作' }));
+    expect(screen.getByRole('heading', { name: '当前工作' })).toBeInTheDocument();
+  });
+
   it('keeps Life secondary finance and housing details reachable without stacking them into the home dashboard', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -158,8 +174,11 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
-    await user.click(screen.getByRole('tab', { name: '社交' }));
-    const project = screen.getByRole('heading', { name: '品牌短片项目 · 完成客户合同' }).closest('.activity-card');
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    await user.click(within(shop).getByRole('tab', { name: '社交' }));
+    const activityPager = within(shop).queryByRole('navigation', { name: '活动分页' });
+    if (activityPager) await user.click(within(activityPager).getByRole('button', { name: '下一页活动' }));
+    const project = within(shop).getByRole('heading', { name: '品牌短片项目 · 完成客户合同' }).closest('.activity-card');
     expect(project).not.toBeNull();
     expect(within(project as HTMLElement).getByText('企业项目利润 · 可承接')).toBeInTheDocument();
     await user.click(within(project as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
@@ -171,6 +190,7 @@ describe('余量 app flow', () => {
     render(<App />);
     await user.click(screen.getByRole('button', { name: '职业' }));
     await user.click(screen.getAllByRole('button', { name: '申请职位' })[0]);
+    await user.click(screen.getByRole('button', { name: '职业页面' }));
     await user.click(screen.getByRole('button', { name: '我的申请' }));
     expect(screen.getByText(/当前竞争力：/)).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -247,6 +267,7 @@ describe('余量 app flow', () => {
     await user.click(within(storyline as HTMLElement).getByRole('button', { name: '约个时间聊聊' }));
     expect(screen.getByText('进行中')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '职业' }));
+    await user.click(screen.getByRole('button', { name: '职业页面' }));
     await user.click(screen.getByRole('button', { name: '工作机会' }));
     expect(screen.getByText('徐可的朋友推荐')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '申请机会' })).toBeInTheDocument();
@@ -415,6 +436,52 @@ describe('余量 app flow', () => {
     activityCards.forEach((card) => expect(card.querySelectorAll('.catalog-meter-row')).toHaveLength(2));
   });
 
+  it('keeps the entertainment catalog paged within the compact three-column surface', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
+    const grid = shop.querySelector('.activity-grid');
+    expect(grid).not.toBeNull();
+    expect(grid?.children).toHaveLength(12);
+    expect(within(shop).getByRole('navigation', { name: '活动分页' })).toBeInTheDocument();
+
+    const firstPageTitle = grid?.querySelector('h3')?.textContent;
+    await user.click(within(shop).getByRole('button', { name: '下一页活动' }));
+    expect(grid?.children.length).toBeGreaterThan(0);
+    expect(grid?.querySelector('h3')?.textContent).not.toBe(firstPageTitle);
+  });
+
+  it('gives shop cards one clear primary action and a semantic pixel silhouette', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '商店' }));
+
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    const expectedIcons = [['现磨咖啡', 'coffee'], ['实用手机', 'phone'], ['轻薄笔记本电脑', 'laptop'], ['简洁书桌', 'desk'], ['合身衬衫', 'hoodie'], ['电影票', 'film'], ['实用书籍', 'book']] as const;
+    for (const [title, illustration] of expectedIcons) {
+      const card = Array.from(shop.querySelectorAll<HTMLElement>('[data-catalog-card]')).find((entry) => entry.querySelector('h2')?.textContent === title);
+      expect(card).not.toBeNull();
+      expect(card?.querySelector(`.pixel-illustration.il-${illustration}`)).not.toBeNull();
+    }
+
+    const itemCard = screen.getByRole('heading', { name: '实用手机' }).closest('[data-catalog-card]') as HTMLElement;
+    expect(itemCard.querySelectorAll('button.primary-button')).toHaveLength(1);
+    expect(itemCard.querySelector('.button-pair')).toBeNull();
+    expect(itemCard.querySelector('.catalog-secondary-action')).not.toBeNull();
+  });
+
+  it('keeps the Life plan header compact instead of presenting a webpage slogan', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+
+    expect(screen.getByRole('heading', { name: '本周计划' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '把时间留给什么' })).not.toBeInTheDocument();
+  });
+
   it('gives an empty market insight panel a complete visual state', () => {
     const game = appStore.getState().game;
     appStore.setState({ game: { ...game, vacancies: [] } });
@@ -555,6 +622,7 @@ describe('余量 app flow', () => {
     });
 
     render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业页面' }));
     await user.click(screen.getByRole('button', { name: '我的申请' }));
     await user.click(screen.getByRole('button', { name: /去商店/ }));
     expect(screen.getByRole('heading', { name: '商品' })).toBeInTheDocument();
