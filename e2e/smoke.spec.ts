@@ -6,6 +6,21 @@ test.beforeEach(async ({ page }) => {
   await page.reload();
 });
 
+async function openLifeDetails(page: import('@playwright/test').Page) {
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const details = page.getByRole('button', { name: '查看生活详情' });
+  if (await details.isVisible()) await details.click();
+}
+
+async function openLifeLongRun(page: import('@playwright/test').Page) {
+  await openLifeDetails(page);
+}
+
+async function runLongPeriod(page: import('@playwright/test').Page, months: 1 | 3) {
+  await openLifeLongRun(page);
+  await page.getByRole('button', { name: `运行 ${months} 个月` }).click();
+}
+
 test('discovers a named city venue and reaches its activity entry', async ({ page }) => {
   await page.getByRole('button', { name: '城市', exact: true }).click();
   const venue = page.getByRole('heading', { name: '云庭咖啡' }).locator('..');
@@ -51,6 +66,7 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
   await page.getByRole('button', { name: '工作机会' }).click();
   await expect(page.getByText(/人物推荐、内部转岗、猎头和剧情机会/)).toBeVisible();
 
+  await page.getByRole('button', { name: '生活', exact: true }).click();
   await page.getByRole('button', { name: '开始本周' }).click();
   await expect(page.getByText('运行中')).toBeVisible();
   await page.getByRole('button', { name: '×4' }).click();
@@ -132,7 +148,7 @@ test('turns the education course qualification into a persistent teaching assist
   await expect(page.getByRole('heading', { name: '线上课程助教' })).toBeVisible();
   await page.getByRole('button', { name: '安排到本周' }).click();
   await expect(page.getByText('线上课程助教 4 小时', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await runLongPeriod(page, 1);
   await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('线上课程助教');
   await page.getByRole('button', { name: '进入下个月' }).click();
@@ -419,7 +435,7 @@ test('charges and cancels a monthly subscription with persisted history', async 
   await subscription.getByRole('button', { name: '开通订阅' }).click();
   await expect(subscription.getByRole('button', { name: '取消订阅' })).toBeVisible();
 
-  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toContainText('第 1 月', { timeout: 15_000 });
   await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
   const chargedState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
@@ -577,7 +593,7 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   await expect(page.getByText('持股 70% · 已投入资本 ¥0 · 融资 ¥0')).toBeVisible();
   await page.getByRole('button', { name: '买入公开股权 ¥208' }).click();
   await expect(page.getByRole('region', { name: '公开股权' })).toContainText('你持有公开份额 10%');
-  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await runLongPeriod(page, 1);
   await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('投资分红');
   await page.getByRole('button', { name: '进入下个月' }).click();
@@ -612,7 +628,7 @@ test('runs a business from purchase through funding, listing, daily profit and p
   await page.getByRole('button', { name: '继续融资' }).click();
   await page.getByRole('button', { name: '申请上市' }).click();
   await expect(page.getByRole('button', { name: '已上市' })).toBeVisible();
-  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await runLongPeriod(page, 1);
   await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('企业收入');
   await page.getByRole('button', { name: '进入下个月' }).click();
@@ -707,7 +723,7 @@ test('joins and settles the official consulting studio partnership through the b
   await page.getByRole('button', { name: '加入合伙 ¥12,000' }).click();
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await expect(page.getByText(/咨询工作室/).first()).toBeVisible();
-  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await runLongPeriod(page, 1);
   await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('企业收入');
   await page.getByRole('button', { name: '进入下个月' }).click();
@@ -1382,7 +1398,7 @@ test('finances a home and restores the mortgage state after reload', async ({ pa
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '生活', exact: true }).click();
+  await openLifeDetails(page);
   const homeRow = page.getByRole('heading', { name: '独立单间' }).locator('..').locator('..');
   await expect(homeRow).toContainText('首付');
   await homeRow.getByRole('button', { name: '分期购买' }).click();
@@ -1391,7 +1407,7 @@ test('finances a home and restores the mortgage state after reload', async ({ pa
   await expect(page.getByText('分期买下独立单间')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '生活', exact: true }).click();
+  await openLifeDetails(page);
   await expect(page.getByText('分期中')).toBeVisible();
   await expect(page.getByText('住房分期还款')).toHaveCount(0);
 });
@@ -1410,7 +1426,7 @@ test('buys and rents a second home with persisted portfolio controls', async ({ 
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '生活', exact: true }).click();
+  await openLifeDetails(page);
   const homeRow = page.getByRole('heading', { name: '独立单间' }).locator('..').locator('..');
   await homeRow.getByRole('button', { name: '买作投资房' }).click();
   await homeRow.getByRole('button', { name: '开始出租' }).click();
@@ -1418,7 +1434,7 @@ test('buys and rents a second home with persisted portfolio controls', async ({ 
   await expect(homeRow).toContainText('本月预计净租金');
 
   await page.reload();
-  await page.getByRole('button', { name: '生活', exact: true }).click();
+  await openLifeDetails(page);
   await expect(page.getByRole('heading', { name: '独立单间' }).locator('..').locator('..')).toContainText('已出租');
 });
 
@@ -1640,6 +1656,7 @@ test('records and shows a reached milestone in the profile', async ({ page }) =>
   }, { key: saveKey, state: initial });
   await page.reload();
 
+  await page.getByRole('button', { name: '生活', exact: true }).click();
   await page.getByRole('button', { name: '开始本周' }).click();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   const records = page.getByRole('region', { name: '里程碑记录' });
@@ -1665,7 +1682,7 @@ test('records the first investment dividend as a milestone after monthly settlem
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toContainText('第 1 月');
   await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
   await page.getByRole('button', { name: '我的', exact: true }).click();
@@ -1691,7 +1708,7 @@ test('completes and persists an official course through the weekly plan', async 
   const course = page.getByRole('heading', { name: '职场基础课' }).locator('xpath=ancestor::div[contains(@class, "item-row")]');
   await expect(course).toContainText('¥180');
   await course.getByRole('button', { name: '安排课程' }).click();
-  await page.getByRole('button', { name: '运行 1 个月' }).click();
+  await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toContainText('第 1 月');
   await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
 
@@ -1858,7 +1875,7 @@ test('shows cross-industry mobility distance and a senior expert ladder', async 
   await page.reload();
 
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await page.getByRole('button', { name: '运行 1 个月' }).first().click();
+  await runLongPeriod(page, 1);
   await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
   await page.getByRole('button', { name: '进入下个月' }).click();
 

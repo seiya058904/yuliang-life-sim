@@ -32,12 +32,59 @@ describe('余量 app flow', () => {
     expect(screen.getByText('已暂停')).toBeInTheDocument();
   });
 
+  it('keeps simulation controls in the Life console and gives the shell a semantic settings control', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    const header = document.querySelector('.topbar') as HTMLElement;
+    expect(within(header).getByRole('button', { name: '设置' })).toBeInTheDocument();
+    expect(within(header).queryByRole('button', { name: '开始本周' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '职业' }));
+    expect(within(header).queryByRole('button', { name: '开始本周' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '生活' }));
+    const lifeConsole = screen.getByRole('region', { name: '生活主控制台' });
+    expect(lifeConsole).toHaveClass('life-hero-dashboard');
+    expect(lifeConsole).toHaveTextContent('当前时间');
+    expect(lifeConsole).not.toHaveTextContent('主循环 · 现在');
+    expect(within(lifeConsole).getByRole('button', { name: '开始本周' })).toBeInTheDocument();
+  });
+
+  it('returns the shared content viewport to the top when switching pages', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+    const main = document.querySelector('.main-content') as HTMLElement;
+    main.scrollTop = 240;
+
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    expect(main.scrollTop).toBe(0);
+  });
+
+  it('keeps Life secondary finance and housing details reachable without stacking them into the home dashboard', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+
+    expect(screen.getByRole('button', { name: '查看生活详情' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('heading', { name: '住房' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '查看生活详情' }));
+    expect(screen.getByRole('button', { name: '收起生活详情' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('heading', { name: '住房' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '生活信息面板' })).toBeInTheDocument();
+  });
+
   it('groups the four reference-driven surfaces into stable visual regions', async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '生活' }));
     expect(screen.getByRole('region', { name: '生活主控制台' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '查看生活详情' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '查看生活详情' }));
     expect(screen.getByRole('region', { name: '生活信息面板' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '职业' }));
@@ -72,6 +119,7 @@ describe('余量 app flow', () => {
     expect(dialog).toHaveTextContent('已实现收益');
     expect(dialog).toHaveTextContent('净资产变化');
     expect(within(dialog).getByRole('region', { name: '净资产结果' })).toHaveClass('settle-result-inverse');
+    expect(dialog.querySelector('.highlight-row')).toHaveClass('highlight-row-1');
     expect(dialog).not.toHaveTextContent('✦');
     expect(dialog).not.toHaveTextContent('✧');
   });
@@ -249,6 +297,7 @@ describe('余量 app flow', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: '生活' }));
+    await user.click(screen.getByRole('button', { name: '查看生活详情' }));
 
     expect(screen.getByRole('button', { name: '运行 1 个月' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '运行 3 个月' })).toBeInTheDocument();
@@ -448,6 +497,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '生活' }));
+    await user.click(screen.getByRole('button', { name: '查看生活详情' }));
     const home = screen.getByRole('heading', { name: '独立单间' }).closest('.item-row');
     expect(home).not.toBeNull();
     await user.click(within(home as HTMLElement).getByRole('button', { name: '买下' }));

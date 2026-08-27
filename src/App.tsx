@@ -152,6 +152,14 @@ function App() {
   }, [dispatch, game.simulationMode, game.simulationSpeed]);
 
   useEffect(() => {
+    const main = document.querySelector('.main-content');
+    if (main) {
+      main.scrollTop = 0;
+      main.scrollLeft = 0;
+    }
+  }, [activeView]);
+
+  useEffect(() => {
     if (!effects.length) return undefined;
     const timeout = window.setTimeout(consumeEffects, 2400);
     return () => window.clearTimeout(timeout);
@@ -166,13 +174,13 @@ function App() {
     <div className={`app-shell mode-${game.simulationMode} view-${activeView}`}>
       <div className="outer-frame" aria-hidden="true" />
       <header className="topbar">
-        <div className="brand-block"><PixelIllustration name="mascot" size={46} className="brand-mascot" /><h1 className="brand-mark">余量</h1><span className="brand-subtitle">人生模拟<small>v{game.contentVersion} · 澄川市</small></span></div>
+        <div className="brand-block"><div className="brand-wordmark"><h1 className="brand-mark">余量</h1><span className="brand-subtitle">人生模拟<small>v{game.contentVersion} · 澄川市</small></span></div><PixelIllustration name="mascot" size={42} className="brand-mascot" /></div>
         <div className="status-line" aria-label="当前状态">
           <span className="status-date"><PixelIcon name="calendar" /><span><b><span>第 {game.calendar.week} 周</span> · 周{weekdayLabel(game.calendar.weekday)}</b><small data-testid="date-value">{formatDate(game.time)}</small></span></span>
-          <span className="status-clock"><PixelIcon name="clock" /><span className="status-clock-copy"><b data-testid={activeView === 'life' ? undefined : 'clock-value'}>{formatClock(game.time.hour, game.time.minute)}</b><small>{activeView === 'life' ? '主循环' : modeText(game.simulationMode)}</small></span>{activeView !== 'life' && <SimDock game={game} dispatch={dispatch} />}</span>
+          <span className="status-clock"><PixelIcon name="clock" /><span className="status-clock-copy"><b data-testid={activeView === 'life' ? undefined : 'clock-value'}>{formatClock(game.time.hour, game.time.minute)}</b><small>{activeView === 'life' ? '主循环' : modeText(game.simulationMode)}</small></span></span>
           <span><PixelIcon name="cash" /><b data-testid="cash-value">现金 {money(game.cash)}</b></span>
           <span><PixelIcon name="wealth" /><span><small>净资产</small><b>{money(netWorth)}</b></span></span>
-          <span className="settings-button" aria-label="设置"><PixelIcon name="settings" /></span>
+          <button type="button" className="settings-button" aria-label="设置" title="设置"><PixelIcon name="settings" size={24} /></button>
         </div>
       </header>
 
@@ -183,12 +191,12 @@ function App() {
       </nav>
 
       <main className="main-content">
-        {activeView === 'life' && <section className="life-hero-grid" aria-label="生活主控制台"><TimeConsole game={game} dispatch={dispatch} /><ForecastPanel game={game} /></section>}
+        {activeView === 'life' && <section className="life-hero-grid life-hero-dashboard" aria-label="生活主控制台"><TimeConsole game={game} dispatch={dispatch} /><ForecastPanel game={game} /></section>}
         <section className="metric-strip" aria-label="成长指标">
           <Metric label="生活水平" value={lifestyle} /><Metric label="能力" value={game.ability} /><Metric label="声誉" value={game.reputation} /><Metric label="关系" value={Object.values(game.relationships).reduce((sum, value) => sum + value, 0)} />
         </section>
         {lastError && <div className="notice error" role="alert">{lastError}</div>}
-        {activeView === 'life' && <><LifeView game={game} dispatch={dispatch} onNavigate={navigateToView} /><AcquisitionRequirementsPanel game={game} onNavigate={navigateToView} scope="life" /></>}
+        {activeView === 'life' && <LifeView game={game} dispatch={dispatch} onNavigate={navigateToView} />}
         {activeView === 'work' && <><CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={navigateToView} /><section className="planning-section"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><CourseMarket game={game} dispatch={dispatch} /><ForecastPanel game={game} /></>}
         {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} onNavigate={navigateToView} initialTab={shopTab} /><div className="shop-support-panels"><AcquisitionRequirementsPanel game={game} onNavigate={navigateToView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /></div></>}
         {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={navigateToView} scope="wealth" /><BusinessGroupView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessPublicFloatView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /><PortfolioAllocation game={game} /><PortfolioHistory game={game} /></>}
@@ -318,18 +326,19 @@ function TimeConsole({ game, dispatch }: { game: GameState; dispatch: (action: G
   const currentJob = contentRegistry.jobs.find((job) => job.id === game.currentJobId);
   const activity = game.currentActivity ?? activityAtTime(game.time, game.weeklyPlan, game.employment, contentRegistry);
   const progress = deriveActivityProgress(activity, game.time);
+  const progressPercent = Math.round(progress * 100);
+  const progressSegments = 12;
+  const filledSegments = Math.round(progress * progressSegments);
   const dayActivities = getDailyActivities(game.time.day, game.weeklyPlan, game.employment, contentRegistry);
   const next = dayActivities.find((entry) => absoluteMinute(entry.start) > absoluteMinute(game.time) && !['sleep', 'life', 'free'].includes(entry.kind));
-  const modeLabel = modeText(game.simulationMode);
   const action = primaryAction(game.simulationMode);
-  const weeklyPay = currentJob?.kind === 'regular' ? currentJob.basePay * (game.employment?.schedule.workDays.length ?? 5) : 0;
   const title = activity.kind === 'work' ? currentJob?.name ?? '工作中' : activity.kind === 'study' ? '学习' : activity.kind === 'side_job' ? contentRegistry.jobs.find((job) => job.id === activity.jobId)?.name ?? '兼职' : activity.kind === 'activity' ? contentRegistry.activities?.find((entry) => entry.id === activity.activityId)?.name ?? '生活活动' : activity.kind === 'sleep' ? '睡眠' : activity.kind === 'life' ? '基础生活' : '自由时间';
   const scene = activityKinds(activity);
   const nextLabel = next ? `${formatClock(next.start.hour, next.start.minute)} · ${next.kind === 'study' ? '学习' : next.kind === 'side_job' ? '兼职' : next.kind === 'activity' ? '生活活动' : '安排'}` : '今天没有特殊安排';
   return <section className="time-console" aria-label="世界时间">
     <div className="hero-cols">
       <div className="hero-time">
-        <span className="console-kicker">主循环 · 现在</span>
+        <span className="console-kicker">当前时间</span>
         <strong className="hero-clock" data-testid="clock-value">{formatClock(game.time.hour, game.time.minute)}</strong>
         <div className="hero-date"><b>第 {game.calendar.week} 周 · 周{weekdayLabel(game.calendar.weekday)}</b><small>{formatDate(game.time)} · {timeOfDayLabel(game.time.hour)}</small></div>
         <PixelIcon name="spark" size={28} className="hero-day-icon" />
@@ -340,43 +349,42 @@ function TimeConsole({ game, dispatch }: { game: GameState; dispatch: (action: G
         <PixelIllustration name={scene} size={84} />
         <h2>{title}</h2>
         <p className="hero-range">{formatClock(activity.start.hour, activity.start.minute)} — {formatClock(activity.end.hour, activity.end.minute)} · {activity.kind === 'work' ? '自动排班' : '自动发生'}</p>
-        <div className="activity-progress"><i style={{ width: `${progress * 100}%` }} /></div>
-        <span className="progress-caption">{Math.round(progress * 100)}% · 今日活动进度</span>
+        <div className="activity-progress" role="meter" aria-label="今日活动进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>{Array.from({ length: progressSegments }, (_, index) => <i key={index} className={index < filledSegments ? 'filled' : undefined} />)}</div>
+        <span className="progress-caption"><span>今日活动进度</span><b>{progressPercent}%</b></span>
         <div className="hero-next"><span>下一活动</span><b>{nextLabel}</b></div>
       </div>
       <div className="hero-controls">
         <span className="console-kicker">时间速度</span>
         <div className="speed-controls">{([1, 2, 4] as const).map((speed) => <button key={speed} className={game.simulationSpeed === speed ? 'speed-button active' : 'speed-button'} aria-pressed={game.simulationSpeed === speed} onClick={() => dispatch({ type: 'set_simulation_speed', speed })}>×{speed}</button>)}</div>
         <button className="primary-button hero-start" disabled={action.disabled} onClick={() => dispatch({ type: action.type } as GameAction)}>{action.label}</button>
-        <div className="run-controls"><span className={`mode-label mode-${game.simulationMode}`}>{modeLabel}</span><button className="text-button month-run" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 1 })}>运行 1 个月</button><button className="text-button month-run" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 3 })}>运行 3 个月</button></div>
-        <dl className="hero-mini"><div><dt>本周工资</dt><dd>{weeklyPay ? money(weeklyPay) : '—'}</dd></div></dl>
+        <span className={`mode-label mode-${game.simulationMode}`}>{modeText(game.simulationMode)}</span>
       </div>
     </div>
   </section>;
 }
 
-/** 非 Life 页面的紧凑时间控制坞，合并进导航行，不单独占一条横带。 */
-function SimDock({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
-  const action = primaryAction(game.simulationMode);
-  return <div className="sim-dock" role="group" aria-label="时间控制台">
-    <button className="primary-button dock-start" disabled={action.disabled} onClick={() => dispatch({ type: action.type } as GameAction)}>{action.label}</button>
-    <div className="speed-controls dock-speed">{([1, 2, 4] as const).map((speed) => <button key={speed} className={game.simulationSpeed === speed ? 'speed-button active' : 'speed-button'} aria-pressed={game.simulationSpeed === speed} onClick={() => dispatch({ type: 'set_simulation_speed', speed })}>×{speed}</button>)}</div>
-    <button className="text-button dock-run" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 1 })}>运行 1 个月</button>
-    <button className="text-button dock-run" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 3 })}>运行 3 个月</button>
-  </div>;
-}
-
-function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate?: (view: ViewId) => void }) {
+function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate: (view: ViewId) => void }) {
   const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
   const lifestyleScore = calculateLifestyle(game, contentRegistry);
   const lifestyleFactor = Math.min(balanceConfig.lifestyleCostFactorCap, Math.max(0, lifestyleScore * balanceConfig.lifestyleCostFactor));
   const dailyRent = home ? housingRentPerDay(game, home) : 0;
   const fixed = dailyRent * 28 + Math.round(balanceConfig.dailyLivingCost * (1 + lifestyleFactor) * 28) + Math.round(balanceConfig.dailyTransportCost * (1 + lifestyleFactor / 2) * 28) + balanceConfig.monthlyCommunicationCost + (home?.fixedMonthlyCost ?? 0);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const action = primaryAction(game.simulationMode);
   return <>
-    <section className="life-planning-section"><div className="section-heading compact"><div><span className="eyebrow">本周计划</span><h1>把时间留给什么</h1></div><p>正式工作自动占用；学习、活动、兼职和自由时间由你规划。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section>
-    <InboxGrid game={game} onNavigate={onNavigate} />
-    <section className="life-info-grid" aria-label="生活信息面板"><section className="forecast-strip monthly-forecast"><div><span className="eyebrow">本月预计</span><h2>先看余量，再安排生活</h2></div><div><span>固定支出</span><strong>{money(fixed)}</strong></div><div><span>房租</span><strong>{money(dailyRent * 28)}</strong></div><div><span>生活与交通</span><strong>{money(fixed - dailyRent * 28 - balanceConfig.monthlyCommunicationCost)}</strong></div></section><FinancialSummaryView game={game} compact /></section>
-    <HousingView game={game} dispatch={dispatch} />
+    <section className="life-primary-dashboard" aria-label="生活核心面板">
+      <section className="life-planning-section"><div className="section-heading compact"><div><span className="eyebrow">本周计划</span><h1>把时间留给什么</h1></div><p>正式工作自动占用；学习、活动、兼职和自由时间由你规划。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section>
+      <InboxGrid game={game} onNavigate={onNavigate} />
+    </section>
+    <section className="life-secondary-drawer" aria-label="生活详情">
+      <div className="life-secondary-toggle-row"><span className="eyebrow">账本与居住</span><button className="secondary-button" aria-expanded={detailsOpen} aria-controls="life-secondary-details" onClick={() => setDetailsOpen((open) => !open)}>{detailsOpen ? '收起生活详情' : '查看生活详情'}</button></div>
+      {detailsOpen && <div id="life-secondary-details" className="life-secondary-details">
+        <section className="life-advanced-controls" aria-label="高级时间控制"><span className="eyebrow">更多时间</span><span className="muted">把已规划的人生交给世界运行。</span><button className="text-button" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 1 })}>运行 1 个月</button><button className="text-button" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 3 })}>运行 3 个月</button></section>
+        <section className="life-info-grid" aria-label="生活信息面板"><section className="forecast-strip monthly-forecast"><div><span className="eyebrow">本月预计</span><h2>先看余量，再安排生活</h2></div><div><span>固定支出</span><strong>{money(fixed)}</strong></div><div><span>房租</span><strong>{money(dailyRent * 28)}</strong></div><div><span>生活与交通</span><strong>{money(fixed - dailyRent * 28 - balanceConfig.monthlyCommunicationCost)}</strong></div></section><FinancialSummaryView game={game} compact /></section>
+        <HousingView game={game} dispatch={dispatch} />
+        <AcquisitionRequirementsPanel game={game} onNavigate={onNavigate} scope="life" />
+      </div>}
+    </section>
   </>;
 }
 
@@ -956,6 +964,7 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
   const realizedLoss = financial?.consumption.categories.realized_loss ?? 0;
   const liquidation = financial?.totalAssetLiquidation ?? 0;
   const allocationScale = Math.max(1, ...allocationRows.map(([, amount]) => Math.abs(amount)));
+  const highlightCount = Math.min(pending.highlights.length, 5);
   const attributes: Array<[string, number]> = [
     ['专业', game.attributes?.professional ?? game.ability], ['知识', game.attributes?.knowledge ?? game.ability],
     ['沟通', game.attributes?.communication ?? game.ability], ['体能', game.attributes?.fitness ?? 50],
@@ -1015,7 +1024,7 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
     </div>
     <div className="settle-highlights">
       <header className="settle-highlights-head"><PixelIcon name="spark" size={14} /><span>本月重要收获</span><i className="dotted-line" aria-hidden="true" /></header>
-      <div className="highlight-row">
+      <div className={`highlight-row highlight-row-${highlightCount}`}>
         {pending.highlights.slice(0, 5).map((highlight, index) => <article className="highlight-card" key={highlight.id}>
           <i className="new-ribbon" aria-hidden="true">NEW</i>
           <PixelIcon name={highlightKindIcon[highlight.kind] ?? 'spark'} size={22} />

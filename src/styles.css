@@ -2766,3 +2766,245 @@ button, input, select { border-radius: 0; }
 .settle-result-inverse .settle-range { color: #333; }
 .settle-result-inverse .settle-badge { color: #070707; background: #fff; border-color: #070707; }
 .settle-result-inverse .settle-result-art { color: #070707; --il-knock: #f4f4f0; }
+
+/* Next reference pass: keep the desktop surface a single HUD viewport. The
+   main content owns its scroll area, so the persistent status bar never
+   covers the last row at 1280px-wide desktop sizes. */
+@media (min-width: 1181px) {
+  html,
+  body,
+  #root {
+    height: 100%;
+    min-height: 720px;
+    overflow: hidden;
+  }
+
+  .app-shell {
+    display: grid;
+    grid-template-rows: 94px 48px minmax(0, 1fr) 78px;
+    height: 100dvh;
+    min-height: 720px;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+
+  .topbar {
+    height: auto;
+    min-height: 0;
+    padding: 10px clamp(18px, 2.8vw, 42px);
+  }
+
+  .main-nav {
+    height: auto;
+    min-height: 0;
+  }
+
+  .main-content {
+    width: min(1400px, calc(100% - 44px));
+    min-height: 0;
+    padding: 8px 0 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-color: #777 #050505;
+    scrollbar-width: thin;
+  }
+
+  .persistent-status {
+    position: static;
+    z-index: auto;
+    height: 78px;
+    min-height: 78px;
+    padding: 8px clamp(18px, 2.8vw, 42px);
+  }
+
+  .footer-note { display: none; }
+
+  .brand-block {
+    flex-basis: 31%;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-wordmark {
+    display: flex;
+    align-items: baseline;
+    min-width: 0;
+    gap: 12px;
+  }
+
+  .brand-mark { flex: none; }
+  .brand-mascot { order: 2; width: 42px; height: 42px; }
+
+  .settings-button {
+    display: grid;
+    place-items: center;
+    min-width: 54px !important;
+    min-height: 68px;
+    padding: 0 !important;
+    color: #fff;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .settings-button:hover,
+  .settings-button:focus-visible {
+    color: #050505;
+    background: #f4f4f0;
+  }
+
+  .settings-button .pixel-icon { width: 24px; height: 24px; }
+  .nav-item .pixel-icon { width: 22px; height: 22px; }
+
+  .app-shell:not(.view-life) .status-clock {
+    min-width: 0;
+    background: transparent;
+    border: 0 !important;
+  }
+
+  .app-shell:not(.view-life) .status-clock .sim-dock { display: none; }
+
+  .life-hero-grid {
+    height: 356px;
+    min-height: 356px;
+  }
+
+  .life-hero-grid .time-console,
+  .life-hero-grid > .forecast-strip {
+    height: 356px;
+    min-height: 356px;
+  }
+
+  .life-hero-grid .time-console { padding: 18px 20px 16px; }
+  .life-hero-grid .hero-cols { height: 100%; }
+
+  .hero-activity .activity-progress {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 3px;
+    height: 14px;
+    margin-top: 10px;
+    background: transparent;
+    border: 0;
+    overflow: visible;
+  }
+
+  .hero-activity .activity-progress i {
+    display: block;
+    width: auto !important;
+    height: 12px;
+    background: #202020;
+    border: 1px solid #666;
+  }
+
+  .hero-activity .activity-progress i.filled {
+    background: #f4f4f0;
+    border-color: #f4f4f0;
+  }
+
+  .hero-activity .progress-caption {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 4px;
+    color: #aaa;
+    font-size: 10px;
+  }
+
+  .hero-activity .progress-caption b {
+    color: #f4f4f0;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .life-planning-section { margin: 0 0 10px; }
+  .life-planning-section .section-heading { height: 36px; min-height: 36px; padding: 5px 10px; }
+  .life-planning-section .section-heading h1 { font-size: 20px; }
+  .life-planning-section .section-heading p { font-size: 11px; line-height: 1.25; }
+  .life-planning-section .planner-head,
+  .life-planning-section .planner-row { grid-template-columns: 74px repeat(7, minmax(0, 1fr)); }
+  .life-planning-section .planner-head { height: 34px; min-height: 34px; font-size: 12px; }
+  .life-planning-section .planner-row,
+  .life-planning-section .plan-cell { height: 52px; min-height: 52px; }
+  .life-planning-section .plan-cell { padding: 4px 5px; font-size: 13px; }
+  .life-planning-section .plan-cell .pixel-icon { width: 16px; height: 16px; }
+  .life-planning-section .plan-cell strong { font-size: 13px !important; line-height: 1.1; }
+  .life-planning-section .plan-cell small { font-size: 11px !important; line-height: 1.1; }
+  .life-planning-section .planner-row > span { font-size: 12px; }
+  .life-planning-section .planner-actions { height: 36px; min-height: 36px; padding: 5px 10px; font-size: 11px; }
+
+  .life-primary-dashboard .inbox-grid { margin-bottom: 8px; }
+  .life-primary-dashboard .inbox-panel {
+    height: 200px;
+    min-height: 200px;
+    padding: 10px;
+  }
+
+  .life-primary-dashboard .inbox-head { padding-bottom: 6px; }
+  .life-primary-dashboard .inbox-head h2 { font-size: 16px; }
+  .life-primary-dashboard .inbox-list li { padding: 5px 0; font-size: 11px; }
+  .life-primary-dashboard .inbox-title small { font-size: 10px; }
+  .life-primary-dashboard .inbox-foot button { min-height: 26px; font-size: 10px; }
+
+  .life-advanced-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 34px;
+    margin: 0 0 8px;
+    padding: 4px 10px;
+    color: #aaa;
+    background: #090909;
+    border: 1px dotted #666;
+  }
+
+  .life-advanced-controls .eyebrow { margin-right: auto; }
+  .life-advanced-controls .muted { font-size: 10px; }
+  .life-advanced-controls .text-button { padding: 4px 6px; font-size: 11px; }
+
+  .life-secondary-drawer { margin-top: 0; border-top: 1px dotted #555; }
+  .life-secondary-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 36px;
+    gap: 12px;
+    padding: 4px 10px;
+    background: #090909;
+  }
+
+  .life-secondary-toggle-row .secondary-button { min-height: 28px; padding: 5px 10px; font-size: 11px; }
+  .life-secondary-details { display: grid; gap: 10px; padding-top: 8px; }
+
+  .view-shop .shop-main .item-card { height: 156px; min-height: 156px; }
+
+  /* A sparse month still keeps the reference's full-width ceremony. The
+     actual highlights remain the source of truth; only their columns expand
+     when fewer than five are available. */
+  .monthly-summary.fullframe .highlight-row-0,
+  .monthly-summary.fullframe .highlight-row-1 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .monthly-summary.fullframe .highlight-row-2 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .monthly-summary.fullframe .highlight-row-3 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .monthly-summary.fullframe .highlight-row-4 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .monthly-summary.fullframe .highlight-row-5 { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1181px) and (max-width: 1320px) {
+  .topbar { padding-inline: 14px; }
+  .brand-block { flex-basis: 27%; gap: 8px; }
+  .brand-wordmark { gap: 8px; }
+  .brand-mark { font-size: 44px; }
+  .brand-subtitle { font-size: 12px; }
+  .brand-mascot { width: 36px; height: 36px; }
+  .status-line > span { padding-inline: 8px; }
+  .status-line b { font-size: 15px; }
+  .status-line .pixel-icon { width: 16px; height: 16px; }
+  .status-clock-copy > b { font-size: 23px; }
+  .settings-button { min-width: 42px !important; }
+  .main-content { width: calc(100% - 24px); }
+  .persistent-status { padding-inline: 12px; }
+  .persistent-stat { gap: 4px; padding-inline: 8px; }
+  .persistent-status .segment-meter { grid-auto-columns: 9px; gap: 2px; }
+  .persistent-status .segment-meter i { width: 9px; height: 9px; }
+}
