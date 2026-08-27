@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { balanceConfig } from './game/balance/config';
 import { contentRegistry } from './game/content/registry';
-import type { CharacterDefinition, ContentId, GameAction, GameState, PlannedActivity, PlanSlot, ViewId, Weekday } from './game/content/contracts';
+import type { AttributeId, CharacterDefinition, ContentId, EffectDefinition, GameAction, GameState, PlannedActivity, PlanSlot, StatName, ViewId, Weekday } from './game/content/contracts';
 import { businessValuation, calculateDailyBusinessProfit, calculateLifestyle, calculateNetWorth, canDirectBusinessOperations, effectiveBusinessLocationId, ownershipTierForEquity, ownershipTierForHolding, wealthTierForNetWorth } from './game/engine/economy';
 import { activityAtTime, deriveActivityProgress, defaultJobSchedule, getDailyActivities } from './game/engine/schedule';
 import { formatClock, formatDate, absoluteMinute } from './game/engine/time';
@@ -15,6 +15,9 @@ import { summarizeFinancialLedger } from './game/engine/financialLedger';
 import { CareerView } from './game/ui/CareerView';
 import { LifeHistoryList } from './game/ui/LifeHistoryList';
 import { PixelIcon, type PixelIconName } from './game/ui/pixel/PixelIcon';
+import { PixelIllustration } from './game/ui/pixel/PixelIllustration';
+import type { PixelIllustrationName } from './game/ui/pixel/PixelIllustration';
+import { SegmentMeter } from './game/ui/pixel/PixelUI';
 import { PersistentStatusBar } from './game/ui/pixel/PersistentStatusBar';
 import { forecastWeeklyPlan } from './game/engine/forecast';
 import { housingMortgageTerms, housingPrice, housingRentPerDay, locationSummary, locationForCurrentJob } from './game/engine/locations';
@@ -142,7 +145,7 @@ function App() {
   return (
     <div className={`app-shell mode-${game.simulationMode} view-${activeView}`}>
       <header className="topbar">
-        <div className="brand-block"><h1 className="brand-mark">余量</h1><span className="brand-subtitle">人生模拟</span><span className="brand-pixel" aria-hidden="true">◇</span></div>
+        <div className="brand-block"><PixelIllustration name="mascot" size={46} className="brand-mascot" /><h1 className="brand-mark">余量</h1><span className="brand-subtitle">人生模拟<small>v{game.contentVersion} · 澄川市</small></span></div>
         <div className="status-line" aria-label="当前状态">
           <span className="status-date"><PixelIcon name="calendar" /><span><b><span>第 {game.calendar.week} 周</span> · 周{weekdayLabel(game.calendar.weekday)}</b><small data-testid="date-value">{formatDate(game.time)}</small></span></span>
           <span className="status-clock"><PixelIcon name="clock" /><b>{formatClock(game.time.hour, game.time.minute)}</b><small>{game.simulationMode === 'running' ? '自动中' : '等待开始'}</small></span>
@@ -153,24 +156,27 @@ function App() {
       </header>
 
       <nav className="main-nav" aria-label="主导航" data-pixel-nav="true">
-        {navItems.map(([id, label, icon]) => <button key={id} className={activeView === id ? 'nav-item active' : 'nav-item'} aria-current={activeView === id ? 'page' : undefined} onClick={() => setView(id)}><PixelIcon name={icon} />{label}</button>)}
+        <div className="nav-tabs">
+          {navItems.map(([id, label, icon]) => <button key={id} className={activeView === id ? 'nav-item active' : 'nav-item'} aria-current={activeView === id ? 'page' : undefined} onClick={() => setView(id)}><PixelIcon name={icon} />{label}</button>)}
+        </div>
+        {activeView !== 'life' && <SimDock game={game} dispatch={dispatch} />}
       </nav>
 
       <main className="main-content">
-        {activeView === 'life' ? <section className="life-hero-grid" aria-label="生活主控制台"><TimeConsole game={game} dispatch={dispatch} /><ForecastPanel game={game} /></section> : <TimeConsole game={game} dispatch={dispatch} />}
+        {activeView === 'life' && <section className="life-hero-grid" aria-label="生活主控制台"><TimeConsole game={game} dispatch={dispatch} /><ForecastPanel game={game} /></section>}
         <section className="metric-strip" aria-label="成长指标">
           <Metric label="生活水平" value={lifestyle} /><Metric label="能力" value={game.ability} /><Metric label="声誉" value={game.reputation} /><Metric label="关系" value={Object.values(game.relationships).reduce((sum, value) => sum + value, 0)} />
         </section>
         {lastError && <div className="notice error" role="alert">{lastError}</div>}
-        {activeView === 'life' && <><LifeView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="life" /></>}
+        {activeView === 'life' && <><LifeView game={game} dispatch={dispatch} onNavigate={setView} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="life" /></>}
         {activeView === 'work' && <><CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={setView} /><section className="planning-section"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><CourseMarket game={game} dispatch={dispatch} /><ForecastPanel game={game} /></>}
-        {activeView === 'shop' && <section className="shop-page" aria-label="商品目录布局"><ShopView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /><InventoryPanel game={game} dispatch={dispatch} /><WishlistPanel game={game} dispatch={dispatch} /><ServiceMarket game={game} dispatch={dispatch} /></section>}
+        {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /></>}
         {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={setView} scope="wealth" /><BusinessGroupView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessPublicFloatView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /><PortfolioAllocation game={game} /><PortfolioHistory game={game} /></>}
         {activeView === 'relations' && <><RelationsView game={game} dispatch={dispatch} /><GiftPanel game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></>}
         {activeView === 'city' && <CityView game={game} onNavigate={setView} />}
         {activeView === 'profile' && <><ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /><WealthMilestoneView game={game} /><MilestoneProgressView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /><WorldEquityHistoryView game={game} /></>}
       </main>
-      <PersistentStatusBar game={game} />
+      <PersistentStatusBar game={game} onNavigate={setView} />
 
       <footer className="footer-note">你负责规划，世界负责继续运行。</footer>
       {pendingEvent && <EventModal event={pendingEvent} onChoose={(choiceId) => dispatch({ type: 'choose_event', eventId: pendingEvent.id, choiceId })} />}
@@ -234,36 +240,189 @@ function Metric({ label, value }: { label: string; value: number }) {
   return <div className="metric"><span>{label}</span><strong>{value}</strong></div>;
 }
 
+/** 参考图反相面板：白底黑字的本周预测。 */
 function ForecastPanel({ game }: { game: GameState }) {
   const forecast = useMemo(() => forecastWeeklyPlan(game, game.weeklyPlan, contentRegistry, balanceConfig), [game]);
-  return <section className="forecast-strip"><div><span className="eyebrow">本周预计</span><h2>确定性计划变化</h2><small>不包含随机事件、市场价格变化、未确定招聘结果</small></div><div><span>确定性收入</span><strong>+{money(forecast.income)}</strong></div><div><span>确定性支出</span><strong>-{money(forecast.expense)}</strong></div><div><span>预计现金结余</span><strong>{forecast.netCash >= 0 ? '+' : '-'}{money(Math.abs(forecast.netCash))}</strong></div><div><span>预计成长</span><strong>{Object.entries(forecast.attributes).map(([key, value]) => (attributeLabels[key] ?? key) + ' +' + value).join(' · ') || '—'}</strong></div></section>;
+  const attributes = Object.entries(forecast.attributes).filter(([, value]) => value !== 0);
+  return <section className="forecast-strip inverse">
+    <header className="forecast-head"><span className="eyebrow">本周预测</span><h2>确定性计划变化</h2><small>不包含随机事件、市场价格变化、未确定招聘结果</small></header>
+    <div className="forecast-row"><span>预计收入</span><strong>+{money(forecast.income)}</strong></div>
+    <div className="forecast-row"><span>预计支出</span><strong>-{money(forecast.expense)}</strong></div>
+    <div className="forecast-net"><span>现金净变化</span><strong>{forecast.netCash >= 0 ? '+' : '-'}{money(Math.abs(forecast.netCash))}</strong></div>
+    <div className="forecast-attrs"><span className="forecast-sub">属性变化</span>
+      {attributes.length ? attributes.slice(0, 4).map(([key, value]) => <div className="forecast-attr" key={key}><span>{attributeLabels[key] ?? key}</span><SegmentMeter value={getAttribute(game, key as AttributeId)} max={Math.max(60, getAttribute(game, key as AttributeId) + Math.abs(value))} segments={8} /><b>{value > 0 ? '+' : ''}{value}</b></div>) : <p className="forecast-empty">本周计划不会改变属性。</p>}
+    </div>
+    <button className="forecast-more" onClick={() => document.querySelector('.life-planning-section')?.scrollIntoView({ behavior: 'smooth' })}>详细预测 ▸</button>
+  </section>;
 }
 
+const activitySceneByCategory: Record<string, PixelIllustrationName> = {
+  travel: 'suitcase', social: 'users', game: 'controller', film: 'controller', nightlife: 'coin',
+  fitness: 'chart', culture: 'book', hobby: 'book', food: 'bag', premium: 'cash',
+};
+
+function activityKinds(activity: PlannedActivity | NonNullable<GameState['currentActivity']>): PixelIllustrationName {
+  if (activity.kind === 'work') return 'work';
+  if (activity.kind === 'sleep') return 'sleep';
+  if (activity.kind === 'study' || activity.kind === 'course') return 'book';
+  if (activity.kind === 'side_job') return 'coin';
+  if (activity.kind === 'activity') {
+    const definition = contentRegistry.activities?.find((entry) => entry.id === activity.activityId);
+    return definition ? activitySceneByCategory[definition.category] ?? 'controller' : 'controller';
+  }
+  return 'life';
+}
+
+function timeOfDayLabel(hour: number) {
+  if (hour < 5) return '凌晨';
+  if (hour < 11) return '上午';
+  if (hour < 13) return '中午';
+  if (hour < 18) return '下午';
+  if (hour < 23) return '晚上';
+  return '深夜';
+}
+
+function modeText(mode: GameState['simulationMode']) {
+  return mode === 'running' ? '运行中' : mode === 'event' ? '事件暂停' : mode === 'reward' ? '奖励结算' : mode === 'monthly_summary' ? '月结待确认' : mode === 'paused' ? '已暂停' : '等待规划';
+}
+
+function primaryAction(mode: GameState['simulationMode']) {
+  return { label: mode === 'running' ? '暂停' : mode === 'paused' ? '继续运行' : mode === 'planning' ? '开始本周' : '等待处理',
+    type: (mode === 'running' ? 'pause_simulation' : mode === 'paused' ? 'resume_simulation' : 'start_week') as GameAction['type'],
+    disabled: mode === 'event' || mode === 'reward',
+    runEnabled: ['planning', 'paused', 'week_complete'].includes(mode) };
+}
+
+/** 参考图三段式 Hero：时间 / 当前活动 / 运行控制。 */
 function TimeConsole({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
   const currentJob = contentRegistry.jobs.find((job) => job.id === game.currentJobId);
   const activity = game.currentActivity ?? activityAtTime(game.time, game.weeklyPlan, game.employment, contentRegistry);
   const progress = deriveActivityProgress(activity, game.time);
   const dayActivities = getDailyActivities(game.time.day, game.weeklyPlan, game.employment, contentRegistry);
   const next = dayActivities.find((entry) => absoluteMinute(entry.start) > absoluteMinute(game.time) && !['sleep', 'life', 'free'].includes(entry.kind));
-  const modeLabel = game.simulationMode === 'running' ? '运行中' : game.simulationMode === 'event' ? '事件暂停' : game.simulationMode === 'reward' ? '奖励结算' : game.simulationMode === 'monthly_summary' ? '月结待确认' : game.simulationMode === 'paused' ? '已暂停' : '等待规划';
-  const actionLabel = game.simulationMode === 'running' ? '暂停' : game.simulationMode === 'paused' ? '继续运行' : game.simulationMode === 'planning' ? '开始本周' : '等待处理';
-  const actionType: GameAction['type'] = game.simulationMode === 'running' ? 'pause_simulation' : game.simulationMode === 'paused' ? 'resume_simulation' : 'start_week';
+  const modeLabel = modeText(game.simulationMode);
+  const action = primaryAction(game.simulationMode);
   const weeklyPay = currentJob?.kind === 'regular' ? currentJob.basePay * (game.employment?.schedule.workDays.length ?? 5) : 0;
+  const title = activity.kind === 'work' ? currentJob?.name ?? '工作中' : activity.kind === 'study' ? '学习' : activity.kind === 'side_job' ? contentRegistry.jobs.find((job) => job.id === activity.jobId)?.name ?? '兼职' : activity.kind === 'activity' ? contentRegistry.activities?.find((entry) => entry.id === activity.activityId)?.name ?? '生活活动' : activity.kind === 'sleep' ? '睡眠' : activity.kind === 'life' ? '基础生活' : '自由时间';
+  const scene = activityKinds(activity);
+  const nextLabel = next ? `${formatClock(next.start.hour, next.start.minute)} · ${next.kind === 'study' ? '学习' : next.kind === 'side_job' ? '兼职' : next.kind === 'activity' ? '生活活动' : '安排'}` : '今天没有特殊安排';
   return <section className="time-console" aria-label="世界时间">
-    <div className="console-head"><div><span className="console-kicker">现在</span><strong className="week-title">第 {game.calendar.week} 周 · 周{weekdayLabel(game.calendar.weekday)}</strong></div><div className="console-clock" data-testid="clock-value">{formatClock(game.time.hour, game.time.minute)}</div></div>
-    <div className="week-track" aria-label="本周进度">{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => <span key={weekday} className={weekday === game.calendar.weekday ? 'track-day current' : weekday < game.calendar.weekday ? 'track-day passed' : 'track-day'}>周{weekdayLabel(weekday)}</span>)}</div>
-    <div className="console-grid"><div><span className="console-kicker">当前活动</span><h2>{activity.kind === 'work' ? currentJob?.name ?? '工作中' : activity.kind === 'study' ? '学习' : activity.kind === 'side_job' ? contentRegistry.jobs.find((job) => job.id === activity.jobId)?.name ?? '兼职' : activity.kind === 'activity' ? contentRegistry.activities?.find((entry) => entry.id === activity.activityId)?.name ?? '生活活动' : activity.kind === 'sleep' ? '睡眠' : activity.kind === 'life' ? '基础生活' : '自由时间'}</h2><p>{formatClock(activity.start.hour, activity.start.minute)} — {formatClock(activity.end.hour, activity.end.minute)} · {activity.kind === 'work' ? '自动排班' : '自动发生'}</p><div className="activity-progress"><i style={{ width: `${progress * 100}%` }} /></div><span className="progress-caption">{Math.round(progress * 100)}% · 今日活动进度</span></div><div className="console-side"><span>本周工资</span><strong>{weeklyPay ? money(weeklyPay) : '—'}</strong><span>下一项</span><b>{next ? `${formatClock(next.start.hour, next.start.minute)} · ${next.kind === 'study' ? '学习' : next.kind === 'side_job' ? '兼职' : next.kind === 'activity' ? '生活活动' : '安排'}` : '今天没有特殊安排'}</b></div></div>
-     <div className="console-controls"><div className="speed-controls" aria-label="运行倍率">{([1, 2, 4] as const).map((speed) => <button key={speed} className={game.simulationSpeed === speed ? 'speed-button active' : 'speed-button'} aria-pressed={game.simulationSpeed === speed} onClick={() => dispatch({ type: 'set_simulation_speed', speed })}>×{speed}</button>)}</div><div className="run-controls"><span className={`mode-label mode-${game.simulationMode}`}>{modeLabel}</span><button className="primary-button" disabled={game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => dispatch({ type: actionType } as GameAction)}>{actionLabel}</button><button className="text-button" disabled={!['planning', 'paused', 'week_complete'].includes(game.simulationMode)} onClick={() => dispatch({ type: 'advance_period', months: 1 })}>运行 1 个月</button><button className="text-button" disabled={!['planning', 'paused', 'week_complete'].includes(game.simulationMode)} onClick={() => dispatch({ type: 'advance_period', months: 3 })}>运行 3 个月</button></div></div>
+    <div className="hero-cols">
+      <div className="hero-time">
+        <span className="console-kicker">主循环 · 现在</span>
+        <strong className="hero-clock" data-testid="clock-value">{formatClock(game.time.hour, game.time.minute)}</strong>
+        <div className="hero-date"><b>第 {game.calendar.week} 周 · 周{weekdayLabel(game.calendar.weekday)}</b><small>{formatDate(game.time)} · {timeOfDayLabel(game.time.hour)}</small></div>
+        <div className="week-track" aria-label="本周进度">{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => <span key={weekday} className={weekday === game.calendar.weekday ? 'track-day current' : weekday < game.calendar.weekday ? 'track-day passed' : 'track-day'}>周{weekdayLabel(weekday)}</span>)}</div>
+      </div>
+      <div className="hero-activity">
+        <div className="hero-activity-head"><PixelIcon name={scene === 'life' ? 'home' : scene === 'work' ? 'career' : scene === 'sleep' ? 'sleep' : scene === 'book' ? 'book' : scene === 'coin' ? 'cash' : scene === 'suitcase' ? 'plane' : scene === 'users' ? 'users' : scene === 'cash' ? 'wealth' : scene === 'bag' ? 'shop' : 'spark'} /><span className="console-kicker">当前活动</span></div>
+        <PixelIllustration name={scene} size={84} />
+        <h2>{title}</h2>
+        <p className="hero-range">{formatClock(activity.start.hour, activity.start.minute)} — {formatClock(activity.end.hour, activity.end.minute)} · {activity.kind === 'work' ? '自动排班' : '自动发生'}</p>
+        <div className="activity-progress"><i style={{ width: `${progress * 100}%` }} /></div>
+        <span className="progress-caption">{Math.round(progress * 100)}% · 今日活动进度</span>
+      </div>
+      <div className="hero-controls">
+        <span className="console-kicker">时间速度</span>
+        <div className="speed-controls">{([1, 2, 4] as const).map((speed) => <button key={speed} className={game.simulationSpeed === speed ? 'speed-button active' : 'speed-button'} aria-pressed={game.simulationSpeed === speed} onClick={() => dispatch({ type: 'set_simulation_speed', speed })}>×{speed}</button>)}</div>
+        <button className="primary-button hero-start" disabled={action.disabled} onClick={() => dispatch({ type: action.type } as GameAction)}>{action.label}</button>
+        <div className="run-controls"><span className={`mode-label mode-${game.simulationMode}`}>{modeLabel}</span><button className="text-button month-run" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 1 })}>运行 1 个月</button><button className="text-button month-run" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 3 })}>运行 3 个月</button></div>
+        <dl className="hero-mini"><div><dt>本周工资</dt><dd>{weeklyPay ? money(weeklyPay) : '—'}</dd></div><div><dt>下一项</dt><dd><b>{nextLabel}</b></dd></div></dl>
+      </div>
+    </div>
   </section>;
 }
 
-function LifeView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
+/** 非 Life 页面的紧凑时间控制坞，合并进导航行，不单独占一条横带。 */
+function SimDock({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
+  const action = primaryAction(game.simulationMode);
+  return <div className="sim-dock" role="group" aria-label="时间控制台">
+    <span className="dock-clock"><PixelIcon name="clock" size={14} /><b data-testid="clock-value">{formatClock(game.time.hour, game.time.minute)}</b><i className={`mode-label mode-${game.simulationMode}`}>{modeText(game.simulationMode)}</i></span>
+    <button className="primary-button dock-start" disabled={action.disabled} onClick={() => dispatch({ type: action.type } as GameAction)}>{action.label}</button>
+    <div className="speed-controls dock-speed">{([1, 2, 4] as const).map((speed) => <button key={speed} className={game.simulationSpeed === speed ? 'speed-button active' : 'speed-button'} aria-pressed={game.simulationSpeed === speed} onClick={() => dispatch({ type: 'set_simulation_speed', speed })}>×{speed}</button>)}</div>
+    <button className="text-button dock-run" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 1 })}>运行 1 个月</button>
+    <button className="text-button dock-run" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 3 })}>运行 3 个月</button>
+  </div>;
+}
+
+function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate?: (view: ViewId) => void }) {
   const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
   const lifestyleScore = calculateLifestyle(game, contentRegistry);
   const lifestyleFactor = Math.min(balanceConfig.lifestyleCostFactorCap, Math.max(0, lifestyleScore * balanceConfig.lifestyleCostFactor));
   const dailyRent = home ? housingRentPerDay(game, home) : 0;
   const fixed = dailyRent * 28 + Math.round(balanceConfig.dailyLivingCost * (1 + lifestyleFactor) * 28) + Math.round(balanceConfig.dailyTransportCost * (1 + lifestyleFactor / 2) * 28) + balanceConfig.monthlyCommunicationCost + (home?.fixedMonthlyCost ?? 0);
-  return <><section className="life-planning-section"><div className="section-heading compact"><div><span className="eyebrow">本周计划</span><h1>把时间留给什么</h1></div><p>正式工作自动占用；学习、活动、兼职和自由时间由你规划。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><section className="life-info-grid" aria-label="生活信息面板"><section className="forecast-strip monthly-forecast"><div><span className="eyebrow">本月预计</span><h2>先看余量，再安排生活</h2></div><div><span>固定支出</span><strong>{money(fixed)}</strong></div><div><span>房租</span><strong>{money(dailyRent * 28)}</strong></div><div><span>生活与交通</span><strong>{money(fixed - dailyRent * 28 - balanceConfig.monthlyCommunicationCost)}</strong></div></section><FinancialSummaryView game={game} compact /></section><HousingView game={game} dispatch={dispatch} /></>;
+  return <>
+    <section className="life-planning-section"><div className="section-heading compact"><div><span className="eyebrow">本周计划</span><h1>把时间留给什么</h1></div><p>正式工作自动占用；学习、活动、兼职和自由时间由你规划。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section>
+    <InboxGrid game={game} onNavigate={onNavigate} />
+    <section className="life-info-grid" aria-label="生活信息面板"><section className="forecast-strip monthly-forecast"><div><span className="eyebrow">本月预计</span><h2>先看余量，再安排生活</h2></div><div><span>固定支出</span><strong>{money(fixed)}</strong></div><div><span>房租</span><strong>{money(dailyRent * 28)}</strong></div><div><span>生活与交通</span><strong>{money(fixed - dailyRent * 28 - balanceConfig.monthlyCommunicationCost)}</strong></div></section><FinancialSummaryView game={game} compact /></section>
+    <HousingView game={game} dispatch={dispatch} />
+  </>;
+}
+
+interface InboxItem { icon: PixelIconName; title: string; meta?: string; unread?: boolean }
+
+function inboxList(items: readonly InboxItem[], emptyText: string) {
+  if (!items.length) return <p className="inbox-empty">{emptyText}</p>;
+  return <ul className="inbox-list">{items.slice(0, 4).map((item, index) => (
+    <li key={`${item.title}-${index}`}>
+      <PixelIcon name={item.icon} size={16} />
+      <span className="inbox-title"><b>{item.title}</b>{item.meta && <small>{item.meta}</small>}</span>
+      {item.unread && <i className="inbox-dot" aria-label="未读" />}
+    </li>
+  ))}</ul>;
+}
+
+/** 参考图第一屏的四格信息区：待处理 / 消息 / 事件 / Offer。 */
+function InboxGrid({ game, onNavigate }: { game: GameState; onNavigate?: (view: ViewId) => void }) {
+  const pending: InboxItem[] = [];
+  const pendingEvent = game.pendingEventId ? contentRegistry.events.find((event) => event.id === game.pendingEventId) : undefined;
+  if (pendingEvent) pending.push({ icon: 'alert', title: pendingEvent.title, meta: '事件待处理' });
+  if (game.activeRecruitment) {
+    const stageLabel = game.activeRecruitment.stage === 'offer' ? 'Offer 待回复' : game.activeRecruitment.stage === 'interview' ? '面试安排中' : '招聘对话中';
+    pending.push({ icon: 'users', title: contentRegistry.jobs.find((job) => job.id === game.activeRecruitment!.jobId)?.name ?? '招聘流程', meta: stageLabel });
+  }
+  if (game.activeResignation) pending.push({ icon: 'career', title: '离职流程', meta: '等待结算确认' });
+  if (game.simulationMode === 'planning') pending.push({ icon: 'calendar', title: '本周计划待开始', meta: `第 ${game.calendar.week} 周 · 周${weekdayLabel(game.calendar.weekday)}` });
+  const unreadCount = (game.messages ?? []).filter((message) => !message.read).length;
+  if (unreadCount) pending.push({ icon: 'mail', title: `${unreadCount} 条未读消息`, meta: '收件箱里有新的对话' });
+
+  const allMessages = [...(game.messages ?? [])].reverse();
+  const messageRows = [...allMessages.filter((m) => !m.read), ...allMessages.filter((m) => m.read)].slice(0, 4).map((message): InboxItem => ({ icon: 'mail', title: message.title, meta: `第 ${message.day} 天`, unread: !message.read }));
+
+  const eventRows: InboxItem[] = [];
+  if (game.majorEventsThisMonth) eventRows.push({ icon: 'alert', title: `本月重要事件 ×${game.majorEventsThisMonth}`, meta: '已发生并写入记录' });
+  for (const entry of [...(game.ambientLog ?? [])].reverse().slice(0, 3)) eventRows.push({ icon: 'spark', title: entry.text, meta: `第 ${entry.day} 天` });
+
+  const offerRows: InboxItem[] = (game.opportunities ?? []).slice(0, 2).map((opportunity): InboxItem => ({
+    icon: 'tag',
+    title: contentRegistry.jobs.find((job) => job.id === opportunity.jobId)?.name ?? opportunity.jobId,
+    meta: `${opportunity.source} · 第 ${opportunity.expiresDay} 天前`,
+  })).concat((game.gigs ?? []).slice(0, 1).map((gig): InboxItem => ({
+    icon: 'cash',
+    title: contentRegistry.jobs.find((job) => job.id === gig.jobId)?.name ?? gig.jobId,
+    meta: `一次性 Gig · 结算 ${money(gig.pay)}`,
+  })));
+  if (!offerRows.length) {
+    const eligibleCount = (game.vacancies ?? []).filter((vacancy) => {
+      const job = contentRegistry.jobs.find((candidate) => candidate.id === vacancy.jobId);
+      return Boolean(job) && (job!.abilityRequired ?? 0) <= game.ability && (job!.reputationRequired ?? 0) <= game.reputation;
+    }).length;
+    offerRows.push({ icon: 'target', title: `${eligibleCount} 个岗位符合当前条件`, meta: '去招聘市场查看公开机会' });
+  }
+
+  const panels = [
+    { key: 'pending', icon: 'alert' as PixelIconName, title: '待处理事项', count: pending.length, empty: '世界会按计划继续运转。', rows: pending, action: '我的档案 ▸', target: 'profile' as ViewId },
+    { key: 'messages', icon: 'mail' as PixelIconName, title: '消息', count: (game.messages ?? []).length, empty: '收件箱暂时是空的。', rows: messageRows, action: '前往社交 ▸', target: 'relations' as ViewId },
+    { key: 'events', icon: 'spark' as PixelIconName, title: '事件', count: game.eventsToday || eventRows.length, empty: '这一周风平浪静。', rows: eventRows, action: '打开城市 ▸', target: 'city' as ViewId },
+    { key: 'offers', icon: 'tag' as PixelIconName, title: 'Offer 与机会', count: (game.opportunities?.length ?? 0) + (game.gigs?.length ?? 0), empty: '', rows: offerRows, action: '进入招聘市场 ▸', target: 'work' as ViewId },
+  ];
+  return <section className="inbox-grid" aria-label="生活信息四宫格">
+    {panels.map((panel) => <article className={`pixel-panel secondary inbox-panel inbox-${panel.key}`} key={panel.key}>
+      <header className="inbox-head"><PixelIcon name={panel.icon} size={18} /><h2>{panel.title}</h2>{panel.count > 0 && <b className="inbox-count">{panel.count}</b>}</header>
+      {panel.rows.length ? inboxList(panel.rows, panel.empty) : <p className="inbox-empty">{panel.empty}</p>}
+      <footer className="inbox-foot"><button onClick={() => onNavigate?.(panel.target)}>{panel.action}</button></footer>
+    </article>)}
+  </section>;
 }
 
 function WorkView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
@@ -302,13 +461,42 @@ function ServiceHistoryView({ game }: { game: GameState }) {
   return <div className="ledger-detail" role="region" aria-label="服务记录"><span>最近服务记录</span><small>{records.length ? records.map((record) => `第 ${record.day} 天 · ${record.title}`).join(' · ') : '使用服务或开通订阅后，这里会保留最近记录'}</small></div>;
 }
 
+/** 参考图 Shop 结构：六类大标签 + 高密度目录 + 右侧工具栏 + 底部选中详情。 */
+const shopTabs: ReadonlyArray<readonly [string, string]> = [
+  ['goods', '商品'], ['services', '服务'], ['fun', '娱乐'], ['learn', '学习'], ['social', '社交'], ['travel', '旅行'],
+];
+const shopTabCategories: Record<string, readonly string[]> = {
+  fun: ['game', 'film', 'nightlife', 'fitness'],
+  learn: ['culture', 'hobby'],
+  social: ['social', 'food', 'premium'],
+  travel: ['travel'],
+};
+
+function statMapTexts(map: Partial<Record<AttributeId | StatName, number>> | undefined): string[] {
+  return Object.entries(map ?? {}).map(([id, value]) => `${attributeLabels[id] ?? statLabels[id] ?? id} ${value >= 0 ? '+' : ''}${value}`);
+}
+
+function effectTexts(effects: readonly EffectDefinition[] | undefined): string[] {
+  return (effects ?? []).filter((effect) => ['attribute', 'stat', 'relation', 'cash'].includes(effect.type)).map((effect) => {
+    switch (effect.type) {
+      case 'attribute': return `${attributeLabels[effect.attribute] ?? effect.attribute} ${effect.amount >= 0 ? '+' : ''}${effect.amount}`;
+      case 'stat': return `${statLabels[effect.stat] ?? effect.stat} ${effect.amount >= 0 ? '+' : ''}${effect.amount}`;
+      case 'relation': return `关系 ${effect.amount >= 0 ? '+' : ''}${effect.amount}`;
+      case 'cash': return `${effect.amount >= 0 ? '+' : '-'}${money(Math.abs(effect.amount))}`;
+      default: return '新的进展';
+    }
+  });
+}
+
 function ShopView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
   const [cart, setCart] = useState<Record<ContentId, number>>({});
-  const [category, setCategory] = useState<string>('all');
+  const [itemCategory, setItemCategory] = useState<string>('all');
+  const [tab, setTab] = useState<string>('goods');
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const cartCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
   const total = Object.entries(cart).reduce((sum, [itemId, quantity]) => { const item = contentRegistry.items.find((entry) => entry.id === itemId); return sum + (item ? getItemCost(game, item) : 0) * quantity; }, 0);
   const categories = ['all', ...new Set(contentRegistry.items.map((item) => item.category))];
-  const items = contentRegistry.items.filter((item) => category === 'all' || item.category === category);
+  const items = contentRegistry.items.filter((item) => itemCategory === 'all' || item.category === itemCategory);
   const scheduleActivity = (activityId: ContentId, optionId: string) => {
     const activityOption = contentRegistry.activities?.find((entry) => entry.id === activityId)?.options.find((entry) => entry.id === optionId);
     const isMultiDayActivity = (activityOption?.durationMinutes ?? 0) >= 2880;
@@ -324,7 +512,83 @@ function ShopView({ game, dispatch }: { game: GameState; dispatch: (action: Game
       }
     }
   };
-  return <><div className="section-heading compact"><div><span className="eyebrow">浏览不消耗时间 · 功能先说清楚</span><h1>商品</h1></div><p>商品会说明它改善什么、解锁什么，以及是否值得纳入生活。</p></div><div className="filter-row" aria-label="商品分类">{categories.map((entry) => <button key={entry} className={category === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setCategory(entry)}>{entry === 'all' ? '全部' : categoryLabels[entry] ?? entry}</button>)}</div><div className="shop-layout"><div className="item-grid">{items.map((item) => { const owned = (game.inventory[item.id] ?? 0) > 0; const wishlisted = game.wishlist?.includes(item.id); const effects = Object.entries(item.attributeEffects ?? {}).map(([id, value]) => `${attributeLabels[id] ?? id} ${value >= 0 ? '+' : ''}${value}`).concat(Object.entries(item.statEffects ?? {}).map(([id, value]) => `${statLabels[id] ?? id} ${value >= 0 ? '+' : ''}${value}`)).slice(0, 2); return <article className="item-card" key={item.id}><div className="item-card-head"><span className="job-kind">{categoryLabels[item.category] ?? item.category}</span>{owned && <span className="current-label">已拥有</span>}</div><h2>{item.name}</h2><p>{item.description}</p><div className="item-effect">{effects.length ? effects.join(' · ') : item.capabilities?.length ? `解锁：${item.capabilities.map((capability) => capabilityLabels[capability] ?? capability).join('、')}` : '生活品质与收藏价值'}</div><div className="item-card-foot"><strong>{money(getItemCost(game, item))}</strong><div className="button-pair"><button className="primary-button" onClick={() => setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 }))} aria-label={`加入购物袋：${item.name}`}>加入</button>{!owned && <button className="text-button" onClick={() => dispatch({ type: 'manage_wishlist', itemId: item.id, enabled: !wishlisted })} aria-label={`${wishlisted ? '移出' : '加入'}愿望清单：${item.name}`}>{wishlisted ? '已加入目标' : '加入目标'}</button>}</div></div></article>; })}</div><aside className="side-panel"><span className="console-kicker">当前购物会话</span><h2>购物袋（{cartCount}）</h2>{cartCount === 0 ? <p className="muted">还没有选择商品。</p> : <>{Object.entries(cart).map(([itemId, quantity]) => <div className="cart-row" key={itemId}><span>{contentRegistry.items.find((item) => item.id === itemId)?.name}</span><span>×{quantity}</span></div>)}<div className="total-row"><span>消费合计</span><strong>{money(total)}</strong></div><button className="primary-button full" onClick={() => { dispatch({ type: 'purchase_items', items: cart }); setCart({}); }} aria-label="一次购买">一次购买</button></>}</aside></div><section className="activity-market"><div className="section-heading compact"><div><span className="eyebrow">不为赚钱服务的时间</span><h2>娱乐与生活活动</h2></div><p>活动会占用周计划中的自由时间；每个 Option 都有自己的时长、费用和效果。</p></div><div className="activity-grid">{contentRegistry.activities?.flatMap((activity) => activity.options.map((option) => { const optionEffects = (option.effects ?? []).map((effect) => effect.type === 'attribute' ? `${attributeLabels[effect.attribute] ?? effect.attribute} ${effect.amount >= 0 ? '+' : ''}${effect.amount}` : effect.type === 'stat' ? `${statLabels[effect.stat] ?? effect.stat} ${effect.amount >= 0 ? '+' : ''}${effect.amount}` : effect.type === 'relation' ? `关系 ${effect.amount >= 0 ? '+' : ''}${effect.amount}` : '新的进展'); const project = option.businessProject; const projectReady = !project || Boolean(game.businesses[project.businessId]); const projectDone = Boolean(project && game.completedBusinessProjects?.includes(`${activity.id}.${option.id}`)); const cost = activityCashCost(game, activity, option, contentRegistry); const cooldownRemaining = activityCooldownRemaining(game, activity, option); const durationLabel = option.durationMinutes >= 2880 ? `${option.durationMinutes / 1440} 天` : `${option.durationMinutes / 60} 小时`; return <article className="activity-card" key={`${activity.id}-${option.id}`}><span className="job-kind">{activity.category}</span><h3>{activity.name} · {option.label}</h3><p>{activity.description}</p><div className="activity-facts"><span>{durationLabel}</span><strong>{project ? `收入 ${money(project.revenue)} · 成本 ${money(project.cost)}` : money(cost)}</strong></div><div className="activity-effect">{project ? `企业项目利润 · ${projectDone ? '已完成' : projectReady ? '可承接' : '需要对应企业'}` : `${optionEffects.join(' · ') || '给生活留一点空间'}${activityDiscountLabel(game, activity, contentRegistry) ? ` · ${activityDiscountLabel(game, activity, contentRegistry)}` : ''}`}</div>{cooldownRemaining > 0 && <span className="requirement-missing">冷却中 · 还需 {cooldownRemaining} 天</span>}<button className="secondary-button" disabled={!projectReady || projectDone || cooldownRemaining > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleActivity(activity.id, option.id)}>{projectDone ? '项目已完成' : cooldownRemaining > 0 ? `冷却中 · 还需 ${cooldownRemaining} 天` : '安排到本周自由时间'}</button></article>; }))}</div></section></>;
+  const owned = (itemId: ContentId) => (game.inventory[itemId] ?? 0) > 0;
+  const activeCategories = shopTabCategories[tab];
+  const activities = (contentRegistry.activities ?? []).filter((activity) => activeCategories?.includes(activity.category));
+  const displayActivities = tab === 'goods' ? (contentRegistry.activities ?? []) : activities;
+  const weekRows = ([1, 2, 3, 4, 5, 6, 7] as const).flatMap((weekday) => {
+    if (game.employment?.schedule.workDays.includes(weekday)) return [{ key: `w${weekday}`, day: `周${weekdayLabel(weekday)}`, text: '工作 · 自动排班' }];
+    return (['day', 'evening'] as const).map((slot) => {
+      const plan = game.weeklyPlan.days[weekday][slot];
+      const prefix = slot === 'day' ? '白天' : '晚间';
+      const text = plan.kind === 'free' ? `${prefix} 自由` : plan.kind === 'study' ? `${prefix} 学习 ${plan.durationMinutes / 60} 小时` : plan.kind === 'side_job' ? `${prefix} 兼职 ${plan.durationMinutes / 60} 小时` : plan.kind === 'course' ? `${prefix} 课程 ${contentRegistry.courses?.find((course) => course.id === plan.courseId)?.name ?? ''}` : `${prefix} ${contentRegistry.activities?.find((entry) => entry.id === (plan as { activityId?: ContentId }).activityId)?.name ?? '活动'}`;
+      return { key: `w${weekday}${slot}`, day: `周${weekdayLabel(weekday)}`, text };
+    });
+  });
+
+  // ---- 底部选中详情区域的数据 ----
+  let detail: null | { icon: PixelIllustrationName; title: string; desc: string; facts: string[]; ctaLabel: string; onCta?: () => void; disabled?: boolean } = null;
+  if (selectedKey?.startsWith('item:')) {
+    const item = contentRegistry.items.find((entry) => entry.id === selectedKey.slice(5));
+    if (item) {
+      const effectLine = [...statMapTexts(item.attributeEffects), ...statMapTexts(item.statEffects)].slice(0, 3).join(' · ');
+      detail = {
+        icon: 'bag',
+        title: item.name,
+        desc: item.description,
+        facts: [`价格 ${money(getItemCost(game, item))}`, owned(item.id) ? `已拥有 ×${game.inventory[item.id]}` : '未持有', effectLine || (item.capabilities?.length ? `解锁：${item.capabilities.map((capability) => capabilityLabels[capability] ?? capability).join('、')}` : '生活品质与收藏价值')],
+        ctaLabel: '加入购物袋',
+        onCta: () => setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 })),
+      };
+    }
+  } else if (selectedKey?.startsWith('act:')) {
+    const [activityId, optionId] = selectedKey.slice(4).split('|');
+    const definition = contentRegistry.activities?.find((entry) => entry.id === activityId);
+    const option = definition?.options.find((entry) => entry.id === optionId);
+    if (definition && option) {
+      const cost = activityCashCost(game, definition, option, contentRegistry);
+      const cooldown = activityCooldownRemaining(game, definition, option);
+      const durationLabel = option.durationMinutes >= 2880 ? `${option.durationMinutes / 1440} 天` : `${option.durationMinutes / 60} 小时`;
+      detail = {
+        icon: activitySceneByCategory[definition.category] ?? 'controller',
+        title: `${definition.name} · ${option.label}`,
+        desc: definition.description,
+        facts: [`时长 ${durationLabel}`, `费用 ${money(cost)}`, effectTexts(option.effects).join(' · ') || '给生活留一点空间', cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '本周可安排'],
+        ctaLabel: cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '安排到本周自由时间',
+        onCta: () => scheduleActivity(definition.id, option.id),
+        disabled: cooldown > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward',
+      };
+    }
+  }
+
+  return <section className="shop-page" aria-label="商品目录布局">
+    <div className="section-heading compact"><div><span className="eyebrow">商店 · 生活内容</span><h1>商品</h1></div><p>浏览不消耗时间；购买与安排都会进入真实账本、周计划和人生记录。</p></div>
+    <div className="shop-tabs" role="tablist" aria-label="商店分类">{shopTabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'shop-tab selected' : 'shop-tab'} onClick={() => setTab(id)}>{label}</button>)}</div>
+    <div className="shop-layout">
+      <div className="shop-main">
+        {tab === 'goods' && <>
+          <div className="filter-row" aria-label="商品分类">{categories.map((entry) => <button key={entry} className={itemCategory === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setItemCategory(entry)}>{entry === 'all' ? '全部' : categoryLabels[entry] ?? entry}</button>)}</div>
+          <div className="item-grid">{items.map((item) => { const hasItem = owned(item.id); const wishlisted = game.wishlist?.includes(item.id); const effects = [...statMapTexts(item.attributeEffects), ...statMapTexts(item.statEffects)].slice(0, 2); return <article className={selectedKey === `item:${item.id}` ? 'item-card selected' : 'item-card'} key={item.id}><button className="card-overlay" onClick={() => setSelectedKey(`item:${item.id}`)} aria-label={`查看详情：${item.name}`} /><div className="item-card-head"><span className="job-kind">{categoryLabels[item.category] ?? item.category}</span>{hasItem && <span className="current-label">已拥有</span>}</div><h2>{item.name}</h2><p>{item.description}</p><div className="item-effect">{effects.length ? effects.join(' · ') : item.capabilities?.length ? `解锁：${item.capabilities.map((capability) => capabilityLabels[capability] ?? capability).join('、')}` : '生活品质与收藏价值'}</div><div className="item-card-foot"><strong>{money(getItemCost(game, item))}</strong><div className="button-pair"><button className="primary-button" onClick={() => { setSelectedKey(`item:${item.id}`); setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 })); }} aria-label={`加入购物袋：${item.name}`}>加入</button>{!hasItem && <button className="text-button" onClick={() => dispatch({ type: 'manage_wishlist', itemId: item.id, enabled: !wishlisted })} aria-label={`${wishlisted ? '移出' : '加入'}愿望清单：${item.name}`}>{wishlisted ? '已加入目标' : '加入目标'}</button>}</div></div></article>; })}</div>
+          <ServiceMarket game={game} dispatch={dispatch} />
+          {detail && <section className="shop-detail inverse" aria-label="已选商品详情"><PixelIllustration name={detail.icon} size={72} /><div><span className="eyebrow">已选商品</span><h2>{detail.title}</h2><p>{detail.desc}</p><ul>{detail.facts.filter(Boolean).map((fact, index) => <li key={index}>{fact}</li>)}</ul></div><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section>}
+        </>}
+        {tab === 'services' && <ServiceMarket game={game} dispatch={dispatch} />}
+        {(tab === 'goods' || shopTabCategories[tab]) && <><div className="section-heading compact"><div><span className="eyebrow">不为赚钱服务的时间</span><h2>娱乐与生活活动</h2></div><p>活动会占用周计划中的自由时间；每个 Option 都有自己的时长、费用和效果。</p></div><div className="activity-grid">{displayActivities.flatMap((activity) => activity.options.map((option) => { const project = option.businessProject; const projectReady = !project || Boolean(game.businesses[project.businessId]); const projectDone = Boolean(project && game.completedBusinessProjects?.includes(`${activity.id}.${option.id}`)); const cost = activityCashCost(game, activity, option, contentRegistry); const cooldownRemaining = activityCooldownRemaining(game, activity, option); const durationLabel = option.durationMinutes >= 2880 ? `${option.durationMinutes / 1440} 天` : `${option.durationMinutes / 60} 小时`; const effects = effectTexts(option.effects); return <article className={selectedKey === `act:${activity.id}|${option.id}` ? 'activity-card selected' : 'activity-card'} key={`${activity.id}-${option.id}`}><button className="card-overlay" onClick={() => setSelectedKey(`act:${activity.id}|${option.id}`)} aria-label={`查看详情：${activity.name} ${option.label}`} /><span className="job-kind">{activity.category}</span><h3>{activity.name} · {option.label}</h3><p>{activity.description}</p><div className="activity-facts"><span>{durationLabel}</span><strong>{project ? `收入 ${money(project.revenue)} · 成本 ${money(project.cost)}` : money(cost)}</strong></div><div className="activity-effect">{project ? `企业项目利润 · ${projectDone ? '已完成' : projectReady ? '可承接' : '需要对应企业'}` : `${effects.join(' · ') || '给生活留一点空间'}${activityDiscountLabel(game, activity, contentRegistry) ? ` · ${activityDiscountLabel(game, activity, contentRegistry)}` : ''}`}</div>{cooldownRemaining > 0 && <span className="requirement-missing">冷却中 · 还需 {cooldownRemaining} 天</span>}<button className="secondary-button" disabled={!projectReady || projectDone || cooldownRemaining > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleActivity(activity.id, option.id)}>{projectDone ? '项目已完成' : cooldownRemaining > 0 ? `冷却中 · 还需 ${cooldownRemaining} 天` : '安排到本周自由时间'}</button></article>; }))}</div></>}
+      </div>
+      <aside className="shop-rail">
+        <section className="rail-module" aria-label="购物清单"><header><PixelIcon name="bag" size={16} /><h3>购物袋（{cartCount}）</h3></header>
+          {cartCount === 0 ? <p className="muted">还没有选择商品。</p> : <>
+            <ul className="rail-rows">{Object.entries(cart).map(([itemId, quantity]) => <li key={itemId}><span>{contentRegistry.items.find((item) => item.id === itemId)?.name}</span><b>×{quantity}</b></li>)}</ul>
+            <div className="total-row"><span>消费合计</span><strong>{money(total)}</strong></div>
+            <button className="primary-button full" onClick={() => { dispatch({ type: 'purchase_items', items: cart }); setCart({}); }} aria-label="一次购买">一次购买</button>
+          </>}
+        </section>
+        <section className="rail-module" aria-label="本周安排"><header><PixelIcon name="calendar" size={16} /><h3>本周安排</h3></header><ul className="rail-rows compact">{weekRows.map((row) => <li key={row.key}><small>{row.day}</small><span>{row.text}</span></li>)}</ul></section>
+        <section className="rail-module rail-fill" aria-label="已拥有模块"><InventoryPanel game={game} dispatch={dispatch} /></section>
+        <section className="rail-module rail-fill" aria-label="消费目标快捷区"><WishlistPanel game={game} dispatch={dispatch} /></section>
+      </aside>
+    </div>
+  </section>;
 }
 
 function ActivityAcquisitionHints({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {

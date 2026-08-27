@@ -569,3 +569,529 @@ button:focus-visible, input:focus-visible { outline-color: #fff; outline-offset:
 }
 .view-shop .item-card h2,
 .view-shop .item-card p { margin-left: 34px; }
+
+/* =====================================================================
+   参考图近复刻收敛层：修正 Life 三段式 Hero 比例、反向预测面板、
+   InboxGrid、底部属性 HUD、Career 白色详情、Shop 工具栏/详情。
+   ===================================================================== */
+
+/* ---- 参考整体比例 ---- */
+.app-shell { padding-bottom: 68px; }
+.main-content { width: min(1410px, calc(100% - 28px)); padding-top: 10px; }
+.topbar { height: 88px; min-height: 88px; }
+.main-nav { min-height: 44px; }
+
+/* 主导航行内放 SimDock，不额外占一整条 */
+.main-nav {
+  justify-content: space-between;
+  align-items: stretch;
+  padding: 0 clamp(12px, 2vw, 28px);
+}
+.nav-tabs { display: flex; align-items: stretch; min-width: 0; gap: 0; }
+.nav-item { min-width: 96px; padding: 10px 14px; font-size: 14px; }
+.sim-dock {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 12px;
+  margin-left: 8px;
+  border-left: 1px solid #666;
+  white-space: nowrap;
+}
+.dock-clock { display: inline-flex; align-items: center; gap: 5px; color: #ddd; font-size: 12px; }
+.dock-clock .mode-label { margin-left: 5px; color: #aaa; font-size: 10px; }
+.dock-start { padding: 5px 10px; font-size: 12px; }
+.dock-speed { gap: 3px; }
+.dock-speed .speed-button { min-width: 30px; padding: 4px 5px; font-size: 11px; }
+.dock-run { padding: 4px 6px; color: #fff; background: #111; border: 1px solid #666; font-size: 11px; }
+.dock-run:hover:not(:disabled) { color: #050505; background: #f4f4f0; }
+.dock-run:disabled { color: #666; background: #0a0a0a; border-color: #333; }
+.app-shell.view-life .sim-dock { display: none; }
+
+/* ---- Life Hero 三段式 ---- */
+.life-hero-grid {
+  grid-template-columns: minmax(0, 1fr) 288px;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.life-hero-grid .time-console {
+  min-height: 372px;
+  margin: 0;
+  padding: 18px 20px 16px;
+}
+.life-hero-grid > .forecast-strip {
+  align-self: stretch;
+  max-height: 372px;
+  overflow: hidden;
+}
+.hero-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 31%) minmax(0, 47%) minmax(0, 22%);
+  gap: 14px;
+  height: 100%;
+  align-items: stretch;
+}
+.hero-time {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-right: 12px;
+  border-right: 1px dotted #555;
+}
+.hero-clock {
+  display: block;
+  margin-top: 6px;
+  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-size: clamp(58px, 5.4vw, 78px);
+  line-height: .92;
+  letter-spacing: -.09em;
+  color: #fff;
+  text-shadow: 3px 3px 0 #555;
+  font-variant-numeric: tabular-nums;
+}
+.hero-date { margin-top: 10px; }
+.hero-date b { display: block; color: #fff; font-size: 16px; font-weight: 800; }
+.hero-date small { display: block; margin-top: 3px; color: #aaa; font-size: 12px; }
+.hero-time .week-track { margin: 16px 0 0; padding: 0; border: 0; display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.hero-time .track-day { color: #777; font-size: 10px; padding: 5px 1px; border: 1px solid #333; }
+.hero-time .track-day.current { color: #050505; background: #fff; border-color: #fff; font-weight: 800; }
+.hero-time .track-day.current::before { display: none; }
+.hero-time .track-day.passed { color: #c5c5bd; }
+.hero-activity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 0 14px;
+  border-right: 1px dotted #555;
+}
+.hero-activity-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.hero-activity-head .pixel-icon { color: #fff; }
+.hero-activity-head .console-kicker { margin: 0; color: #9e9e99; }
+.hero-activity .pixel-illustration {
+  align-self: flex-start;
+  width: 76px;
+  height: 76px;
+  margin: 6px 0 2px;
+  color: #f4f4f0;
+  background: #101010;
+  border: 1px solid #777;
+  padding: 5px;
+}
+.hero-activity h2 {
+  margin: 8px 0 4px;
+  font-size: clamp(24px, 2.2vw, 34px);
+  line-height: 1.05;
+  letter-spacing: -.04em;
+}
+.hero-range { margin: 0 0 8px; color: #b0b0aa; font-size: 12px; }
+.hero-activity .activity-progress { height: 12px; margin-top: auto; }
+.hero-activity .progress-caption { color: #9e9e99; font-size: 10px; }
+.hero-controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 9px;
+  min-width: 0;
+  padding-left: 4px;
+}
+.hero-controls > .console-kicker { margin-bottom: -3px; color: #aaa; }
+.hero-controls .speed-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+.hero-controls .speed-button { min-width: 0; padding: 7px 5px; font-size: 13px; background: #0a0a0a; border-color: #666; }
+.hero-controls .speed-button.active { color: #050505; background: #f4f4f0; border-color: #fff; }
+.hero-start {
+  width: 100%;
+  padding: 13px 10px;
+  font-size: 16px;
+  text-align: center;
+}
+.run-controls { display: grid; grid-template-columns: 1fr; gap: 5px; }
+.run-controls .mode-label { display: inline-block; padding: 4px 6px; color: #aaa; background: #0a0a0a; border: 1px solid #555; font-size: 10px; text-align: center; }
+.month-run {
+  width: 100%;
+  padding: 7px 8px;
+  color: #eee;
+  background: #0a0a0a;
+  border: 1px solid #666;
+  text-align: center;
+  font-size: 12px;
+}
+.month-run:hover:not(:disabled) { color: #050505; background: #f4f4f0; }
+.month-run:disabled { color: #666; border-color: #333; }
+.hero-mini {
+  display: grid;
+  gap: 3px;
+  margin: 4px 0 0;
+  padding: 7px;
+  border: 1px dotted #555;
+  font-size: 10px;
+}
+.hero-mini div { display: flex; justify-content: space-between; gap: 8px; }
+.hero-mini dt { color: #aaa; }
+.hero-mini dd { margin: 0; color: #fff; font-variant-numeric: tabular-nums; }
+
+/* ---- WeeklyForecast 反相面板 ---- */
+.forecast-strip.inverse {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 12px 14px;
+  color: #070707;
+  background: #f4f4f0;
+  border: 2px solid #f4f4f0;
+  outline: 1px solid #070707;
+  outline-offset: 3px;
+  box-shadow: inset 0 0 0 1px #070707;
+  --il-knock: #f4f4f0;
+}
+.forecast-strip.inverse .forecast-head { padding-bottom: 8px; border-bottom: 2px solid #070707; }
+.forecast-strip.inverse .eyebrow { color: #070707; font-size: 11px; }
+.forecast-strip.inverse h2 { margin: 2px 0 0; color: #070707; font-size: 18px; letter-spacing: -.03em; }
+.forecast-strip.inverse small { display: block; margin-top: 4px; color: #444; font-size: 9px; line-height: 1.4; }
+.forecast-strip.inverse .forecast-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 7px 2px;
+  border-bottom: 1px dotted #999;
+  font-size: 12px;
+}
+.forecast-strip.inverse .forecast-row strong { color: #070707; font-size: 18px; font-variant-numeric: tabular-nums; }
+.forecast-net {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 2px;
+  color: #070707;
+  background: #fff;
+  border: 1px solid #070707;
+  margin: 8px 0;
+  font-size: 12px;
+  font-weight: 800;
+}
+.forecast-net strong { font-size: 20px; }
+.forecast-attrs { display: grid; gap: 5px; }
+.forecast-attrs .forecast-sub { font-size: 10px; font-weight: 800; color: #070707; letter-spacing: .1em; }
+.forecast-attr {
+  display: grid;
+  grid-template-columns: 34px 1fr 26px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 0;
+  border-bottom: 1px dotted #aaa;
+  font-size: 10px;
+}
+.forecast-attr b { text-align: right; font-variant-numeric: tabular-nums; }
+.forecast-strip.inverse .segment-meter i { width: 8px; height: 7px; border-color: #777; background: #d5d5d0; }
+.forecast-strip.inverse .segment-meter i.filled { background: #070707; border-color: #070707; }
+.forecast-strip.inverse .forecast-empty { margin: 4px 0 0; color: #333; font-size: 10px; }
+.forecast-more {
+  margin-top: auto;
+  padding: 9px 10px;
+  color: #f4f4f0;
+  background: #070707;
+  border: 1px solid #070707;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* ---- Planner 放大（保持白色反相区） ---- */
+.life-planning-section { margin: 10px 0 12px; }
+.life-planning-section .section-heading { min-height: 44px; padding: 6px 10px; }
+.life-planning-section .section-heading h1 { font-size: 22px; }
+.life-planning-section .planner-head, .life-planning-section .planner-row { grid-template-columns: 78px repeat(7, 1fr); }
+.life-planning-section .planner-head { min-height: 34px; font-size: 13px; }
+.life-planning-section .plan-cell { min-height: 48px; padding: 8px 5px; font-size: 12px; }
+.life-planning-section .planner-row > span { font-size: 12px; }
+.life-planning-section .planner-actions { min-height: 42px; padding: 8px 12px; font-size: 12px; }
+
+/* ---- Inbox 四宫格 ---- */
+.inbox-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.inbox-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 156px;
+  padding: 12px 12px 8px;
+  color: #f5f5f1;
+  background: #090909;
+  border: 1px solid #aaa;
+  position: relative;
+}
+.inbox-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 8px;
+  border-bottom: 1px dotted #666;
+}
+.inbox-head .pixel-icon { color: #f4f4f0; }
+.inbox-head h2 { margin: 0; font-size: 17px; letter-spacing: -.02em; }
+.inbox-count {
+  min-width: 22px;
+  padding: 2px 6px;
+  margin-left: auto;
+  color: #050505;
+  background: #f4f4f0;
+  border: 1px solid #fff;
+  font-size: 11px;
+  font-weight: 900;
+  text-align: center;
+}
+.inbox-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  align-content: start;
+  flex: 1;
+}
+.inbox-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+  padding: 7px 0;
+  border-bottom: 1px dotted #333;
+  font-size: 11px;
+}
+.inbox-list li .pixel-icon { flex: none; color: #ddd; }
+.inbox-title { display: grid; gap: 2px; min-width: 0; }
+.inbox-title b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff; font-weight: 650; }
+.inbox-title small { color: #999; font-size: 9px; }
+.inbox-dot { width: 6px; height: 6px; margin-left: auto; background: #fff; border: 1px solid #fff; }
+.inbox-empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 16px 4px;
+  color: #666;
+  border: 1px dashed #444;
+  font-size: 11px;
+  text-align: center;
+}
+.inbox-foot {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #444;
+}
+.inbox-foot button {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  color: #f4f4f0;
+  background: #111;
+  border: 1px solid #666;
+  font-size: 11px;
+  text-align: center;
+  cursor: pointer;
+}
+.inbox-foot button:hover { color: #050505; background: #f4f4f0; }
+
+/* ---- Persistent HUD 放大 ---- */
+.persistent-status {
+  min-height: 62px;
+  padding: 7px clamp(14px, 2vw, 36px);
+  border-top: 2px solid #ddd;
+}
+.pixel-avatar { width: 46px; height: 46px; margin-right: 12px; border-width: 2px; }
+.persistent-stat { grid-template-columns: auto 1fr auto; gap: 6px; min-width: 0; padding: 0 12px; font-size: 12px; }
+.persistent-stat strong { font-size: 15px; }
+.persistent-status .segment-meter { grid-auto-columns: 12px; gap: 3px; }
+.persistent-status .segment-meter i { width: 12px; height: 10px; }
+.status-detail { padding: 9px 14px; color: #050505; background: #f4f4f0; border: 1px solid #fff; font-weight: 800; cursor: pointer; }
+.status-detail:hover { color: #fff; background: #111; }
+
+/* ---- 品牌与 Header 视觉重量 ---- */
+.brand-mark { font-size: clamp(38px, 4.4vw, 56px); letter-spacing: -.09em; }
+.brand-subtitle small { display: block; margin-top: 2px; color: #aaa; font-size: 9px; letter-spacing: .05em; }
+.brand-mascot { color: #f4f4f0; background: #111; border: 1px solid #777; padding: 5px; }
+.status-line > span { min-height: 62px; }
+.status-clock > b { font-size: 28px; }
+.status-line b { font-size: 18px; }
+
+/* ---- Career：白色岗位详情 + 底部四面板 ---- */
+.career-market-shell { grid-template-columns: 220px minmax(0, 1fr) 372px; }
+.career-detail.inverse {
+  position: sticky;
+  top: 10px;
+  color: #070707;
+  background: #f4f4f0;
+  border: 2px solid #070707;
+  outline: 1px solid #f4f4f0;
+  outline-offset: 3px;
+  box-shadow: inset 0 0 0 1px #070707;
+  --il-knock: #f4f4f0;
+}
+.career-detail.inverse .career-detail-title { color: #070707; }
+.career-detail.inverse > p,
+.career-detail.inverse .detail-facts,
+.career-detail.inverse .requirement-line,
+.career-detail.inverse h3,
+.career-detail.inverse .detail-facts strong,
+.career-detail.inverse .requirement-line strong,
+.career-detail.inverse .job-kind { color: #111; border-color: #999; }
+.career-detail.inverse .primary-button { color: #f4f4f0; background: #070707; border-color: #070707; }
+.career-detail.inverse .primary-button:hover { color: #050505; background: #fff; }
+.career-bottom-panels {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 14px;
+}
+.career-bottom-panel { min-height: 132px; }
+
+/* ---- 卡片 overlay 点击模式（保持标题为卡片直接子元素以兼容测试与 DOM 语义） ---- */
+.item-card, .activity-card, .job-card { position: relative; }
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+.item-card > :not(.card-overlay),
+.activity-card > :not(.card-overlay),
+.job-card > :not(.card-overlay) { position: relative; z-index: 2; }
+
+/* ---- Shop：六标签、三列、右侧工具栏、底部详情 ---- */
+.shop-page > .section-heading { padding-top: 2px; }
+.shop-tabs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 4px;
+  margin: 0 0 10px;
+}
+.shop-tab {
+  padding: 10px 8px;
+  color: #eee;
+  background: #0a0a0a;
+  border: 1px solid #777;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.shop-tab.selected,
+.shop-tab:hover { color: #050505; background: #f4f4f0; border-color: #fff; }
+.shop-layout { display: grid; grid-template-columns: minmax(0, 1fr) 274px; gap: 12px; align-items: start; }
+.rail-module {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  color: #f5f5f1;
+  background: #090909;
+  border: 1px solid #aaa;
+  margin-bottom: 8px;
+}
+.rail-module > header { display: flex; align-items: center; gap: 7px; padding-bottom: 7px; border-bottom: 1px dotted #666; }
+.rail-module > header .pixel-icon { color: #f4f4f0; }
+.rail-module h3 { margin: 0; font-size: 14px; }
+.rail-rows { list-style: none; margin: 0; padding: 0; display: grid; }
+.rail-rows li { display: flex; justify-content: space-between; gap: 10px; min-width: 0; padding: 6px 0; border-bottom: 1px dotted #333; font-size: 11px; }
+.rail-rows li small { color: #aaa; white-space: nowrap; }
+.rail-rows li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rail-rows li b { font-variant-numeric: tabular-nums; }
+.rail-rows.compact li { padding: 5px 0; }
+.rail-fill .detail-panel { margin: 0; padding: 0; border: 0; }
+.rail-fill .detail-panel .section-heading { display: none; }
+.rail-fill .detail-panel .item-list { border-top: 0; max-height: 132px; overflow-y: auto; }
+.rail-fill .detail-panel .item-row { padding: 7px 0; gap: 8px; }
+.rail-fill .detail-panel .item-row h2 { margin: 2px 0; font-size: 14px; }
+.rail-fill .detail-panel .item-row p { font-size: 10px; }
+.rail-fill .detail-panel .button-pair { gap: 8px; }
+.rail-fill .detail-panel .button-pair .text-button { padding: 2px 0; font-size: 10px; }
+.shop-detail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin-top: 12px;
+  padding: 16px 18px;
+  color: #070707;
+  background: #f4f4f0;
+  border: 2px solid #070707;
+  outline: 1px solid #f4f4f0;
+  outline-offset: 3px;
+  --il-knock: #f4f4f0;
+}
+.shop-detail .pixel-illustration { width: 72px; height: 72px; color: #070707; background: #fff; border: 1px solid #070707; padding: 4px; }
+.shop-detail .eyebrow { color: #070707; font-weight: 800; }
+.shop-detail h2 { margin: 3px 0 6px; color: #070707; font-size: 20px; }
+.shop-detail p { margin: 0; color: #333; font-size: 12px; max-width: 520px; }
+.shop-detail ul { list-style: none; display: flex; flex-wrap: wrap; gap: 5px 12px; margin: 8px 0 0; padding: 0; color: #222; font-size: 11px; }
+.shop-detail ul li::before { content: '▰'; margin-right: 4px; }
+.shop-detail .primary-button { padding: 12px 18px; color: #f4f4f0; background: #070707; border-color: #070707; font-size: 14px; }
+.shop-detail .primary-button:hover { color: #050505; background: #fff; }
+.view-shop .shop-layout .item-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.shop-main .item-grid, .shop-main .activity-grid { margin-bottom: 0; }
+.shop-main .activity-grid { margin-top: 4px; }
+
+/* ---- 像素角标：四个角 L 形 ---- */
+.pixel-corners::before,
+.time-console::before,
+.forecast-strip.inverse::before,
+.shop-detail::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  pointer-events: none;
+  background-image:
+    linear-gradient(#fff 0 0), linear-gradient(#fff 0 0),
+    linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size: 9px 2px, 9px 2px, 2px 9px, 2px 9px;
+  background-position:
+    left 0 top 0, right 0 top 0, left 0 top 0, right 0 top 0;
+}
+.time-console,
+.forecast-strip.inverse,
+.shop-detail,
+.career-detail.inverse { position: relative; }
+.forecast-strip.inverse::before,
+.shop-detail::before { background-image: linear-gradient(#070707 0 0), linear-gradient(#070707 0 0), linear-gradient(#070707 0 0), linear-gradient(#070707 0 0); }
+
+/* ---- 响应式：桌面收缩与移动端 ---- */
+@media (max-width: 1180px) {
+  .inbox-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .career-bottom-panels { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .shop-layout { grid-template-columns: 1fr; }
+  .shop-rail { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+}
+@media (max-width: 900px) {
+  .sim-dock { display: none; }
+  .hero-cols { grid-template-columns: 1fr; }
+  .hero-time, .hero-activity { border-right: 0; padding: 0; }
+  .hero-time .week-track { grid-template-columns: repeat(7, 1fr); }
+  .life-hero-grid > .forecast-strip { max-height: none; }
+  .inbox-grid { grid-template-columns: 1fr; }
+  .career-bottom-panels { grid-template-columns: 1fr; }
+  .shop-rail { grid-template-columns: 1fr; }
+  .shop-detail { grid-template-columns: 1fr; text-align: left; }
+  .shop-detail .primary-button { width: 100%; }
+  .shop-tabs { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 520px) {
+  .nav-tabs { overflow-x: auto; }
+  .nav-item { min-width: 68px; padding-inline: 8px; font-size: 12px; }
+  .brand-mark { font-size: 34px; }
+  .brand-mascot { display: none; }
+  .hero-clock { font-size: 58px; }
+  .hero-activity .pixel-illustration { width: 60px; height: 60px; }
+  .inbox-panel { min-height: 0; }
+  .persistent-status { grid-template-columns: 1fr; }
+  .persistent-stat { border-left: 0; border-top: 1px dotted #444; }
+  .persistent-status .segment-meter { grid-auto-columns: 10px; }
+}

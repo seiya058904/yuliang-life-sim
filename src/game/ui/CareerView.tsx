@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { PixelIcon } from './pixel/PixelIcon';
 import type { GameAction, GameState, JobDefinition, ViewId, Weekday } from '../content/contracts';
 import { employmentKind, requirementHints } from '../engine/careers';
 import { contentRegistry } from '../content/registry';
@@ -28,7 +29,7 @@ export function CareerView({ game, dispatch, jobs, onNavigate }: { game: GameSta
     <div className="section-heading compact"><div><span className="eyebrow">职业</span><h1>{labels[tab]}</h1></div><p>公开招聘和特殊机会分开；所有申请、Offer 与兼职资格都有明确状态。</p></div>
     <div className="filter-row" aria-label="职业导航">{Object.entries(labels).map(([id, label]) => <button key={id} className={tab === id ? 'filter-button selected' : 'filter-button'} onClick={() => setTab(id as typeof tab)}>{label}</button>)}</div>
     {tab === 'current' && <><CareerProgress game={game} /><CurrentEmployment game={game} jobs={jobs} dispatch={dispatch} /></>}
-    {tab === 'market' && <VacancyMarket game={game} jobs={jobs} dispatch={dispatch} />}
+    {tab === 'market' && <><VacancyMarket game={game} jobs={jobs} dispatch={dispatch} /><CareerBottomPanels game={game} jobs={jobs} onOpenTab={(next) => setTab(next)} /></>}
     {tab === 'opportunities' && <OpportunityList game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'applications' && <ApplicationList game={game} jobs={jobs} dispatch={dispatch} onNavigate={onNavigate} />}
     {tab === 'side-jobs' && <SideJobList game={game} jobs={jobs} dispatch={dispatch} />}
@@ -74,7 +75,7 @@ function VacancyMarket({ game, jobs, dispatch }: { game: GameState; jobs: readon
   return <div className="career-market-shell" role="region" aria-label="招聘市场布局">
     <aside className="career-filters"><label>搜索岗位 / 公司<input aria-label="搜索岗位或公司" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入关键词" /></label><strong>岗位类型</strong>{categories.map((entry) => <button key={entry} className={category === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setCategory(entry)}>{entry}</button>)}<strong>申请状态</strong>{states.map((entry) => <button key={entry} className={state === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setState(entry)}>{entry}</button>)}</aside>
     <div className="career-results"><div className="career-toolbar"><strong>公开机会 {rows.length}</strong><div>{sorts.map((entry) => <button key={entry} className={sort === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setSort(entry)}>{entry}</button>)}</div></div><div className="job-grid">{rows.map(({ vacancy, job }) => <VacancyCard key={vacancy.vacancyId} game={game} vacancy={vacancy} job={job!} dispatch={dispatch} selected={vacancy.vacancyId === selected?.vacancy.vacancyId} onSelect={() => setSelectedId(vacancy.vacancyId)} />)}</div></div>
-    <aside className="career-detail" aria-label="岗位详情">{selected ? <VacancyDetail game={game} vacancy={selected.vacancy} job={selected.job!} dispatch={dispatch} /> : <p className="muted">当前筛选下没有岗位。</p>}</aside>
+    <aside className="career-detail inverse pixel-corners" aria-label="岗位详情">{selected ? <VacancyDetail game={game} vacancy={selected.vacancy} job={selected.job!} dispatch={dispatch} /> : <p className="muted">当前筛选下没有岗位。</p>}</aside>
   </div>;
 }
 
@@ -129,4 +130,56 @@ function SideJobList({ game, jobs, dispatch }: { game: GameState; jobs: readonly
 
 function HistoryList({ game, jobs }: { game: GameState; jobs: readonly any[] }) {
   return (game.employmentHistory ?? []).length ? <div className="item-list">{game.employmentHistory!.map((entry) => <div className="item-row" key={entry.jobId + (entry.endedDay ?? 0)}><div><h2>{jobs.find((job) => job.id === entry.jobId)?.name ?? entry.jobId}</h2><p>{entry.migrated ? '旧存档开始前已任职' : `${entry.startedDay === undefined ? '游戏开始前' : `第 ${entry.startedDay} 天`}至第 ${entry.endedDay ?? game.time.day} 天`}{entry.reason ? ` · ${entry.reason}` : ''}</p></div><strong>{money(entry.finalPay)} / 班</strong></div>)}</div> : <p className="muted">职业履历会在换岗或离职后出现。</p>;
+}
+
+const offerStatusLabels: Record<string, string> = { submitted: '已提交', screening: '筛选中', interview: '面试中', waiting: '等待结果', rejected: '未通过', offer: 'Offer 待回复', accepted: '已接受', withdrawn: '已撤回', expired: '已过期' };
+
+function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: readonly any[]; onOpenTab: (tab: 'applications' | 'history' | 'mobility') => void }) {
+  const moneyFmt = (amount: number) => '¥' + Math.round(amount).toLocaleString('zh-CN');
+  const applications = [...(game.applications ?? [])].reverse().slice(0, 3);
+  const offers = (game.applications ?? []).filter((application) => application.status === 'offer').slice(0, 3);
+  const history = [...(game.employmentHistory ?? [])].reverse().slice(0, 2);
+  const vacancies = game.vacancies ?? [];
+  const eligibleCount = vacancies.filter((vacancy) => {
+    const job = jobs.find((entry) => entry.id === vacancy.jobId);
+    return Boolean(job) && isJobEligible(job!, game);
+  }).length;
+  const averageSalary = vacancies.length ? Math.round(vacancies.reduce((sum, vacancy) => sum + vacancy.salaryRange[0], 0) / vacancies.length) : 0;
+  const panels = [
+    {
+      key: 'applications', icon: 'mail' as const, title: '我的申请', count: (game.applications ?? []).length,
+      rows: applications.map((application) => ({ label: jobs.find((job) => job.id === application.jobId)?.name ?? application.jobId, value: offerStatusLabels[application.status] ?? application.status })),
+      empty: '还没有提交任何申请。',
+      action: '全部申请 ▸', target: () => onOpenTab('applications'),
+    },
+    {
+      key: 'offers', icon: 'tag' as const, title: 'Offer', count: offers.length,
+      rows: offers.map((offer) => ({ label: jobs.find((job) => job.id === offer.jobId)?.name ?? offer.jobId, value: offer.offerExpiresDay ? `第 ${offer.offerExpiresDay} 天前有效` : '等待处理' })),
+      empty: '暂无等待回复的 Offer。',
+      action: '查看 Offer ▸', target: () => onOpenTab('applications'),
+    },
+    {
+      key: 'history', icon: 'chart' as const, title: '职业履历', count: (game.employmentHistory ?? []).length,
+      rows: history.map((entry) => ({ label: jobs.find((job) => job.id === entry.jobId)?.name ?? entry.jobId, value: `${moneyFmt(entry.finalPay)} / 班` })).slice(0, 3),
+      empty: '职业履历会在换岗或离职后出现。',
+      action: '完整履历 ▸', target: () => onOpenTab('history'),
+    },
+    {
+      key: 'insight', icon: 'target' as const, title: '市场洞察', count: vacancies.length,
+      rows: [
+        { label: '公开机会', value: `${vacancies.length} 个` },
+        { label: '符合条件', value: `${eligibleCount} 个` },
+        { label: '平均起薪', value: moneyFmt(averageSalary) },
+      ],
+      empty: '',
+      action: '跨行业距离 ▸', target: () => onOpenTab('mobility'),
+    },
+  ];
+  return <div className="career-bottom-panels" aria-label="求职支持面板">
+    {panels.map((panel) => <article className="pixel-panel secondary career-bottom-panel" key={panel.key}>
+      <header className="inbox-head"><PixelIcon name={panel.icon} size={18} /><h2>{panel.title}</h2>{panel.count > 0 && <b className="inbox-count">{panel.count}</b>}</header>
+      {panel.rows.length ? <ul className="rail-rows compact">{panel.rows.map((row, index) => <li key={`${row.label}-${index}`}><span>{row.label}</span><small>{row.value}</small></li>)}</ul> : <p className="inbox-empty">{panel.empty}</p>}
+      <footer className="inbox-foot"><button onClick={() => panel.target()}>{panel.action}</button></footer>
+    </article>)}
+  </div>;
 }
