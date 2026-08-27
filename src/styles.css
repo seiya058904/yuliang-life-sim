@@ -3211,7 +3211,8 @@ button, input, select { border-radius: 0; }
    surfaces that carry the most catalog data a stronger black/white rhythm. */
 @media (min-width: 1181px) {
   .hero-activity {
-    grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto auto;
+    align-content: start;
   }
   .hero-activity .activity-progress {
     align-self: start;
@@ -3765,4 +3766,48 @@ button, input, select { border-radius: 0; }
   .brand-mark { font-size: 56px; }
   .brand-mascot { width: 44px; height: 44px; }
   .status-line > span:not(.status-clock) .pixel-icon { width: 20px; height: 20px; }
+}
+
+/* The reference keeps catalog navigation and its two compact controls on one
+   horizontal HUD strip. This frees the first viewport for the product grid. */
+.view-shop .shop-tab-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+  margin-bottom: 6px;
+}
+.view-shop .shop-tab-bar .shop-tabs {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.view-shop .shop-tab-bar .shop-toolbar {
+  flex: 0 0 auto;
+  align-self: center;
+  margin: 0;
+}
+
+@media (min-width: 1181px) {
+  .view-life .life-hero-grid {
+    grid-template-columns: minmax(0, 1fr) 304px;
+  }
+}
+
+.settle-rows.alloc li.is-zero {
+  color: #777;
+}
+.settle-rows.alloc li.is-zero b {
+  color: #888;
+  font-weight: 500;
+}
+.settle-rows.alloc li.is-zero em {
+  margin-left: 5px;
+  color: #666;
+  font-size: 9px;
+  font-style: normal;
+}
+.settle-rows.alloc li.is-zero .segment-meter i {
+  background: #171717;
+  border-color: #444;
 }

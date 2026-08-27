@@ -202,6 +202,7 @@ describe('余量 app flow', () => {
     expect(dialog).toHaveTextContent('已实现收益');
     expect(dialog).toHaveTextContent('净资产变化');
     expect(within(dialog).getByRole('region', { name: '净资产结果' })).toHaveClass('settle-result-inverse');
+    expect(dialog.querySelectorAll('.settle-allocation .settle-rows .is-zero')).toHaveLength(3);
     expect(dialog.querySelector('.highlight-row')).toHaveClass('highlight-row-1');
     expect(dialog.querySelectorAll('.highlight-card.placeholder')).toHaveLength(4);
     expect(dialog).not.toHaveTextContent('✦');
@@ -265,6 +266,8 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '商店' }));
 
     const shop = screen.getByRole('region', { name: '商品目录布局' });
+    expect(shop.querySelector('.shop-tab-bar')).not.toBeNull();
+    expect(shop.querySelector('.shop-tab-bar .shop-toolbar')).not.toBeNull();
     const sort = within(shop).getByRole('combobox', { name: '商品排序' });
     expect(sort).toHaveValue('default');
     await user.selectOptions(sort, 'price-asc');

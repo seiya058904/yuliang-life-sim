@@ -803,9 +803,11 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
     <div className="section-heading compact"><div><span className="eyebrow">商店 · 生活内容</span><h1>商品</h1></div><p>浏览不消耗时间；购买与安排都会进入真实账本、周计划和人生记录。</p></div>
     <div className="shop-layout">
       <div className="shop-main">
-        <div className="shop-tabs" role="tablist" aria-label="商店分类">{shopTabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'shop-tab selected' : 'shop-tab'} onClick={() => { setTab(id); setActivityPage(0); }}>{label}</button>)}</div>
+        <div className="shop-tab-bar">
+          <div className="shop-tabs" role="tablist" aria-label="商店分类">{shopTabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'shop-tab selected' : 'shop-tab'} onClick={() => { setTab(id); setActivityPage(0); }}>{label}</button>)}</div>
+          {tab === 'goods' && <div className="shop-toolbar" aria-label="商品工具栏"><label className="shop-sort-control"><span>排序</span><select aria-label="商品排序" value={itemSort} onChange={(event) => { setItemSort(event.target.value as 'default' | 'price-asc' | 'price-desc'); setItemPage(0); }}><option value="default">默认排序</option><option value="price-asc">价格从低到高</option><option value="price-desc">价格从高到低</option></select></label><button className="shop-toolbar-button" aria-controls="shop-category-filters" aria-expanded={shopFiltersOpen} onClick={() => setShopFiltersOpen((open) => !open)}>筛选{itemCategory === 'all' ? '' : ' 1'} ▾</button></div>}
+        </div>
         {tab === 'goods' && <>
-          <div className="shop-toolbar" aria-label="商品工具栏"><label className="shop-sort-control"><span>排序</span><select aria-label="商品排序" value={itemSort} onChange={(event) => { setItemSort(event.target.value as 'default' | 'price-asc' | 'price-desc'); setItemPage(0); }}><option value="default">默认排序</option><option value="price-asc">价格从低到高</option><option value="price-desc">价格从高到低</option></select></label><button className="shop-toolbar-button" aria-controls="shop-category-filters" aria-expanded={shopFiltersOpen} onClick={() => setShopFiltersOpen((open) => !open)}>筛选{itemCategory === 'all' ? '' : ' 1'} ▾</button></div>
           <div id="shop-category-filters" className={shopFiltersOpen ? 'filter-row shop-category-filters is-open' : 'filter-row shop-category-filters'} aria-label="商品分类">{categories.map((entry) => <button key={entry} className={itemCategory === entry ? 'filter-button selected' : 'filter-button'} onClick={() => selectItemCategory(entry)}>{entry === 'all' ? '全部' : entry}</button>)}</div>
           <div className="item-grid">{featuredItems.map(renderItemCard)}</div>
           {itemPageCount > 1 && <nav className="catalog-pager" aria-label="商品分页"><button className="text-button" disabled={itemPage === 0} aria-label="上一页商品" onClick={() => selectItemPage(Math.max(0, itemPage - 1))}>←</button>{Array.from({ length: itemPageCount }, (_, page) => <button key={page} className={page === itemPage ? 'filter-button selected' : 'filter-button'} aria-current={page === itemPage ? 'page' : undefined} onClick={() => selectItemPage(page)}>{page + 1}</button>)}<button className="text-button" disabled={itemPage === itemPageCount - 1} aria-label="下一页商品" onClick={() => selectItemPage(Math.min(itemPageCount - 1, itemPage + 1))}>→</button></nav>}
@@ -1053,7 +1055,11 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
   const growthPercent = netWorthStart > 0 ? Math.round((netWorthChange / netWorthStart) * 1000) / 10 : null;
   const incomeRows = Object.entries(financial?.income.categories ?? {}).filter(([, amount]) => amount > 0).slice(0, 5);
   const expenseRows = Object.entries(financial?.consumption.categories ?? {}).filter(([, amount]) => amount > 0).slice(0, 6);
-  const allocationRows = Object.entries(financial?.assetAllocation.categories ?? {}).filter(([, amount]) => amount !== 0).slice(0, 7);
+  const allocationCategoryOrder = ['investment_transfer', 'property_transfer', 'business_transfer', 'collectible_transfer'] as const;
+  const allocationCategories = financial?.assetAllocation.categories ?? {};
+  const allocationRows = financial
+    ? allocationCategoryOrder.map((category) => [category, allocationCategories[category] ?? 0] as [string, number])
+    : Object.entries(allocationCategories).filter(([, amount]) => amount !== 0).slice(0, 7);
   const realizedGain = financial?.income.categories.realized_gain ?? 0;
   const realizedLoss = financial?.consumption.categories.realized_loss ?? 0;
   const liquidation = financial?.totalAssetLiquidation ?? 0;
@@ -1099,7 +1105,7 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
       <section className="settle-panel settle-allocation" aria-label="资产配置">
         <h3>资产配置（变化）</h3>
         <div className="settle-panel-art"><PixelIllustration name="wealth" size={68} /></div>
-        <ul className="settle-rows alloc">{allocationRows.length ? allocationRows.map(([category, amount]) => <li key={category}><span>{displayMappedLabel(category, financialLabels)}</span><SegmentMeter value={Math.abs(amount)} max={allocationScale} segments={10} label={`${displayMappedLabel(category, financialLabels)} ${money(amount)}`} /><b>{money(Math.abs(amount))}</b></li>) : <li><span>本月没有资产配置流动。</span></li>}</ul>
+        <ul className="settle-rows alloc">{allocationRows.length ? allocationRows.map(([category, amount]) => { const label = displayMappedLabel(category, financialLabels); return <li className={amount === 0 ? 'is-zero' : undefined} key={category}><span>{label}{amount === 0 && <em>无变化</em>}</span><SegmentMeter value={Math.abs(amount)} max={allocationScale} segments={10} label={`${label} ${amount === 0 ? '本月无配置流动' : money(amount)}`} /><b>{money(Math.abs(amount))}</b></li>; }) : <li><span>本月没有资产配置流动。</span></li>}</ul>
         <div className="ledger-detail"><span>现金变化</span><small>{cashDelta >= 0 ? '+' : '-'}{money(Math.abs(cashDelta))}</small></div>
       </section>
       <div className="settle-result-column" aria-label="净资产结果与变现结果">
