@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { balanceConfig } from './game/balance/config';
 import { contentRegistry } from './game/content/registry';
 import type { AttributeId, CharacterDefinition, ContentId, EffectDefinition, GameAction, GameState, PlannedActivity, PlanSlot, StatName, ViewId, Weekday } from './game/content/contracts';
@@ -144,6 +144,7 @@ function App() {
 
   return (
     <div className={`app-shell mode-${game.simulationMode} view-${activeView}`}>
+      <div className="outer-frame" aria-hidden="true" />
       <header className="topbar">
         <div className="brand-block"><PixelIllustration name="mascot" size={46} className="brand-mascot" /><h1 className="brand-mark">余量</h1><span className="brand-subtitle">人生模拟<small>v{game.contentVersion} · 澄川市</small></span></div>
         <div className="status-line" aria-label="当前状态">
@@ -465,6 +466,10 @@ function ServiceHistoryView({ game }: { game: GameState }) {
 const shopTabs: ReadonlyArray<readonly [string, string]> = [
   ['goods', '商品'], ['services', '服务'], ['fun', '娱乐'], ['learn', '学习'], ['social', '社交'], ['travel', '旅行'],
 ];
+const itemArt: Record<string, PixelIllustrationName> = {
+  technology: 'controller', consumable: 'bag', clothing: 'users', furniture: 'house',
+  leisure_item: 'tag', luxury: 'cash', collectible: 'tag',
+};
 const shopTabCategories: Record<string, readonly string[]> = {
   fun: ['game', 'film', 'nightlife', 'fitness'],
   learn: ['culture', 'hobby'],
@@ -492,7 +497,7 @@ function ShopView({ game, dispatch }: { game: GameState; dispatch: (action: Game
   const [cart, setCart] = useState<Record<ContentId, number>>({});
   const [itemCategory, setItemCategory] = useState<string>('all');
   const [tab, setTab] = useState<string>('goods');
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(() => contentRegistry.items[0] ? `item:${contentRegistry.items[0].id}` : null);
   const cartCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
   const total = Object.entries(cart).reduce((sum, [itemId, quantity]) => { const item = contentRegistry.items.find((entry) => entry.id === itemId); return sum + (item ? getItemCost(game, item) : 0) * quantity; }, 0);
   const categories = ['all', ...new Set(contentRegistry.items.map((item) => item.category))];
@@ -561,6 +566,14 @@ function ShopView({ game, dispatch }: { game: GameState; dispatch: (action: Game
     }
   }
 
+  const featuredItems = items.slice(0, 12);
+  const moreItems = items.slice(12);
+  const renderItemCard = (item: (typeof contentRegistry.items)[number]) => {
+    const hasItem = owned(item.id);
+    const wishlisted = game.wishlist?.includes(item.id);
+    const effects = [...statMapTexts(item.attributeEffects), ...statMapTexts(item.statEffects)].slice(0, 2);
+    return <article className={selectedKey === `item:${item.id}` ? 'item-card selected' : 'item-card'} key={item.id} data-catalog-card><button className="card-overlay" onClick={() => setSelectedKey(`item:${item.id}`)} aria-label={`查看详情：${item.name}`} /><div className="card-art"><PixelIllustration name={itemArt[item.category] ?? 'bag'} size={52} /></div><div className="item-card-head"><span className="job-kind">{categoryLabels[item.category] ?? item.category}</span>{hasItem && <span className="current-label">已拥有</span>}</div><h2>{item.name}</h2><p>{item.description}</p><div className="item-effect">{effects.length ? effects.join(' · ') : item.capabilities?.length ? `解锁：${item.capabilities.map((capability) => capabilityLabels[capability] ?? capability).join('、')}` : '生活品质与收藏价值'}</div><div className="item-card-foot"><strong>{money(getItemCost(game, item))}</strong><div className="button-pair"><button className="primary-button" onClick={() => { setSelectedKey(`item:${item.id}`); setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 })); }} aria-label={`加入购物袋：${item.name}`}>加入</button>{!hasItem && <button className="text-button" onClick={() => dispatch({ type: 'manage_wishlist', itemId: item.id, enabled: !wishlisted })} aria-label={`${wishlisted ? '移出' : '加入'}愿望清单：${item.name}`}>{wishlisted ? '已加入目标' : '加入目标'}</button>}</div></div></article>;
+  };
   return <section className="shop-page" aria-label="商品目录布局">
     <div className="section-heading compact"><div><span className="eyebrow">商店 · 生活内容</span><h1>商品</h1></div><p>浏览不消耗时间；购买与安排都会进入真实账本、周计划和人生记录。</p></div>
     <div className="shop-tabs" role="tablist" aria-label="商店分类">{shopTabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'shop-tab selected' : 'shop-tab'} onClick={() => setTab(id)}>{label}</button>)}</div>
@@ -568,12 +581,13 @@ function ShopView({ game, dispatch }: { game: GameState; dispatch: (action: Game
       <div className="shop-main">
         {tab === 'goods' && <>
           <div className="filter-row" aria-label="商品分类">{categories.map((entry) => <button key={entry} className={itemCategory === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setItemCategory(entry)}>{entry === 'all' ? '全部' : categoryLabels[entry] ?? entry}</button>)}</div>
-          <div className="item-grid">{items.map((item) => { const hasItem = owned(item.id); const wishlisted = game.wishlist?.includes(item.id); const effects = [...statMapTexts(item.attributeEffects), ...statMapTexts(item.statEffects)].slice(0, 2); return <article className={selectedKey === `item:${item.id}` ? 'item-card selected' : 'item-card'} key={item.id}><button className="card-overlay" onClick={() => setSelectedKey(`item:${item.id}`)} aria-label={`查看详情：${item.name}`} /><div className="item-card-head"><span className="job-kind">{categoryLabels[item.category] ?? item.category}</span>{hasItem && <span className="current-label">已拥有</span>}</div><h2>{item.name}</h2><p>{item.description}</p><div className="item-effect">{effects.length ? effects.join(' · ') : item.capabilities?.length ? `解锁：${item.capabilities.map((capability) => capabilityLabels[capability] ?? capability).join('、')}` : '生活品质与收藏价值'}</div><div className="item-card-foot"><strong>{money(getItemCost(game, item))}</strong><div className="button-pair"><button className="primary-button" onClick={() => { setSelectedKey(`item:${item.id}`); setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 })); }} aria-label={`加入购物袋：${item.name}`}>加入</button>{!hasItem && <button className="text-button" onClick={() => dispatch({ type: 'manage_wishlist', itemId: item.id, enabled: !wishlisted })} aria-label={`${wishlisted ? '移出' : '加入'}愿望清单：${item.name}`}>{wishlisted ? '已加入目标' : '加入目标'}</button>}</div></div></article>; })}</div>
+          <div className="item-grid">{featuredItems.map(renderItemCard)}</div>
+          {detail && <section className="shop-detail inverse pixel-corners" aria-label="已选商品详情"><PixelIllustration name={detail.icon} size={72} /><div><span className="eyebrow">已选商品</span><h2>{detail.title}</h2><p>{detail.desc}</p><ul>{detail.facts.filter(Boolean).map((fact, index) => <li key={index}>{fact}</li>)}</ul></div><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section>}
+          {moreItems.length > 0 && <div className="more-cards"><div className="section-heading compact"><div><span className="eyebrow">更多商品</span><h2>继续浏览</h2></div><p>首屏保持参考图密度；其余商品与活动在下方继续陈列。</p></div><div className="item-grid">{moreItems.map(renderItemCard)}</div></div>}
           <ServiceMarket game={game} dispatch={dispatch} />
-          {detail && <section className="shop-detail inverse" aria-label="已选商品详情"><PixelIllustration name={detail.icon} size={72} /><div><span className="eyebrow">已选商品</span><h2>{detail.title}</h2><p>{detail.desc}</p><ul>{detail.facts.filter(Boolean).map((fact, index) => <li key={index}>{fact}</li>)}</ul></div><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section>}
         </>}
-        {tab === 'services' && <ServiceMarket game={game} dispatch={dispatch} />}
-        {(tab === 'goods' || shopTabCategories[tab]) && <><div className="section-heading compact"><div><span className="eyebrow">不为赚钱服务的时间</span><h2>娱乐与生活活动</h2></div><p>活动会占用周计划中的自由时间；每个 Option 都有自己的时长、费用和效果。</p></div><div className="activity-grid">{displayActivities.flatMap((activity) => activity.options.map((option) => { const project = option.businessProject; const projectReady = !project || Boolean(game.businesses[project.businessId]); const projectDone = Boolean(project && game.completedBusinessProjects?.includes(`${activity.id}.${option.id}`)); const cost = activityCashCost(game, activity, option, contentRegistry); const cooldownRemaining = activityCooldownRemaining(game, activity, option); const durationLabel = option.durationMinutes >= 2880 ? `${option.durationMinutes / 1440} 天` : `${option.durationMinutes / 60} 小时`; const effects = effectTexts(option.effects); return <article className={selectedKey === `act:${activity.id}|${option.id}` ? 'activity-card selected' : 'activity-card'} key={`${activity.id}-${option.id}`}><button className="card-overlay" onClick={() => setSelectedKey(`act:${activity.id}|${option.id}`)} aria-label={`查看详情：${activity.name} ${option.label}`} /><span className="job-kind">{activity.category}</span><h3>{activity.name} · {option.label}</h3><p>{activity.description}</p><div className="activity-facts"><span>{durationLabel}</span><strong>{project ? `收入 ${money(project.revenue)} · 成本 ${money(project.cost)}` : money(cost)}</strong></div><div className="activity-effect">{project ? `企业项目利润 · ${projectDone ? '已完成' : projectReady ? '可承接' : '需要对应企业'}` : `${effects.join(' · ') || '给生活留一点空间'}${activityDiscountLabel(game, activity, contentRegistry) ? ` · ${activityDiscountLabel(game, activity, contentRegistry)}` : ''}`}</div>{cooldownRemaining > 0 && <span className="requirement-missing">冷却中 · 还需 {cooldownRemaining} 天</span>}<button className="secondary-button" disabled={!projectReady || projectDone || cooldownRemaining > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleActivity(activity.id, option.id)}>{projectDone ? '项目已完成' : cooldownRemaining > 0 ? `冷却中 · 还需 ${cooldownRemaining} 天` : '安排到本周自由时间'}</button></article>; }))}</div></>}
+        {(tab === 'services') && <ServiceMarket game={game} dispatch={dispatch} />}
+        {(tab === 'goods' || shopTabCategories[tab]) && <><div className="section-heading compact"><div><span className="eyebrow">不为赚钱服务的时间</span><h2>娱乐与生活活动</h2></div><p>活动会占用周计划中的自由时间；每个 Option 都有自己的时长、费用和效果。</p></div><div className="activity-grid">{displayActivities.flatMap((activity) => activity.options.map((option) => { const project = option.businessProject; const projectReady = !project || Boolean(game.businesses[project.businessId]); const projectDone = Boolean(project && game.completedBusinessProjects?.includes(`${activity.id}.${option.id}`)); const cost = activityCashCost(game, activity, option, contentRegistry); const cooldownRemaining = activityCooldownRemaining(game, activity, option); const durationLabel = option.durationMinutes >= 2880 ? `${option.durationMinutes / 1440} 天` : `${option.durationMinutes / 60} 小时`; const effects = effectTexts(option.effects); return <article className={selectedKey === `act:${activity.id}|${option.id}` ? 'activity-card selected' : 'activity-card'} key={`${activity.id}-${option.id}`} data-catalog-card><button className="card-overlay" onClick={() => setSelectedKey(`act:${activity.id}|${option.id}`)} aria-label={`查看详情：${activity.name} ${option.label}`} /><div className="card-art"><PixelIllustration name={activitySceneByCategory[activity.category] ?? 'controller'} size={52} /></div><span className="job-kind">{activity.category}</span><h3>{activity.name} · {option.label}</h3><p>{activity.description}</p><div className="activity-facts"><span>{durationLabel}</span><strong>{project ? `收入 ${money(project.revenue)} · 成本 ${money(project.cost)}` : money(cost)}</strong></div><div className="activity-effect">{project ? `企业项目利润 · ${projectDone ? '已完成' : projectReady ? '可承接' : '需要对应企业'}` : `${effects.join(' · ') || '给生活留一点空间'}${activityDiscountLabel(game, activity, contentRegistry) ? ` · ${activityDiscountLabel(game, activity, contentRegistry)}` : ''}`}</div>{cooldownRemaining > 0 && <span className="requirement-missing">冷却中 · 还需 {cooldownRemaining} 天</span>}<button className="secondary-button" disabled={!projectReady || projectDone || cooldownRemaining > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleActivity(activity.id, option.id)}>{projectDone ? '项目已完成' : cooldownRemaining > 0 ? `冷却中 · 还需 ${cooldownRemaining} 天` : '安排到本周自由时间'}</button></article>; }))}</div></>}
       </div>
       <aside className="shop-rail">
         <section className="rail-module" aria-label="购物清单"><header><PixelIcon name="bag" size={16} /><h3>购物袋（{cartCount}）</h3></header>
@@ -772,23 +786,108 @@ function ResignationModal({ game, dispatch }: { game: GameState; dispatch: (acti
 
 function MonthlySummary({ summary, financial }: { summary: NonNullable<GameState['lastMonthlySummary']>; financial?: GameState['lastFinancialSummary'] }) { const fallback = [['工资', summary.ledger.wageIncome], ['兼职', summary.ledger.sideJobIncome], ['企业收益', summary.ledger.businessIncome], ['投资收益', summary.ledger.assetIncome], ['固定生活支出', -(summary.ledger.rentExpense + summary.ledger.livingExpense)], ['主动消费', -summary.ledger.purchaseExpense]]; const group = (label: string, entries: Record<string, number> | undefined, sign: 1 | -1) => <div className="summary-group" key={label}><span className="summary-group-title">{label}</span>{Object.entries(entries ?? {}).filter(([, amount]) => amount > 0).map(([category, amount]) => <div key={category}><span>{financialLabels[category] ?? category}</span><strong className={sign > 0 ? 'positive' : 'negative'}>{sign > 0 ? '+' : '-'}{money(amount)}</strong></div>)}</div>; return <section className="monthly-summary"><div><span className="eyebrow">四周结算 · 现金流仪式</span><h2>第 {summary.month} 月账单</h2><p>现金变化和净资产变化分开计算；买入资产只是把现金换成了另一种财富。</p></div><div className="summary-lines">{financial ? <>{group('收入', financial.income.categories, 1)}{group('消费支出', financial.consumption.categories, -1)}{group('资产配置 · 现金转为资产', financial.assetAllocation.categories, -1)}{group('资产变现', financial.assetLiquidation.categories, 1)}</> : fallback.map(([label, amount]) => <div key={label as string}><span>{label}</span><strong className={(amount as number) >= 0 ? 'positive' : 'negative'}>{(amount as number) >= 0 ? '+' : ''}{money(amount as number)}</strong></div>)}</div><div className="summary-total"><span>收入</span><strong>{money(financial?.totalIncome ?? summary.ledger.wageIncome + summary.ledger.sideJobIncome + summary.ledger.businessIncome + summary.ledger.assetIncome)}</strong><span>消费支出</span><strong>{money(financial?.totalConsumption ?? summary.ledger.rentExpense + summary.ledger.livingExpense + summary.ledger.purchaseExpense)}</strong><span>现金变化</span><strong>{financial ? `${money(financial.cashStart)} → ${money(financial.cashEnd)}` : '—'}</strong><span>净资产</span><strong>{money(summary.ledger.netWorthStart)} → {money(summary.ledger.netWorthEnd)}</strong></div></section>; }
 
+const highlightKindIcon: Record<string, PixelIconName> = {
+  new_job: 'career', new_contact: 'users', side_job_acquired: 'cash', gig_completed: 'cash',
+  major_purchase: 'bag', new_asset: 'house', attribute_milestone: 'chart', storyline_completed: 'book',
+};
+const incomeCategoryIcon: Record<string, PixelIconName> = { wage: 'career', side_job: 'clock', bonus: 'spark', business_income: 'city', property_income: 'house', investment_dividend: 'wealth', event_income: 'mail', other_income: 'tag' };
+const expenseCategoryIcon: Record<string, PixelIconName> = { housing: 'house', living: 'home', food: 'bag', transport: 'plane', communication: 'mail', shopping: 'shop', entertainment: 'controller', social: 'users', education: 'book', travel: 'plane', service: 'spark', maintenance: 'settings', other_expense: 'tag' };
+
+/** 参考图整幅月结仪式：状态栏保持可见，下方是一个完整的结算大框，而不是小弹窗。 */
 function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
   const pending = game.pendingMonthlySummary!;
   const financial = pending.financial;
-  const incomeSources = Object.entries(financial?.income.categories ?? {}).filter(([, amount]) => amount > 0);
+  const ledger = pending.summary.ledger;
+  const netWorthStart = ledger.netWorthStart;
+  const netWorthEnd = ledger.netWorthEnd;
+  const netWorthChange = financial?.netWorthChange ?? (netWorthEnd - netWorthStart);
+  const cashDelta = financial?.cashChange ?? ledger.netWorthEnd - ledger.netWorthStart;
+  const monthStartDay = (pending.month - 1) * 28 + 1;
+  const monthEndDay = pending.month * 28;
+  const growthPercent = netWorthStart > 0 ? Math.round((netWorthChange / netWorthStart) * 1000) / 10 : null;
+  const incomeRows = Object.entries(financial?.income.categories ?? {}).filter(([, amount]) => amount > 0).slice(0, 5);
+  const expenseRows = Object.entries(financial?.consumption.categories ?? {}).filter(([, amount]) => amount > 0).slice(0, 6);
+  const allocationRows = Object.entries(financial?.assetAllocation.categories ?? {}).filter(([, amount]) => amount !== 0).slice(0, 7);
   const realizedGain = financial?.income.categories.realized_gain ?? 0;
   const realizedLoss = financial?.consumption.categories.realized_loss ?? 0;
-  return <div className="modal-backdrop event-paused"><section className="event-modal monthly-summary" role="dialog" aria-modal="true" aria-labelledby="monthly-title">
-    <header className="settlement-heading"><span className="eyebrow">月度结算 · 世界已暂停</span><h2 id="monthly-title">第 {pending.month} 月结算</h2><p>时间在流逝，你的选择创造了结果</p></header>
-    <div className="settlement-grid">
-      <section className="settlement-card"><span>收入</span><strong>+{money(financial?.totalIncome ?? pending.summary.ledger.wageIncome + pending.summary.ledger.sideJobIncome)}</strong><small>{incomeSources.map(([category, amount]) => `${financialLabels[category] ?? category} ${money(amount)}`).join(' · ') || '本月没有收入'}</small></section>
-      <section className="settlement-card"><span>消费支出</span><strong>-{money(financial?.totalConsumption ?? pending.summary.ledger.livingExpense + pending.summary.ledger.rentExpense)}</strong><small>住房、生活与主动消费</small></section>
-      <section className="settlement-card"><span>资产配置</span><strong>{money(financial?.totalAssetAllocation ?? 0)}</strong><small>现金转入投资、房产、企业或收藏</small></section>
-      <section className="settlement-card settlement-net"><span>净资产变化</span><strong>{financial && financial.netWorthChange >= 0 ? '+' : ''}{money(financial?.netWorthChange ?? pending.summary.ledger.netWorthEnd - pending.summary.ledger.netWorthStart)}</strong><small>{money(pending.summary.ledger.netWorthStart)} → {money(pending.summary.ledger.netWorthEnd)}</small></section>
+  const liquidation = financial?.totalAssetLiquidation ?? 0;
+  const allocationScale = Math.max(1, ...allocationRows.map(([, amount]) => Math.abs(amount)));
+  const attributes: Array<[string, number]> = [
+    ['专业', game.attributes?.professional ?? game.ability], ['知识', game.attributes?.knowledge ?? game.ability],
+    ['沟通', game.attributes?.communication ?? game.ability], ['体能', game.attributes?.fitness ?? 50],
+    ['形象', game.attributes?.appearance ?? 50], ['人脉', game.attributes?.network ?? 0],
+  ];
+  const resumeText = pending.resumeMode === 'running' ? '时间继续自动流转' : pending.resumeMode === 'paused' ? '回到暂停中的计划' : '等待你安排新一周';
+  return <div className="modal-backdrop settlement-mode"><section className="monthly-summary fullframe pixel-corners" role="dialog" aria-modal="true" aria-labelledby="monthly-title">
+    <header className="settle-head">
+      <div className="settle-meta left">
+        <span>本月时间</span>
+        <b>第 {monthStartDay} – 第 {monthEndDay} 天</b>
+        <small>本月天数：28 天</small>
+      </div>
+      <div className="settle-title-wrap">
+        <i className="settle-spark a" aria-hidden="true">✦</i>
+        <h2 id="monthly-title">第 {pending.month} 月结算</h2>
+        <i className="settle-spark b" aria-hidden="true">✧</i>
+        <p>时间在流逝，你的选择创造了结果</p>
+      </div>
+      <div className="settle-meta right">
+        <span>结算日期</span>
+        <b>第 {monthEndDay + 1} 天</b>
+        <small>{resumeText}</small>
+      </div>
+    </header>
+    <div className="settle-grid" role="group" aria-label="月度财务仪表盘">
+      <section className="settle-panel" aria-label="收入">
+        <h3>收入（总计）</h3>
+        <strong className={'metric-box positive'}>+{money(financial?.totalIncome ?? ledger.wageIncome + ledger.sideJobIncome)}</strong>
+        <ul className="settle-rows">{incomeRows.length ? incomeRows.map(([category, amount]) => <li key={category}><PixelIcon name={incomeCategoryIcon[category] ?? 'cash'} size={16} /><span>{financialLabels[category] ?? category}</span><b>+{money(amount)}</b></li>) : <li><span>本月没有收入记录。</span></li>}</ul>
+      </section>
+      <section className="settle-panel" aria-label="支出">
+        <h3>支出（总计）</h3>
+        <strong className={'metric-box negative'}>-{money(financial?.totalConsumption ?? ledger.livingExpense + ledger.rentExpense)}</strong>
+        <ul className="settle-rows">{expenseRows.length ? expenseRows.map(([category, amount]) => <li key={category}><PixelIcon name={expenseCategoryIcon[category] ?? 'shop'} size={16} /><span>{financialLabels[category] ?? category}</span><b>-{money(amount)}</b></li>) : <li><span>本月没有消费支出。</span></li>}</ul>
+      </section>
+      <section className="settle-panel settle-allocation" aria-label="资产配置">
+        <h3>资产配置（变化）</h3>
+        <ul className="settle-rows alloc">{allocationRows.length ? allocationRows.map(([category, amount]) => <li key={category}><span>{financialLabels[category] ?? category}</span><SegmentMeter value={Math.abs(amount)} max={allocationScale} segments={10} label={`${financialLabels[category] ?? category} ${money(amount)}`} /><b>{money(Math.abs(amount))}</b></li>) : <li><span>本月没有资产配置流动。</span></li>}</ul>
+        <div className="ledger-detail"><span>现金变化</span><small>{cashDelta >= 0 ? '+' : '-'}{money(Math.abs(cashDelta))}</small></div>
+      </section>
+      <section className="settle-result pixel-corners" aria-label="净资产结果">
+        <h3 className="settle-result-title">净资产变化</h3>
+        <span className="settle-ribbon">本月净资产{netWorthChange >= 0 ? '增加' : '减少'}</span>
+        <strong className={`settle-big ${netWorthChange >= 0 ? 'positive' : 'negative'}`}>{netWorthChange >= 0 ? '+' : '-'}{money(Math.abs(netWorthChange))}</strong>
+        <p className="settle-range">净资产从 {money(netWorthStart)} 增长至 {money(netWorthEnd)}（估值变化不等于现金收入）</p>
+        {growthPercent !== null && <em className="settle-badge">增幅 {netWorthChange >= 0 ? '+' : ''}{growthPercent}%</em>}
+        <div className="settle-half-row">
+          <div className="settle-half"><h4>已实现收益</h4><strong>{realizedGain - realizedLoss >= 0 ? '+' : '-'}{money(Math.abs(realizedGain - realizedLoss))}</strong><small>卖出落袋才计入现金</small></div>
+          <div className="settle-half"><h4>资产变现</h4><strong>{money(liquidation)}</strong><small>持有物转回现金的金额</small></div>
+        </div>
+      </section>
     </div>
-    <div className="settlement-secondary"><div><span>现金变化</span><strong>{financial ? money(financial.cashChange) : '—'}</strong></div><div><span>已实现收益</span><strong>{money(realizedGain - realizedLoss)}</strong></div><div><span>资产变现</span><strong>{money(financial?.totalAssetLiquidation ?? 0)}</strong></div></div>
-    <section className="settlement-highlights"><span className="eyebrow">本月重要收获</span><div className="reward-lines">{pending.highlights.length ? pending.highlights.map((highlight) => <div key={highlight.id}>{highlight.label}</div>) : <div>这个月平稳地过去了</div>}</div></section>
-    <footer className="settlement-footer"><span>你比上个月又向前走了一段。</span><button className="primary-button" onClick={() => dispatch({ type: 'acknowledge_monthly_summary' })}>进入下个月</button></footer>
+    <div className="settle-highlights">
+      <header className="settle-highlights-head"><PixelIcon name="spark" size={14} /><span>本月重要收获</span><i className="dotted-line" aria-hidden="true" /></header>
+      <div className="highlight-row">
+        {pending.highlights.slice(0, 5).map((highlight, index) => <article className="highlight-card" key={highlight.id}>
+          <i className="new-ribbon" aria-hidden="true">NEW</i>
+          <PixelIcon name={highlightKindIcon[highlight.kind] ?? 'spark'} size={22} />
+          <h3>{highlight.label}</h3>
+          <small>第 {highlight.day} 天 · 记录 {index + 1}</small>
+        </article>)}
+        <article className="highlight-card reflection" aria-label="本月回顾">
+          <h3>本月回顾</h3>
+          <p>净资产 {money(netWorthStart)} → {money(netWorthEnd)}</p>
+          <p>{pending.highlights.length ? `写下了 ${pending.highlights.length} 条值得记住的变化。` : '这个月平稳地过去了，没有标记的重大变化。'}</p>
+        </article>
+      </div>
+    </div>
+    <footer className="settle-footer">
+      <div className="settle-avatar"><PixelIllustration name="mascot" size={40} /></div>
+      <div className="settle-foot-text">你比上个月更进一步！这些数字都来自真实账本。</div>
+      <dl className="settle-attrs">{attributes.map(([label, value]) => <div key={label}><dt>{label}</dt><dd><SegmentMeter value={value} segments={10} label={`${label} ${value}`} /></dd><b>{Math.round(value)}</b></div>)}</dl>
+      <button className="primary-button settle-continue" onClick={() => dispatch({ type: 'acknowledge_monthly_summary' })}>进入下个月</button>
+      <small className="settle-continue-note">时间不会停止，机会稍纵即逝</small>
+    </footer>
   </section></div>;
 }
 

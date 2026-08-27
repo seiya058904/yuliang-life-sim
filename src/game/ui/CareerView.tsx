@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { PixelIcon } from './pixel/PixelIcon';
+
 import type { GameAction, GameState, JobDefinition, ViewId, Weekday } from '../content/contracts';
 import { employmentKind, requirementHints } from '../engine/careers';
 import { contentRegistry } from '../content/registry';
@@ -61,6 +62,8 @@ function VacancyMarket({ game, jobs, dispatch }: { game: GameState; jobs: readon
   const [state, setState] = useState<(typeof states)[number]>('全部');
   const [sort, setSort] = useState<(typeof sorts)[number]>('匹配度');
   const [selectedId, setSelectedId] = useState<string | undefined>(game.vacancies?.[0]?.vacancyId);
+  const [page, setPage] = useState(0);
+  const pageSize = 6;
   const rows = useMemo(() => (game.vacancies ?? []).map((vacancy) => ({ vacancy, job: jobs.find((job) => job.id === vacancy.jobId) })).filter((row) => row.job).filter((row) => {
     const job = row.job!;
     const application = game.applications?.find((entry) => entry.vacancyId === row.vacancy.vacancyId);
@@ -71,10 +74,22 @@ function VacancyMarket({ game, jobs, dispatch }: { game: GameState; jobs: readon
     const stateMatches = state === '全部' || (state === '符合条件' && eligible) || (state === '接近条件' && close) || (state === '已申请' && Boolean(application)) || (state === '冷却中' && Boolean(cooldown));
     return categoryMatches && stateMatches && (job.name + companyName(row.vacancy.companyId)).toLowerCase().includes(query.toLowerCase());
   }).sort((left, right) => sort === '薪资最高' ? right.vacancy.salaryRange[1] - left.vacancy.salaryRange[1] : sort === '截止最早' ? left.vacancy.expiresDay - right.vacancy.expiresDay : left.job!.name.localeCompare(right.job!.name, 'zh-CN')), [category, game, jobs, query, sort, state]);
+  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize));
+  const safePage = Math.min(page, pageCount - 1);
+  const pagedRows = rows.slice(safePage * pageSize, safePage * pageSize + pageSize);
   const selected = rows.find((row) => row.vacancy.vacancyId === selectedId) ?? rows[0];
+  const goPage = (next: number) => setPage(Math.max(0, Math.min(pageCount - 1, next)));
   return <div className="career-market-shell" role="region" aria-label="招聘市场布局">
     <aside className="career-filters"><label>搜索岗位 / 公司<input aria-label="搜索岗位或公司" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入关键词" /></label><strong>岗位类型</strong>{categories.map((entry) => <button key={entry} className={category === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setCategory(entry)}>{entry}</button>)}<strong>申请状态</strong>{states.map((entry) => <button key={entry} className={state === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setState(entry)}>{entry}</button>)}</aside>
-    <div className="career-results"><div className="career-toolbar"><strong>公开机会 {rows.length}</strong><div>{sorts.map((entry) => <button key={entry} className={sort === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setSort(entry)}>{entry}</button>)}</div></div><div className="job-grid">{rows.map(({ vacancy, job }) => <VacancyCard key={vacancy.vacancyId} game={game} vacancy={vacancy} job={job!} dispatch={dispatch} selected={vacancy.vacancyId === selected?.vacancy.vacancyId} onSelect={() => setSelectedId(vacancy.vacancyId)} />)}</div></div>
+    <div className="career-results"><div className="career-toolbar"><strong>公开机会 {rows.length}</strong><div>{sorts.map((entry) => <button key={entry} className={sort === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setSort(entry)}>{entry}</button>)}</div></div><div className="job-grid">{pagedRows.map(({ vacancy, job }) => <VacancyCard key={vacancy.vacancyId} game={game} vacancy={vacancy} job={job!} dispatch={dispatch} selected={vacancy.vacancyId === selected?.vacancy.vacancyId} onSelect={() => setSelectedId(vacancy.vacancyId)} />)}</div>
+      {pageCount > 1 && <div className="pager-row" role="navigation" aria-label="岗位列表分页">
+        <span className="pager-fill" aria-hidden="true" />
+        <button type="button" className="pager-arrow" disabled={safePage === 0} onClick={() => goPage(safePage - 1)} aria-label="上一页">‹</button>
+        {Array.from({ length: pageCount }, (_, i) => <button type="button" key={i} className={i === safePage ? 'pager-num selected' : 'pager-num'} onClick={() => goPage(i)}>{i + 1}</button>)}
+        <button type="button" className="pager-arrow" disabled={safePage >= pageCount - 1} onClick={() => goPage(safePage + 1)} aria-label="下一页">›</button>
+        <span className="pager-fill right" aria-hidden="true" />
+      </div>}
+    </div>
     <aside className="career-detail inverse pixel-corners" aria-label="岗位详情">{selected ? <VacancyDetail game={game} vacancy={selected.vacancy} job={selected.job!} dispatch={dispatch} /> : <p className="muted">当前筛选下没有岗位。</p>}</aside>
   </div>;
 }
@@ -84,7 +99,7 @@ function VacancyCard({ game, vacancy, job, dispatch, selected, onSelect }: { gam
   const acquired = game.acquiredSideJobs?.[job.id];
   const eligible = isJobEligible(job, game);
   const hints = requirementHints(job, game, contentRegistry, balanceConfig);
-  return <article className={selected ? 'job-card selected' : 'job-card'}><button className="card-select" onClick={onSelect} aria-label={`查看岗位详情：${job.name}`}><div className="job-card-head"><span className="job-kind">{job.category ?? '岗位'}</span><span className="muted">{companyName(vacancy.companyId)}</span></div><h2>{job.name}</h2><p>{job.description}</p></button><div className="job-facts"><span>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])} / 班</span><span>第 {vacancy.expiresDay} 天截止</span></div>{hints.length > 0 && <div className="requirement-box"><strong>还需准备</strong>{hints.map((hint) => <span key={hint.requirementId}>{hint.actionLabel} · {hint.label}{hint.currentValue !== undefined ? ` ${hint.currentValue}/${hint.requiredValue}` : ''}</span>)}</div>}<div className="requirement-box"><strong>{eligible ? '符合条件' : '仍需准备'}</strong><span>{acquired ? '已获得' : application?.status ?? '可申请'}</span></div>{acquired ? <button className="secondary-button" disabled>安排到本周</button> : <button className="primary-button" disabled={!eligible || Boolean(application)} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{application ? '已申请' : '申请职位'}</button>}</article>;
+  return <article className={selected ? 'job-card selected' : 'job-card'} data-catalog-card><button className="card-select" onClick={onSelect} aria-label={`查看岗位详情：${job.name}`}><div className="job-card-head"><span className="job-kind">{job.category ?? '岗位'}</span><span className="muted">{companyName(vacancy.companyId)}</span></div><h2>{job.name}</h2><p>{job.description}</p></button><div className="job-facts"><span>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])} / 班</span><span>第 {vacancy.expiresDay} 天截止</span></div>{hints.length > 0 && <div className="requirement-box"><strong>还需准备</strong>{hints.map((hint) => <span key={hint.requirementId}>{hint.actionLabel} · {hint.label}{hint.currentValue !== undefined ? ` ${hint.currentValue}/${hint.requiredValue}` : ''}</span>)}</div>}<div className="requirement-box"><strong>{eligible ? '符合条件' : '仍需准备'}</strong><span>{acquired ? '已获得' : application?.status ?? '可申请'}</span></div>{acquired ? <button className="secondary-button" disabled>安排到本周</button> : <button className="primary-button" disabled={!eligible || Boolean(application)} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{application ? '已申请' : '申请职位'}</button>}</article>;
 }
 
 function VacancyDetail({ game, vacancy, job, dispatch }: { game: GameState; vacancy: any; job: JobDefinition; dispatch: (action: GameAction) => void }) {
