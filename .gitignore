@@ -5,6 +5,7 @@ test-results/
 artifacts/
 coverage/
 .impeccable/
+.codebase-memory/
 .env
 .env.*
 !.env.example
