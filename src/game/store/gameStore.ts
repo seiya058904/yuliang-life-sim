@@ -342,7 +342,7 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
   return create<GameStore>((set, get) => ({
     game: initial,
     effects: [],
-    activeView: 'work',
+    activeView: 'life',
     dispatch: (action) => {
       const result = dispatchGameAction(get().game, action, content, balance);
       if (result.error) { set({ lastError: result.error, effects: [] }); return; }

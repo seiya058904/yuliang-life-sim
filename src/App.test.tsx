@@ -71,6 +71,9 @@ describe('余量 app flow', () => {
     expect(dialog).toHaveTextContent('资产变现');
     expect(dialog).toHaveTextContent('已实现收益');
     expect(dialog).toHaveTextContent('净资产变化');
+    expect(within(dialog).getByRole('region', { name: '净资产结果' })).toHaveClass('settle-result-inverse');
+    expect(dialog).not.toHaveTextContent('✦');
+    expect(dialog).not.toHaveTextContent('✧');
   });
 
   it('discovers an official course and schedules it into a free planning slot', async () => {
@@ -89,6 +92,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '社交' }));
     const project = screen.getByRole('heading', { name: '品牌短片项目 · 完成客户合同' }).closest('.activity-card');
     expect(project).not.toBeNull();
     expect(within(project as HTMLElement).getByText('企业项目利润 · 可承接')).toBeInTheDocument();
@@ -152,6 +156,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('button', { name: '休闲用品' }));
     const flowers = screen.getByRole('heading', { name: '一束花' }).closest('article') as HTMLElement;
     await user.click(within(flowers).getByRole('button', { name: '加入购物袋：一束花' }));
     await user.click(screen.getByRole('button', { name: '一次购买' }));
@@ -298,6 +303,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '服务' }));
     await user.click(screen.getAllByRole('button', { name: '使用服务' })[0]);
     const subscriptionRow = screen.getByRole('heading', { name: '基础通信套餐' }).closest('.item-row');
     expect(subscriptionRow).not.toBeNull();
@@ -312,6 +318,48 @@ describe('余量 app flow', () => {
     expect(screen.getByText('取消基础通信套餐')).toBeInTheDocument();
   });
 
+  it('keeps the shop catalog scoped to the selected activity tab', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    expect(within(shop).queryAllByRole('heading', { name: '看电影 · 普通影厅' })).toHaveLength(0);
+    await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
+    expect(within(shop).getAllByRole('heading', { name: '看电影 · 普通影厅' }).length).toBeGreaterThan(0);
+    expect(within(shop).queryAllByRole('heading', { name: '旧城文化日 · 看一场展览' })).toHaveLength(0);
+    await user.click(within(shop).getByRole('tab', { name: '学习' }));
+    expect(within(shop).getByRole('heading', { name: '旧城文化日 · 看一场展览' })).toBeInTheDocument();
+  });
+
+  it('shows semantic segmented meters on every visible shop catalog card', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    const itemCards = Array.from(shop.querySelectorAll('[data-catalog-card]'));
+    expect(itemCards).toHaveLength(12);
+    itemCards.forEach((card) => expect(card.querySelectorAll('.catalog-meter-row')).toHaveLength(2));
+
+    await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
+    const activityCards = Array.from(shop.querySelectorAll('[data-catalog-card]'));
+    expect(activityCards.length).toBeGreaterThan(0);
+    activityCards.forEach((card) => expect(card.querySelectorAll('.catalog-meter-row')).toHaveLength(2));
+  });
+
+  it('gives an empty market insight panel a complete visual state', () => {
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, vacancies: [] } });
+    render(<App />);
+
+    const insight = screen.getByText('市场洞察').closest('.career-bottom-panel') as HTMLElement;
+    expect(insight).not.toBeNull();
+    expect(insight).toHaveClass('career-bottom-insight');
+    expect(within(insight).getByText('本期暂无公开机会')).toBeInTheDocument();
+    expect(within(insight).getByLabelText('市场洞察空态')).toBeInTheDocument();
+  });
+
   it('discovers the expanded daily service and subscription content', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
@@ -319,6 +367,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '服务' }));
     const styling = screen.getByRole('heading', { name: '专业形象咨询' }).closest('.item-row');
     expect(styling).not.toBeNull();
     await user.click(within(styling as HTMLElement).getByRole('button', { name: '使用服务' }));
@@ -343,6 +392,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '服务' }));
     const service = screen.getByRole('heading', { name: '车辆年度保养' }).closest('.item-row');
     expect(service).not.toBeNull();
     await user.click(within(service as HTMLElement).getByRole('button', { name: '使用服务' }));
@@ -593,6 +643,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '旅行' }));
     const getaway = screen.getByRole('heading', { name: '周末短途旅行 · 慢慢走走' }).closest('article');
     expect(getaway).not.toBeNull();
     expect(screen.getByRole('heading', { name: '周末短途旅行 · 临江夜游' })).toBeInTheDocument();
@@ -607,6 +658,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '娱乐' }));
     const outing = screen.getByRole('heading', { name: '看电影 · 和周妍看一场' }).closest('article');
     expect(outing).not.toBeNull();
     await user.click(within(outing as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
@@ -618,6 +670,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '学习' }));
     const outing = screen.getByRole('heading', { name: '旧城文化日 · 看一场展览' }).closest('article');
     expect(outing).not.toBeNull();
     await user.click(within(outing as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
@@ -631,6 +684,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '学习' }));
     const hints = screen.getByRole('region', { name: '活动获取提示' });
     expect(hints).toHaveTextContent('城市摄影练习 · 街区取景');
     expect(hints).toHaveTextContent('需要商品 复古相机');
@@ -644,6 +698,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('tab', { name: '旅行' }));
     const getaway = screen.getByRole('heading', { name: '周末短途旅行 · 慢慢走走' }).closest('article') as HTMLElement;
     expect(within(getaway).getAllByText('冷却中 · 还需 9 天')).toHaveLength(2);
     expect(within(getaway).getByRole('button', { name: '冷却中 · 还需 9 天' })).toBeDisabled();

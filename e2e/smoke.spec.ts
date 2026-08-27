@@ -34,9 +34,10 @@ test('discovers the riverside night market venue and reaches its activity entry'
 });
 
 test('uses the public market, plans a week, pauses for shopping, and restores the save', async ({ page }) => {
-  await expect(page.getByRole('heading', { name: '余量' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '余量', exact: true })).toBeVisible();
   await expect(page.getByText('第 1 周', { exact: true })).toBeVisible();
 
+  await page.getByRole('button', { name: '职业', exact: true }).click();
   await expect(page.getByRole('heading', { name: '招聘市场' })).toBeVisible();
   await page.getByLabel('搜索岗位或公司').fill('远望');
   await expect(page.getByText('远望零售').first()).toBeVisible();
@@ -63,7 +64,9 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
 
   const pausedClock = await page.getByTestId('clock-value').innerText();
   await page.getByRole('button', { name: '商店' }).click();
+  await page.getByRole('tab', { name: '旅行', exact: true }).click();
   await expect(page.getByRole('heading', { name: '周末短途旅行 · 临江夜游' })).toBeVisible();
+  await page.getByRole('tab', { name: '商品', exact: true }).click();
   await page.getByRole('button', { name: '加入购物袋：现磨咖啡' }).click();
   await page.getByRole('button', { name: '加入购物袋：实用手机' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
@@ -292,6 +295,7 @@ test('enforces the persisted travel cooldown in the activity market', async ({ p
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '旅行', exact: true }).click();
   const getaway = page.getByRole('heading', { name: '周末短途旅行 · 慢慢走走' }).locator('..');
   await expect(getaway).toContainText('冷却中 · 还需 9 天');
   await expect(getaway.getByRole('button', { name: '冷却中 · 还需 9 天' })).toBeDisabled();
@@ -308,22 +312,26 @@ test('shows the persisted service history beside the service market', async ({ p
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   await page.getByRole('button', { name: '使用服务' }).first().click();
   const serviceMarket = page.getByRole('region', { name: '服务与订阅' });
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础理发');
   await expect(serviceMarket).toContainText('最近服务记录');
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础理发');
 });
 
 test('applies and persists a cooldown after using a repeatable service', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   const haircut = page.getByRole('heading', { name: '基础理发' }).locator('..').locator('..');
   await haircut.getByRole('button', { name: '使用服务' }).click();
   await expect(haircut.getByRole('button', { name: '冷却中 · 还需 14 天' })).toBeDisabled();
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   await expect(page.getByRole('heading', { name: '基础理发' }).locator('..').locator('..').getByRole('button', { name: '冷却中 · 还需 14 天' })).toBeDisabled();
 });
 
@@ -335,6 +343,7 @@ test('discovers the expanded daily services and subscriptions', async ({ page })
   await page.evaluate(({ key, nextState }) => localStorage.setItem(key, JSON.stringify(nextState)), { key: saveKey, nextState: state });
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   const styling = page.getByRole('heading', { name: '专业形象咨询' }).locator('..').locator('..');
   await styling.getByRole('button', { name: '使用服务' }).click();
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('专业形象咨询');
@@ -405,6 +414,7 @@ test('charges and cancels a monthly subscription with persisted history', async 
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   const subscription = page.getByRole('heading', { name: '基础通信套餐' }).locator('..').locator('..');
   await subscription.getByRole('button', { name: '开通订阅' }).click();
   await expect(subscription.getByRole('button', { name: '取消订阅' })).toBeVisible();
@@ -418,6 +428,7 @@ test('charges and cancels a monthly subscription with persisted history', async 
   expect(chargedState.financialHistory).toContainEqual(expect.objectContaining({ consumption: expect.objectContaining({ categories: expect.objectContaining({ service: 39 }) }) }));
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   await page.getByRole('heading', { name: '基础通信套餐' }).locator('..').locator('..').getByRole('button', { name: '取消订阅' }).click();
   await expect(subscription.getByRole('button', { name: '开通订阅' })).toBeVisible();
   await page.getByRole('button', { name: '我的', exact: true }).click();
@@ -432,22 +443,26 @@ test('charges and cancels a monthly subscription with persisted history', async 
 
 test('uses the basic fitness assessment service and keeps its history', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   const fitness = page.getByRole('heading', { name: '基础体能评估' }).locator('..').locator('..');
   await fitness.getByRole('button', { name: '使用服务' }).click();
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础体能评估');
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('基础体能评估');
 });
 
 test('discovers the riverside night market activity', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '娱乐', exact: true }).click();
   const market = page.locator('article.activity-card').filter({ hasText: '河畔夜市 · 逛一圈' });
   await expect(market.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
 
 test('discovers the industrial design exhibition trip', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '旅行', exact: true }).click();
   const exhibition = page.locator('article.activity-card').filter({ hasText: '北部产业设计展 · 看展' });
   await expect(exhibition).toContainText('¥280');
   await expect(exhibition.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
@@ -455,19 +470,22 @@ test('discovers the industrial design exhibition trip', async ({ page }) => {
 
 test('discovers and plans the expanded dining and concert activities', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '社交', exact: true }).click();
   const dining = page.locator('article.activity-card').filter({ hasText: '精品餐厅晚餐 · 慢慢吃完' });
   await expect(dining).toContainText('¥380');
   await expect(dining.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
+  await dining.getByRole('button', { name: '安排到本周自由时间' }).click();
+  await page.getByRole('tab', { name: '学习', exact: true }).click();
   const concert = page.locator('article.activity-card').filter({ hasText: '演唱会 · 去现场' });
   await expect(concert).toContainText('¥680');
   await expect(concert.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
-  await dining.getByRole('button', { name: '安排到本周自由时间' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '精品餐厅晚餐 · dinner' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '精品餐厅晚餐 · 慢慢吃完' })).toBeVisible();
 });
 
 test('discovers the expanded home, cinema, and fitness activities', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '娱乐', exact: true }).click();
   const cinema = page.locator('article.activity-card').filter({ hasText: 'IMAX 高规格电影 · 特别放映厅' });
   await expect(cinema).toContainText('¥138');
   await expect(cinema.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
@@ -488,6 +506,7 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
   await page.evaluate(({ key, nextState }) => localStorage.setItem(key, JSON.stringify(nextState)), { key: saveKey, nextState: initial });
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '旅行', exact: true }).click();
   const dayTrip = page.locator('article.activity-card').filter({ hasText: '城郊一日游 · 安排一日出行' });
   await expect(dayTrip).toContainText('¥280');
   const premiumWeekend = page.locator('article.activity-card').filter({ hasText: '品质周末旅行 · 安排品质周末' });
@@ -501,18 +520,19 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
   await expect(luxury).toContainText('5 天');
   await premiumWeekend.getByRole('button', { name: '安排到本周自由时间' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await expect(page.getByRole('button', { name: /周[一二三四五六日]白天计划/ }).filter({ hasText: '品质周末旅行 · premium-stay' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /周[一二三四五六日]白天计划/ }).filter({ hasText: '品质周末旅行 · 安排品质周末' })).toBeVisible();
 });
 
 test('discovers a contact-specific activity and schedules it with its relationship gate', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '社交', exact: true }).click();
   const coffee = page.locator('article.activity-card').filter({ hasText: '和联系人喝咖啡 · 和林晨聊聊' });
   await expect(coffee).toContainText('¥100');
   await expect(coffee).toContainText('关系 +3');
   await expect(coffee.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await coffee.getByRole('button', { name: '安排到本周自由时间' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '和联系人喝咖啡 · with-lin' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '和联系人喝咖啡 · 和林晨聊聊' })).toBeVisible();
 });
 
 test('acquires camping gear and unlocks the weekend camping plan', async ({ page }) => {
@@ -526,6 +546,7 @@ test('acquires camping gear and unlocks the weekend camping plan', async ({ page
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '旅行', exact: true }).click();
   const hints = page.getByRole('region', { name: '活动获取提示' });
   await expect(hints).toContainText('周末露营 · 搭帐篷住一晚');
   await expect(hints).toContainText('需要商品 露营装备');
@@ -534,7 +555,7 @@ test('acquires camping gear and unlocks the weekend camping plan', async ({ page
   await expect(camping.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await camping.getByRole('button', { name: '安排到本周自由时间' }).click();
   await page.getByRole('button', { name: '职业', exact: true }).click();
-  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '周末露营 · camp' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '周末露营 · 搭帐篷住一晚' })).toBeVisible();
 });
 
 test('trades a listed business equity slice from the wealth flow', async ({ page }) => {
@@ -769,6 +790,7 @@ test('buys and persists the Isle lifestyle technology smart-home set', async ({ 
   const beforePurchase = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
   const item = page.locator('article.item-card').filter({ hasText: '智能家居套装' });
   await expect(item).toContainText('¥5,999');
   await item.getByRole('button', { name: '加入购物袋：智能家居套装' }).click();
@@ -828,10 +850,10 @@ test('applies the industrial hub city event and persists its development', async
   await page.getByRole('dialog').getByRole('button', { name: /支持这项升级/ }).click();
   await expect(page.getByRole('dialog')).toContainText('北部产业区发展 +1');
   await page.getByRole('button', { name: '收下并暂停' }).click();
-  await page.getByRole('button', { name: '城市' }).click();
+  await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
   await expect(page.getByRole('heading', { name: '北部产业区', exact: true })).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '城市' }).click();
+  await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 });
 
@@ -988,6 +1010,7 @@ test('uses the employee purchase plan to buy a discounted smart-home set', async
   await storyline.getByRole('button', { name: '开始故事' }).click();
   await storyline.getByRole('button', { name: '折扣购买' }).click();
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
   const item = page.locator('article.item-card').filter({ hasText: '智能家居套装' });
   await expect(item).toContainText('¥4,499');
   await item.getByRole('button', { name: '加入购物袋：智能家居套装' }).click();
@@ -1009,12 +1032,14 @@ test('uses and persists the vehicle annual service from the shop', async ({ page
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   const service = page.getByRole('heading', { name: '车辆年度保养' }).locator('..').locator('..');
   await expect(service).toContainText('车辆年度保养');
   await service.getByRole('button', { name: '使用服务' }).click();
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('车辆年度保养');
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '服务', exact: true }).click();
   await expect(page.getByRole('region', { name: '服务记录' })).toContainText('车辆年度保养');
 });
 
@@ -1060,13 +1085,14 @@ test('discovers and plans the friend-specific cafe activity', async ({ page }) =
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '学习', exact: true }).click();
   await expect(page.getByRole('region', { name: '活动获取提示' })).toContainText('需要商品 复古相机');
   const outing = page.locator('article').filter({ hasText: '和陈宇坐坐' });
   await expect(outing).toContainText('和陈宇坐坐');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
   await expect(page.getByRole('button', { name: '职业', exact: true })).toBeVisible();
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
-  await expect(page.getByText('去咖啡馆坐一会 · with-chenyu')).toBeVisible();
+  await expect(page.getByText('去咖啡馆坐一会 · 和陈宇坐坐')).toBeVisible();
 });
 
 test('discovers and plans the relationship-gated cinema outing with Zhou', async ({ page }) => {
@@ -1081,6 +1107,7 @@ test('discovers and plans the relationship-gated cinema outing with Zhou', async
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '娱乐', exact: true }).click();
   const outing = page.locator('article').filter({ hasText: '和周妍看一场' });
   await expect(outing).toContainText('和周妍看一场');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
@@ -1089,6 +1116,7 @@ test('discovers and plans the relationship-gated cinema outing with Zhou', async
 
 test('discovers and plans the old-town cultural trip', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '学习', exact: true }).click();
   const outing = page.getByRole('heading', { name: '旧城文化日 · 看一场展览' }).locator('..');
   await expect(outing).toContainText('旧城文化日 · 看一场展览');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
@@ -1097,6 +1125,7 @@ test('discovers and plans the old-town cultural trip', async ({ page }) => {
 
 test('discovers and plans the riverside park ride', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '旅行', exact: true }).click();
   const ride = page.getByRole('heading', { name: '临江公园骑行 · 沿江骑行' }).locator('..');
   await expect(ride).toContainText('¥180');
   await expect(ride).toContainText('体能 +2');
@@ -1115,6 +1144,7 @@ test('buys and gives a preference-matching gift with persisted social history', 
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
   const flowers = page.locator('article').filter({ hasText: '一束花' }).first();
   await flowers.getByRole('button', { name: '加入购物袋：一束花' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
@@ -1144,11 +1174,11 @@ test('settles a city development event and keeps the location change after reloa
   await page.getByRole('dialog').getByRole('button', { name: /支持这项建设/ }).click();
   await expect(page.getByRole('dialog')).toContainText('临江区发展 +1');
   await page.getByRole('button', { name: '收下并暂停' }).click();
-  await page.getByRole('button', { name: '城市' }).click();
+  await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '城市' }).click();
+  await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 });
 
@@ -1264,6 +1294,7 @@ test('buys and resells the official diamond pendant with persisted purchase hist
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
   const product = page.getByRole('heading', { name: '小型钻石吊坠' }).locator('xpath=ancestor::article[1]');
   await product.getByRole('button', { name: '加入购物袋：小型钻石吊坠' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();

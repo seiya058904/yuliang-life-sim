@@ -6,6 +6,12 @@ import { createGameStore, loadGameState, migrateGameState, saveGameState } from 
 describe('game store persistence', () => {
   beforeEach(() => localStorage.clear());
 
+  it('opens a fresh game on the life dashboard', () => {
+    const store = createGameStore(contentRegistry, balanceConfig, 1);
+
+    expect(store.getState().activeView).toBe('life');
+  });
+
   it('persists the exact minute and restores the current schedule activity', () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const first = createGameStore(contentRegistry, balance, 1);
