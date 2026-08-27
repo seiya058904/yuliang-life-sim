@@ -3,6 +3,7 @@ dist/
 test-results/
 .playwright-cli/
 coverage/
+.impeccable/
 .env
 .env.*
 !.env.example
