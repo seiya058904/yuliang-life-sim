@@ -2,9 +2,9 @@ node_modules/
 dist/
 test-results/
 .playwright-cli/
+artifacts/
 coverage/
 .impeccable/
 .env
 .env.*
 !.env.example
-
