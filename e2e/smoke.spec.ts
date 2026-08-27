@@ -21,6 +21,19 @@ async function runLongPeriod(page: import('@playwright/test').Page, months: 1 | 
   await page.getByRole('button', { name: `运行 ${months} 个月` }).click();
 }
 
+async function openCareerTools(page: import('@playwright/test').Page) {
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  const market = page.getByRole('button', { name: '招聘市场', exact: true });
+  if (await market.isVisible()) await market.click();
+  await page.getByRole('button', { name: '安排本周与课程' }).click();
+  await expect(page.getByRole('dialog', { name: '职业工具' })).toBeVisible();
+}
+
+async function closeCareerTools(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: '关闭职业工具' }).click();
+  await expect(page.getByRole('dialog', { name: '职业工具' })).toHaveCount(0);
+}
+
 test('discovers a named city venue and reaches its activity entry', async ({ page }) => {
   await page.getByRole('button', { name: '城市', exact: true }).click();
   const venue = page.getByRole('heading', { name: '云庭咖啡' }).locator('..');
@@ -147,7 +160,9 @@ test('turns the education course qualification into a persistent teaching assist
   await page.getByRole('button', { name: '我的兼职' }).click();
   await expect(page.getByRole('heading', { name: '线上课程助教' })).toBeVisible();
   await page.getByRole('button', { name: '安排到本周' }).click();
+  await openCareerTools(page);
   await expect(page.getByText('线上课程助教 4 小时', { exact: true })).toBeVisible();
+  await closeCareerTools(page);
   await runLongPeriod(page, 1);
   await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('线上课程助教');
@@ -495,7 +510,7 @@ test('discovers and plans the expanded dining and concert activities', async ({ 
   const concert = page.locator('article.activity-card').filter({ hasText: '演唱会 · 去现场' });
   await expect(concert).toContainText('¥680');
   await expect(concert.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
-  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await openCareerTools(page);
   await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '精品餐厅晚餐 · 慢慢吃完' })).toBeVisible();
 });
 
@@ -535,7 +550,7 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
   await expect(luxury).toContainText('¥18,000');
   await expect(luxury).toContainText('5 天');
   await premiumWeekend.getByRole('button', { name: '安排到本周自由时间' }).click();
-  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await openCareerTools(page);
   await expect(page.getByRole('button', { name: /周[一二三四五六日]白天计划/ }).filter({ hasText: '品质周末旅行 · 安排品质周末' })).toBeVisible();
 });
 
@@ -547,7 +562,7 @@ test('discovers a contact-specific activity and schedules it with its relationsh
   await expect(coffee).toContainText('关系 +3');
   await expect(coffee.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await coffee.getByRole('button', { name: '安排到本周自由时间' }).click();
-  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await openCareerTools(page);
   await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '和联系人喝咖啡 · 和林晨聊聊' })).toBeVisible();
 });
 
@@ -570,7 +585,7 @@ test('acquires camping gear and unlocks the weekend camping plan', async ({ page
   const camping = page.locator('article.activity-card').filter({ hasText: '周末露营 · 搭帐篷住一晚' });
   await expect(camping.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await camping.getByRole('button', { name: '安排到本周自由时间' }).click();
-  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await openCareerTools(page);
   await expect(page.getByRole('button', { name: /晚间计划/ }).filter({ hasText: '周末露营 · 搭帐篷住一晚' })).toBeVisible();
 });
 
@@ -1107,7 +1122,7 @@ test('discovers and plans the friend-specific cafe activity', async ({ page }) =
   await expect(outing).toContainText('和陈宇坐坐');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
   await expect(page.getByRole('button', { name: '职业', exact: true })).toBeVisible();
-  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await openCareerTools(page);
   await expect(page.getByText('去咖啡馆坐一会 · 和陈宇坐坐')).toBeVisible();
 });
 
@@ -1704,20 +1719,21 @@ test('completes and persists an official course through the weekly plan', async 
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await openCareerTools(page);
   const course = page.getByRole('heading', { name: '职场基础课' }).locator('xpath=ancestor::div[contains(@class, "item-row")]');
   await expect(course).toContainText('¥180');
   await course.getByRole('button', { name: '安排课程' }).click();
+  await closeCareerTools(page);
   await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toContainText('第 1 月');
   await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
 
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByText('完成课程：职场基础课')).toBeVisible();
-  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await openCareerTools(page);
   await expect(page.getByRole('heading', { name: '职场基础课' }).locator('xpath=ancestor::div[contains(@class, "item-row")]')).toContainText('已完成');
   await page.reload();
-  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await openCareerTools(page);
   await expect(page.getByRole('heading', { name: '职场基础课' }).locator('xpath=ancestor::div[contains(@class, "item-row")]')).toContainText('已完成');
 });
 

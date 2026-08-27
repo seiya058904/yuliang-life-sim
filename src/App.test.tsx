@@ -63,6 +63,23 @@ describe('余量 app flow', () => {
     expect(main.scrollTop).toBe(0);
   });
 
+  it('keeps the career market as the primary surface and gates planning tools behind a drawer', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    expect(screen.getByRole('region', { name: '招聘市场布局' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '职场基础课' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '安排本周与课程' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '安排本周与课程' }));
+    expect(screen.getByRole('dialog', { name: '职业工具' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '职场基础课' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '关闭职业工具' }));
+    expect(screen.queryByRole('dialog', { name: '职业工具' })).not.toBeInTheDocument();
+  });
+
   it('keeps Life secondary finance and housing details reachable without stacking them into the home dashboard', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -128,6 +145,7 @@ describe('余量 app flow', () => {
     const user = userEvent.setup();
     render(<App />);
 
+    await user.click(screen.getByRole('button', { name: '安排本周与课程' }));
     expect(screen.getByRole('heading', { name: '职场基础课' })).toBeInTheDocument();
     await user.click(screen.getAllByRole('button', { name: '安排课程' })[0]);
     expect(screen.getByText('课程 · 职场基础课')).toBeInTheDocument();

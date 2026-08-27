@@ -3008,3 +3008,90 @@ button, input, select { border-radius: 0; }
   .persistent-status .segment-meter { grid-auto-columns: 9px; gap: 2px; }
   .persistent-status .segment-meter i { width: 9px; height: 9px; }
 }
+
+/* Career keeps the recruitment market as its first-screen game board. The
+   weekly planner, courses, and forecast remain real controls, but open as a
+   contained utility drawer instead of extending the market page into a long
+   web document. */
+.career-tools-trigger {
+  min-height: 24px;
+  padding: 4px 7px;
+  color: #f4f4ef;
+  background: #090909;
+  border: 1px solid #888883;
+  font-size: 10px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.career-tools-trigger:hover,
+.career-tools-trigger:focus-visible {
+  color: #070707;
+  background: #f4f4f0;
+  border-color: #f4f4f0;
+}
+.career-tools-drawer {
+  position: fixed;
+  z-index: 40;
+  inset: 150px 22px 86px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  color: #f4f4ef;
+  background: #050505;
+  border: 2px solid #f4f4ef;
+  outline: 1px solid #777772;
+  outline-offset: 3px;
+  box-shadow: inset 0 0 0 2px #111;
+}
+.career-tools-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding: 8px 12px;
+  border-bottom: 1px solid #777772;
+}
+.career-tools-head h2 { margin: 2px 0 0; font-size: 22px; line-height: 1; }
+.career-tools-head .secondary-button { min-height: 30px; padding: 5px 10px; font-size: 11px; }
+.career-tools-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px;
+  overflow: auto;
+  scrollbar-color: #777 #050505;
+  scrollbar-width: thin;
+}
+.career-tools-content > .planning-section {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+}
+.career-tools-content > .planning-section .section-heading { margin: 0; }
+.career-tools-content > .market-section {
+  min-width: 0;
+  margin: 0;
+}
+.career-tools-content > .market-section .section-heading { margin-bottom: 8px; }
+.career-tools-content > .market-section .item-list { max-height: none; }
+.career-tools-content > .forecast-strip {
+  align-self: start;
+  min-width: 0;
+  margin: 0;
+}
+
+@media (max-width: 1180px) {
+  .career-tools-drawer {
+    inset: 8px;
+    max-height: calc(100dvh - 16px);
+  }
+  .career-tools-content { grid-template-columns: 1fr; }
+  .career-tools-content > .planning-section,
+  .career-tools-content > .market-section,
+  .career-tools-content > .forecast-strip { grid-column: 1; }
+}

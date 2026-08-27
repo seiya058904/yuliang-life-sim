@@ -197,7 +197,7 @@ function App() {
         </section>
         {lastError && <div className="notice error" role="alert">{lastError}</div>}
         {activeView === 'life' && <LifeView game={game} dispatch={dispatch} onNavigate={navigateToView} />}
-        {activeView === 'work' && <><CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={navigateToView} /><section className="planning-section"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section><CourseMarket game={game} dispatch={dispatch} /><ForecastPanel game={game} /></>}
+        {activeView === 'work' && <CareerWorkspace game={game} dispatch={dispatch} onNavigate={navigateToView} />}
         {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} onNavigate={navigateToView} initialTab={shopTab} /><div className="shop-support-panels"><AcquisitionRequirementsPanel game={game} onNavigate={navigateToView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /></div></>}
         {activeView === 'wealth' && <><AssetsView game={game} dispatch={dispatch} /><AcquisitionRequirementsPanel game={game} onNavigate={navigateToView} scope="wealth" /><BusinessGroupView game={game} dispatch={dispatch} /><BusinessOperationsView game={game} dispatch={dispatch} /><BusinessPublicFloatView game={game} dispatch={dispatch} /><BusinessLocationSummary game={game} dispatch={dispatch} /><PortfolioSummary game={game} /><PortfolioAllocation game={game} /><PortfolioHistory game={game} /></>}
         {activeView === 'relations' && <div className="social-page"><div className="social-primary"><RelationsView game={game} dispatch={dispatch} /></div><SocialDetail game={game} dispatch={dispatch} /><div className="social-support"><GiftPanel game={game} dispatch={dispatch} /><CharacterPreferenceSummary game={game} /><StorylinePanel game={game} dispatch={dispatch} /></div></div>}
@@ -268,8 +268,40 @@ function Metric({ label, value }: { label: string; value: number }) {
   return <div className="metric"><span>{label}</span><strong>{value}</strong></div>;
 }
 
+function CareerWorkspace({ game, dispatch, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate: (view: ViewId) => void }) {
+  const [toolsOpen, setToolsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!toolsOpen) return undefined;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setToolsOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [toolsOpen]);
+
+  return <>
+    <CareerView game={game} dispatch={dispatch} jobs={contentRegistry.jobs} onNavigate={onNavigate} onOpenTools={() => setToolsOpen(true)} />
+    {toolsOpen && <CareerToolsDrawer game={game} dispatch={dispatch} onClose={() => setToolsOpen(false)} />}
+  </>;
+}
+
+function CareerToolsDrawer({ game, dispatch, onClose }: { game: GameState; dispatch: (action: GameAction) => void; onClose: () => void }) {
+  return <section className="career-tools-drawer" role="dialog" aria-modal="true" aria-label="职业工具">
+    <header className="career-tools-head">
+      <div><span className="eyebrow">职业工具</span><h2 id="career-tools-title">安排与成长</h2></div>
+      <button type="button" className="secondary-button" onClick={onClose}>关闭职业工具</button>
+    </header>
+    <div className="career-tools-content">
+      <section className="planning-section career-tools-planning" aria-label="职业周计划"><div className="section-heading compact"><div><span className="eyebrow">周计划</span><h2>安排本周</h2></div><p>正式工作自动占用；下方数值均为预计。</p></div><WeekPlanner game={game} dispatch={dispatch} /></section>
+      <CourseMarket game={game} dispatch={dispatch} />
+      <ForecastPanel game={game} scrollTarget=".career-tools-planning" />
+    </div>
+  </section>;
+}
+
 /** 参考图反相面板：白底黑字的本周预测。 */
-function ForecastPanel({ game }: { game: GameState }) {
+function ForecastPanel({ game, scrollTarget = '.life-planning-section' }: { game: GameState; scrollTarget?: string }) {
   const forecast = useMemo(() => forecastWeeklyPlan(game, game.weeklyPlan, contentRegistry, balanceConfig), [game]);
   const attributes = Object.entries(forecast.attributes).filter(([, value]) => value !== 0);
   return <section className="forecast-strip inverse">
@@ -280,7 +312,7 @@ function ForecastPanel({ game }: { game: GameState }) {
     <div className="forecast-attrs"><span className="forecast-sub">属性变化</span>
       {attributes.length ? attributes.slice(0, 4).map(([key, value]) => <div className="forecast-attr" key={key}><span>{attributeLabels[key] ?? key}</span><SegmentMeter value={getAttribute(game, key as AttributeId)} max={Math.max(60, getAttribute(game, key as AttributeId) + Math.abs(value))} segments={8} /><b>{value > 0 ? '+' : ''}{value}</b></div>) : <p className="forecast-empty">本周计划不会改变属性。</p>}
     </div>
-    <button className="forecast-more" onClick={() => document.querySelector('.life-planning-section')?.scrollIntoView({ behavior: 'smooth' })}>详细预测 ▸</button>
+    <button className="forecast-more" onClick={() => document.querySelector(scrollTarget)?.scrollIntoView({ behavior: 'smooth' })}>详细预测 ▸</button>
   </section>;
 }
 

@@ -41,14 +41,14 @@ const isJobEligible = (job: JobDefinition, game: GameState) => (job.abilityRequi
   && !(job.requiredItems ?? []).some((itemId) => (game.inventory[itemId] ?? 0) < 1)
   && !(job.requiredCapabilities ?? []).some((capability) => !game.unlockedCapabilities.includes(capability));
 
-export function CareerView({ game, dispatch, jobs, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; jobs: readonly JobDefinition[]; onNavigate?: (view: ViewId) => void }) {
+export function CareerView({ game, dispatch, jobs, onNavigate, onOpenTools }: { game: GameState; dispatch: (action: GameAction) => void; jobs: readonly JobDefinition[]; onNavigate?: (view: ViewId) => void; onOpenTools?: () => void }) {
   const [tab, setTab] = useState<CareerTab>('market');
   const labels: Record<CareerTab, string> = { current: '当前工作', market: '招聘市场', opportunities: '工作机会', applications: '我的申请', 'side-jobs': '我的兼职', history: '职业履历', mobility: '跨行业' };
   return <section className={tab === 'market' ? 'career-section market-mode' : 'career-section'}>
     <div className="section-heading compact"><div><span className="eyebrow">职业</span><h1>{labels[tab]}</h1></div><p>公开招聘和特殊机会分开；所有申请、Offer 与兼职资格都有明确状态。</p></div>
     {tab !== 'market' && <div className="filter-row" aria-label="职业导航">{Object.entries(labels).map(([id, label]) => <button key={id} className={tab === id ? 'filter-button selected' : 'filter-button'} onClick={() => setTab(id as CareerTab)}>{label}</button>)}</div>}
     {tab === 'current' && <><CareerProgress game={game} /><CurrentEmployment game={game} jobs={jobs} dispatch={dispatch} /></>}
-    {tab === 'market' && <><VacancyMarket game={game} jobs={jobs} dispatch={dispatch} labels={labels} onOpenTab={(next) => setTab(next)} /><CareerBottomPanels game={game} jobs={jobs} onOpenTab={(next) => setTab(next)} /></>}
+    {tab === 'market' && <><VacancyMarket game={game} jobs={jobs} dispatch={dispatch} labels={labels} onOpenTab={(next) => setTab(next)} onOpenTools={onOpenTools} /><CareerBottomPanels game={game} jobs={jobs} onOpenTab={(next) => setTab(next)} /></>}
     {tab === 'opportunities' && <OpportunityList game={game} jobs={jobs} dispatch={dispatch} />}
     {tab === 'applications' && <ApplicationList game={game} jobs={jobs} dispatch={dispatch} onNavigate={onNavigate} />}
     {tab === 'side-jobs' && <SideJobList game={game} jobs={jobs} dispatch={dispatch} />}
@@ -74,7 +74,7 @@ function CareerProgress({ game }: { game: GameState }) {
   return <section className="detail-panel" aria-label="职业经验与资格"><h2>职业经验与资格</h2>{entries.length ? <div className="item-list">{entries.map(([id, value]) => <div className="item-row" key={id}><div><strong>{careerExperienceLabel(id as Parameters<typeof careerExperienceLabel>[0])}</strong><p>{value} 天 · {careerExperienceStage(value)}</p></div></div>)}</div> : <p className="muted">完成实际工作后，会在这里积累可迁移的职业经验。</p>}<p className="muted">已获得资格：{game.qualifications?.length ? game.qualifications.map((id) => humanizeContentId(id)).join('、') : '暂无'}</p></section>;
 }
 
-function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void; labels: Record<CareerTab, string>; onOpenTab: (tab: CareerTab) => void }) {
+function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void; labels: Record<CareerTab, string>; onOpenTab: (tab: CareerTab) => void; onOpenTools?: () => void }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<(typeof categories)[number]>('全部');
   const [state, setState] = useState<(typeof states)[number]>('全部');
@@ -99,7 +99,7 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab }: { game: Game
   const goPage = (next: number) => setPage(Math.max(0, Math.min(pageCount - 1, next)));
   return <div className="career-market-shell" role="region" aria-label="招聘市场布局">
     <aside className="career-filters"><div className="career-market-identity"><span className="eyebrow">职业</span><h1>招聘市场</h1><p>发现你的下一份机会</p><div className="career-market-tabs" aria-label="职业导航">{Object.entries(labels).map(([id, label]) => <button key={id} className={id === 'market' ? 'filter-button selected' : 'filter-button'} onClick={() => onOpenTab(id as CareerTab)}>{label}</button>)}</div></div><label>搜索岗位 / 公司<input aria-label="搜索岗位或公司" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="输入关键词" /></label><strong>岗位类型</strong>{categories.map((entry) => <button key={entry} className={category === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setCategory(entry)}>{entry}</button>)}<strong>申请状态</strong>{states.map((entry) => <button key={entry} className={state === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setState(entry)}>{entry}</button>)}</aside>
-    <div className="career-results"><div className="career-toolbar"><strong>公开机会 {rows.length}</strong><div>{sorts.map((entry) => <button key={entry} className={sort === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setSort(entry)}>{entry}</button>)}</div></div><div className="job-grid">{pagedRows.map(({ vacancy, job }) => <VacancyCard key={vacancy.vacancyId} game={game} vacancy={vacancy} job={job!} dispatch={dispatch} selected={vacancy.vacancyId === selected?.vacancy.vacancyId} onSelect={() => setSelectedId(vacancy.vacancyId)} />)}</div>
+    <div className="career-results"><div className="career-toolbar"><strong>公开机会 {rows.length}</strong><div>{onOpenTools && <button type="button" className="career-tools-trigger" onClick={onOpenTools}>安排本周与课程</button>}{sorts.map((entry) => <button key={entry} className={sort === entry ? 'filter-button selected' : 'filter-button'} onClick={() => setSort(entry)}>{entry}</button>)}</div></div><div className="job-grid">{pagedRows.map(({ vacancy, job }) => <VacancyCard key={vacancy.vacancyId} game={game} vacancy={vacancy} job={job!} dispatch={dispatch} selected={vacancy.vacancyId === selected?.vacancy.vacancyId} onSelect={() => setSelectedId(vacancy.vacancyId)} />)}</div>
       {pageCount > 1 && <div className="pager-row" role="navigation" aria-label="岗位列表分页">
         <span className="pager-fill" aria-hidden="true" />
         <button type="button" className="pager-arrow" disabled={safePage === 0} onClick={() => goPage(safePage - 1)} aria-label="上一页">‹</button>
