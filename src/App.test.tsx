@@ -88,6 +88,9 @@ describe('余量 app flow', () => {
     const detail = screen.getByRole('complementary', { name: '岗位详情' });
     expect(detail.querySelector('.career-detail-match')).toHaveClass('career-detail-match');
     expect(detail.querySelector('.career-detail-apply-bar')).not.toBeNull();
+    expect(detail.querySelectorAll('.career-condition-meter')).toHaveLength(2);
+    expect(within(detail).getByRole('meter', { name: '能力当前条件' })).toBeInTheDocument();
+    expect(within(detail).getByRole('meter', { name: '声誉当前条件' })).toBeInTheDocument();
     expect(within(detail).getByRole('button', { name: '申请岗位' })).toHaveClass('primary-button');
   });
 
@@ -254,6 +257,27 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '一次购买' }));
     expect(screen.getByTestId('date-value')).toHaveTextContent('08:00');
     expect(screen.getByTestId('cash-value')).toHaveTextContent('¥62');
+  });
+
+  it('exposes real shop sort and filter controls without changing the catalog contract', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '商店' }));
+
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    const sort = within(shop).getByRole('combobox', { name: '商品排序' });
+    expect(sort).toHaveValue('default');
+    await user.selectOptions(sort, 'price-asc');
+    expect(sort).toHaveValue('price-asc');
+    await user.selectOptions(sort, 'price-desc');
+    expect(sort).toHaveValue('price-desc');
+    expect(within(shop).getAllByRole('heading', { level: 2 })[0]).toHaveTextContent('小型钻石吊坠');
+
+    const filterToggle = within(shop).getByRole('button', { name: /^筛选/ });
+    await user.click(filterToggle);
+    expect(shop.querySelector('.shop-category-filters')).toHaveClass('is-open');
+    await user.click(within(shop).getByRole('button', { name: '休闲用品' }));
+    expect(within(shop).getByRole('heading', { name: '一束花' })).toBeInTheDocument();
   });
 
   it('manages an owned durable item from the reachable shop inventory', async () => {

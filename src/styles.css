@@ -3211,11 +3211,11 @@ button, input, select { border-radius: 0; }
    surfaces that carry the most catalog data a stronger black/white rhythm. */
 @media (min-width: 1181px) {
   .hero-activity {
-    grid-template-rows: auto auto auto 84px auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
   }
   .hero-activity .activity-progress {
-    align-self: end;
-    margin-top: 0;
+    align-self: start;
+    margin-top: 10px;
   }
   .hero-activity .hero-next {
     align-self: end;
@@ -3668,4 +3668,101 @@ button, input, select { border-radius: 0; }
     font-size: 9px;
     line-height: 1.1;
   }
+}
+
+/* Career conditions are a visual comparison in the reference HUD. Keep the
+   source values as text, while making the same comparison legible at a
+   glance through the shared one-bit segmented meter. */
+.career-detail.inverse .career-condition-meter {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 0;
+  color: #222;
+  border-bottom: 1px dotted #b0b0aa;
+  font-size: 10px;
+  line-height: 1.2;
+}
+.career-detail.inverse .career-condition-meter > span:first-child {
+  color: #444;
+}
+.career-detail.inverse .career-condition-meter > strong {
+  color: #070707;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.career-detail.inverse .career-condition-meter .segment-meter {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(5px, 1fr);
+  gap: 3px;
+  width: 100%;
+  min-width: 0;
+}
+.career-detail.inverse .career-condition-meter .segment-meter i {
+  width: auto;
+  height: 7px;
+  background: #d2d2cc;
+  border-color: #777;
+}
+.career-detail.inverse .career-condition-meter .segment-meter i.filled {
+  background: #070707;
+  border-color: #070707;
+}
+
+/* Shop toolbar: keep sorting and filtering on the same compact strip as the
+   six catalog tabs. The category rail opens on demand, so the first viewport
+   keeps the reference's dense 3-by-4 catalog silhouette. */
+.view-shop .shop-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-height: 30px;
+  margin: -4px 0 6px;
+}
+.view-shop .shop-sort-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: #aaa9a2;
+  font-size: 10px;
+}
+.view-shop .shop-sort-control select,
+.view-shop .shop-toolbar-button {
+  min-height: 28px;
+  padding: 5px 8px;
+  color: #eee;
+  background: #090909;
+  border: 1px solid #777;
+  font: inherit;
+  line-height: 1;
+}
+.view-shop .shop-sort-control select { max-width: 112px; }
+.view-shop .shop-toolbar-button { cursor: pointer; }
+.view-shop .shop-sort-control select:hover,
+.view-shop .shop-sort-control select:focus-visible,
+.view-shop .shop-toolbar-button:hover,
+.view-shop .shop-toolbar-button:focus-visible {
+  color: #070707;
+  background: #f4f4ef;
+  border-color: #f4f4ef;
+}
+.view-shop .shop-category-filters { margin: 0 0 8px; }
+
+@media (min-width: 1181px) {
+  .view-shop .shop-category-filters { display: none; }
+  .view-shop .shop-category-filters.is-open { display: flex; }
+}
+
+/* Shared shell weight: the brand stays a clear anchor without swallowing
+   the status modules, while the cash/net-worth symbols read as HUD data. */
+@media (min-width: 1321px) {
+  .brand-mark { font-size: 56px; }
+  .brand-mascot { width: 44px; height: 44px; }
+  .status-line > span:not(.status-clock) .pixel-icon { width: 20px; height: 20px; }
 }

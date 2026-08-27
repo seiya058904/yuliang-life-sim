@@ -694,6 +694,8 @@ function activityCatalogMeters(option: ActivityOption, cost: number): CatalogMet
 function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate: (view: ViewId) => void; initialTab: string }) {
   const [cart, setCart] = useState<Record<ContentId, number>>({});
   const [itemCategory, setItemCategory] = useState<string>('all');
+  const [itemSort, setItemSort] = useState<'default' | 'price-asc' | 'price-desc'>('default');
+  const [shopFiltersOpen, setShopFiltersOpen] = useState(false);
   const [itemPage, setItemPage] = useState(0);
   const [activityPage, setActivityPage] = useState(0);
   const [tab, setTab] = useState<string>(initialTab);
@@ -705,11 +707,15 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
   const cartCount = Object.values(cart).reduce((sum, quantity) => sum + quantity, 0);
   const total = Object.entries(cart).reduce((sum, [itemId, quantity]) => { const item = contentRegistry.items.find((entry) => entry.id === itemId); return sum + (item ? getItemCost(game, item) : 0) * quantity; }, 0);
   const categories = ['all', ...new Set(contentRegistry.items.map((item) => categoryLabels[item.category] ?? item.category))];
-  const items = contentRegistry.items.filter((item) => itemCategory === 'all' || (categoryLabels[item.category] ?? item.category) === itemCategory);
+  const items = [...contentRegistry.items.filter((item) => itemCategory === 'all' || (categoryLabels[item.category] ?? item.category) === itemCategory)].sort((left, right) => {
+    if (itemSort === 'default') return 0;
+    const priceDelta = getItemCost(game, left) - getItemCost(game, right);
+    return itemSort === 'price-asc' ? priceDelta : -priceDelta;
+  });
   const selectItemCategory = (entry: string) => {
     setItemCategory(entry);
     setItemPage(0);
-    const first = contentRegistry.items.find((item) => entry === 'all' || (categoryLabels[item.category] ?? item.category) === entry);
+    const first = items.find((item) => entry === 'all' || (categoryLabels[item.category] ?? item.category) === entry);
     setSelectedKey(first ? `item:${first.id}` : null);
   };
   const scheduleActivity = (activityId: ContentId, optionId: string) => {
@@ -799,7 +805,8 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
       <div className="shop-main">
         <div className="shop-tabs" role="tablist" aria-label="商店分类">{shopTabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'shop-tab selected' : 'shop-tab'} onClick={() => { setTab(id); setActivityPage(0); }}>{label}</button>)}</div>
         {tab === 'goods' && <>
-          <div className="filter-row" aria-label="商品分类">{categories.map((entry) => <button key={entry} className={itemCategory === entry ? 'filter-button selected' : 'filter-button'} onClick={() => selectItemCategory(entry)}>{entry === 'all' ? '全部' : entry}</button>)}</div>
+          <div className="shop-toolbar" aria-label="商品工具栏"><label className="shop-sort-control"><span>排序</span><select aria-label="商品排序" value={itemSort} onChange={(event) => { setItemSort(event.target.value as 'default' | 'price-asc' | 'price-desc'); setItemPage(0); }}><option value="default">默认排序</option><option value="price-asc">价格从低到高</option><option value="price-desc">价格从高到低</option></select></label><button className="shop-toolbar-button" aria-controls="shop-category-filters" aria-expanded={shopFiltersOpen} onClick={() => setShopFiltersOpen((open) => !open)}>筛选{itemCategory === 'all' ? '' : ' 1'} ▾</button></div>
+          <div id="shop-category-filters" className={shopFiltersOpen ? 'filter-row shop-category-filters is-open' : 'filter-row shop-category-filters'} aria-label="商品分类">{categories.map((entry) => <button key={entry} className={itemCategory === entry ? 'filter-button selected' : 'filter-button'} onClick={() => selectItemCategory(entry)}>{entry === 'all' ? '全部' : entry}</button>)}</div>
           <div className="item-grid">{featuredItems.map(renderItemCard)}</div>
           {itemPageCount > 1 && <nav className="catalog-pager" aria-label="商品分页"><button className="text-button" disabled={itemPage === 0} aria-label="上一页商品" onClick={() => selectItemPage(Math.max(0, itemPage - 1))}>←</button>{Array.from({ length: itemPageCount }, (_, page) => <button key={page} className={page === itemPage ? 'filter-button selected' : 'filter-button'} aria-current={page === itemPage ? 'page' : undefined} onClick={() => selectItemPage(page)}>{page + 1}</button>)}<button className="text-button" disabled={itemPage === itemPageCount - 1} aria-label="下一页商品" onClick={() => selectItemPage(Math.min(itemPageCount - 1, itemPage + 1))}>→</button></nav>}
           {detail && <section className="shop-detail inverse pixel-corners" aria-label="已选商品详情"><PixelIllustration name={detail.icon} size={72} /><div><span className="eyebrow">已选商品</span><h2>{detail.title}</h2><p>{detail.desc}</p><ul>{detail.facts.filter(Boolean).map((fact, index) => <li key={index}>{fact}</li>)}</ul></div><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section>}
