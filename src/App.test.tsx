@@ -187,6 +187,14 @@ describe('余量 app flow', () => {
     expect(legend).toHaveTextContent('其他');
   });
 
+  it('uses the reference-led seated scene for the current basic-life activity', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+
+    expect(document.querySelector('.hero-activity .pixel-illustration')).toHaveClass('il-life-activity');
+  });
+
   it('groups the four reference-driven surfaces into stable visual regions', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -229,9 +237,13 @@ describe('余量 app flow', () => {
     expect(dialog).toHaveTextContent('已实现收益');
     expect(dialog).toHaveTextContent('净资产变化');
     expect(within(dialog).getByRole('region', { name: '净资产结果' })).toHaveClass('settle-result-inverse');
+    expect(dialog).toHaveTextContent('净资产从 ¥500 变化为 ¥1,250');
+    expect(dialog).not.toHaveTextContent('增长至');
     expect(dialog.querySelectorAll('.settle-allocation .settle-rows .is-zero')).toHaveLength(3);
     expect(dialog.querySelector('.highlight-row')).toHaveClass('highlight-row-1');
     expect(dialog.querySelectorAll('.highlight-card.placeholder')).toHaveLength(4);
+    expect(dialog.querySelector('.settle-result-motif')).toBeInTheDocument();
+    expect(dialog.querySelectorAll('.settle-result-motif .settle-ray')).toHaveLength(8);
     expect(dialog).not.toHaveTextContent('✦');
     expect(dialog).not.toHaveTextContent('✧');
   });

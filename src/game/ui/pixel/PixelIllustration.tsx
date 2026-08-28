@@ -3,7 +3,7 @@ import type { SVGProps } from 'react';
 export type PixelIllustrationName =
   | 'mascot' | 'life' | 'sleep' | 'work' | 'book' | 'coin' | 'controller' | 'users'
   | 'suitcase' | 'house' | 'cash' | 'chart' | 'bag' | 'mail' | 'flag' | 'tag'
-  | 'life-main' | 'career-market' | 'shop' | 'settlement' | 'wealth' | 'social' | 'social-alt' | 'social-mentor' | 'social-colleague' | 'city' | 'profile' | 'phone' | 'coffee'
+  | 'life-main' | 'life-activity' | 'career-market' | 'shop' | 'settlement' | 'wealth' | 'social' | 'social-alt' | 'social-mentor' | 'social-colleague' | 'city' | 'profile' | 'phone' | 'coffee'
   | 'camera' | 'laptop' | 'desk' | 'hoodie' | 'watch' | 'record' | 'film' | 'meal' | 'dumbbell' | 'mountain' | 'painting' | 'flower' | 'diamond';
 
 /**
@@ -111,6 +111,20 @@ const scenes: Record<PixelIllustrationName, readonly Cell[]> = {
     [6, 6, 4, 3], [4, 7, 2, 1], [10, 7, 2, 1], [7, 8, 2, 1, 1],
     [3, 9, 10, 1], [4, 10, 8, 1], [4, 11, 2, 4], [10, 11, 2, 4],
     [11, 6, 3, 2], [12, 8, 2, 1], [1, 15, 14, 1],
+  ],
+  'life-activity': [
+    // A seated person at a table, matching the reference's basic-life anchor.
+    [5, 1, 4, 1], [4, 2, 6, 1], [4, 3, 2, 2], [8, 3, 2, 2], [5, 4, 5, 1],
+    [5, 3, 1, 1, 1], [8, 3, 1, 1, 1], [6, 4, 2, 1, 1],
+    [6, 5, 2, 1],
+    [5, 6, 5, 1], [4, 7, 2, 1], [4, 8, 1, 3], [9, 7, 2, 1], [10, 8, 1, 3],
+    [5, 10, 5, 1], [6, 7, 3, 3, 1],
+    [3, 9, 2, 1], [2, 10, 3, 1], [2, 11, 3, 1],
+    [9, 8, 1, 1], [10, 9, 2, 1], [11, 10, 2, 1],
+    [5, 11, 2, 2], [6, 13, 2, 1], [8, 11, 2, 3], [8, 14, 3, 1],
+    [1, 12, 13, 1], [2, 13, 2, 3], [11, 13, 2, 3],
+    [12, 4, 2, 1], [12, 5, 2, 3], [13, 6, 1, 1, 1], [14, 6, 1, 1], [12, 8, 3, 1],
+    [1, 15, 14, 1],
   ],
   'career-market': [
     [1, 5, 9, 9], [3, 3, 5, 2], [4, 4, 3, 1, 1],

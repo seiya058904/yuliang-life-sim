@@ -3920,6 +3920,19 @@ button, input, select { border-radius: 0; }
     grid-template-columns: repeat(20, minmax(0, 1fr));
   }
 
+  .view-life .hero-activity h2 {
+    font-size: clamp(42px, 3.4vw, 50px);
+    line-height: 1;
+  }
+  .view-life .hero-activity .pixel-illustration {
+    width: 108px;
+    height: 108px;
+    margin-top: 4px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
   .view-shop .item-card,
   .view-shop .activity-card { grid-template-columns: 80px minmax(0, 1fr); }
   .view-shop .item-card .card-art,
@@ -3969,5 +3982,53 @@ button, input, select { border-radius: 0; }
     min-height: 42px;
     padding: 9px 12px;
     font-size: 13px;
+  }
+}
+
+/* The settlement result is the ceremony's visual anchor: a small set of
+   crisp rays adds the reference's one-bit burst without inventing a score or
+   changing any financial meaning. */
+.settle-result-motif {
+  position: absolute;
+  z-index: 0;
+  right: 8px;
+  bottom: 8px;
+  width: 158px;
+  height: 158px;
+  pointer-events: none;
+}
+.settle-ray {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42px;
+  height: 2px;
+  background: #f0f0eb;
+  transform-origin: 0 50%;
+}
+.settle-ray-1 { transform: rotate(-168deg); }
+.settle-ray-2 { transform: rotate(-145deg); width: 34px; }
+.settle-ray-3 { transform: rotate(-118deg); width: 48px; }
+.settle-ray-4 { transform: rotate(-92deg); width: 30px; }
+.settle-ray-5 { transform: rotate(-64deg); width: 46px; }
+.settle-ray-6 { transform: rotate(-36deg); width: 34px; }
+.settle-ray-7 { transform: rotate(-12deg); width: 48px; }
+.settle-ray-8 { transform: rotate(14deg); width: 30px; }
+.settle-result > :not(.settle-result-motif) { position: relative; z-index: 1; }
+.settle-result > .settle-result-art { z-index: 2; }
+.settle-result-inverse .settle-ray { background: #070707; }
+
+@media (max-height: 800px) {
+  .settle-result-motif { display: none; }
+}
+
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card {
+    height: 150px;
+    min-height: 150px;
+  }
+
+  .view-shop .shop-detail {
+    min-height: 116px;
   }
 }

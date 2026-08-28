@@ -347,7 +347,7 @@ function activityKinds(activity: PlannedActivity | NonNullable<GameState['curren
     const definition = contentRegistry.activities?.find((entry) => entry.id === activity.activityId);
     return definition ? activitySceneFor(definition) : 'controller';
   }
-  return 'life-main';
+  return 'life-activity';
 }
 
 function timeOfDayLabel(hour: number) {
@@ -394,7 +394,7 @@ function TimeConsole({ game, dispatch }: { game: GameState; dispatch: (action: G
         <div className="week-track" aria-label="本周进度">{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => <span key={weekday} className={weekday === game.calendar.weekday ? 'track-day current' : weekday < game.calendar.weekday ? 'track-day passed' : 'track-day'}>周{weekdayLabel(weekday)}</span>)}</div>
       </div>
       <div className="hero-activity">
-        <div className="hero-activity-head"><PixelIcon name={scene === 'life' || scene === 'life-main' ? 'home' : scene === 'work' ? 'career' : scene === 'sleep' ? 'sleep' : scene === 'book' ? 'book' : scene === 'coin' ? 'cash' : scene === 'suitcase' ? 'plane' : scene === 'users' ? 'users' : scene === 'cash' ? 'wealth' : scene === 'bag' ? 'shop' : 'spark'} /><span className="console-kicker">当前活动</span></div>
+        <div className="hero-activity-head"><PixelIcon name={scene === 'life' || scene === 'life-main' || scene === 'life-activity' ? 'home' : scene === 'work' ? 'career' : scene === 'sleep' ? 'sleep' : scene === 'book' ? 'book' : scene === 'coin' ? 'cash' : scene === 'suitcase' ? 'plane' : scene === 'users' ? 'users' : scene === 'cash' ? 'wealth' : scene === 'bag' ? 'shop' : 'spark'} /><span className="console-kicker">当前活动</span></div>
         <PixelIllustration name={scene} size={84} />
         <h2>{title}</h2>
         <p className="hero-range">{formatClock(activity.start.hour, activity.start.minute)} — {formatClock(activity.end.hour, activity.end.minute)} · {activity.kind === 'work' ? '自动排班' : '自动发生'}</p>
@@ -1159,8 +1159,9 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
           <h3 className="settle-result-title">净资产变化</h3>
           <span className="settle-ribbon">本月净资产{netWorthChange >= 0 ? '增加' : '减少'}</span>
           <strong className={`settle-big ${netWorthChange >= 0 ? 'positive' : 'negative'}`}>{netWorthChange >= 0 ? '+' : '-'}{money(Math.abs(netWorthChange))}</strong>
-          <p className="settle-range">净资产从 {money(netWorthStart)} 增长至 {money(netWorthEnd)}（估值变化不等于现金收入）</p>
+          <p className="settle-range">净资产从 {money(netWorthStart)} 变化为 {money(netWorthEnd)}（估值变化不等于现金收入）</p>
           {growthPercent !== null && <em className="settle-badge">增幅 {netWorthChange >= 0 ? '+' : ''}{growthPercent}%</em>}
+          <div className="settle-result-motif" aria-hidden="true">{Array.from({ length: 8 }, (_, index) => <i className={`settle-ray settle-ray-${index + 1}`} key={index} />)}</div>
           <PixelIllustration name="settlement" size={104} className="settle-result-art" />
         </section>
         <div className="settle-half-row">
