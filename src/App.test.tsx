@@ -612,6 +612,34 @@ describe('余量 app flow', () => {
     expect(activityCard.querySelector('.catalog-facts')).toHaveTextContent('类型');
   });
 
+  it('keeps the Life console progress and pause affordance in the reference control grammar', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+
+    const timeConsole = screen.getByRole('region', { name: '世界时间' });
+    expect(timeConsole.querySelectorAll('.activity-progress i')).toHaveLength(20);
+    expect(within(timeConsole).getByRole('button', { name: '暂停' })).toBeDisabled();
+  });
+
+  it('renders the selected shop detail with reference-scale art and four honest fact cells', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '商店' }));
+
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    const itemCard = screen.getByRole('heading', { name: '实用手机' }).closest('[data-catalog-card]') as HTMLElement;
+    expect(itemCard.querySelector('.card-art .pixel-illustration')).toHaveAttribute('width', '64');
+
+    const detail = within(shop).getByRole('region', { name: '已选商品详情' });
+    expect(detail.querySelector('.shop-detail-price')).toHaveTextContent('¥');
+    expect(detail.querySelectorAll('.shop-detail-fact')).toHaveLength(4);
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('时间');
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('效果');
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('前提');
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('类型');
+  });
+
   it('keeps an activity heading, facts, and action inside one semantic card body', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -631,7 +659,9 @@ describe('余量 app flow', () => {
     render(<App />);
     await user.click(screen.getByRole('button', { name: '生活' }));
 
+    const life = screen.getByRole('region', { name: '生活核心面板' });
     expect(screen.getByRole('heading', { name: '本周计划' })).toBeInTheDocument();
+    expect(life.querySelector('.life-planning-section .eyebrow')).toBeNull();
     expect(screen.queryByRole('heading', { name: '把时间留给什么' })).not.toBeInTheDocument();
   });
 

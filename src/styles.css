@@ -3843,3 +3843,131 @@ button, input, select { border-radius: 0; }
   background: #171717;
   border-color: #444;
 }
+
+/* Round 5: carry the reference control grammar and selected-product detail
+   into the rendered board without changing the actions or their state. */
+.hero-pause {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px;
+  color: #aaa;
+  background: #090909;
+  border-color: #777;
+  font-size: 14px;
+  line-height: 1.1;
+  text-align: center;
+}
+.hero-pause:disabled {
+  color: #aaa;
+  background: #090909;
+  border-color: #777;
+  opacity: 1;
+  cursor: default;
+}
+
+.shop-detail-copy,
+.shop-detail-title-row,
+.shop-detail-facts,
+.shop-detail-fact { min-width: 0; }
+.shop-detail-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.shop-detail-title-row > div { min-width: 0; }
+.shop-detail-price {
+  flex: none;
+  color: #f4f4ef;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.shop-detail-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  margin: 0;
+  border-inline-start: 1px dotted #666;
+}
+.shop-detail-fact {
+  display: grid;
+  gap: 4px;
+  padding: 5px 8px;
+  border-inline-end: 1px dotted #666;
+}
+.shop-detail-fact dt,
+.shop-detail-fact dd {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shop-detail-fact dt {
+  color: #aaa;
+  font-size: 10px;
+  line-height: 1;
+}
+.shop-detail-fact dd {
+  color: #f4f4ef;
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+@media (min-width: 1181px) {
+  .hero-activity .activity-progress {
+    grid-template-columns: repeat(20, minmax(0, 1fr));
+  }
+
+  .view-shop .item-card,
+  .view-shop .activity-card { grid-template-columns: 80px minmax(0, 1fr); }
+  .view-shop .item-card .card-art,
+  .view-shop .activity-card .card-art {
+    width: 76px;
+    height: 76px;
+    padding: 5px;
+  }
+  .view-shop .item-card .card-art .pixel-illustration,
+  .view-shop .activity-card .card-art .pixel-illustration {
+    width: 64px;
+    height: 64px;
+  }
+
+  .view-shop .shop-detail {
+    grid-template-columns: 76px minmax(170px, .9fr) minmax(300px, 1.5fr) auto;
+    gap: 12px;
+    min-height: 126px;
+    padding: 10px 12px;
+  }
+  .view-shop .shop-detail .pixel-illustration {
+    width: 72px;
+    height: 72px;
+  }
+  .view-shop .shop-detail-copy { align-self: center; }
+  .view-shop .shop-detail h2 {
+    margin: 3px 0 5px;
+    font-size: 20px;
+    line-height: 1.05;
+  }
+  .view-shop .shop-detail p {
+    max-width: none;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .view-shop .shop-detail-facts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-self: stretch;
+    align-items: center;
+  }
+  .view-shop .shop-detail-fact { min-height: 42px; }
+  .view-shop .shop-detail .primary-button {
+    min-width: 112px;
+    min-height: 42px;
+    padding: 9px 12px;
+    font-size: 13px;
+  }
+}

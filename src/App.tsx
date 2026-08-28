@@ -376,7 +376,7 @@ function TimeConsole({ game, dispatch }: { game: GameState; dispatch: (action: G
   const activity = game.currentActivity ?? activityAtTime(game.time, game.weeklyPlan, game.employment, contentRegistry);
   const progress = deriveActivityProgress(activity, game.time);
   const progressPercent = Math.round(progress * 100);
-  const progressSegments = 12;
+  const progressSegments = 20;
   const filledSegments = Math.round(progress * progressSegments);
   const dayActivities = getDailyActivities(game.time.day, game.weeklyPlan, game.employment, contentRegistry);
   const next = dayActivities.find((entry) => absoluteMinute(entry.start) > absoluteMinute(game.time) && !['sleep', 'life', 'free'].includes(entry.kind));
@@ -406,6 +406,7 @@ function TimeConsole({ game, dispatch }: { game: GameState; dispatch: (action: G
         <span className="console-kicker">时间速度</span>
         <div className="speed-controls">{([1, 2, 4] as const).map((speed) => <button key={speed} className={game.simulationSpeed === speed ? 'speed-button active' : 'speed-button'} aria-pressed={game.simulationSpeed === speed} onClick={() => dispatch({ type: 'set_simulation_speed', speed })}>×{speed}</button>)}</div>
         <button className="primary-button hero-start" disabled={action.disabled} onClick={() => dispatch({ type: action.type } as GameAction)}>{action.label}</button>
+        {game.simulationMode !== 'running' && <button className="secondary-button hero-pause" type="button" aria-label="暂停" disabled>暂停 Ⅱ</button>}
         <span className={`mode-label mode-${game.simulationMode}`}>{modeText(game.simulationMode)}</span>
       </div>
     </div>
@@ -422,7 +423,7 @@ function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (
   const action = primaryAction(game.simulationMode);
   return <>
     <section className="life-primary-dashboard" aria-label="生活核心面板">
-      <section className="life-planning-section"><div className="section-heading compact"><div><span className="eyebrow">本周计划</span><h1>本周计划</h1></div><div className="planner-heading-side"><p>工作自动占用；其他时间由你安排。</p><PlanLegend /></div></div><WeekPlanner game={game} dispatch={dispatch} /></section>
+      <section className="life-planning-section"><div className="section-heading compact"><div><h1>本周计划</h1></div><div className="planner-heading-side"><p>工作自动占用；其他时间由你安排。</p><PlanLegend /></div></div><WeekPlanner game={game} dispatch={dispatch} /></section>
       <InboxGrid game={game} onNavigate={onNavigate} />
     </section>
     <section className="life-secondary-drawer" aria-label="生活详情">
@@ -767,16 +768,16 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
   });
 
   // ---- 底部选中详情区域的数据 ----
-  let detail: null | { icon: PixelIllustrationName; title: string; desc: string; facts: string[]; ctaLabel: string; onCta?: () => void; disabled?: boolean } = null;
+  let detail: null | { icon: PixelIllustrationName; title: string; desc: string; facts: CatalogFact[]; price?: string; ctaLabel: string; onCta?: () => void; disabled?: boolean } = null;
   if (selectedKey?.startsWith('item:')) {
     const item = contentRegistry.items.find((entry) => entry.id === selectedKey.slice(5));
     if (item) {
-      const effectLine = [...statMapTexts(item.attributeEffects), ...statMapTexts(item.statEffects)].slice(0, 3).join(' · ');
       detail = {
         icon: itemIllustrationFor(item),
         title: item.name,
         desc: item.description,
-        facts: [`价格 ${money(getItemCost(game, item))}`, owned(item.id) ? `已拥有 ×${game.inventory[item.id]}` : '未持有', effectLine || (item.capabilities?.length ? `解锁：${item.capabilities.map((capability) => displayMappedLabel(capability, capabilityLabels)).join('、')}` : '生活品质与收藏价值')],
+        price: money(getItemCost(game, item)),
+        facts: itemCatalogFacts(item, game),
         ctaLabel: '加入购物袋',
         onCta: () => setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 })),
       };
@@ -793,7 +794,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
         icon: activitySceneFor(definition),
         title: `${definition.name} · ${option.label}`,
         desc: definition.description,
-        facts: [`时长 ${durationLabel}`, `费用 ${money(cost)}`, effectTexts(option.effects).join(' · ') || '给生活留一点空间', cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '本周可安排'],
+        facts: [['时间', durationLabel], ['费用', money(cost)], ['效果', effectTexts(option.effects).join(' · ') || '给生活留一点空间'], ['状态', cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '本周可安排']],
         ctaLabel: cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '安排到本周自由时间',
         onCta: () => scheduleActivity(definition.id, option.id),
         disabled: cooldown > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward',
@@ -811,7 +812,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
   const renderItemCard = (item: (typeof contentRegistry.items)[number]) => {
     const hasItem = owned(item.id);
     const wishlisted = game.wishlist?.includes(item.id);
-    return <article className={selectedKey === `item:${item.id}` ? 'item-card selected' : 'item-card'} key={item.id} data-catalog-card><button className="card-overlay" onClick={() => setSelectedKey(`item:${item.id}`)} aria-label={`查看详情：${item.name}`} /><div className="card-art"><PixelIllustration name={itemIllustrationFor(item)} size={52} /></div><div className="item-card-head"><span className="catalog-badge">{displayMappedLabel(item.category, categoryLabels)}</span><span className="catalog-card-status">{hasItem ? <span className="current-label">已拥有</span> : <button className="catalog-secondary-action" onClick={() => dispatch({ type: 'manage_wishlist', itemId: item.id, enabled: !wishlisted })} aria-label={`${wishlisted ? '移出' : '加入'}愿望清单：${item.name}`} aria-pressed={wishlisted}>{wishlisted ? '已加入目标' : '加入目标'}</button>}</span></div><div className="catalog-title-row"><h2>{item.name}</h2><strong className="catalog-price">{money(getItemCost(game, item))}</strong></div><p>{item.description}</p><CatalogFacts facts={itemCatalogFacts(item, game)} ariaLabel={`${item.name} 商品信息`} /><CatalogMeters metrics={itemCatalogMeters(item)} ariaLabel={`${item.name} 影响计量`} /><div className="item-card-foot"><button className="primary-button" onClick={() => { setSelectedKey(`item:${item.id}`); setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 })); }} aria-label={`加入购物袋：${item.name}`}>加入清单</button></div></article>;
+    return <article className={selectedKey === `item:${item.id}` ? 'item-card selected' : 'item-card'} key={item.id} data-catalog-card><button className="card-overlay" onClick={() => setSelectedKey(`item:${item.id}`)} aria-label={`查看详情：${item.name}`} /><div className="card-art"><PixelIllustration name={itemIllustrationFor(item)} size={64} /></div><div className="item-card-head"><span className="catalog-badge">{displayMappedLabel(item.category, categoryLabels)}</span><span className="catalog-card-status">{hasItem ? <span className="current-label">已拥有</span> : <button className="catalog-secondary-action" onClick={() => dispatch({ type: 'manage_wishlist', itemId: item.id, enabled: !wishlisted })} aria-label={`${wishlisted ? '移出' : '加入'}愿望清单：${item.name}`} aria-pressed={wishlisted}>{wishlisted ? '已加入目标' : '加入目标'}</button>}</span></div><div className="catalog-title-row"><h2>{item.name}</h2><strong className="catalog-price">{money(getItemCost(game, item))}</strong></div><p>{item.description}</p><CatalogFacts facts={itemCatalogFacts(item, game)} ariaLabel={`${item.name} 商品信息`} /><CatalogMeters metrics={itemCatalogMeters(item)} ariaLabel={`${item.name} 影响计量`} /><div className="item-card-foot"><button className="primary-button" onClick={() => { setSelectedKey(`item:${item.id}`); setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 })); }} aria-label={`加入购物袋：${item.name}`}>加入清单</button></div></article>;
   };
   return <section className="shop-page" aria-label="商品目录布局">
     <div className="section-heading compact"><div><span className="eyebrow">商店 · 生活内容</span><h1>商品</h1></div><p>浏览不消耗时间；购买与安排都会进入真实账本、周计划和人生记录。</p></div>
@@ -825,7 +826,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
           <div id="shop-category-filters" className={shopFiltersOpen ? 'filter-row shop-category-filters is-open' : 'filter-row shop-category-filters'} aria-label="商品分类">{categories.map((entry) => <button key={entry} className={itemCategory === entry ? 'filter-button selected' : 'filter-button'} onClick={() => selectItemCategory(entry)}>{entry === 'all' ? '全部' : entry}</button>)}</div>
           <div className="item-grid">{featuredItems.map(renderItemCard)}</div>
           {itemPageCount > 1 && <nav className="catalog-pager" aria-label="商品分页"><button className="text-button" disabled={itemPage === 0} aria-label="上一页商品" onClick={() => selectItemPage(Math.max(0, itemPage - 1))}>←</button>{Array.from({ length: itemPageCount }, (_, page) => <button key={page} className={page === itemPage ? 'filter-button selected' : 'filter-button'} aria-current={page === itemPage ? 'page' : undefined} onClick={() => selectItemPage(page)}>{page + 1}</button>)}<button className="text-button" disabled={itemPage === itemPageCount - 1} aria-label="下一页商品" onClick={() => selectItemPage(Math.min(itemPageCount - 1, itemPage + 1))}>→</button></nav>}
-          {detail && <section className="shop-detail inverse pixel-corners" aria-label="已选商品详情"><PixelIllustration name={detail.icon} size={72} /><div><span className="eyebrow">已选商品</span><h2>{detail.title}</h2><p>{detail.desc}</p><ul>{detail.facts.filter(Boolean).map((fact, index) => <li key={index}>{fact}</li>)}</ul></div><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section>}
+          {detail && <section className="shop-detail inverse pixel-corners" aria-label="已选商品详情"><PixelIllustration name={detail.icon} size={72} /><div className="shop-detail-copy"><div className="shop-detail-title-row"><div><span className="eyebrow">已选商品</span><h2>{detail.title}</h2></div>{detail.price && <strong className="shop-detail-price">{detail.price}</strong>}</div><p>{detail.desc}</p></div><dl className="shop-detail-facts" aria-label={`${detail.title} 详情事实`}>{detail.facts.filter(([, value]) => Boolean(value)).map(([label, value]) => <div className="shop-detail-fact" key={label}><dt>{label}</dt><dd title={value}>{value}</dd></div>)}</dl><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section>}
         </>}
         {tab === 'services' && <ServiceMarket game={game} dispatch={dispatch} />}
         {tab !== 'goods' && tab !== 'services' && pagedActivityEntries.length > 0 && <>
@@ -844,7 +845,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
                 : `${effects.join(' · ') || '给生活留一点空间'}${activityDiscountLabel(game, activity, contentRegistry) ? ` · ${activityDiscountLabel(game, activity, contentRegistry)}` : ''}`;
               return <article className={selectedKey === `act:${activity.id}|${option.id}` ? 'activity-card selected' : 'activity-card'} key={`${activity.id}-${option.id}`} data-catalog-card>
                 <button className="card-overlay" onClick={() => setSelectedKey(`act:${activity.id}|${option.id}`)} aria-label={`查看详情：${activity.name} ${option.label}`} />
-                <div className="card-art"><PixelIllustration name={activitySceneFor(activity)} size={52} /></div>
+                <div className="card-art"><PixelIllustration name={activitySceneFor(activity)} size={64} /></div>
                 <div className="activity-card-body">
                   <div className="item-card-head"><span className="catalog-badge">{activityCategoryLabels[activity.category] ?? activity.category}</span><span className="catalog-card-status">{projectDone ? <span className="current-label">已完成</span> : cooldownRemaining > 0 ? <span className="requirement-missing">冷却中</span> : null}</span></div>
                   <h3>{activity.name} · {option.label}</h3>
