@@ -453,7 +453,7 @@ describe('余量 app flow', () => {
     expect(reflection.querySelector('.pixel-icon')).not.toBeNull();
     expect(dialog.querySelector('.settle-result-motif')).toBeInTheDocument();
     expect(dialog.querySelectorAll('.settle-result-motif .settle-ray')).toHaveLength(16);
-    expect(dialog.querySelectorAll('.settle-result-motif .settle-spark')).toHaveLength(10);
+    expect(dialog.querySelectorAll('.settle-result-motif .settle-spark')).toHaveLength(14);
     expect(dialog.querySelectorAll('.settle-title-spark')).toHaveLength(3);
     expect(dialog.querySelector('[aria-label="收入"] .settle-panel-art .il-settlement-income')).toBeInTheDocument();
     expect(dialog.querySelector('[aria-label="支出"] .settle-panel-art .il-settlement-expense')).toBeInTheDocument();
