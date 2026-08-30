@@ -1781,15 +1781,20 @@ test('keeps the Settlement review card on the shared visual anchor tier', async 
   const metrics = await page.locator('.monthly-summary.fullframe .highlight-card.reflection').evaluate((card) => {
     const icon = card.querySelector('.pixel-icon')?.getBoundingClientRect();
     const metric = card.querySelector('.reflection-metric')?.getBoundingClientRect();
+    const recordWidths = Array.from(card.parentElement?.querySelectorAll<HTMLElement>('.highlight-card:not(.reflection)') ?? [])
+      .map((record) => record.getBoundingClientRect().width);
     return {
       cardWidth: card.getBoundingClientRect().width,
       iconWidth: icon?.width ?? 0,
       iconHeight: icon?.height ?? 0,
       metricHeight: metric?.height ?? 0,
+      recordWidths,
     };
   });
 
   expect(metrics.cardWidth).toBeGreaterThanOrEqual(210);
+  expect(metrics.recordWidths).toHaveLength(5);
+  expect(metrics.cardWidth).toBeGreaterThan(Math.max(...metrics.recordWidths) * 1.15);
   expect(metrics.iconWidth).toBeGreaterThanOrEqual(32);
   expect(metrics.iconHeight).toBeGreaterThanOrEqual(32);
   expect(metrics.metricHeight).toBeGreaterThanOrEqual(22);

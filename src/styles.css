@@ -8118,6 +8118,16 @@ textarea {
   }
 }
 
+/* The reference closes the achievement band with a wider review card. Give
+   that real net-worth summary more visual weight while keeping the five
+   authored records in the same row and leaving the low-height compression
+   rule untouched. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .highlight-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) minmax(0, 1.25fr);
+  }
+}
+
 /* Settlement's title follows the reference celebration rhythm: one larger
    spark on the left, a small mid-air marker, and a second right-side spark.
    Keep the compact 720px layout to two marks so the title never collides. */
