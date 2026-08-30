@@ -9242,3 +9242,25 @@ textarea {
   .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(15) { width: 140px !important; transform: rotate(152deg); }
   .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(16) { width: 114px !important; transform: rotate(175deg); }
 }
+
+/* Life empty states use one muted status line beside a small pixel marker.
+   The authored hint remains in the DOM for the real state, but stays out of
+   the fixed four-panel scan tier so an empty inbox does not read like a
+   two-line web empty state. */
+@media (min-width: 1181px) {
+  .view-life .inbox-panel .inbox-empty-copy {
+    display: block;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy strong {
+    display: block;
+    color: #aaa9a2;
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1.25;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy small {
+    display: none;
+  }
+}

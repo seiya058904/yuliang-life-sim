@@ -341,6 +341,7 @@ test('keeps empty Life inboxes as compact horizontal pixel states', async ({ pag
     const markRect = mark?.getBoundingClientRect();
     const copy = item.querySelector('.inbox-empty-copy');
     const copyRect = copy?.getBoundingClientRect();
+    const hint = item.querySelector('.inbox-empty-copy small');
     const itemRect = item.getBoundingClientRect();
     return {
       gridTemplateColumns: style.gridTemplateColumns,
@@ -355,17 +356,18 @@ test('keeps empty Life inboxes as compact horizontal pixel states', async ({ pag
       markRight: markRect?.right ?? 0,
       markCenterY: markRect ? markRect.top + markRect.height / 2 : 0,
       copyCenterY: copyRect ? copyRect.top + copyRect.height / 2 : 0,
+      hintVisible: hint ? getComputedStyle(hint).display !== 'none' : false,
     };
   }));
 
   expect(states.length).toBeGreaterThanOrEqual(2);
-  expect(states.every(({ gridTemplateColumns, textAlign, justifyItems, markWidth, markHeight, emptyWidth, emptyHeight, copyLeft, copyTop, markRight, markCenterY, copyCenterY }) =>
+  expect(states.every(({ gridTemplateColumns, textAlign, justifyItems, markWidth, markHeight, emptyWidth, emptyHeight, copyLeft, copyTop, markRight, markCenterY, copyCenterY, hintVisible }) =>
     gridTemplateColumns.trim().split(/\s+/).length === 2 && textAlign === 'left' && justifyItems === 'start' &&
     markWidth >= 34 && markWidth <= 40 && markHeight >= 34 && markHeight <= 40 &&
     emptyWidth >= 300 && emptyWidth <= 330 &&
     emptyHeight >= 92 && emptyHeight <= 104 &&
     copyLeft >= markRight + 6 && copyTop >= 0 &&
-    Math.abs(markCenterY - copyCenterY) <= 10
+    Math.abs(markCenterY - copyCenterY) <= 10 && !hintVisible
   )).toBe(true);
 });
 
