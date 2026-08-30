@@ -896,7 +896,6 @@ test('keeps Shop product metadata and secondary actions in the readable pixel ti
     const secondary = card.querySelector('.catalog-secondary-action');
     const primary = card.querySelector('.item-card-foot .primary-button');
     const factStyle = facts ? getComputedStyle(facts) : null;
-    const secondaryStyle = secondary ? getComputedStyle(secondary) : null;
     const primaryStyle = primary ? getComputedStyle(primary) : null;
     const cardRect = card.getBoundingClientRect();
     return {
@@ -906,38 +905,38 @@ test('keeps Shop product metadata and secondary actions in the readable pixel ti
       illustrationWidth: illustration?.getBoundingClientRect().width ?? 0,
       illustrationHeight: illustration?.getBoundingClientRect().height ?? 0,
       factFontSize: factStyle ? Number.parseFloat(factStyle.fontSize) : 0,
-      secondaryFontSize: secondaryStyle ? Number.parseFloat(secondaryStyle.fontSize) : 0,
+      secondaryWidth: secondary?.getBoundingClientRect().width ?? 0,
+      secondaryHeight: secondary?.getBoundingClientRect().height ?? 0,
+      hasPixelIcon: Boolean(secondary?.querySelector('.pixel-icon')),
       primaryFontSize: primaryStyle ? Number.parseFloat(primaryStyle.fontSize) : 0,
       primaryHeight: primary?.getBoundingClientRect().height ?? 0,
     };
   }));
 
   expect(cards.length).toBeGreaterThan(0);
-  expect(cards.every(({ cardHeight, artWidth, artHeight, illustrationWidth, illustrationHeight, factFontSize, secondaryFontSize, primaryFontSize, primaryHeight }) =>
+  expect(cards.every(({ cardHeight, artWidth, artHeight, illustrationWidth, illustrationHeight, factFontSize, secondaryWidth, secondaryHeight, hasPixelIcon, primaryFontSize, primaryHeight }) =>
     cardHeight >= 150 && artWidth >= 64 && artHeight >= 64 && illustrationWidth >= 60 && illustrationHeight >= 60 &&
-    factFontSize >= 10 && secondaryFontSize >= 9 && primaryFontSize >= 11 && primaryHeight >= 25
+    factFontSize >= 10 && secondaryWidth >= 18 && secondaryHeight >= 18 && hasPixelIcon && primaryFontSize >= 11 && primaryHeight >= 25
   )).toBe(true);
 });
 
-test('keeps Shop product facts and CTA above the tiny web-copy tier', async ({ page }) => {
+test('keeps Shop product facts and primary CTA above the tiny web-copy tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card typography is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
 
   const typography = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
     const fact = card.querySelector('.catalog-facts > div');
-    const secondary = card.querySelector('.catalog-secondary-action');
     const primary = card.querySelector('.item-card-foot .primary-button');
     return {
       factFontSize: fact ? Number.parseFloat(getComputedStyle(fact).fontSize) : 0,
-      secondaryFontSize: secondary ? Number.parseFloat(getComputedStyle(secondary).fontSize) : 0,
       primaryFontSize: primary ? Number.parseFloat(getComputedStyle(primary).fontSize) : 0,
     };
   }));
 
   expect(typography.length).toBeGreaterThan(0);
-  expect(typography.every(({ factFontSize, secondaryFontSize, primaryFontSize }) =>
-    factFontSize >= 11 && secondaryFontSize >= 10 && primaryFontSize >= 12
+  expect(typography.every(({ factFontSize, primaryFontSize }) =>
+    factFontSize >= 11 && primaryFontSize >= 12
   )).toBe(true);
 });
 

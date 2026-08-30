@@ -8305,7 +8305,18 @@ textarea {
   }
 
   .view-shop .shop-main .item-card .catalog-secondary-action {
-    font-size: 10px;
+    display: grid;
+    place-items: center;
+    width: 18px;
+    min-height: 18px;
+    padding: 2px;
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .view-shop .shop-main .item-card .catalog-secondary-action .pixel-icon {
+    width: 12px;
+    height: 12px;
   }
 
   .view-shop .shop-main .item-card .item-card-foot > .primary-button {

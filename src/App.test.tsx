@@ -893,6 +893,7 @@ describe('余量 app flow', () => {
     expect(itemCard.querySelectorAll('button.primary-button')).toHaveLength(1);
     expect(itemCard.querySelector('.button-pair')).toBeNull();
     expect(itemCard.querySelector('.catalog-secondary-action')).not.toBeNull();
+    expect(itemCard.querySelector('.catalog-secondary-action .pixel-icon')).not.toBeNull();
   });
 
   it('renders the reference product-card anatomy with honest definition facts', async () => {
