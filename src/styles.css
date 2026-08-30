@@ -9724,3 +9724,24 @@ textarea {
     line-height: .95;
   }
 }
+
+/* The tall reference has enough vertical room for a clearer product reading
+   tier. Scale the shared Goods/Entertainment title, price, and real facts
+   together; the low-height card keeps its existing compact rhythm. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-shop .shop-main .item-card .catalog-title-row h2,
+  .view-shop .shop-main .activity-card h3 {
+    font-size: 18px;
+    line-height: 1.1;
+  }
+
+  .view-shop .shop-main .item-card .catalog-price,
+  .view-shop .shop-main .activity-card .catalog-price {
+    font-size: 14px;
+  }
+
+  .view-shop .shop-main .item-card .catalog-facts > div {
+    font-size: 12px;
+    line-height: .95;
+  }
+}

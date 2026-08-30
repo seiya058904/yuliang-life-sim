@@ -1103,6 +1103,30 @@ test('keeps Shop product titles on the primary catalog tier', async ({ page }) =
   expect(typography.every(({ titleFontSize, priceFontSize }) => titleFontSize >= 17 && priceFontSize >= 13)).toBe(true);
 });
 
+test('gives Shop product cards a stronger reference reading tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product reading hierarchy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const typography = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
+    const title = card.querySelector('.catalog-title-row h2');
+    const price = card.querySelector('.catalog-price');
+    const fact = card.querySelector('.catalog-facts > div');
+    const primary = card.querySelector('.item-card-foot .primary-button');
+    return {
+      titleFontSize: title ? Number.parseFloat(getComputedStyle(title).fontSize) : 0,
+      priceFontSize: price ? Number.parseFloat(getComputedStyle(price).fontSize) : 0,
+      factFontSize: fact ? Number.parseFloat(getComputedStyle(fact).fontSize) : 0,
+      primaryFontSize: primary ? Number.parseFloat(getComputedStyle(primary).fontSize) : 0,
+    };
+  }));
+
+  expect(typography.length).toBeGreaterThan(0);
+  expect(typography.every(({ titleFontSize, priceFontSize, factFontSize, primaryFontSize }) =>
+    titleFontSize >= 18 && priceFontSize >= 14 && factFontSize >= 12 && primaryFontSize >= 12
+  )).toBe(true);
+});
+
 test('keeps the selected Shop product frame brighter than idle cards', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product frame contrast is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
