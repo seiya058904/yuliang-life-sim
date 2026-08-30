@@ -121,42 +121,34 @@ describe('PixelIllustration', () => {
 
     const illustration = screen.getByTestId('mascot');
     expect(illustration).toHaveClass('fine-grid');
-    expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
+    expect(illustration).toHaveAttribute('viewBox', '0 0 24 26');
     const hasCell = (x: string, y: string, width: string, height: string) => [...illustration.querySelectorAll('rect')].some((rect) =>
       rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height
     );
 
-    const hasKnockout = (x: string, y: string, width: string, height: string) => [...illustration.querySelectorAll('rect')].some((rect) =>
-      rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && rect.getAttribute('fill') === 'var(--il-knock, #090909)'
-    );
-
-    expect(hasCell('8', '1', '8', '1')).toBe(true);
-    expect(hasCell('6', '2', '12', '1')).toBe(true);
-    expect(hasCell('3', '7', '1', '5')).toBe(true);
-    expect(hasCell('20', '7', '1', '5')).toBe(true);
-    expect(hasCell('7', '8', '10', '6')).toBe(true);
-    expect(hasKnockout('8', '10', '2', '2')).toBe(true);
-    expect(hasKnockout('14', '10', '2', '2')).toBe(true);
-    expect(hasKnockout('10', '13', '4', '1')).toBe(true);
+    expect(hasCell('8', '0', '1', '1')).toBe(true);
+    expect(hasCell('0', '12', '1', '1')).toBe(true);
+    expect(hasCell('23', '12', '1', '1')).toBe(true);
     expect(hasCell('9', '18', '1', '1')).toBe(true);
-    expect(hasCell('8', '17', '8', '1')).toBe(true);
-    expect(hasCell('6', '21', '2', '2')).toBe(true);
-    expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(35);
+    expect(hasCell('8', '20', '1', '1')).toBe(true);
+    expect(hasCell('9', '25', '1', '1')).toBe(true);
+    expect(hasCell('7', '8', '10', '6')).toBe(false);
+    expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(170);
   });
 
-  it('keeps the persistent mascot face readable as stepped eyewear', () => {
-    render(<PixelIllustration name="mascot" data-testid="mascot-glasses" />);
+  it('keeps the persistent portrait on the reference open-ring detail grid', () => {
+    render(<PixelIllustration name="mascot" data-testid="mascot-reference-grid" />);
 
-    const illustration = screen.getByTestId('mascot-glasses');
-    const hasKnockout = (x: string, y: string, width: string, height: string) => [...illustration.querySelectorAll('rect')].some((rect) =>
-      rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && rect.getAttribute('fill') === 'var(--il-knock, #090909)'
+    const cells = [...screen.getByTestId('mascot-reference-grid').querySelectorAll('rect')];
+    const hasCell = (x: string, y: string) => cells.some((rect) =>
+      rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === '1' && rect.getAttribute('height') === '1'
     );
 
-    expect(hasKnockout('8', '9', '3', '1')).toBe(true);
-    expect(hasKnockout('13', '9', '3', '1')).toBe(true);
-    expect(hasKnockout('10', '10', '4', '1')).toBe(true);
-    expect(hasKnockout('9', '12', '2', '1')).toBe(true);
-    expect(hasKnockout('13', '12', '2', '1')).toBe(true);
+    expect(hasCell('0', '12')).toBe(true);
+    expect(hasCell('23', '12')).toBe(true);
+    expect(hasCell('11', '12')).toBe(true);
+    expect(cells.some((rect) => rect.getAttribute('width') === '10' && rect.getAttribute('height') === '6')).toBe(false);
+    expect(cells.every((rect) => rect.getAttribute('width') === '1' && rect.getAttribute('height') === '1')).toBe(true);
   });
 
   it('keeps career and settlement anchors on the same fine grid', () => {

@@ -2322,7 +2322,7 @@ test('keeps desktop footer portraits open instead of boxed terminal icons', asyn
       backgroundColor: style.backgroundColor,
       borderStyle: style.borderStyle,
       hasOpenShoulder: cells.some(({ x, y, width, height }) => x === '9' && y === '18' && width === '1' && height === '1'),
-      hasSeparatedShoulder: cells.some(({ x, y, width, height }) => x === '6' && y === '21' && width === '2' && height === '2'),
+      hasOpenCollar: cells.some(({ x, y, width, height }) => x === '8' && y === '20' && width === '1' && height === '1'),
     };
   });
 
@@ -2338,7 +2338,7 @@ test('keeps desktop footer portraits open instead of boxed terminal icons', asyn
     backgroundColor: 'rgba(0, 0, 0, 0)',
     borderStyle: 'none',
     hasOpenShoulder: true,
-    hasSeparatedShoulder: true,
+    hasOpenCollar: true,
   }));
   expect(portrait.svgBottom).toBeLessThanOrEqual(portrait.footerBottom - 2);
 });
