@@ -952,6 +952,27 @@ describe('余量 app flow', () => {
     expect(effectFact).toHaveTextContent('生活水平');
   });
 
+  it('keeps the Entertainment tab on the same selected-detail surface as Goods', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '商店' }));
+
+    const shop = screen.getByRole('region', { name: '商品目录布局' });
+    await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
+    await user.click(within(shop).getAllByRole('button', { name: '查看详情：看电影 普通影厅' })[0]);
+
+    const detail = within(shop).getByRole('region', { name: '已选商品详情' });
+    expect(detail).toHaveTextContent('看电影 · 普通影厅');
+    expect(detail.querySelectorAll('.shop-detail-fact')).toHaveLength(4);
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('时间');
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('费用');
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('状态');
+    expect(within(detail).getByRole('button', { name: '安排到本周自由时间' })).toBeInTheDocument();
+
+    await user.click(within(shop).getByRole('tab', { name: '商品' }));
+    expect(within(shop).queryByRole('region', { name: '已选商品详情' })).not.toBeInTheDocument();
+  });
+
   it('keeps an activity heading, facts, and action inside one semantic card body', async () => {
     const user = userEvent.setup();
     render(<App />);

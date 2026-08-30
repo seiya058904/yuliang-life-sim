@@ -814,6 +814,12 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
     const first = items[page * 12];
     if (first) setSelectedKey(`item:${first.id}`);
   };
+  const selectedActivityVisible = selectedKey?.startsWith('act:') && pagedActivityEntries.some(({ activity, option }) => `act:${activity.id}|${option.id}` === selectedKey);
+  const shouldRenderSelectedDetail = Boolean(detail && (
+    (tab === 'goods' && selectedKey?.startsWith('item:')) ||
+    (tab !== 'services' && selectedActivityVisible)
+  ));
+  const selectedDetail = shouldRenderSelectedDetail && detail ? <section className="shop-detail inverse pixel-corners" aria-label="已选商品详情"><PixelIllustration name={detail.icon} size={72} /><div className="shop-detail-copy"><div className="shop-detail-title-row"><div><span className="eyebrow">已选商品</span><h2>{detail.title}</h2></div>{detail.price && <strong className="shop-detail-price">{detail.price}</strong>}</div><p>{detail.desc}</p></div><dl className="shop-detail-facts" aria-label={`${detail.title} 详情事实`}>{detail.facts.filter(([, value]) => Boolean(value)).map(([label, value]) => <div className="shop-detail-fact" data-fact={label} key={label}><dt>{label}</dt><dd title={value}>{label === '效果' && detail.metrics?.length ? <CatalogMeters metrics={detail.metrics} ariaLabel={`${detail.title}效果变化`} /> : value}</dd></div>)}</dl><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section> : null;
   const renderItemCard = (item: (typeof contentRegistry.items)[number]) => {
     const hasItem = owned(item.id);
     const wishlisted = game.wishlist?.includes(item.id);
@@ -831,7 +837,6 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
           <div id="shop-category-filters" className={shopFiltersOpen ? 'filter-row shop-category-filters is-open' : 'filter-row shop-category-filters'} aria-label="商品分类">{categories.map((entry) => <button key={entry} className={itemCategory === entry ? 'filter-button selected' : 'filter-button'} onClick={() => selectItemCategory(entry)}>{entry === 'all' ? '全部' : entry}</button>)}</div>
           <div className="item-grid">{featuredItems.map(renderItemCard)}</div>
           {itemPageCount > 1 && <nav className="catalog-pager" aria-label="商品分页"><button className="text-button" disabled={itemPage === 0} aria-label="上一页商品" onClick={() => selectItemPage(Math.max(0, itemPage - 1))}>←</button>{Array.from({ length: itemPageCount }, (_, page) => <button key={page} className={page === itemPage ? 'filter-button selected' : 'filter-button'} aria-current={page === itemPage ? 'page' : undefined} onClick={() => selectItemPage(page)}>{page + 1}</button>)}<button className="text-button" disabled={itemPage === itemPageCount - 1} aria-label="下一页商品" onClick={() => selectItemPage(Math.min(itemPageCount - 1, itemPage + 1))}>→</button></nav>}
-          {detail && <section className="shop-detail inverse pixel-corners" aria-label="已选商品详情"><PixelIllustration name={detail.icon} size={72} /><div className="shop-detail-copy"><div className="shop-detail-title-row"><div><span className="eyebrow">已选商品</span><h2>{detail.title}</h2></div>{detail.price && <strong className="shop-detail-price">{detail.price}</strong>}</div><p>{detail.desc}</p></div><dl className="shop-detail-facts" aria-label={`${detail.title} 详情事实`}>{detail.facts.filter(([, value]) => Boolean(value)).map(([label, value]) => <div className="shop-detail-fact" data-fact={label} key={label}><dt>{label}</dt><dd title={value}>{label === '效果' && detail.metrics?.length ? <CatalogMeters metrics={detail.metrics} ariaLabel={`${detail.title}效果变化`} /> : value}</dd></div>)}</dl><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section>}
         </>}
         {tab === 'services' && <ServiceMarket game={game} dispatch={dispatch} />}
         {tab !== 'goods' && tab !== 'services' && pagedActivityEntries.length > 0 && <>
@@ -866,6 +871,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
           </div>
           {activityPageCount > 1 && <nav className="catalog-pager" aria-label="活动分页"><button className="text-button" disabled={safeActivityPage === 0} aria-label="上一页活动" onClick={() => setActivityPage(Math.max(0, safeActivityPage - 1))}>←</button>{Array.from({ length: activityPageCount }, (_, page) => <button key={page} className={page === safeActivityPage ? 'filter-button selected' : 'filter-button'} aria-current={page === safeActivityPage ? 'page' : undefined} onClick={() => setActivityPage(page)}>{page + 1}</button>)}<button className="text-button" disabled={safeActivityPage === activityPageCount - 1} aria-label="下一页活动" onClick={() => setActivityPage(Math.min(activityPageCount - 1, safeActivityPage + 1))}>→</button></nav>}
         </>}
+        {selectedDetail}
       </div>
       <aside className="shop-rail" aria-label="商店辅助信息">
         <section className="rail-module rail-cart" aria-label="购物清单"><header><PixelIcon name="bag" size={16} /><h3>购物袋（{cartCount}）</h3></header>
