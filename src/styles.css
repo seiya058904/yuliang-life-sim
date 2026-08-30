@@ -1,5 +1,5 @@
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
   color: #111;
   background: #f3f3f0;
   font-synthesis: none;
@@ -228,7 +228,7 @@ button:focus-visible, input:focus-visible { outline-color: #fff; outline-offset:
 .status-clock { min-width: 150px; justify-content: center; border: 1px dotted #aaa !important; text-align: center; }
 .status-clock > b { font-size: 25px; }
 .settings-button { min-width: 48px !important; justify-content: center; padding-inline: 14px !important; }
-.pixel-icon { flex: none; image-rendering: pixelated; }
+.pixel-icon { flex: none; image-rendering: pixelated; shape-rendering: crispEdges; stroke-width: 2.5; }
 .main-nav { padding: 0 clamp(18px, 3vw, 44px); background: #050505; border-bottom-color: #777; }
 .nav-item { display: inline-flex; align-items: center; gap: 8px; min-width: 112px; justify-content: center; padding: 11px 18px; color: #ddd; border: 1px solid transparent; border-bottom: 0; font-size: 15px; }
 .nav-item:hover { color: #fff; background: #171717; border-color: #777; }
@@ -641,7 +641,7 @@ button:focus-visible, input:focus-visible { outline-color: #fff; outline-offset:
 .hero-clock {
   display: block;
   margin-top: 6px;
-  font-family: ui-monospace, "Cascadia Mono", monospace;
+  font-family: "MS Gothic", "Cascadia Mono", ui-monospace, monospace;
   font-size: clamp(58px, 5.4vw, 78px);
   line-height: .92;
   letter-spacing: -.09em;
@@ -773,13 +773,15 @@ button:focus-visible, input:focus-visible { outline-color: #fff; outline-offset:
 .forecast-attrs .forecast-sub { font-size: 10px; font-weight: 800; color: #070707; letter-spacing: .1em; }
 .forecast-attr {
   display: grid;
-  grid-template-columns: 34px 1fr 26px;
+  grid-template-columns: 16px 34px minmax(0, 1fr) 26px;
   align-items: center;
   gap: 5px;
   padding: 3px 0;
   border-bottom: 1px dotted #aaa;
   font-size: 10px;
 }
+
+.forecast-attr .pixel-icon { width: 13px; height: 13px; color: #070707; }
 .forecast-attr b { text-align: right; font-variant-numeric: tabular-nums; }
 .forecast-strip.inverse .segment-meter i { width: 8px; height: 7px; border-color: #777; background: #d5d5d0; }
 .forecast-strip.inverse .segment-meter i.filled { background: #070707; border-color: #070707; }
@@ -965,9 +967,23 @@ button:focus-visible, input:focus-visible { outline-color: #fff; outline-offset:
   border: 0;
   cursor: pointer;
 }
-.item-card > :not(.card-overlay),
-.activity-card > :not(.card-overlay),
-.job-card > :not(.card-overlay) { position: relative; z-index: 2; }
+.item-card:has(> .card-overlay) > :not(.card-overlay),
+.activity-card:has(> .card-overlay) > :not(.card-overlay) {
+  position: relative;
+  z-index: auto;
+  pointer-events: none;
+}
+
+/* The full-card detail target must remain reachable through text and facts,
+   while the real purchase/action buttons keep their own hit area above it. */
+.item-card:has(> .card-overlay) > :not(.card-overlay) button,
+.activity-card:has(> .card-overlay) > :not(.card-overlay) button,
+.item-card:has(> .card-overlay) > :not(.card-overlay) a,
+.activity-card:has(> .card-overlay) > :not(.card-overlay) a {
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+}
 
 /* ---- Shop：六标签、三列、右侧工具栏、底部详情 ---- */
 .shop-page > .section-heading { padding-top: 2px; }
@@ -1420,6 +1436,19 @@ button:focus-visible, input:focus-visible { outline-color: #fff; outline-offset:
 .highlight-card small { color: #999991; font-size: 9.5px; }
 .highlight-card.reflection { background: #101010; border-style: dashed; }
 .highlight-card.reflection p { margin: 0; color: #ccc; font-size: 10.5px; line-height: 1.5; }
+.highlight-card.reflection {
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-areas: 'icon title' 'icon metric' 'range range' 'copy copy';
+  align-content: center;
+  gap: 3px 7px;
+  border-style: solid;
+  border-color: #f4f4ef;
+}
+.highlight-card.reflection > .pixel-icon { grid-area: icon; align-self: start; width: 26px; height: 26px; }
+.highlight-card.reflection h3 { grid-area: title; margin-top: 0; }
+.highlight-card.reflection .reflection-metric { grid-area: metric; color: #fff; font-size: 24px; line-height: 1; }
+.highlight-card.reflection .reflection-range { grid-area: range; color: #aaa; }
+.highlight-card.reflection p { grid-area: copy; }
 
 .settle-footer {
   display: grid;
@@ -1641,8 +1670,8 @@ html { background: var(--pixel-black); }
 body { color: var(--pixel-white); background: var(--pixel-black); font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace; }
 button, input, select { border-radius: 0; }
 .app-shell { color: var(--pixel-white); background: var(--pixel-black); padding-bottom: 76px; }
-.outer-frame { inset: 5px; border: 2px solid var(--pixel-white); }
-.outer-frame::before, .outer-frame::after { width: 12px; height: 12px; border-color: var(--pixel-white); }
+.outer-frame { inset: 7px; border: 1px solid #777; }
+.outer-frame::before, .outer-frame::after { width: 10px; height: 10px; border-color: #777; }
 
 .topbar {
   min-height: 102px;
@@ -1897,7 +1926,7 @@ button, input, select { border-radius: 0; }
 .highlight-row { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .highlight-card { min-height: 126px; padding: 12px; background: #0c0c0c; border-color: #777; }
 .highlight-card h3 { font-size: 13px; }
-.highlight-card.reflection { background: #111; border-style: dashed; }
+.highlight-card.reflection { background: #111; border-style: solid; border-color: #f4f4ef; }
 .settle-footer { grid-template-columns: auto minmax(130px, .8fr) minmax(360px, 1.5fr) auto; gap: 14px; min-height: 68px; padding-top: 9px; border-top-color: #aaa; }
 .settle-avatar { width: 48px; height: 48px; color: #fff; background: #111; border-color: #fff; }
 .settle-foot-text { color: #ddd; font-size: 11px; }
@@ -3844,6 +3873,25 @@ button, input, select { border-radius: 0; }
   border-color: #444;
 }
 
+@media (min-width: 1181px) {
+  .monthly-summary.fullframe .settle-rows.alloc li.is-zero {
+    color: #aaa;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc li.is-zero b {
+    color: #aaa;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc li.is-zero em {
+    color: #888;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc li.is-zero .segment-meter i {
+    background: #2d2d2a;
+    border-color: #666;
+  }
+}
+
 /* Round 5: carry the reference control grammar and selected-product detail
    into the rendered board without changing the actions or their state. */
 .hero-pause {
@@ -3921,16 +3969,21 @@ button, input, select { border-radius: 0; }
   }
 
   .view-life .hero-activity h2 {
-    font-size: clamp(42px, 3.4vw, 50px);
+    font-size: clamp(42px, 3.9vw, 56px);
     line-height: 1;
+    letter-spacing: .12em;
   }
   .view-life .hero-activity .pixel-illustration {
     width: 108px;
     height: 108px;
-    margin-top: 4px;
+    margin-top: 8px;
     padding: 0;
     background: transparent;
     border: 0;
+    /* The 32px raster carries its own reference-sized negative space. Keep
+       the fixed grid box for layout, then align its left chair edge with the
+       reference's figure anchor without moving the text column. */
+    transform: translateX(4px);
   }
 
   .view-shop .item-card,
@@ -4016,7 +4069,7 @@ button, input, select { border-radius: 0; }
 .settle-ray-8 { transform: rotate(14deg); width: 30px; }
 .settle-result > :not(.settle-result-motif) { position: relative; z-index: 1; }
 .settle-result > .settle-result-art { z-index: 2; }
-.settle-result-inverse .settle-ray { background: #070707; }
+.settle-result-inverse .settle-ray { background: #f0f0eb; }
 
 @media (max-height: 800px) {
   .settle-result-motif { display: none; }
@@ -4030,5 +4083,5099 @@ button, input, select { border-radius: 0; }
 
   .view-shop .shop-detail {
     min-height: 116px;
+  }
+}
+
+/* Reference convergence pass: keep the desktop board dense, square, and
+   quiet. These are presentation-only overrides; actions and state remain in
+   the existing components. */
+:root {
+  --ref-black: #070707;
+  --ref-ink: #111;
+  --ref-paper: #f4f4f0;
+  --ref-rule: #777;
+  --ref-muted: #aaa;
+}
+
+html,
+body,
+button,
+input,
+select,
+textarea {
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
+  font-synthesis: none;
+}
+
+button,
+input,
+select,
+textarea {
+  border-radius: 0;
+}
+
+.main-content {
+  scrollbar-width: none;
+  scrollbar-color: transparent transparent;
+}
+
+.main-content::-webkit-scrollbar,
+.shop-rail::-webkit-scrollbar,
+.shop-support-panels::-webkit-scrollbar,
+.monthly-summary.fullframe::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.pixel-icon,
+.pixel-illustration {
+  shape-rendering: crispEdges;
+  image-rendering: pixelated;
+}
+
+.pixel-icon {
+  stroke-width: 2.5;
+}
+
+.inbox-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  min-height: 72px;
+  margin: 0;
+  padding: 8px;
+  color: #aaa;
+  background: #111;
+  border: 1px dotted #555;
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.inbox-empty .pixel-illustration {
+  width: 30px;
+  height: 30px;
+  color: #f4f4ef;
+}
+
+.inbox-empty strong {
+  color: #f4f4ef;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.pixel-panel,
+.detail-panel,
+.forecast-strip,
+.job-card,
+.item-card,
+.activity-card,
+.shop-detail,
+.career-bottom-panel,
+.shop-rail .rail-module {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.pixel-panel::before,
+.detail-panel::before,
+.forecast-strip::before,
+.job-card::before,
+.item-card::before,
+.activity-card::before,
+.shop-detail::before {
+  border-radius: 0;
+}
+
+@media (min-width: 1181px) {
+  html,
+  body,
+  #root {
+    min-height: 720px;
+  }
+
+  .app-shell {
+    grid-template-rows: 82px 44px minmax(0, 1fr) 76px;
+  }
+
+  .topbar {
+    padding: 8px clamp(18px, 2.4vw, 34px);
+  }
+
+  .main-content {
+    width: min(1400px, calc(100% - 36px));
+    padding-top: 10px;
+    padding-bottom: 0;
+  }
+
+  .view-life .life-hero-grid {
+    min-height: 370px;
+  }
+
+  .view-life .life-planning-section .planner-row,
+  .view-life .life-planning-section .plan-cell {
+    min-height: 60px;
+    height: 60px;
+  }
+
+  .view-life .life-planning-section .plan-cell {
+    padding: 5px 4px;
+  }
+
+  .view-life .inbox-panel {
+    min-height: 202px;
+    height: 202px;
+  }
+
+  .view-life .life-secondary-drawer {
+    min-height: 28px;
+    height: 28px;
+    overflow: hidden;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse {
+    height: 370px;
+    max-height: 370px;
+    box-sizing: border-box;
+    grid-template-rows: 52px 42px 42px 48px minmax(0, 1fr) 36px;
+    padding: 8px 10px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-head {
+    padding: 8px 12px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-head h2 {
+    font-size: 19px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-row {
+    min-height: 0;
+    padding: 5px 12px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-row strong {
+    font-size: 21px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-net {
+    margin: 0 8px;
+    padding: 6px 10px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-net strong {
+    font-size: 24px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-attrs {
+    min-height: 0;
+    padding: 4px 12px;
+    gap: 0;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-attr {
+    grid-template-columns: 16px 42px minmax(0, 1fr) 24px;
+    min-height: 20px;
+    padding: 2px 0;
+    font-size: 10px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-attr .segment-meter {
+    grid-auto-columns: minmax(5px, 1fr);
+    gap: 2px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-attr .segment-meter i {
+    width: auto;
+    height: 6px;
+  }
+
+  .life-hero-grid > .forecast-strip.inverse .forecast-more {
+    min-height: 32px;
+    margin: 0 8px;
+    padding: 6px 10px;
+  }
+
+  /* Career: one compact toolbar, then cards that read as vacancies rather
+     than six large dashboard tiles. */
+  .career-section.market-mode .career-results {
+    padding: 10px 12px 12px;
+  }
+
+  .career-section.market-mode .career-toolbar {
+    grid-template-columns: minmax(160px, 1fr) auto;
+    gap: 6px 10px;
+    min-height: 34px;
+    padding: 5px 0 7px;
+  }
+
+  .career-section.market-mode .career-toolbar-leading {
+    gap: 6px;
+  }
+
+  .career-section.market-mode .career-toolbar-actions {
+    gap: 4px;
+  }
+
+  .career-section.market-mode .career-market-filters {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding-top: 4px;
+  }
+
+  .career-section.market-mode .career-market-filters label {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .career-section.market-mode .career-market-filters select {
+    min-width: 0;
+    min-height: 24px;
+    padding: 3px 5px;
+    font-size: 10px;
+  }
+
+  .career-results .job-card {
+    min-height: 228px;
+    height: 228px;
+    padding: 9px 10px;
+  }
+
+  .career-results .job-card .card-select {
+    grid-template-columns: 48px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+
+  .career-results .job-card .career-card-art {
+    width: 44px;
+    height: 44px;
+    grid-row: 1 / span 2;
+    align-self: start;
+    margin: 0;
+  }
+
+  .career-results .job-card .career-card-art .pixel-illustration {
+    width: 34px;
+    height: 34px;
+  }
+
+  .career-results .job-card .job-card-head,
+  .career-results .job-card h2,
+  .career-results .job-card p {
+    grid-column: 2;
+  }
+
+  .career-results .job-card h2 {
+    margin: 4px 0 3px;
+    font-size: 17px;
+    line-height: 1.05;
+  }
+
+  .career-results .job-card p {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 0;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .career-results .job-card .job-facts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin-top: 7px;
+    padding: 5px 0;
+  }
+
+  .career-results .job-card > .requirement-box {
+    max-height: 28px;
+    padding: 3px 0;
+    font-size: 9px;
+  }
+
+  .career-results .job-card > .requirement-box strong {
+    margin-right: 5px;
+  }
+
+  .career-results .job-card .job-actions .primary-button,
+  .career-results .job-card .job-actions .secondary-button {
+    min-height: 28px;
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  /* Shop: cards give the product/name/price the visual priority. Detailed
+     effects stay available in the selected-product surface below the grid. */
+  .view-shop .shop-main .item-card,
+  .view-shop .shop-main .activity-card {
+    height: 142px;
+    min-height: 142px;
+    grid-template-columns: 62px minmax(0, 1fr);
+    gap: 7px;
+    padding: 8px;
+  }
+
+  .view-shop .item-card .card-art,
+  .view-shop .activity-card .card-art {
+    width: 58px;
+    height: 58px;
+    padding: 3px;
+  }
+
+  .view-shop .item-card .card-art .pixel-illustration,
+  .view-shop .activity-card .card-art .pixel-illustration {
+    width: 48px;
+    height: 48px;
+  }
+
+  .view-shop .catalog-meter-stack {
+    display: none;
+  }
+
+  .view-shop .item-card h2,
+  .view-shop .activity-card h3 {
+    margin: 3px 0 2px;
+    font-size: 15px;
+    line-height: 1.1;
+  }
+
+  .view-shop .item-card .item-effect,
+  .view-shop .activity-card .item-effect {
+    margin-top: 3px;
+    font-size: 9px;
+    line-height: 1.25;
+  }
+
+  .view-shop .shop-detail {
+    min-height: 106px;
+    grid-template-columns: 62px minmax(155px, .8fr) minmax(250px, 1.45fr) auto;
+    gap: 9px;
+    padding: 8px 10px;
+  }
+
+  .view-shop .shop-detail .pixel-illustration {
+    width: 58px;
+    height: 58px;
+  }
+
+  .view-shop .shop-detail h2 {
+    font-size: 18px;
+  }
+
+  .view-shop .shop-detail p {
+    font-size: 10px;
+  }
+
+  .view-shop .shop-detail-fact {
+    min-height: 36px;
+    padding: 4px 6px;
+  }
+
+  .view-shop .shop-detail .primary-button {
+    min-height: 38px;
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+
+  .view-shop .shop-rail {
+    min-height: 0;
+    height: 815px;
+    grid-template-rows: minmax(82px, auto) minmax(0, 1.35fr) minmax(120px, 1fr) minmax(160px, 1fr);
+    gap: 7px;
+  }
+
+  .view-shop .shop-rail .rail-module {
+    min-height: 0;
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border: 2px solid #c7c7c0 !important;
+  }
+
+  .view-shop .shop-rail .rail-module > header {
+    min-height: 27px;
+    padding: 5px 8px;
+    color: #fff !important;
+    background: var(--ref-black) !important;
+    border-bottom: 0;
+  }
+
+  .view-shop .shop-rail .rail-module > header .pixel-icon,
+  .view-shop .shop-rail .rail-module > header h3 {
+    color: #fff !important;
+  }
+
+  .view-shop .shop-rail .rail-module p,
+  .view-shop .shop-rail .rail-module .muted,
+  .view-shop .shop-rail .rail-rows li,
+  .view-shop .shop-rail .rail-rows li small {
+    color: #f4f4ef !important;
+  }
+
+  .view-shop .shop-rail .rail-rows li {
+    padding: 5px 8px;
+    border-bottom: 1px dotted var(--ref-rule);
+  }
+
+  .view-shop .shop-rail .rail-module .primary-button {
+    min-height: 31px;
+    color: #fff !important;
+    background: var(--ref-black) !important;
+    border-color: var(--ref-black) !important;
+  }
+
+  .view-shop .shop-rail .rail-module .text-button {
+    color: #f4f4ef !important;
+    border-color: #777 !important;
+  }
+
+  /* Settlement: the net-worth result is the black hero from the reference;
+     the rest of the financial surfaces remain legible around it. */
+  .monthly-summary.fullframe {
+    width: min(1400px, calc(100vw - 42px));
+    height: calc(100dvh - 174px);
+    padding: 12px 16px 10px;
+    gap: 8px;
+  }
+
+  .settle-head {
+    min-height: 60px;
+    padding: 2px 4px 7px;
+    border-bottom-color: var(--ref-rule);
+  }
+
+  .settle-head,
+  .settle-title-wrap,
+  .settle-meta,
+  .settle-title-wrap h2,
+  .settle-title-wrap p,
+  .settle-meta span,
+  .settle-meta b,
+  .settle-meta small {
+    color: #f4f4ef;
+  }
+
+  .settle-title-wrap h2 {
+    font-size: clamp(36px, 4vw, 58px);
+  }
+
+  .settle-grid {
+    min-height: 0;
+    height: 300px;
+    grid-template-columns: 1fr 1fr 1fr 1.3fr;
+    gap: 7px;
+  }
+
+  .settle-panel {
+    gap: 4px;
+    padding: 8px 9px;
+  }
+
+  .settle-panel-art {
+    right: 7px;
+    bottom: 7px;
+    width: 52px;
+    height: 52px;
+    opacity: .62;
+  }
+
+  .settle-panel-art .pixel-illustration {
+    width: 48px;
+    height: 48px;
+  }
+
+  .settle-panel .metric-box {
+    font-size: 24px !important;
+  }
+
+  .settle-rows li {
+    padding: 3px 0;
+    font-size: 9px;
+  }
+
+  .settle-result-column {
+    grid-template-rows: minmax(0, 1fr) 62px;
+    gap: 7px;
+  }
+
+  .settle-result-inverse {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #f0f0eb;
+    outline-color: #090909;
+    --il-knock: #090909;
+  }
+
+  .settle-result-inverse::before,
+  .settle-result-inverse::after {
+    border-color: #f4f4ef;
+  }
+
+  .settle-result-inverse .settle-result-title,
+  .settle-result-inverse .settle-range,
+  .settle-result-inverse .settle-big,
+  .settle-result-inverse .settle-big.positive,
+  .settle-result-inverse .settle-big.negative {
+    color: #f4f4ef !important;
+  }
+
+  .settle-result-inverse .settle-ribbon {
+    color: #070707;
+    background: #f4f4ef;
+  }
+
+  .settle-result-inverse .settle-badge {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #f4f4ef;
+  }
+
+  .settle-result-inverse .settle-result-art {
+    color: #f4f4ef;
+    --il-knock: #090909;
+  }
+
+  .settle-result-inverse .settle-ray {
+    background: #f4f4ef;
+  }
+
+  .settle-highlights {
+    gap: 4px;
+    padding-top: 2px;
+  }
+
+  .highlight-row {
+    gap: 5px;
+  }
+
+  .highlight-card {
+    min-height: 116px;
+    padding: 7px;
+    gap: 4px;
+    background: #f4f4f0;
+    border-color: #070707;
+  }
+
+  .highlight-card h3 {
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .highlight-card small,
+  .highlight-card.reflection p {
+    font-size: 9px;
+  }
+
+  .settle-footer {
+    min-height: 62px;
+    height: 62px;
+    gap: 8px;
+    padding-top: 5px;
+    border-top-color: var(--ref-rule);
+  }
+
+  .settle-continue {
+    min-height: 40px;
+    min-width: 190px;
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .app-shell {
+    grid-template-rows: 72px 40px minmax(0, 1fr) 68px;
+  }
+
+  .persistent-status {
+    box-sizing: border-box;
+    height: 68px;
+    min-height: 68px;
+    padding-block: 4px;
+  }
+
+  .main-content {
+    padding-top: 6px;
+    padding-bottom: 18px;
+  }
+
+  .monthly-summary.fullframe {
+    height: calc(100dvh - 154px);
+    padding: 7px 10px;
+    gap: 5px;
+  }
+
+  .settle-head {
+    min-height: 50px;
+  }
+
+  .settle-title-wrap h2 {
+    font-size: 34px;
+  }
+
+  .settle-grid {
+    height: 205px;
+  }
+
+  .settle-highlights .highlight-card {
+    min-height: 84px;
+    height: 84px;
+    padding: 5px;
+  }
+
+  .settle-footer {
+    min-height: 50px;
+    height: 50px;
+  }
+}
+
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-shop .shop-main .item-card,
+  .view-shop .shop-main .activity-card {
+    height: 154px;
+    min-height: 154px;
+  }
+
+  .view-shop .item-card .card-art,
+  .view-shop .activity-card .card-art {
+    width: 64px;
+    height: 64px;
+  }
+
+  .view-shop .item-card .card-art .pixel-illustration,
+  .view-shop .activity-card .card-art .pixel-illustration {
+    width: 54px;
+    height: 54px;
+  }
+
+  .view-shop .shop-detail {
+    min-height: 110px;
+  }
+}
+
+/* Product cards: restore the reference's left-art / right-facts balance after
+   the compact desktop fit rules. The card remains the same real hit area and
+   keeps the catalogue grid within the existing first-viewport geometry. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card,
+  .view-shop .shop-main .activity-card {
+    grid-template-columns: 88px minmax(0, 1fr);
+    column-gap: 6px;
+  }
+
+  .view-shop .item-card .card-art,
+  .view-shop .activity-card .card-art {
+    width: 72px;
+    height: 72px;
+    padding: 2px;
+    background: #070707;
+    border-color: #999;
+  }
+
+.view-shop .item-card .card-art .pixel-illustration,
+.view-shop .activity-card .card-art .pixel-illustration {
+  width: 64px;
+  height: 64px;
+  transform: scale(1.08);
+}
+
+.view-shop .item-card .card-art .pixel-illustration.fine-grid,
+.view-shop .activity-card .card-art .pixel-illustration.fine-grid {
+  transform: scale(1.22);
+}
+
+.view-shop .item-card::before,
+.view-shop .activity-card::before {
+  background-image: linear-gradient(#555, #555);
+  background-position: 92px 5px;
+  background-repeat: no-repeat;
+  background-size: 1px calc(100% - 10px);
+}
+
+.view-shop .item-card h2,
+.view-shop .activity-card h3 {
+    font-size: 16px;
+    line-height: 1.1;
+  }
+
+.view-shop .item-card .catalog-price,
+  .view-shop .activity-card .catalog-price {
+    font-size: 13px;
+  }
+}
+
+/* Product-card facts and CTA are the second reading tier after the title.
+   Raise only the item-card specificity here so the compact desktop rules do
+   not win back their smaller sizes; activity cards keep their own meter-led
+   density and existing two-meter anatomy. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card .catalog-facts {
+    gap: 2px;
+    padding-block: 3px;
+  }
+
+  .view-shop .shop-main .item-card .catalog-facts > div {
+    font-size: 9px;
+    line-height: 1.15;
+  }
+
+  .view-shop .shop-main .item-card .item-card-foot .primary-button {
+    min-height: 25px;
+    padding: 5px 8px;
+    font-size: 11px;
+    line-height: 1.15;
+  }
+}
+
+/* Keep the product card's second reading tier legible beside the 1-bit art.
+   This changes only text scale; the fixed-height card and three-column grid
+   stay intact so the reference silhouette does not drift. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card .catalog-facts > div {
+    font-size: 10px;
+    line-height: 1.15;
+  }
+
+  .view-shop .shop-main .item-card .catalog-secondary-action {
+    font-size: 9px;
+    line-height: 1.1;
+  }
+}
+
+/* Career filter rows are navigation data, not a second stack of form fields.
+   Keep the real counts visible, give each row a semantic pixel marker, and
+   let the selected row carry the inverse state without a full rectangle. */
+.career-section.market-mode .career-filters > .career-filter-option {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 24px;
+  height: 24px;
+  padding: 3px 5px;
+  color: #c7c7c0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dotted #444;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: left;
+}
+
+.career-section.market-mode .career-filter-option:hover,
+.career-section.market-mode .career-filter-option:focus-visible {
+  color: #fff;
+  background: #1b1b1b;
+  border-bottom-color: #aaa;
+}
+
+.career-section.market-mode .career-filter-option.selected {
+  color: #070707;
+  background: #f4f4f0;
+  border-bottom-color: #f4f4f0;
+}
+
+.career-filter-option .pixel-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.career-filter-count {
+  min-width: 2ch;
+  color: inherit;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.career-toolbar-count {
+  grid-area: count;
+  justify-self: end;
+  color: #f4f4ef;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.career-sort-control {
+  display: grid;
+  grid-template-columns: auto minmax(88px, 1fr);
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: #aaa;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.career-sort-control select {
+  min-width: 0;
+  height: 27px;
+  padding: 4px 14px 4px 5px;
+  color: #070707;
+  background: #f4f4f0;
+  border: 1px solid #f4f4f0;
+  border-radius: 0;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.career-sort-control select:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+
+.career-toolbar-actions .career-tools-trigger {
+  color: #aaa;
+  background: transparent;
+  border-color: #555;
+}
+
+.career-toolbar-actions .career-tools-trigger:hover,
+.career-toolbar-actions .career-tools-trigger:focus-visible {
+  color: #070707;
+  background: #f4f4f0;
+  border-color: #f4f4f0;
+}
+
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'leading actions count'
+      'filters filters filters';
+  }
+
+  .career-section.market-mode .career-toolbar-leading { grid-area: leading; }
+  .career-section.market-mode .career-toolbar-actions { grid-area: actions; }
+  .career-section.market-mode .career-market-filters { grid-area: filters; }
+}
+
+@media (max-width: 700px) {
+  .career-toolbar-count { align-self: center; }
+}
+
+/* Career support panels keep the reference anatomy even when the current
+   save has no rows: inverse header, readable content lane, inverse CTA. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-head {
+    padding: 8px 10px 7px;
+    color: #f4f4ef;
+    background: #090909;
+    border-bottom-color: #777;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-head h2,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-head .pixel-icon {
+    color: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-count {
+    color: #070707;
+    background: #f4f4f0;
+    border-color: #f4f4f0;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .rail-rows {
+    color: #070707;
+    background: #f4f4f0;
+    border-color: #777;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .career-bottom-empty .pixel-illustration {
+    color: #070707;
+    --il-knock: #f4f4f0;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .career-bottom-empty strong,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .rail-rows li span,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .rail-rows li b {
+    color: #070707;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .career-bottom-empty small,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .rail-rows li small {
+    color: #555;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .rail-rows li {
+    color: #222;
+    border-bottom-color: #999;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-foot {
+    border-top-color: #777;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-foot button {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #f4f4ef;
+  }
+}
+
+/* One-bit frame pass: use the same clipped corner grammar on the secondary
+   surfaces that already use the shared pixel-corners treatment. These are
+   pointer-free overlays; the real card content and hit areas stay unchanged. */
+:is(
+  .life-primary-dashboard .inbox-panel,
+  .career-section.market-mode .career-filters,
+  .career-section.market-mode .job-card,
+  .career-section.market-mode .career-bottom-panel,
+  .view-shop .item-card,
+  .view-shop .activity-card,
+  .view-shop .shop-rail .rail-module,
+  .monthly-summary.fullframe .settle-panel,
+  .monthly-summary.fullframe .highlight-card
+) {
+  position: relative;
+}
+
+:is(
+  .life-primary-dashboard .inbox-panel,
+  .career-section.market-mode .career-filters,
+  .career-section.market-mode .job-card,
+  .career-section.market-mode .career-bottom-panel,
+  .view-shop .item-card,
+  .view-shop .activity-card,
+  .monthly-summary.fullframe .settle-panel,
+  .monthly-summary.fullframe .highlight-card
+)::after,
+.view-shop .shop-rail .rail-module::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: 4;
+  display: block;
+  background-image: none;
+  width: calc(100% + 2px);
+  height: calc(100% + 2px);
+  pointer-events: none;
+  border: 1px solid var(--frame-corner-line, #777);
+  clip-path: polygon(
+    0 0, 9px 0, 9px 1px, calc(100% - 9px) 1px,
+    calc(100% - 9px) 0, 100% 0, 100% 9px,
+    calc(100% - 1px) 9px, calc(100% - 1px) calc(100% - 9px),
+    100% calc(100% - 9px), 100% 100%, calc(100% - 9px) 100%,
+    calc(100% - 9px) calc(100% - 1px), 9px calc(100% - 1px),
+    9px 100%, 0 100%, 0 calc(100% - 9px), 1px calc(100% - 9px),
+    1px 9px, 0 9px
+  );
+}
+
+.view-shop .shop-rail .rail-module {
+  --frame-corner-line: #070707;
+}
+
+/* Empty career support panels should still read as useful game surfaces. The
+   state stays honest, while the compact dark block removes the dead white
+   center and explains how the panel becomes populated. */
+.career-bottom-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  min-height: 86px;
+  margin: 6px 0;
+  padding: 8px;
+  color: #aaa;
+  background: #090909;
+  border: 1px dotted #777;
+  text-align: center;
+}
+
+.career-bottom-empty .pixel-illustration {
+  width: 34px;
+  height: 34px;
+  color: #f4f4ef;
+}
+
+.career-bottom-empty strong {
+  color: #f4f4ef;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.career-bottom-empty small {
+  max-width: 24ch;
+  color: #aaa;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-bottom-empty {
+    min-height: 92px;
+  }
+}
+
+/* The large Shop rail modules keep their light frame, but their empty content
+   gets the same readable dark state treatment as the other support panels. */
+.view-shop .shop-rail .shop-rail-empty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  min-height: 92px;
+  margin: 8px 0;
+  padding: 8px;
+  color: #aaa !important;
+  background: #090909;
+  border: 1px dotted #777;
+  text-align: center;
+}
+
+.view-shop .shop-rail .shop-rail-empty .pixel-illustration {
+  width: 34px;
+  height: 34px;
+  color: #f4f4ef !important;
+}
+
+.view-shop .shop-rail .shop-rail-empty strong {
+  color: #f4f4ef !important;
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.view-shop .shop-rail .shop-rail-empty small {
+  max-width: 25ch;
+  color: #aaa !important;
+  font-size: 8px;
+  line-height: 1.35;
+}
+
+/* Settlement occupies the same dense board as the reference: keep the
+   application header readable, then give the financial grid and highlight
+   row their actual visual weight instead of leaving dead black space below. */
+@media (min-width: 1181px) {
+  .modal-backdrop.settlement-mode {
+    background: #050505;
+  }
+
+  .monthly-summary.fullframe {
+    height: calc(100dvh - 142px);
+    grid-template-rows: 96px 456px 224px 121px;
+    align-content: start;
+    padding-bottom: 1px;
+  }
+
+  .settle-head {
+    min-height: 96px;
+  }
+
+  .settle-grid {
+    height: 456px;
+    min-height: 456px;
+  }
+
+  .settle-result-column {
+    grid-template-rows: minmax(0, 1fr) 140px;
+  }
+
+  .settle-highlights {
+    min-height: 224px;
+    gap: 18px;
+  }
+
+   .highlight-card {
+     min-height: 180px;
+     height: 180px;
+     color: #f4f4ef;
+     background: #090909;
+     border-color: #aaa;
+   }
+
+   .highlight-card h3 {
+     color: #fff;
+   }
+
+   .highlight-card small,
+   .highlight-card.reflection p {
+     color: #999991;
+   }
+
+   .highlight-card.placeholder {
+     color: #777;
+     background: #0a0a0a;
+     border-style: dotted;
+   }
+
+   .highlight-card.placeholder h3 {
+     color: #aaa;
+   }
+
+   .highlight-card.placeholder small {
+     color: #666;
+   }
+
+   .highlight-card:not(.reflection) {
+     grid-template-columns: 34px minmax(0, 1fr);
+     grid-template-areas: 'icon title' 'icon meta';
+     align-content: center;
+     align-items: center;
+     gap: 5px 8px;
+   }
+
+   .highlight-card:not(.reflection) > .pixel-icon {
+     grid-area: icon;
+     width: 30px;
+     height: 30px;
+   }
+
+   .highlight-card:not(.reflection) h3 {
+     grid-area: title;
+     margin: 0;
+   }
+
+   .highlight-card:not(.reflection) small {
+     grid-area: meta;
+   }
+
+  .settle-footer {
+    min-height: 102px;
+    height: 102px;
+    align-self: end;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .modal-backdrop.settlement-mode {
+    background: #050505;
+    padding-bottom: 6px;
+  }
+
+  .monthly-summary.fullframe {
+    height: calc(100dvh - 116px);
+    grid-template-rows: 50px minmax(205px, 1fr) minmax(84px, 1fr) 50px;
+    align-content: stretch;
+  }
+
+  .settle-grid {
+    height: auto;
+    min-height: 205px;
+  }
+
+  .settle-highlights {
+    min-height: 84px;
+  }
+
+  .settle-highlights .highlight-card {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .settle-footer {
+    min-height: 50px;
+    height: 50px;
+  }
+}
+
+/* Match the reference's tall desktop frame: a taller status header and a
+   tighter persistent HUD move the playable board down without changing the
+   compact low-height landscape layout. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .app-shell {
+    grid-template-rows: 94px 48px minmax(0, 1fr) 80px;
+  }
+
+  .persistent-status {
+    box-sizing: border-box;
+    height: 80px;
+    min-height: 80px;
+    padding-block: 5px;
+  }
+}
+
+/* Life details stay discoverable without adding a full-width row to the
+   reference-sized first viewport. Opening the drawer restores normal flow so
+   its real ledger, housing and time controls remain usable. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-life .life-secondary-drawer:not(.is-open) {
+    position: fixed;
+    z-index: 6;
+    right: 20px;
+    bottom: 80px;
+    left: 20px;
+    height: 0;
+    min-height: 0;
+    margin: 0;
+    border-top: 0;
+    pointer-events: none;
+    overflow: visible;
+  }
+
+  .view-life .life-secondary-drawer:not(.is-open) .life-secondary-toggle-row {
+    position: relative;
+    justify-content: flex-end;
+    height: 0;
+    min-height: 0;
+    padding: 0;
+    background: transparent;
+    pointer-events: auto;
+  }
+
+  .view-life .life-secondary-drawer:not(.is-open) .life-secondary-toggle-row .eyebrow {
+    display: none;
+  }
+
+  .view-life .life-secondary-drawer:not(.is-open) .life-secondary-toggle-row .secondary-button {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    min-height: 28px;
+    padding: 4px 10px;
+    color: #aaa;
+    background: #050505;
+    border: 1px solid #555;
+    font-size: 10px;
+  }
+
+  .view-life .life-secondary-drawer.is-open {
+    position: static;
+    height: auto;
+    min-height: 0;
+    margin-top: 0;
+    border-top: 1px dotted #555;
+    pointer-events: auto;
+    overflow: visible;
+  }
+}
+
+/* Tall-desktop alignment pass: give the catalog rail and vacancy cards the
+   same visual weight as the reference without changing the 720px layout. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .main-content {
+    padding-top: 4px;
+  }
+
+  .career-results .job-card {
+    min-height: 254px;
+    height: 254px;
+  }
+
+  .career-section.market-mode .career-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'leading actions count'
+      'filters filters filters';
+    grid-template-rows: 30px 37px;
+    align-items: center;
+    min-height: 74px;
+    padding: 7px 0 8px;
+  }
+
+  .career-section.market-mode .career-toolbar-leading {
+    grid-area: leading;
+    align-self: center;
+  }
+
+  .career-section.market-mode .career-toolbar-actions {
+    grid-area: actions;
+    align-self: center;
+    margin-left: 0;
+  }
+
+  .career-section.market-mode .career-toolbar-count {
+    grid-area: count;
+    align-self: center;
+  }
+
+  .career-section.market-mode .career-market-filters {
+    grid-area: filters;
+    width: 100%;
+    flex: none;
+    padding-top: 4px;
+  }
+
+  .career-section.market-mode .career-detail.inverse {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .career-section.market-mode .career-detail-apply-bar {
+    margin-top: auto;
+  }
+
+  .view-shop .shop-layout {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 22.5%, 320px);
+  }
+
+  .view-shop .catalog-pager {
+    min-height: 30px;
+    margin: 5px 0 6px;
+    padding: 3px 0;
+  }
+}
+
+/* Shop rail empty states should collapse to their real content height. The
+   reference rail lets populated modules carry the available height; an
+   empty inventory or wishlist must not turn that same space into a dead
+   black block. Keep the real empty-state copy and actions intact. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail:has(.shop-rail-empty) {
+    height: auto;
+    min-height: 0;
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) .rail-fill {
+    min-height: 0;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) .rail-fill .detail-panel {
+    height: auto;
+    min-height: 0;
+  }
+
+  .view-shop .shop-rail .rail-fill .detail-panel .section-heading {
+    min-height: 27px;
+    margin: 0 0 6px;
+    padding: 5px 8px;
+    border-bottom-color: #777;
+  }
+
+  .view-shop .shop-rail .rail-fill .detail-panel .section-heading h2 {
+    color: #fff !important;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) .shop-rail-empty {
+    min-height: 54px;
+    margin: 4px 0;
+    padding: 5px;
+    gap: 3px;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) .shop-rail-empty .pixel-illustration {
+    width: 24px;
+    height: 24px;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) .shop-rail-empty strong {
+    font-size: 9px;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) .shop-rail-empty small {
+    font-size: 7px;
+  }
+}
+
+/* Career card art follows the reference's compact one-bit marker: the
+   illustration itself carries the signal, while the card frame carries the
+   border. This keeps the real card-select hit area and vacancy data intact. */
+@media (min-width: 1181px) {
+  .career-results .job-card .card-select {
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 6px;
+  }
+
+  .career-results .job-card .career-card-art {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border: 0;
+  }
+
+  .career-results .job-card .career-card-art .pixel-illustration {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* Secondary Career pages live with the market identity, leaving the result
+   toolbar to read as one uninterrupted filter/sort/count strip. Preserve the
+   established vertical reservation so the card grid does not jump. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'filters actions count';
+    grid-template-rows: 37px;
+    min-height: 74px;
+    box-sizing: border-box;
+    align-content: center;
+    padding: 7px 0 8px;
+  }
+
+  .career-section.market-mode .career-market-filters { grid-area: filters; }
+  .career-section.market-mode .career-toolbar-actions { grid-area: actions; }
+  .career-section.market-mode .career-toolbar-count { grid-area: count; }
+
+  .career-market-navigation {
+    display: grid;
+    gap: 4px;
+    margin-top: 9px;
+    padding-top: 7px;
+    border-top: 1px dotted #555;
+  }
+
+  .career-market-navigation .career-page-menu-trigger {
+    width: 100%;
+    max-width: none;
+    text-align: left;
+  }
+
+  .career-market-navigation .career-page-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    min-width: 0;
+    padding-top: 4px;
+    border-top: 1px dotted #555;
+  }
+}
+
+/* Keep the Settlement Hero's illustration as a true overlay. The shared
+   stacking rule above intentionally positions ordinary Hero children, but the
+   character belongs to the lower-right composition in the reference frame. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .settle-result-inverse {
+    text-align: center;
+  }
+
+  .settle-result-inverse .settle-result-title,
+  .settle-result-inverse .settle-ribbon,
+  .settle-result-inverse .settle-big,
+  .settle-result-inverse .settle-range,
+  .settle-result-inverse .settle-badge {
+    justify-self: center;
+    text-align: center;
+  }
+
+  .settle-result-inverse > .settle-result-art {
+    position: absolute;
+    right: 18px;
+    bottom: 12px;
+    width: 96px;
+    height: 96px;
+  }
+}
+
+/* The catalog toolbar uses the same compact pixel control grammar as the
+   reference tabs. Keep the native select semantics and keyboard behavior, but
+   remove the browser-default arrow and expose a small fixed marker instead. */
+@media (min-width: 1181px) {
+  .view-shop .shop-sort-control {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .view-shop .shop-sort-control > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .view-shop .shop-sort-control select {
+    min-width: 112px;
+    padding-right: 22px;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .view-shop .shop-sort-control::after {
+    content: '▼';
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    color: #f4f4ef;
+    font-size: 8px;
+    line-height: 1;
+    pointer-events: none;
+    transform: translateY(-50%);
+  }
+}
+
+/* Keep the low-height desktop hero title on one reference-like line. The
+   narrower 1280px activity column needs a smaller display size, while the
+   underlying activity title and simulation state remain unchanged. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .view-life .hero-activity h2 {
+    font-size: 36px;
+    white-space: nowrap;
+  }
+}
+
+/* Forecast attribute rows are data fields, not disabled copy. Keep their
+   labels and empty meter segments readable against the light inverse panel. */
+@media (min-width: 1181px) {
+  .view-life .forecast-strip.inverse .forecast-attr > span {
+    color: #333;
+    font-weight: 600;
+  }
+
+  .view-life .forecast-strip.inverse .forecast-attr .segment-meter i {
+    background: #c7c7c0;
+    border-color: #777;
+  }
+
+  .view-life .forecast-strip.inverse .forecast-attr .segment-meter i.filled {
+    background: #070707;
+    border-color: #070707;
+  }
+}
+
+/* Populated Shop rail modules follow the reference's inverse utility blocks;
+   empty inventory and wishlist modules stay dark so their sparse state does
+   not become another large dead-white surface. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail .rail-module:has(.rail-rows) {
+    color: #070707 !important;
+    background: #f4f4ef !important;
+    border-color: #070707 !important;
+    --frame-corner-line: #070707;
+  }
+
+  .view-shop .shop-rail .rail-module:has(.rail-rows) > header {
+    color: #070707 !important;
+    background: #f4f4ef !important;
+    border-bottom: 1px dotted #777;
+  }
+
+  .view-shop .shop-rail .rail-module:has(.rail-rows) > header .pixel-icon,
+  .view-shop .shop-rail .rail-module:has(.rail-rows) > header h3,
+  .view-shop .shop-rail .rail-module:has(.rail-rows) .rail-rows li,
+  .view-shop .shop-rail .rail-module:has(.rail-rows) .rail-rows li small,
+  .view-shop .shop-rail .rail-module:has(.rail-rows) .rail-rows li b {
+    color: #222 !important;
+  }
+
+  .view-shop .shop-rail .rail-module:has(.rail-rows) .rail-rows li {
+    border-bottom-color: #aaa;
+  }
+
+  .view-shop .shop-rail .rail-module:has(.rail-rows) .text-button {
+    color: #070707 !important;
+    border-color: #555 !important;
+  }
+
+.view-shop .shop-rail .rail-module:has(.rail-rows) .primary-button {
+    color: #fff !important;
+    background: #070707 !important;
+    border-color: #070707 !important;
+  }
+}
+
+/* The reference's net-worth Hero is a small one-bit burst, not a lone
+   diagonal pair. Keep the motif decorative and data-free, but give it the
+   same readable radial density around the real settlement character. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .settle-result-motif {
+    right: 0;
+    bottom: 0;
+    width: 184px;
+    height: 184px;
+  }
+
+  .settle-result-motif .settle-ray {
+    height: 1px;
+    opacity: .92;
+  }
+
+  .settle-result-motif .settle-ray:nth-child(1) { width: 42px; transform: rotate(-170deg); }
+  .settle-result-motif .settle-ray:nth-child(2) { width: 32px; transform: rotate(-151deg); }
+  .settle-result-motif .settle-ray:nth-child(3) { width: 47px; transform: rotate(-133deg); }
+  .settle-result-motif .settle-ray:nth-child(4) { width: 28px; transform: rotate(-114deg); }
+  .settle-result-motif .settle-ray:nth-child(5) { width: 45px; transform: rotate(-96deg); }
+  .settle-result-motif .settle-ray:nth-child(6) { width: 31px; transform: rotate(-77deg); }
+  .settle-result-motif .settle-ray:nth-child(7) { width: 48px; transform: rotate(-58deg); }
+  .settle-result-motif .settle-ray:nth-child(8) { width: 34px; transform: rotate(-39deg); }
+  .settle-result-motif .settle-ray:nth-child(9) { width: 45px; transform: rotate(-20deg); }
+  .settle-result-motif .settle-ray:nth-child(10) { width: 30px; transform: rotate(-2deg); }
+  .settle-result-motif .settle-ray:nth-child(11) { width: 43px; transform: rotate(16deg); }
+  .settle-result-motif .settle-ray:nth-child(12) { width: 29px; transform: rotate(35deg); }
+  .settle-result-motif .settle-ray:nth-child(13) { width: 42px; transform: rotate(54deg); }
+  .settle-result-motif .settle-ray:nth-child(14) { width: 31px; transform: rotate(73deg); }
+  .settle-result-motif .settle-ray:nth-child(15) { width: 45px; transform: rotate(92deg); }
+  .settle-result-motif .settle-ray:nth-child(16) { width: 34px; transform: rotate(111deg); }
+
+  .settle-result-motif .settle-spark {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    background: transparent;
+  }
+
+  .settle-result-motif .settle-spark::before,
+  .settle-result-motif .settle-spark::after {
+    content: '';
+    position: absolute;
+    background: #f0f0eb;
+  }
+
+  .settle-result-motif .settle-spark::before {
+    top: 0;
+    left: 3px;
+    width: 1px;
+    height: 7px;
+  }
+
+  .settle-result-motif .settle-spark::after {
+    top: 3px;
+    left: 0;
+    width: 7px;
+    height: 1px;
+  }
+
+  .settle-result-motif .settle-spark-1 { top: 31px; left: 40px; transform: scale(1.2); }
+  .settle-result-motif .settle-spark-2 { top: 61px; left: 105px; transform: scale(.8); }
+  .settle-result-motif .settle-spark-3 { top: 112px; left: 38px; transform: scale(.75); }
+  .settle-result-motif .settle-spark-4 { top: 124px; left: 135px; transform: scale(1.1); }
+  .settle-result-motif .settle-spark-5 { top: 27px; left: 263px; transform: scale(.8); }
+  .settle-result-motif .settle-spark-6 { top: 53px; left: 317px; transform: scale(1.1); }
+  .settle-result-motif .settle-spark-7 { top: 86px; left: 286px; transform: scale(.65); }
+  .settle-result-motif .settle-spark-8 { top: 111px; left: 337px; transform: scale(.95); }
+  .settle-result-motif .settle-spark-9 { top: 143px; left: 276px; transform: scale(.7); }
+  .settle-result-motif .settle-spark-10 { top: 158px; left: 326px; transform: scale(1.05); }
+
+  .monthly-summary.fullframe .highlight-card:not(.reflection) {
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 6px 9px;
+    padding: 14px 12px;
+  }
+
+  .monthly-summary.fullframe .highlight-card:not(.reflection) > .highlight-art {
+    width: 46px;
+    height: 46px;
+    padding: 4px;
+    color: #f4f4ef;
+    background: #111;
+    border: 1px solid #555;
+  }
+
+  .monthly-summary.fullframe .highlight-card:not(.reflection) h3 {
+    font-size: 13px;
+    line-height: 1.25;
+  }
+
+  .monthly-summary.fullframe .highlight-card:not(.reflection) small {
+    font-size: 10px;
+    line-height: 1.25;
+  }
+}
+
+/* Re-assert the compact settlement tracks after the tall-desktop rules. The
+   low-height landscape target must not let the header's minimum height push
+   into the financial grid and clip the highlights heading. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe {
+    grid-template-rows: 64px minmax(205px, 1fr) minmax(84px, 1fr) 50px;
+  }
+
+  .settle-head {
+    min-height: 64px;
+  }
+
+  .settle-grid {
+    grid-template-rows: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .settle-grid > .settle-panel,
+  .settle-result-column {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .settle-result-column {
+    grid-template-rows: minmax(0, 1fr) 58px;
+  }
+}
+
+/* Put the Career market controls on the same compact strip as the reference:
+   the page switch remains available at the leading edge, while the three
+   real filters, planning action, sort control, and count share one row. The
+   reserved lower track keeps the card grid at its established visual height. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-toolbar {
+    grid-template-columns: 70px minmax(0, 1fr) auto auto;
+    grid-template-areas: 'leading filters actions count';
+    grid-template-rows: 37px;
+    min-height: 74px;
+    align-content: start;
+    gap: 6px;
+    padding: 7px 0 8px;
+    border-bottom: 1px dotted #555;
+  }
+
+  .career-section.market-mode .career-toolbar-leading {
+    grid-area: leading;
+  }
+
+  .career-section.market-mode .career-market-filters {
+    grid-area: filters;
+    width: auto;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding-top: 0;
+  }
+
+  .career-section.market-mode .career-toolbar-actions {
+    grid-area: actions;
+  }
+
+  .career-section.market-mode .career-toolbar-count {
+    grid-area: count;
+  }
+
+  .career-section.market-mode .career-page-menu {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Keep the Career toolbar in the reference's inverse utility grammar: the
+   page switch and real filters are controls, not white content surfaces. */
+.career-section.market-mode .career-page-menu-trigger,
+.career-section.market-mode .career-toolbar-select select,
+.career-section.market-mode .career-sort-control select {
+  color: #f4f4ef;
+  background: #070707;
+  border-color: #777772;
+  border-radius: 0;
+}
+
+.career-section.market-mode .career-page-menu-trigger:hover,
+.career-section.market-mode .career-page-menu-trigger:focus-visible,
+.career-section.market-mode .career-toolbar-select select:hover,
+.career-section.market-mode .career-sort-control select:hover {
+  color: #070707;
+  background: #f4f4ef;
+  border-color: #f4f4ef;
+}
+
+.career-section.market-mode .career-toolbar-select > span,
+.career-section.market-mode .career-sort-control > span {
+  color: #aaa9a4;
+}
+
+/* Vacancy cards now reserve their last line for the real state and CTA. The
+   existing data stays unchanged; requirements remain discoverable in the
+   detail rail instead of competing with the card's identity and metadata. */
+@media (min-width: 1181px) {
+  .career-results .job-card {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    gap: 0;
+    padding: 9px 10px 8px;
+  }
+
+  .career-results .job-card .card-select {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    align-content: start;
+    align-items: start;
+    column-gap: 6px;
+    row-gap: 3px;
+    flex: none;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .career-results .job-card .card-select .career-card-art {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: start;
+  }
+
+  .career-results .job-card .card-select .job-card-head,
+  .career-results .job-card .card-select h2,
+  .career-results .job-card .card-select p {
+    grid-column: 2;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .career-results .job-card .card-select .job-card-head {
+    min-height: 14px;
+  }
+
+  .career-results .job-card .card-select h2 {
+    margin: 1px 0 2px;
+    font-size: 18px;
+    line-height: 1.08;
+  }
+
+  .career-results .job-card .card-select p {
+    display: -webkit-box;
+    min-height: 0;
+    margin-bottom: 0;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .career-results .job-card .job-facts {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+    min-width: 0;
+    margin-top: 5px;
+    padding: 5px 0 4px;
+    border-block: 1px dotted #555;
+    font-size: 10px;
+  }
+
+  .career-results .job-card .job-fact {
+    min-height: 14px;
+    font-size: 10px;
+  }
+
+  .career-results .job-card .job-fact .pixel-icon {
+    width: 12px;
+    height: 12px;
+  }
+
+  .career-results .job-card .job-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    min-height: 31px;
+    margin-top: 0;
+    padding-top: 5px;
+  }
+
+  .career-results .job-card .job-card-status {
+    display: grid;
+    min-width: 0;
+    gap: 2px;
+    color: #aaa;
+    font-size: 9px;
+    line-height: 1.15;
+  }
+
+  .career-results .job-card .job-card-status strong,
+  .career-results .job-card .job-card-status small {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .career-results .job-card .job-card-status strong {
+    color: #f4f4ef;
+    font-size: 10px;
+  }
+
+  .career-results .job-card .job-card-status strong.requirement-missing {
+    color: #c7c7c0;
+  }
+
+  .career-results .job-card .job-card-status small {
+    color: #999;
+    font-size: 9px;
+  }
+
+  .career-results .job-card .job-actions > .primary-button,
+  .career-results .job-card .job-actions > .secondary-button {
+    width: auto;
+    min-width: 76px;
+    min-height: 30px;
+    padding: 6px 9px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+}
+
+/* Financial panels use a character-scale scene as their lower anchor, like
+   the reference settlement board. The art is presentation-only; ledger rows,
+   totals, and their semantic order remain backed by the real summary. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-panel-art {
+    width: 94px;
+    height: 94px;
+    left: 12px;
+    right: auto;
+    bottom: 10px;
+    color: #f4f4ef;
+    --il-knock: #0c0c0c;
+    opacity: .94;
+  }
+
+  .monthly-summary.fullframe .settle-panel-art .pixel-illustration {
+    width: 88px;
+    height: 88px;
+  }
+
+  .monthly-summary.fullframe .settle-allocation .settle-panel-art {
+    right: 12px;
+    left: auto;
+  }
+}
+
+/* The reference settlement characters occupy the full lower corner of the
+   income and expense panels. Give the denser 24px portraits enough physical
+   scale to read as people and coin/bag gestures, while leaving the allocation
+   chart on its existing compact footprint and keeping the note lane clear. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) > .settle-panel-art {
+    width: 118px;
+    height: 118px;
+  }
+
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) > .settle-panel-art .pixel-illustration {
+    width: 112px;
+    height: 112px;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe .settle-panel-art {
+    display: none;
+  }
+}
+
+/* The reference keeps the Shop rail in the same inverse console plane as the
+   catalog. Do not let a populated schedule or nested inventory panel become
+   a white web-form surface; real rows stay readable on the dark module. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail .rail-module {
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border-color: #c7c7c0 !important;
+    --frame-corner-line: #c7c7c0;
+  }
+
+  .view-shop .shop-rail .rail-module > header {
+    color: #fff !important;
+    background: #070707 !important;
+    border-bottom-color: #777 !important;
+  }
+
+  .view-shop .shop-rail .rail-module > header .pixel-icon,
+  .view-shop .shop-rail .rail-module > header h3,
+  .view-shop .shop-rail .rail-module .rail-rows,
+  .view-shop .shop-rail .rail-module .rail-rows li,
+  .view-shop .shop-rail .rail-module .rail-rows li small,
+  .view-shop .shop-rail .rail-module .rail-rows li b,
+  .view-shop .shop-rail .rail-module .total-row,
+  .view-shop .shop-rail .rail-module .total-row strong {
+    color: #f4f4ef !important;
+  }
+
+  .view-shop .shop-rail .rail-module .rail-rows li {
+    background: transparent !important;
+    border-bottom-color: #555 !important;
+  }
+
+  .view-shop .shop-rail .rail-module .rail-fill .detail-panel,
+  .view-shop .shop-rail .rail-module .detail-panel {
+    color: #f4f4ef !important;
+    background: transparent !important;
+  }
+
+  .view-shop .shop-rail .rail-module .detail-panel .section-heading,
+  .view-shop .shop-rail .rail-module .detail-panel .item-list,
+  .view-shop .shop-rail .rail-module .detail-panel .item-row {
+    background: transparent !important;
+  }
+
+  .view-shop .shop-rail .rail-module .detail-panel .section-heading h2,
+  .view-shop .shop-rail .rail-module .detail-panel .section-heading .eyebrow,
+  .view-shop .shop-rail .rail-module .detail-panel h2,
+  .view-shop .shop-rail .rail-module .detail-panel h3,
+  .view-shop .shop-rail .rail-module .detail-panel p,
+  .view-shop .shop-rail .rail-module .detail-panel .muted {
+    color: #f4f4ef !important;
+  }
+
+  .view-shop .shop-rail .rail-module .text-button {
+    color: #f4f4ef !important;
+    border-color: #777 !important;
+  }
+}
+
+/* Use the installed MS Gothic face only for the high-signal display tier so
+   headings keep a harder console silhouette without changing body-copy
+   wrapping or the meaning of any live value. */
+:is(
+  .brand-mark,
+  .hero-activity h2,
+  .section-heading h1,
+  .career-market-identity h1,
+  .shop-page > .section-heading h1,
+  .settle-title-wrap h2,
+  .settle-big,
+  .metric-box
+) {
+  font-family: "MS Gothic", "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: none;
+  -webkit-text-stroke: .3px currentColor;
+}
+
+/* Numeric readouts use the available system mono face, while Chinese copy
+   keeps the existing UI stack. This makes time, money, counters, and meters
+   read like the reference HUD without changing text wrapping elsewhere. */
+:root { --pixel-number: "Cascadia Mono", "MS Gothic", ui-monospace, monospace; }
+
+.status-line b,
+.persistent-stat strong,
+.metric strong,
+.forecast-strip strong,
+.metric-box,
+.settle-big,
+.settle-half strong,
+.reflection-metric,
+.catalog-price,
+.shop-detail-price,
+.career-detail-match > div:first-child strong {
+  font-family: var(--pixel-number);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Empty settlement slots stay honest, but remain part of the same readable
+   achievement-card hierarchy instead of disappearing into the black board. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .highlight-card.placeholder {
+    background: #101010;
+    border-color: #777;
+    border-style: dashed;
+  }
+
+  .monthly-summary.fullframe .highlight-card.placeholder > .highlight-art {
+    color: #aaa9a2;
+    background: #171717;
+    border-color: #666;
+    opacity: .9;
+  }
+
+  .monthly-summary.fullframe .highlight-card.placeholder h3 {
+    color: #c7c7c0;
+  }
+
+.monthly-summary.fullframe .highlight-card.placeholder small {
+    color: #8d8d87;
+  }
+}
+
+/* Life's planning and inbox surfaces share the reference's stepped pixel
+   corners. The content remains above the decorative frame and the frame never
+   captures input. */
+.planner.pixel-corners,
+.inbox-panel.pixel-corners {
+  position: relative;
+}
+
+.planner.pixel-corners::before,
+.inbox-panel.pixel-corners::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  z-index: 2;
+  pointer-events: none;
+  border: 1px solid #f0f0eb;
+  clip-path: polygon(0 0, 10px 0, 10px 1px, calc(100% - 10px) 1px, calc(100% - 10px) 0, 100% 0, 100% 10px, calc(100% - 1px) 10px, calc(100% - 1px) calc(100% - 10px), 100% calc(100% - 10px), 100% 100%, calc(100% - 10px) 100%, calc(100% - 10px) calc(100% - 1px), 10px calc(100% - 1px), 10px 100%, 0 100%, 0 calc(100% - 10px), 1px calc(100% - 10px), 1px 10px, 0 10px);
+}
+
+.planner.pixel-corners::before {
+  border-color: #0b0b0b;
+}
+
+/* Icon tiers stay in one pixel language: navigation and panel anchors carry
+   the heavier 1-bit stroke, while dense metadata remains optically lighter. */
+.nav-item .pixel-icon,
+.status-line > span > .pixel-icon,
+.persistent-stat > .pixel-icon,
+.inbox-head .pixel-icon,
+.career-filter-option .pixel-icon,
+.shop-tab .pixel-icon {
+  stroke-width: 2.75;
+}
+
+.job-fact .pixel-icon,
+.forecast-attr .pixel-icon,
+.settle-rows .pixel-icon {
+  stroke-width: 2.25;
+}
+
+/* Inverse detail panels use dark ink for positive requirement copy too; the
+   state is real, but inheriting the shell's white text makes it disappear on
+   the light surface. */
+.career-detail.inverse .requirement-ok {
+  color: #333;
+}
+
+.brand-mascot {
+  --il-knock: #050505;
+}
+
+/* Keep the full real acquisition summary available to assistive technology without reopening the compact card. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The wide reference board ends after the selected-product detail and the
+   persistent HUD. Keep the real acquisition/activity guidance available on
+   narrower desktop surfaces, where the main area is allowed to scroll, but do
+   not append a second long document below the 1440px composition. */
+@media (min-width: 1350px) {
+  .view-shop .shop-support-panels {
+    display: none;
+  }
+}
+
+/* Empty Life inboxes still need to read as intentional states inside the
+   reference-sized four-panel strip. Increase only the real empty-state mark
+   and label; populated rows and the panel geometry stay unchanged. */
+@media (min-width: 1181px) {
+  .view-life .inbox-empty {
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .view-life .inbox-empty .pixel-illustration {
+    width: 38px;
+    height: 38px;
+  }
+
+  .view-life .inbox-empty strong {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+}
+
+/* The reference clock is a hard-edged 1-bit display. Keep its readable text
+   in the DOM, while drawing only the large Hero value from square cells so
+   the system does not depend on a bundled or unavailable pixel font. */
+.pixel-clock {
+  color: currentColor;
+}
+
+.pixel-clock-glyphs {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  height: calc(7 * var(--pixel-clock-unit) + 6px);
+}
+
+.pixel-clock-glyph {
+  display: grid;
+  flex: none;
+  grid-template-columns: repeat(var(--pixel-clock-columns), var(--pixel-clock-unit));
+  grid-template-rows: repeat(7, var(--pixel-clock-unit));
+  gap: 1px;
+}
+
+.pixel-clock-glyph i {
+  display: block;
+  width: var(--pixel-clock-unit);
+  height: var(--pixel-clock-unit);
+  background: transparent;
+}
+
+.pixel-clock-glyph i.filled {
+  background: currentColor;
+}
+
+.pixel-clock.hero-clock {
+  --pixel-clock-unit: 11px;
+  display: block;
+  width: max-content;
+  margin-top: 6px;
+  font-size: 0;
+  line-height: 1;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+
+.pixel-clock.pixel-clock-compact {
+  --pixel-clock-unit: 3px;
+}
+
+.status-clock-value {
+  display: block;
+  width: max-content;
+  height: 27px;
+  font-size: 0;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.status-clock-value .pixel-clock-glyphs {
+  gap: 5px;
+}
+
+@media (max-height: 800px) and (min-width: 1181px) {
+  .pixel-clock.hero-clock { --pixel-clock-unit: 9px; }
+}
+
+@media (min-width: 1350px) and (min-height: 900px) {
+  .view-life .life-hero-grid,
+  .view-life .life-hero-grid .time-console,
+  .view-life .life-hero-grid > .forecast-strip {
+    min-height: 370px;
+  }
+}
+
+/* Shared one-bit corner rule: reference cards use a bright clipped frame while
+   their internal dotted dividers remain subdued. The rail keeps its inverse
+   dark frame above, so light modules do not gain a second white outline. */
+:is(
+  .life-primary-dashboard .inbox-panel,
+  .career-section.market-mode .career-filters,
+  .career-section.market-mode .job-card,
+  .career-section.market-mode .career-bottom-panel,
+  .view-shop .item-card,
+  .view-shop .activity-card,
+  .monthly-summary.fullframe .settle-panel,
+  .monthly-summary.fullframe .highlight-card
+) {
+  --frame-corner-line: var(--pixel-white);
+}
+
+/* Empty inboxes are still game states, not blank dashboard cells. Give the
+   truthful message a small framed anchor and let the copy sit beside it like
+   a compact one-bit status row. */
+.inbox-empty {
+  grid-template-columns: 40px minmax(0, 1fr);
+  justify-items: start;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.inbox-empty-mark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #f4f4ef;
+  background: #090909;
+  border: 1px solid #555;
+}
+
+.inbox-empty-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.inbox-empty-copy strong {
+  color: #f4f4ef;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.inbox-empty-copy small {
+  color: #aaa9a4;
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+@media (max-width: 700px) {
+  .inbox-empty {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+}
+
+/* Settlement highlights use the same semantic illustration tier as Life and
+   Career. Placeholder slots remain honest, but no longer look like five
+   copies of one generic chart/spark glyph. */
+@media (min-width: 1181px) {
+  .monthly-summary.fullframe .highlight-card:not(.reflection) > .highlight-art {
+    grid-area: icon;
+    align-self: center;
+    width: 32px;
+    height: 32px;
+    color: #f4f4ef;
+  }
+
+  .monthly-summary.fullframe .highlight-card.placeholder > .highlight-art {
+    color: #777;
+  }
+}
+
+/* The financial totals are outlined readouts on the black settlement board,
+   not light dashboard tiles. At the tall acceptance viewport there is room
+   to restore the reference's readable row rhythm and illustration anchors. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-panel .metric-box {
+    min-width: 148px;
+    padding: 7px 12px;
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border: 1px solid #f4f4ef;
+    box-shadow: 3px 3px 0 #000;
+  }
+
+  .monthly-summary.fullframe .settle-panel-art {
+    width: 72px;
+    height: 72px;
+    opacity: .78;
+  }
+
+  .monthly-summary.fullframe .settle-panel-art .pixel-illustration {
+    width: 68px;
+    height: 68px;
+  }
+
+  .monthly-summary.fullframe .settle-rows li {
+    padding: 6px 0;
+    font-size: 11px;
+  }
+
+  .monthly-summary.fullframe .settle-rows li b {
+    font-size: 11px;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc li {
+    grid-template-columns: 84px minmax(0, 1fr) auto;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc .segment-meter i {
+    height: 8px;
+  }
+
+  /* A short ledger-derived note gives sparse columns the same bottom anchor
+     as the reference speech bubbles without inventing another transaction. */
+  .monthly-summary.fullframe .settle-panel-note {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    align-self: end;
+    width: min(100%, calc(100% - 54px));
+    min-height: 42px;
+    margin-top: auto;
+    padding: 7px 9px;
+    color: #e7e7e1;
+    background: #111;
+    border: 1px solid #888;
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .monthly-summary.fullframe .settle-panel-note::before {
+    content: '';
+    position: absolute;
+    right: -7px;
+    bottom: 10px;
+    width: 7px;
+    height: 7px;
+    background: #111;
+    border-top: 1px solid #888;
+    border-right: 1px solid #888;
+    transform: skewX(35deg);
+  }
+
+  .monthly-summary.fullframe .highlight-card .new-ribbon {
+    top: -1px;
+    right: auto;
+    left: -1px;
+    width: 39px;
+    height: 27px;
+    padding: 3px 0 0 3px;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: 0;
+    text-align: left;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe .settle-panel-note {
+    width: min(100%, calc(100% - 42px));
+    min-height: 28px;
+    padding: 4px 6px;
+    font-size: 8px;
+  }
+}
+
+/* Keep the settlement totals as black-board readouts at both supported
+   desktop heights. The tall layout gets extra spacing above; the low-height
+   layout should only compress the same outlined value treatment. */
+@media (min-width: 1181px) {
+  .monthly-summary.fullframe .settle-panel .metric-box {
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border: 1px solid #f4f4ef;
+    box-shadow: 3px 3px 0 #000;
+  }
+}
+
+/* Shop utility rails use one consistent inversion: a black module header,
+   light real-data rows, and a black action footer. Keep the body light only
+   where rows exist so empty inventory/wishlist modules remain honest dark
+   states instead of turning into oversized white surfaces. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail .rail-module:has(.rail-rows) > header {
+    color: #fff !important;
+    background: #070707 !important;
+    border-bottom: 0;
+  }
+
+  .view-shop .shop-rail .rail-module:has(.rail-rows) > header .pixel-icon,
+  .view-shop .shop-rail .rail-module:has(.rail-rows) > header h3 {
+    color: #fff !important;
+  }
+
+  .view-shop .shop-rail .rail-module:has(.rail-rows) > .rail-link {
+    min-height: 31px;
+    margin-top: 4px;
+    padding: 6px 8px;
+    color: #fff !important;
+    background: #070707 !important;
+    border: 1px solid #070707 !important;
+  }
+
+  .view-shop .shop-rail .rail-module:has(.rail-rows) > .rail-link:hover,
+  .view-shop .shop-rail .rail-module:has(.rail-rows) > .rail-link:focus-visible {
+    color: #070707 !important;
+    background: #fff !important;
+    border-color: #070707 !important;
+  }
+}
+
+/* Empty career support panels should not inherit the populated rail's white
+   body. Keep real application/history rows light when they exist, but make a
+   truthful empty state a compact dark anchor like the Life inboxes. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:has(.career-bottom-empty) > .career-bottom-empty {
+    min-height: 92px;
+    margin: 6px 10px;
+    padding: 8px;
+    color: #aaa;
+    background: #090909;
+    border: 1px dotted #777;
+  }
+
+  .career-section.market-mode .career-bottom-panel:has(.career-bottom-empty) .career-bottom-empty .pixel-illustration {
+    color: #f4f4ef;
+    --il-knock: #090909;
+  }
+
+  .career-section.market-mode .career-bottom-panel:has(.career-bottom-empty) .career-bottom-empty strong {
+    color: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:has(.career-bottom-empty) .career-bottom-empty small {
+    color: #aaa;
+  }
+}
+
+/* Planning is a career utility, not a result filter. Keep the real drawer
+   action available in the market identity block so the toolbar can end with
+   the reference's filters, sort control, and opportunity count. */
+.career-tools-heading-trigger {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: block;
+  width: auto;
+  max-width: 112px;
+  min-height: 27px;
+  margin: 0;
+  padding: 5px 7px;
+  color: #aaa9a4;
+  background: transparent;
+  border: 1px dotted #777772;
+  font-size: 10px;
+  line-height: 1;
+  text-align: left;
+}
+
+.career-market-identity { position: relative; }
+
+.career-tools-heading-trigger:hover,
+.career-tools-heading-trigger:focus-visible {
+  color: #070707;
+  background: #f4f4ef;
+  border-color: #f4f4ef;
+}
+
+/* The reference board is genuinely monochrome. Browser subpixel text
+   antialiasing can introduce blue/red fringes around white glyphs; keep the
+   whole playable shell in the same grayscale channel without changing any
+   game-state color semantics or layout geometry. */
+.app-shell {
+  filter: grayscale(1);
+}
+
+/* Keep the non-reflection achievement anchors readable at the tall desktop
+   acceptance size. This intentionally comes after the shared 32px override
+   so the hierarchy is visible without changing the underlying record data. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .highlight-card:not(.reflection) > .highlight-art {
+    grid-area: icon;
+    align-self: center;
+    width: 46px;
+    height: 46px;
+    padding: 4px;
+    color: #f4f4ef;
+    background: #111;
+    border: 1px solid #555;
+  }
+
+  .settle-title-wrap .settle-title-spark {
+    position: absolute;
+    top: 21px;
+    width: 16px;
+    height: 16px;
+    color: #f4f4ef;
+  }
+
+  .settle-title-wrap .settle-title-spark-left {
+    left: calc(50% - 205px);
+  }
+
+  .settle-title-wrap .settle-title-spark-right {
+    right: calc(50% - 205px);
+  }
+}
+
+/* Controls use the same small stepped corners as their surrounding panels.
+   Keep this limited to the two dense catalog toolbars so native selects and
+   real buttons retain their exact size, focus behavior, and hit areas. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-page-menu-trigger,
+  .career-section.market-mode .career-toolbar-select select,
+  .career-section.market-mode .career-sort-control select,
+  .view-shop .shop-tab-bar .shop-tab,
+  .view-shop .shop-sort-control select,
+  .view-shop .shop-toolbar-button {
+    clip-path: polygon(
+      0 0, calc(100% - 5px) 0, calc(100% - 5px) 1px,
+      calc(100% - 1px) 1px, calc(100% - 1px) 5px, 100% 5px,
+      100% calc(100% - 5px), calc(100% - 1px) calc(100% - 5px),
+      calc(100% - 1px) calc(100% - 1px), calc(100% - 5px) calc(100% - 1px),
+      calc(100% - 5px) 100%, 5px 100%, 5px calc(100% - 1px),
+      1px calc(100% - 1px), 1px calc(100% - 5px), 0 calc(100% - 5px)
+    );
+  }
+}
+
+/* Center the Settlement Hero's celebratory composition like the reference:
+   the radial burst and the real character should support the net-worth readout
+   from the panel's visual axis instead of sitting in its lower-right corner. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-result-motif {
+    right: 50%;
+    bottom: 0;
+    width: 360px;
+    height: 280px;
+    transform: translateX(50%);
+  }
+
+  .monthly-summary.fullframe .settle-result-inverse > .settle-result-art {
+    right: auto;
+    bottom: 0;
+    left: 60%;
+    width: 128px;
+    height: 128px;
+    transform: translateX(-50%);
+  }
+
+  .monthly-summary.fullframe .settle-result-inverse .settle-badge {
+    position: absolute;
+    left: 14px;
+    bottom: 16px;
+    z-index: 3;
+    justify-self: initial;
+    padding: 5px 10px;
+  }
+
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(1) { width: 148px; transform: rotate(-170deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(2) { width: 112px; transform: rotate(-147deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(3) { width: 136px; transform: rotate(-124deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(4) { width: 104px; transform: rotate(-101deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(5) { width: 140px; transform: rotate(-78deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(6) { width: 114px; transform: rotate(-55deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(7) { width: 150px; transform: rotate(-32deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(8) { width: 112px; transform: rotate(-9deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(9) { width: 148px; transform: rotate(14deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(10) { width: 110px; transform: rotate(37deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(11) { width: 140px; transform: rotate(60deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(12) { width: 112px; transform: rotate(83deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(13) { width: 132px; transform: rotate(106deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(14) { width: 104px; transform: rotate(129deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(15) { width: 140px; transform: rotate(152deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(16) { width: 114px; transform: rotate(175deg); }
+
+  .monthly-summary.fullframe .settle-footer {
+    position: relative;
+  }
+
+  .monthly-summary.fullframe .settle-continue {
+    min-width: 330px;
+    min-height: 58px;
+    padding-inline: 28px;
+    font-size: 19px;
+  }
+
+  .monthly-summary.fullframe .settle-continue-note {
+    display: block;
+    position: absolute;
+    right: 8px;
+    bottom: 0;
+    grid-column: auto;
+  }
+
+  .monthly-summary.fullframe .highlight-card:not(.reflection) {
+    grid-template-columns: 56px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'icon title' 'icon detail' 'icon meta';
+    align-content: stretch;
+    gap: 6px 10px;
+    padding: 14px 12px 12px;
+  }
+
+  .monthly-summary.fullframe .highlight-card:not(.reflection) > .highlight-art {
+    width: 56px;
+    height: 56px;
+    padding: 6px;
+  }
+
+  .monthly-summary.fullframe .highlight-card:not(.reflection) h3 {
+    align-self: start;
+    font-size: 15px;
+    line-height: 1.25;
+  }
+
+  .monthly-summary.fullframe .highlight-card:not(.reflection) small {
+    align-self: end;
+    font-size: 10.5px;
+    line-height: 1.25;
+  }
+
+  .monthly-summary.fullframe .highlight-card:not(.reflection) .highlight-description {
+    grid-area: detail;
+    align-self: center;
+    min-width: 0;
+    margin: 0;
+    color: #c7c7c0;
+    font-size: 11px;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}
+
+/* The Career detail rail has real requirement and condition rows, so use the
+   reference's taller section rhythm to carry those rows down to the CTA
+   instead of leaving an unexplained white gap above the action bar. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-detail.inverse > .detail-facts {
+    min-height: 69px;
+  }
+
+  .career-section.market-mode .career-detail.inverse > section:first-of-type {
+    min-height: 112px;
+  }
+
+  .career-section.market-mode .career-detail.inverse > section:first-of-type .requirement-line {
+    padding-block: 8px;
+  }
+
+  .career-section.market-mode .career-detail.inverse > section:nth-of-type(2) {
+    min-height: 119px;
+  }
+
+  .career-section.market-mode .career-detail.inverse .career-condition-meter {
+    padding-block: 7px;
+  }
+
+  /* A satisfied requirement list has no authored rows to display. Use the
+     same dark inset as other truthful empty states so the inverse rail keeps
+     an intentional block instead of a large unowned white area. */
+  .career-section.market-mode .career-detail.inverse > section:first-of-type > .requirement-ok {
+    display: grid;
+    place-items: center;
+    min-height: 76px;
+    margin: 0;
+    padding: 10px;
+    color: #f4f4ef;
+    background: #090909;
+    border: 1px dotted #777;
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
+  }
+}
+
+/* Align the desktop Career detail rail with the market frame's top edge.
+   Its former sticky offset made the right column visibly drift below the
+   filters even though both are siblings in the same three-column board. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-detail.inverse {
+    top: 0;
+  }
+}
+
+/* Keep the market card's visual order identical to its DOM order: identity,
+   real job facts, description, then the state/action footer. The single
+   column track is intentional; without it CSS Grid auto-placement puts the
+   facts beside the identity block after the description leaves the button. */
+@media (min-width: 1181px) {
+  .career-results .job-card {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(44px, 1fr) auto;
+  }
+
+  .career-results .job-card > .card-select {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .career-results .job-card > .job-facts {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .career-results .job-card > .job-card-description {
+    grid-column: 1;
+    grid-row: 3;
+    display: -webkit-box;
+    min-width: 0;
+    min-height: 44px;
+    margin: 0;
+    padding-top: 6px;
+    color: #c7c7c0;
+    border-top: 1px dotted #555;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .career-results .job-card > .job-facts {
+    gap: 3px;
+    padding-block: 7px 6px;
+  }
+
+  .career-results .job-card > .job-facts .job-fact {
+    min-height: 17px;
+  }
+
+  .career-results .job-card > .job-card-description {
+    padding-top: 7px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .career-results .job-card > .job-actions {
+    grid-column: 1;
+    grid-row: 4;
+  }
+}
+
+/* Final cascade for the Career identity/menu placement and the compact
+   result toolbar. The source hierarchy is intentional; these overrides keep
+   the existing desktop frame height while moving only the secondary control. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'filters actions count';
+    grid-template-rows: 37px;
+    min-height: 74px;
+    box-sizing: border-box;
+    align-content: center;
+    padding: 7px 0 8px;
+  }
+
+  .career-section.market-mode .career-market-filters { grid-area: filters; }
+  .career-section.market-mode .career-toolbar-actions { grid-area: actions; }
+  .career-section.market-mode .career-toolbar-count { grid-area: count; }
+
+  .career-market-navigation {
+    display: grid;
+    gap: 4px;
+    margin-top: 9px;
+    padding-top: 7px;
+    border-top: 1px dotted #555;
+  }
+
+  .career-market-navigation .career-page-menu-trigger {
+    width: 100%;
+    max-width: none;
+    text-align: left;
+  }
+
+  .career-market-navigation .career-page-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    min-width: 0;
+    padding-top: 4px;
+    border-top: 1px dotted #555;
+  }
+}
+
+/* Career identity follows the reference scan order: category, title,
+   company, then the fact strip. Keep the illustration spanning that identity
+   block so moving the company line does not change card height. */
+@media (min-width: 1181px) {
+  .career-results .job-card .card-select {
+    grid-template-rows: auto auto auto;
+  }
+
+  .career-results .job-card .card-select .career-card-art {
+    grid-row: 1 / span 3;
+  }
+
+  .career-results .job-card .card-select .job-company {
+    grid-column: 2;
+    min-width: 0;
+    margin-top: -1px;
+    overflow: hidden;
+    color: #aaa9a4;
+    font-size: 10px;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Keep the settlement character anchors last in the cascade so the tall
+   desktop composition cannot fall back to the older object-sized treatment. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-panel-art {
+    width: 94px;
+    height: 94px;
+    left: 12px;
+    right: auto;
+    bottom: 10px;
+    color: #f4f4ef;
+    --il-knock: #0c0c0c;
+    opacity: .94;
+  }
+
+  .monthly-summary.fullframe .settle-panel-art .pixel-illustration {
+    width: 88px;
+    height: 88px;
+  }
+
+  .monthly-summary.fullframe .settle-allocation .settle-panel-art {
+    right: 12px;
+    left: auto;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe .settle-panel-art {
+    display: none;
+  }
+}
+
+/* Final Shop rail cascade: populated modules use a stepped black-header /
+   light-row / black-action anatomy. Empty inventory and wishlist modules stay
+   dark, so the rail keeps the reference's deliberate surface hierarchy. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) {
+    color: #070707 !important;
+    background: #f4f4ef !important;
+    border-color: #070707 !important;
+    --frame-corner-line: #070707;
+  }
+
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) > header {
+    color: #fff !important;
+    background: #070707 !important;
+    border-bottom-color: #777 !important;
+  }
+
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) > header h3,
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) > header .pixel-icon {
+    color: #fff !important;
+  }
+
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) > .rail-rows,
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) > .rail-rows li,
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) > .rail-rows li small,
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) > .rail-rows li b,
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) > .total-row {
+    color: #222 !important;
+  }
+
+  .view-shop .shop-rail .rail-module:has(> .rail-rows) > .rail-rows li {
+    background: transparent !important;
+    border-bottom-color: #aaa !important;
+  }
+
+  .view-shop .shop-rail .rail-cart:has(> .rail-rows) > .total-row {
+    margin: 6px -12px 0;
+    padding: 8px 12px;
+    color: #f4f4ef !important;
+    background: #070707 !important;
+    border-top: 1px solid #070707;
+    border-bottom: 0;
+  }
+
+  .view-shop .shop-rail .rail-cart:has(> .rail-rows) > .total-row strong {
+    color: #fff !important;
+  }
+
+  .view-shop .shop-rail .rail-cart:has(> .rail-rows) > .primary-button,
+  .view-shop .shop-rail .rail-schedule:has(> .rail-rows) > .rail-link {
+    color: #fff !important;
+    background: #070707 !important;
+    border-color: #070707 !important;
+  }
+
+  .view-shop .shop-rail .rail-schedule:has(> .rail-rows) > .rail-link:hover,
+  .view-shop .shop-rail .rail-schedule:has(> .rail-rows) > .rail-link:focus-visible {
+    color: #070707 !important;
+    background: #fff !important;
+  }
+
+  .view-shop .shop-rail .rail-inventory,
+  .view-shop .shop-rail .rail-wishlist {
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border-color: #c7c7c0 !important;
+    --frame-corner-line: #c7c7c0;
+  }
+
+  .view-shop .shop-rail .rail-inventory .detail-panel,
+  .view-shop .shop-rail .rail-wishlist .detail-panel,
+  .view-shop .shop-rail .rail-inventory .section-heading,
+  .view-shop .shop-rail .rail-wishlist .section-heading,
+  .view-shop .shop-rail .rail-inventory .item-list,
+  .view-shop .shop-rail .rail-wishlist .item-list,
+  .view-shop .shop-rail .rail-inventory .item-row,
+  .view-shop .shop-rail .rail-wishlist .item-row {
+    color: #f4f4ef !important;
+    background: transparent !important;
+  }
+
+  .view-shop .shop-rail .rail-fill .section-heading {
+    width: 100%;
+    min-height: 30px;
+    box-sizing: border-box;
+    margin: 0 0 8px;
+    padding: 5px 8px;
+    color: #fff !important;
+    background: #070707 !important;
+    border-bottom: 1px solid #777 !important;
+  }
+
+  .view-shop .shop-rail .rail-fill .section-heading h2 {
+    margin: 0;
+    color: #fff !important;
+  }
+
+  .view-shop .shop-rail .rail-inventory .detail-panel .section-heading,
+  .view-shop .shop-rail .rail-wishlist .detail-panel .section-heading {
+    background: #070707 !important;
+    background-color: #070707 !important;
+  }
+
+  .view-shop .shop-rail .rail-inventory .detail-panel .section-heading h2,
+  .view-shop .shop-rail .rail-wishlist .detail-panel .section-heading h2 {
+    color: #fff !important;
+  }
+}
+
+/* Empty rail modules still need a readable state anchor when the current
+   save has no cart, inventory, or wishlist rows. Keep the authored copy and
+   action semantics, but use the compact icon / title / hint anatomy from the
+   reference instead of a centered vertical stack that leaves a dead black
+   block in the rail. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail .shop-rail-empty {
+    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    align-items: center;
+    justify-items: start;
+    column-gap: 8px;
+    row-gap: 2px;
+    min-height: 54px;
+    margin: 4px 0;
+    padding: 5px 8px;
+    text-align: left;
+  }
+
+  .view-shop .shop-rail .shop-rail-empty .pixel-illustration {
+    grid-row: 1 / span 2;
+    width: 28px;
+    height: 28px;
+  }
+
+  .view-shop .shop-rail .shop-rail-empty strong,
+  .view-shop .shop-rail .shop-rail-empty small {
+    grid-column: 2;
+    max-width: none;
+  }
+
+  .view-shop .shop-rail .shop-rail-empty strong {
+    font-size: 10px;
+  }
+
+  .view-shop .shop-rail .shop-rail-empty small {
+    font-size: 8px;
+    line-height: 1.25;
+  }
+}
+
+/* Weekly plan cells carry the player's actual schedule, so the activity
+   marker should read before the small time caption. Keep the fixed 60px cell
+   geometry and real labels, but give the shared pixel icon one more visual
+   tier and let the activity name carry slightly more weight. */
+@media (min-width: 1181px) {
+  .view-life .life-planning-section .plan-cell {
+    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    justify-items: start;
+    column-gap: 6px;
+    row-gap: 0;
+    padding: 3px 7px;
+    text-align: left;
+  }
+
+  .view-life .life-planning-section .plan-cell .pixel-icon {
+    grid-row: 1 / span 2;
+    grid-column: 1;
+    width: 32px;
+    height: 32px;
+    justify-self: center;
+  }
+
+  .view-life .life-planning-section .plan-cell strong {
+    grid-column: 2;
+    min-width: 0;
+    max-width: 100%;
+    font-size: 13.5px !important;
+    line-height: 1.05;
+  }
+
+  .view-life .life-planning-section .plan-cell small {
+    grid-column: 2;
+    font-size: 12px !important;
+    line-height: 1.1;
+  }
+}
+
+/* Sparse settlement columns still need one clear bottom anchor. Keep the
+   ledger-derived note beside its panel character, so the empty lower half
+   reads as an intentional speech-bubble composition instead of a stray
+   paragraph between rows and art. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-panel-note {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    left: 104px;
+    width: auto;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  .monthly-summary.fullframe .settle-allocation .settle-panel-note {
+    right: 104px;
+    left: 10px;
+  }
+}
+
+/* Low-height desktop keeps the settlement board inside the viewport. The
+   achievement cards need their compact three-row anatomy restored here as
+   well as their fixed height, otherwise the summary copy falls back to the
+   default flow and escapes the card frame. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection) {
+    grid-template-columns: 32px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'icon title' 'icon detail' 'icon meta';
+    align-content: stretch;
+    align-items: center;
+    gap: 3px 7px;
+    box-sizing: border-box;
+    padding: 6px 7px 5px;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection) > .highlight-art {
+    grid-area: icon;
+    align-self: center;
+    width: 30px;
+    height: 30px;
+    padding: 3px;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection) h3 {
+    grid-area: title;
+    align-self: start;
+    margin: 0;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection) .highlight-description {
+    grid-area: detail;
+    align-self: center;
+    min-width: 0;
+    margin: 0;
+    font-size: 9px;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection) small {
+    grid-area: meta;
+    align-self: end;
+    font-size: 8px;
+    line-height: 1.2;
+  }
+}
+
+/* Settlement Footer is a real status readout, not a decorative baseline.
+   Keep the six authored attributes and their compact two-row fit, but give
+   the labels, values, and segmented bars enough weight to survive the first
+   viewport comparison. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-foot-text {
+    color: #f0f0eb;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .monthly-summary.fullframe .settle-attrs {
+    column-gap: 10px;
+    row-gap: 8px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs > div {
+    min-height: 18px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs dt {
+    color: #c7c7c0;
+    font-size: 10.5px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs b {
+    color: #f4f4ef;
+    font-size: 11.5px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs .segment-meter {
+    gap: 3px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs .segment-meter i {
+    height: 10px;
+  }
+}
+
+/* The market board should end inside the tall desktop shell. Do not let a
+   trailing panel margin create a fake three-pixel scrollbar when every
+   visible Career surface already sits above the Footer. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-bottom-panels {
+    margin-bottom: 0;
+  }
+}
+
+/* Fine-grid vacancy art has more negative space than the legacy 16-cell
+   silhouettes. Give it a small optical lift so the role marker keeps the
+   reference's visual weight without changing the card column or hit area. */
+@media (min-width: 1181px) {
+  .career-results .job-card .career-card-art .pixel-illustration.fine-grid {
+    transform: scale(1.14);
+  }
+}
+
+/* The page switch is a secondary Career affordance. Keep its existing
+   accessible button and menu, but remove the full-width dead row it used to
+   reserve between the identity copy and the real filter stack. */
+@media (min-width: 1181px) {
+  .career-market-identity .career-market-navigation {
+    position: absolute;
+    top: 34px;
+    right: 0;
+    display: block;
+    width: 82px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .career-market-identity .career-market-navigation .career-page-menu-trigger {
+    width: 100%;
+    max-width: none;
+    min-height: 24px;
+    padding: 4px 5px;
+    font-size: 9px;
+    text-align: center;
+  }
+
+  .career-market-identity .career-market-navigation .career-page-menu {
+    position: absolute;
+    top: 28px;
+    left: 0;
+    right: auto;
+    z-index: 8;
+    width: 214px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 4px;
+    background: #050505;
+    border: 1px solid #777772;
+  }
+}
+
+/* Career's search field follows the reference's single-line utility anatomy:
+   the visible hint lives inside the real input, while the label remains in
+   the accessibility tree. This releases the extra line before the filters. */
+@media (min-width: 1181px) {
+  .career-market-identity {
+    padding-bottom: 0;
+  }
+
+  .career-filters > label {
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .career-filters > label input {
+    min-height: 34px;
+    margin-top: 0;
+    padding: 6px 8px;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+}
+
+/* The tall settlement footer has room for one compact row of all six
+   authored attributes. Flexible meter cells preserve that real data while
+   avoiding the fixed-width 3-by-2 wrap that made the footer look undersized
+   against the reference. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-attrs {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    align-items: center;
+    column-gap: 6px;
+    row-gap: 0;
+  }
+
+  .monthly-summary.fullframe .settle-attrs > div {
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 4px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs dt {
+    color: #d6d6d0;
+    font-size: 11.5px;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+
+  .monthly-summary.fullframe .settle-attrs dd {
+    min-width: 0;
+  }
+
+  .monthly-summary.fullframe .settle-attrs .segment-meter {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(3px, 1fr);
+    gap: 2px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs .segment-meter i {
+    width: auto;
+    height: 10px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs b {
+    color: #f4f4ef;
+    font-size: 12.5px;
+  }
+}
+
+/* Career toolbar anatomy: keep the real filters legible as stacked label /
+   select units, matching the reference utility strip without adding a new
+   control or changing the existing filter state. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas: 'filters actions count';
+    grid-template-rows: 52px;
+    align-items: end;
+    gap: 8px;
+    padding: 5px 0 7px;
+  }
+
+  .career-section.market-mode .career-market-filters {
+    align-items: end;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .career-section.market-mode .career-market-filters label,
+  .career-section.market-mode .career-sort-control {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 34px;
+    align-items: end;
+    gap: 4px;
+  }
+
+  .career-section.market-mode .career-market-filters label > span,
+  .career-section.market-mode .career-sort-control > span {
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .career-section.market-mode .career-market-filters select,
+  .career-section.market-mode .career-sort-control select {
+    height: 34px;
+    min-height: 34px;
+    padding: 7px 8px;
+    font-size: 11px;
+  }
+
+  .career-section.market-mode .career-toolbar-actions,
+  .career-section.market-mode .career-toolbar-count {
+    align-self: end;
+  }
+
+  .career-section.market-mode .career-toolbar-count {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+}
+
+/* Shared desktop HUD: the reference gives the brand and live status fields
+   enough optical weight to anchor the board. This is a presentation-only
+   adjustment above the 1280 low-height target; values and shell geometry stay
+   driven by the existing header state. */
+@media (min-width: 1321px) {
+  .brand-block {
+    flex-basis: 33%;
+  }
+
+  .brand-mark {
+    font-size: 60px;
+  }
+
+  .brand-mascot {
+    width: 48px;
+    height: 48px;
+  }
+
+  .brand-subtitle {
+    color: #f4f4ef;
+    font-size: 15px;
+  }
+
+  .brand-subtitle small,
+  .status-line > span > small {
+    color: #c7c7c0;
+  }
+
+  .status-line > span > b {
+    color: #f4f4ef;
+    font-size: 18px;
+  }
+
+  .status-line > span > .pixel-icon {
+    color: #f4f4ef;
+  }
+
+  .status-date b {
+    font-size: 18px;
+  }
+}
+
+/* Desktop display text follows the reference's sharper 1-bit register. Keep
+   the body-copy stack and all live values unchanged; only the repeated title
+   tier gets raster-like rendering so dense cards do not read as default web
+   typography. */
+@media (min-width: 1181px) {
+  :is(
+    .nav-item,
+    .life-planning-section .section-heading h1,
+    .inbox-head h2,
+    .career-results .job-card .card-select h2,
+    .view-shop .item-card h2,
+    .view-shop .activity-card h3,
+    .shop-detail h2,
+    .settle-panel h3,
+    .highlight-card h3,
+    .settle-continue
+  ) {
+    font-family: "MS Gothic", "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
+    font-synthesis: none;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: none;
+    -webkit-text-stroke: .24px currentColor;
+    letter-spacing: -.035em;
+  }
+
+  .nav-item {
+    font-weight: 800;
+  }
+}
+
+/* The reference cards keep their black plane, but their inner dotted frame
+   and repeated row rules sit one gray step above the surface. Lift only that
+   internal tier so sparse real states do not collapse into a single black
+   mass; outer frames, geometry, and data remain unchanged. */
+@media (min-width: 1181px) {
+  :is(
+    .career-section.market-mode .job-card,
+    .view-shop .item-card,
+    .view-shop .activity-card,
+    .monthly-summary.fullframe .highlight-card
+  )::before {
+    border-color: #555;
+  }
+
+  .view-life .inbox-list li,
+  .monthly-summary.fullframe .settle-rows li {
+    border-bottom-color: #555;
+  }
+}
+
+/* Populated achievement records follow the reference's reading order: title
+   across the top, the real illustration beside its description, and the day
+   record as the closing baseline. Empty slots keep their separate compact
+   placeholder anatomy. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) {
+    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'title title' 'icon detail' 'meta meta';
+    align-content: stretch;
+    gap: 6px 10px;
+    padding: 14px 12px 10px;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) h3 {
+    grid-area: title;
+    align-self: start;
+    justify-self: center;
+    width: 100%;
+    margin: 0;
+    text-align: center;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) > .highlight-art {
+    grid-area: icon;
+    align-self: center;
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    background: transparent;
+    border: 0;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) .highlight-description {
+    grid-area: detail;
+    align-self: start;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) small {
+    grid-area: meta;
+    align-self: end;
+    justify-self: center;
+  }
+}
+
+/* The settlement board is a full-screen pause stage. Enter it atomically so
+   the underlying Life plan never flashes through the black console surface. */
+@media (min-width: 1181px) {
+  .modal-backdrop.settlement-mode {
+    animation: none;
+  }
+
+  /* The settlement stage covers the underlying page, but the global HUD is
+     still the player's live context. Keep its authored contrast above the
+     backdrop without exposing the normal navigation or page content. */
+  .app-shell.mode-monthly_summary > .topbar {
+    position: relative;
+    z-index: 21;
+  }
+}
+
+/* Extend the crisp raster treatment from display headings to the desktop
+   console's labels, rows, and controls so one page does not mix pixel text
+   with browser-smoothed web UI. */
+@media (min-width: 1181px) {
+  body,
+  button,
+  input,
+  select {
+    font-synthesis: none;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: none;
+  }
+}
+
+/* The persistent HUD uses six wider cells so the status readout reads as a
+   character console rather than a micro dashboard. Values and max remain
+   unchanged; this is presentation-only. */
+@media (min-width: 1321px) {
+  .persistent-status .segment-meter {
+    grid-auto-columns: 12px;
+    gap: 3px;
+  }
+
+  .persistent-status .segment-meter i {
+    width: 12px;
+    height: 10px;
+  }
+}
+
+@media (min-width: 1181px) and (max-width: 1320px) {
+  .persistent-status .segment-meter {
+    grid-auto-columns: 10px;
+    gap: 2px;
+  }
+
+  .persistent-status .segment-meter i {
+    width: 10px;
+    height: 9px;
+  }
+}
+
+/* Market insight is a real secondary readout, so its bars and chart should
+   remain legible at the same compact desktop scale as the reference. The
+   vacancy-derived values stay unchanged; only the visual weight increases. */
+@media (min-width: 1181px) {
+  .career-bottom-insight .career-insight-body {
+    grid-template-columns: minmax(0, 1fr) 60px;
+    gap: 10px;
+  }
+
+  .career-bottom-insight .career-insight-metrics {
+    gap: 8px;
+  }
+
+  .career-bottom-insight .career-insight-metric {
+    grid-template-columns: 52px minmax(0, 1fr) auto;
+    gap: 6px;
+    font-size: 10px;
+  }
+
+  .career-bottom-insight .career-insight-metric > small {
+    font-size: 10px;
+  }
+
+  .career-bottom-insight .career-insight-metric .segment-meter i {
+    height: 8px;
+  }
+
+  .career-bottom-insight .career-insight-body > .pixel-illustration {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* Keep the vacancy description at its real two-line height. The fixed card
+   still aligns its status and CTA at the bottom, but the unused room is
+   shared between the identity, facts, description, and footer instead of
+   stretching the description into a hollow block. */
+@media (min-width: 1181px) {
+  .career-results .job-card {
+    grid-template-rows: auto auto auto auto;
+    align-content: space-between;
+  }
+
+  .career-results .job-card > .job-card-description {
+    min-height: 0;
+  }
+}
+
+/* Shop catalog art sits directly on the black card plane in the reference.
+   Replace the dashboard-like inset tile with one open illustration column and
+   a single dotted divider; the card grid and hit targets remain unchanged. */
+@media (min-width: 1181px) {
+  .view-shop .item-card .card-art,
+  .view-shop .activity-card .card-art {
+    width: 64px;
+    height: 64px;
+    box-sizing: border-box;
+    padding: 0;
+    color: #fff;
+    background: transparent;
+    border: 0;
+    border-right: 1px dotted #555;
+  }
+
+  .view-shop .item-card .card-art .pixel-illustration,
+  .view-shop .activity-card .card-art .pixel-illustration {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* The settlement board gives the allocation ledger less horizontal weight
+   and lets the net-worth ceremony carry the broadest visual column, matching
+   the reference's 326 / 312 / 270 / 423px desktop rhythm. */
+@media (min-width: 1181px) {
+  .monthly-summary.fullframe .settle-grid {
+    grid-template-columns: 1.05fr 1fr .87fr 1.36fr;
+  }
+}
+
+/* The inverse net-worth Hero uses a full-width title rule to separate its
+   heading from the real month-change readout, matching the reference's
+   compact title / ribbon / value stack. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-result-inverse .settle-result-title {
+    width: 100%;
+    box-sizing: border-box;
+    padding-bottom: 7px;
+    border-bottom: 1px solid #777;
+  }
+
+  .monthly-summary.fullframe .settle-result-inverse > .settle-result-art {
+    width: 108px;
+    height: 108px;
+    bottom: 8px;
+  }
+}
+
+/* Keep the celebratory burst in the Hero's open left field. The reference
+   leaves the amount and character readable, with rays framing the result
+   instead of crossing its primary number. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-result-motif {
+    right: auto;
+    left: 0;
+    bottom: 0;
+    width: 230px;
+    height: 190px;
+    transform: none;
+    opacity: .82;
+  }
+
+  .monthly-summary.fullframe .settle-result-motif .settle-ray {
+    width: 82px !important;
+  }
+}
+
+/* Life's forecast keeps the reference's black utility header while the
+   rows below remain the light inverse data surface. The explanatory note is
+   still present for semantics, but stays compact enough for the fixed hero. */
+@media (min-width: 1181px) {
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-head {
+    position: relative;
+    display: flex;
+    align-items: center;
+    color: #f4f4ef;
+    background: #070707;
+    border-bottom: 1px solid #777;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-head h2 {
+    position: relative;
+    z-index: 1;
+    color: #fff;
+    font-size: 22px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-head small {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-head::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    left: 128px;
+    border-top: 1px dotted #aaa;
+  }
+}
+
+/* The Career detail rail is an inverse light surface too. Reuse the shared
+   pixel-corner geometry with a dark stroke so its corner marks remain visible
+   instead of disappearing against the panel background. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-detail.inverse::before {
+    border-color: #070707;
+  }
+}
+
+/* Career's final toolbar actions are native disclosure controls: their
+   menus keep the real sort and filter state, while the closed anatomy reads
+   as the compact action pair used by the reference market. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-toolbar-actions {
+    display: flex;
+    align-items: end;
+    gap: 6px;
+  }
+
+  .career-section.market-mode .career-toolbar-popover {
+    position: relative;
+    min-width: 72px;
+  }
+
+  .career-section.market-mode .career-toolbar-popover > summary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-width: 72px;
+    height: 34px;
+    box-sizing: border-box;
+    padding: 7px 9px;
+    color: #f4f4ef;
+    background: #070707;
+    border: 1px solid #777772;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .career-section.market-mode .career-toolbar-popover > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .career-section.market-mode .career-toolbar-popover > summary:hover,
+  .career-section.market-mode .career-toolbar-popover > summary:focus-visible,
+  .career-section.market-mode .career-toolbar-popover[open] > summary {
+    color: #070707;
+    background: #f4f4f0;
+    border-color: #f4f4f0;
+    outline: none;
+  }
+
+  .career-section.market-mode .career-toolbar-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 20;
+    display: grid;
+    gap: 3px;
+    min-width: 128px;
+    padding: 6px;
+    color: #f4f4ef;
+    background: #070707;
+    border: 1px solid #777772;
+    box-shadow: 4px 4px 0 #333;
+  }
+
+  .career-section.market-mode .career-toolbar-menu button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 26px;
+    padding: 5px 7px;
+    color: #f4f4ef;
+    background: #070707;
+    border: 1px solid #555;
+    font: inherit;
+    font-size: 10px;
+    font-weight: 800;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .career-section.market-mode .career-toolbar-menu button:hover,
+  .career-section.market-mode .career-toolbar-menu button:focus-visible,
+  .career-section.market-mode .career-toolbar-menu button.selected {
+    color: #070707;
+    background: #f4f4f0;
+    border-color: #f4f4f0;
+    outline: none;
+  }
+
+  .career-section.market-mode .career-filter-menu {
+    min-width: 250px;
+  }
+
+  .career-section.market-mode .career-menu-label {
+    padding: 2px 3px 1px;
+    color: #aaa9a4;
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  .career-section.market-mode .career-quick-filter-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px;
+    margin-bottom: 4px;
+  }
+
+  .career-section.market-mode .career-quick-filter-group button {
+    min-width: 0;
+  }
+}
+
+/* Structural anchors use the same 20px pixel tier across the shell and
+   section headers. Dense facts keep their smaller sizes; only navigation,
+   inbox headers, and the shop rail header become stronger landmarks. */
+@media (min-width: 1181px) {
+  .main-nav .nav-item .pixel-icon,
+  .inbox-head .pixel-icon,
+  .view-shop .shop-rail .rail-module > header .pixel-icon {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+/* Empty settlement ledgers keep the same board density without inventing a
+   transaction. A framed status lane gives the truthful message its own visual
+   role while the existing total, illustration, and ledger-derived note remain
+   in their original semantic positions. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-panel.is-empty .settle-empty-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 78px;
+    box-sizing: border-box;
+    padding: 12px 10px;
+    color: #aaa;
+    background: #101010;
+    border: 1px dashed #666;
+    text-align: center;
+  }
+
+  .monthly-summary.fullframe .settle-panel.is-empty .settle-empty-copy {
+    max-width: 18ch;
+    color: #aaa;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .monthly-summary.fullframe .settle-panel.is-empty .settle-panel-art {
+    opacity: .58;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe .settle-panel.is-empty .settle-empty-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 4px 6px;
+    color: #999;
+    background: #101010;
+    border: 1px dashed #555;
+    text-align: center;
+  }
+
+  .monthly-summary.fullframe .settle-panel.is-empty .settle-empty-copy {
+    color: #999;
+    font-size: 8px;
+    line-height: 1.2;
+    white-space: nowrap;
+  }
+}
+
+/* Product-card actions close the same frame as the illustration and facts.
+   The catalog keeps its two-column content anatomy, but the real CTA is a
+   full-width bottom rail like the reference; its button and hit target remain
+   the existing purchase action. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    align-content: stretch;
+  }
+
+  .view-shop .shop-main .item-card .card-art {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+
+  .view-shop .shop-main .item-card .item-card-head {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .view-shop .shop-main .item-card .catalog-title-row {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .view-shop .shop-main .item-card .catalog-facts {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: start;
+  }
+
+  .view-shop .shop-main .item-card .item-card-foot {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    align-self: end;
+    width: 100%;
+  }
+
+  .view-shop .shop-main .item-card .item-card-foot > .primary-button {
+    width: 100%;
+  }
+}
+
+/* Career vacancy art is a structural anchor, not a decorative thumbnail.
+   Keep the existing 24px one-bit scenes, but give the job cards the same
+   readable landmark tier as the reference without changing card height or
+   any vacancy data. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-results .job-card .card-select {
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 6px;
+  }
+
+  .career-section.market-mode .career-results .job-card .career-card-art {
+    width: 40px;
+    height: 40px;
+  }
+
+  .career-section.market-mode .career-results .job-card .career-card-art .pixel-illustration {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+@media (min-width: 1321px) {
+  .brand-block {
+    gap: 15px;
+  }
+
+  .brand-mascot {
+    width: 56px;
+    height: 56px;
+  }
+}
+
+@media (min-width: 1321px) {
+  .brand-wordmark {
+    gap: 18px;
+  }
+
+  .brand-block {
+    gap: 23px;
+  }
+
+  .brand-subtitle {
+    font-size: 18px;
+  }
+}
+
+/* Empty Life inboxes are compact status lanes rather than full-height blank
+   columns. Keep the real illustration and copy centered in the panel while
+   leaving the surrounding board rhythm visible. */
+@media (min-width: 1181px) {
+  .view-life .inbox-panel .inbox-empty {
+    flex: 0 0 72px;
+    min-height: 72px;
+    width: 100%;
+    margin-block: auto;
+  }
+}
+
+/* Settlement's title follows the reference celebration rhythm: one larger
+   spark on the left, a small mid-air marker, and a second right-side spark.
+   Keep the compact 720px layout to two marks so the title never collides. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-title-wrap .settle-title-spark-left {
+    top: 16px;
+    left: calc(50% - 275px);
+    width: 26px;
+    height: 26px;
+  }
+
+  .monthly-summary.fullframe .settle-title-wrap .settle-title-spark-mid {
+    top: 8px;
+    right: calc(50% - 165px);
+    width: 16px;
+    height: 16px;
+  }
+
+  .monthly-summary.fullframe .settle-title-wrap .settle-title-spark-right {
+    top: 20px;
+    right: calc(50% - 275px);
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe .settle-title-wrap .settle-title-spark-mid {
+    display: none;
+  }
+}
+
+/* Empty Life inboxes are quiet states, but they still need a deliberate
+   anchor inside the fixed four-panel strip. Center the real status copy
+   around a slightly stronger one-bit mark without manufacturing rows. */
+@media (min-width: 1181px) {
+  .view-life .inbox-panel .inbox-empty {
+    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-rows: auto;
+    align-content: center;
+    justify-content: center;
+    justify-items: start;
+    gap: 10px;
+    box-sizing: border-box;
+    max-width: 260px;
+    padding: 8px 12px;
+    text-align: left;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark {
+    width: 36px;
+    height: 36px;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark .pixel-illustration {
+    width: 28px;
+    height: 28px;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy {
+    align-self: center;
+    justify-items: start;
+    max-width: 28ch;
+    text-align: left;
+  }
+}
+
+/* The five real forecast attributes are a primary readout in the reference,
+   not footnote-sized metadata. Lift only their row, label, and icon tier;
+   the forecast grid, values, and fixed Hero height remain unchanged. */
+@media (min-width: 1181px) {
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr {
+    grid-template-columns: 18px 46px minmax(0, 1fr) 28px;
+    min-height: 22px;
+    padding-block: 3px;
+    font-size: 11px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr .pixel-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr .segment-meter i {
+    height: 7px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr b {
+    font-size: 11px;
+  }
+}
+
+/* Keep the real weekly-plan utility controls in the board, but give them the
+   compact footer rhythm used by the reference instead of a second content
+   row. The button, checkbox, and calculated cost remain fully visible. */
+@media (min-width: 1181px) {
+  .view-life .life-planning-section .planner-actions {
+    height: 30px;
+    min-height: 30px;
+    padding-block: 3px;
+    font-size: 10px;
+  }
+
+  .view-life .life-planning-section .planner-actions .secondary-button {
+    min-height: 24px;
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+
+  .view-life .life-planning-section .planner-actions .repeat-toggle,
+  .view-life .life-planning-section .planner-actions .plan-cost {
+    font-size: 10px;
+  }
+}
+
+/* The persistent HUD is a primary game surface, so its labels and values
+   should remain legible beside the avatar without widening the six-cell meter
+   or changing any attribute value. */
+@media (min-width: 1181px) {
+  .persistent-status .persistent-stat {
+    font-size: 12px;
+  }
+
+  .persistent-status .persistent-stat > strong {
+    font-size: 16px;
+  }
+}
+
+/* Shop cards are read at a glance: keep their real time/effect/prerequisite
+   facts and the target action above the tiny web-copy tier without changing
+   the card grid or any product values. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card .catalog-facts > div {
+    font-size: 11px;
+    line-height: 1.15;
+  }
+
+  .view-shop .shop-main .item-card .catalog-secondary-action {
+    font-size: 10px;
+  }
+
+  .view-shop .shop-main .item-card .item-card-foot > .primary-button {
+    font-size: 12px;
+  }
+}
+
+/* Entertainment uses the same catalogue facts and action hierarchy as Goods.
+   Keep the scheduling action outlined, but lift its readable text tier without
+   changing the activity card's real duration, effects, or availability. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .activity-card .catalog-facts > div {
+    font-size: 11px;
+    line-height: 1.15;
+  }
+
+  .view-shop .shop-main .activity-card .secondary-button {
+    font-size: 11px;
+  }
+}
+
+/* At the 720px desktop target the catalogue cards compress by 12px, so keep
+   the same readable hierarchy with the approved low-height type step and keep
+   the real scheduling control inside its card frame. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .view-shop .shop-main .activity-card .catalog-facts > div {
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .view-shop .shop-main .activity-card .secondary-button {
+    font-size: 10px;
+  }
+}
+
+/* Settlement achievements are the readable record of this month's real
+   changes, so populated titles and descriptions sit one tier above their day
+   metadata while the existing three-row card anatomy remains intact. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) h3 {
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) .highlight-description {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
+/* Allocation rows are a truthful complete list, including zero movement. Keep
+   their empty cells visible on the black board without competing with the
+   white filled cells or changing any financial value. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-rows.alloc li .segment-meter i:not(.filled) {
+    background: #3b3b38;
+    border-color: #777;
+  }
+}
+
+/* Job facts are the card's scan line for salary, employment type, and place.
+   Lift the real metadata one step with its shared icon while leaving the
+   three-column market geometry and vacancy values unchanged. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-results .job-card .job-fact {
+    min-height: 17px;
+    font-size: 11px;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-fact .pixel-icon {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+/* Career's support rail follows the reference black/white split: the three
+   record panels are deliberate light inverse surfaces, while Market Insight
+   remains the single dark dashboard. Truthful empty states keep their compact
+   dark framed lane inside the light shell instead of changing the hierarchy
+   of the whole bottom row. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) {
+    color: #070707;
+    background: #f4f4f0;
+    border-color: #070707;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-head {
+    color: #070707;
+    background: #f4f4f0;
+    border-bottom-color: #999;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-head h2,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-head .pixel-icon {
+    color: #070707;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .career-bottom-empty {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #777;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .career-bottom-empty strong {
+    color: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .career-bottom-empty small {
+    color: #aaa;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-foot {
+    border-top-color: #999;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-foot button {
+    color: #f4f4f0;
+    background: #090909;
+    border-color: #090909;
+  }
+}
+
+/* Tall desktop Shop keeps the four real Rail modules anchored to the same
+   vertical frame as the catalog. Empty cart/inventory/wishlist states stay
+   dark and truthful, but their compact status mark is centered inside the
+   shell instead of leaving an unowned black band below the Rail. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-shop .shop-rail:has(.shop-rail-empty) {
+    height: 815px;
+    min-height: 815px;
+    grid-template-rows: 195px 260px 150px 180px;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) .rail-module:has(.shop-rail-empty) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) .rail-fill,
+  .view-shop .shop-rail:has(.shop-rail-empty) .rail-fill .detail-panel {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) .rail-module:has(.shop-rail-empty) .shop-rail-empty {
+    margin-block: auto;
+  }
+}
+
+/* Keep Settlement's NEW marker as a stepped corner flag on both supported
+   desktop heights; the low-height version is smaller but keeps the same
+   visual anatomy as the tall reference surface. */
+@media (min-width: 1181px) {
+  .monthly-summary.fullframe .highlight-card .new-ribbon {
+    top: -1px;
+    right: auto;
+    left: -1px;
+    width: 39px;
+    height: 27px;
+    padding: 3px 0 0 3px;
+    clip-path: polygon(0 0, 100% 0, 0 100%);
+    font-size: 8px;
+    line-height: 1;
+    letter-spacing: 0;
+    text-align: left;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe .highlight-card .new-ribbon {
+    width: 30px;
+    height: 21px;
+    padding: 3px 0 0 2px;
+    font-size: 7px;
+  }
+}
+
+/* The console's copy uses the same installed hard-edged face as its display
+   tier. Keep the existing CJK fallbacks for glyph coverage, while removing
+   the ordinary web-sans feel from inherited labels and descriptions. */
+body,
+button,
+input,
+select,
+textarea {
+  font-family: "MS Gothic", "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
+  font-synthesis: none;
+  font-kerning: none;
+  font-variant-ligatures: none;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: none;
+}
+
+@media (min-width: 1181px) {
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    -webkit-text-stroke-width: .12px;
+  }
+}
+
+/* Keep desktop card descriptions legible without changing the established
+   card heights or adding another content tier. */
+@media (min-width: 1181px) {
+  .career-results .job-card > .job-card-description {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .view-shop .shop-main .item-card p {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+}
+
+/* Tall Life keeps the four real inbox panels as the lower board band instead
+   of leaving unused black space before the persistent HUD. The low-height
+   landscape surface keeps its compressed 200px track. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-life .life-primary-dashboard .inbox-panel {
+    height: 228px;
+    min-height: 228px;
+  }
+}
+
+/* Career support panels follow the reference's restrained inverse rhythm:
+   all four shells stay on the black record plane; populated rows may use a
+   light inset, while truthful empty states keep the compact dark treatment. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #777;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-head {
+    color: #f4f4ef;
+    background: #090909;
+    border-bottom-color: #555;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-head h2,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-head .pixel-icon {
+    color: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-foot {
+    border-top-color: #555;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) .inbox-foot button {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #777;
+  }
+}
+
+/* The selected product detail is the one place where item effects can use a
+   segmented readout. Product cards stay text-first; this compact two-column
+   meter keeps the real effect visible in the reference detail rhythm without
+   growing the fixed detail strip. */
+@media (min-width: 1181px) {
+  .view-shop .shop-detail-fact[data-fact='效果'] dd {
+    overflow: visible;
+  }
+
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-stack {
+    gap: 2px;
+    margin: 0;
+  }
+
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row {
+    grid-template-columns: 31px minmax(0, 1fr) auto;
+    gap: 3px;
+    min-height: 12px;
+    color: #aaa;
+    font-size: 8px;
+  }
+
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row > b {
+    color: #f4f4ef;
+    font-size: 9px;
+  }
+
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row .segment-meter {
+    gap: 2px;
+  }
+
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row .segment-meter i {
+    height: 5px;
+  }
+}
+
+/* A partially populated inbox still needs a quiet terminal state. Keep the
+   real rows at the top, then let the neutral marker settle against the
+   panel's lower rhythm without inventing another message or event. */
+@media (min-width: 1181px) {
+  .view-life .inbox-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .view-life .inbox-list-end {
+    justify-content: center;
+    margin-top: auto;
+    padding: 7px 0 0;
+    color: #777;
+    border-bottom: 0;
+    font-size: 9px;
+  }
+
+  .view-life .inbox-list-end span {
+    width: 100%;
+    padding-top: 6px;
+    border-top: 1px dotted #555;
+    text-align: center;
+  }
+}
+
+/* The wide reference keeps the primary nav closer to the outer frame and
+   gives each tab a stable console-sized cell. Preserve the tighter 1280
+   landscape rule above; this only corrects the 1440 desktop rhythm. */
+@media (min-width: 1321px) {
+  .main-nav {
+    padding-inline: 36px;
+  }
+
+  .main-nav .nav-item {
+    min-width: 118px;
+  }
+}
+
+/* Persistent character portraits are part of the console frame, not boxed
+   utility icons. Let the stepped SVG silhouette carry the pixel shape while
+   the surrounding footer remains a single dark plane. */
+@media (min-width: 1181px) {
+  .persistent-status .pixel-avatar {
+    background: transparent;
+    border: 0;
+  }
+}
+
+@media (min-width: 1181px) and (min-height: 801px) {
+  .persistent-status .pixel-avatar {
+    width: 60px;
+    height: 58px;
+    margin-right: 8px;
+    background: transparent;
+    border: 0;
+  }
+
+  .persistent-status .pixel-avatar .pixel-illustration {
+    width: 60px;
+    height: 60px;
+    transform: translate(-14px, -8px);
+  }
+}
+
+@media (min-width: 1181px) {
+  .settle-avatar {
+    width: 60px;
+    height: 58px;
+    background: transparent;
+    border: 0;
+  }
+
+  .settle-avatar .pixel-illustration {
+    --il-knock: #070707;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .persistent-status .pixel-avatar {
+    width: 50px;
+    height: 48px;
+    margin-right: 6px;
+  }
+
+  .persistent-status .pixel-avatar .pixel-illustration {
+    width: 46px;
+    height: 46px;
+  }
+
+  .settle-avatar {
+    width: 46px;
+    height: 44px;
+  }
+
+  .settle-avatar .pixel-illustration {
+    width: 42px;
+    height: 42px;
+  }
+}
+
+/* Low-height desktop pages intentionally keep an internal main viewport. The
+   compact track is the navigation affordance that tells the player more
+   truthful content continues below the visible board; the tall reference
+   canvas remains scrollbar-free when its content fits. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .main-content {
+    scrollbar-color: #777 #050505;
+    scrollbar-width: thin;
+  }
+
+  .main-content::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .main-content::-webkit-scrollbar-track {
+    background: #050505;
+  }
+
+  .main-content::-webkit-scrollbar-thumb {
+    background: #777;
+    border: 1px solid #050505;
+  }
+}
+
+/* In the tall Shop reference the first Rail module begins beside the product
+   cards, not beside the filter toolbar. An empty cart still uses its honest
+   status card, but its shell should not consume the populated-cart height;
+   trim only that first track and preserve the following schedule/inventory
+   anchors. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-shop .shop-rail:has(.shop-rail-empty) {
+    margin-top: 24px;
+    height: auto;
+    min-height: 0;
+    grid-template-rows: 171px 260px 150px 180px;
+  }
+}
+
+/* Empty cart and wishlist states stay inside the dark utility shell. Keep
+   their authored copy truthful, but reserve the light reading surface for
+   populated rows where it carries real list data. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail .rail-cart > .shop-rail-empty,
+  .view-shop .shop-rail .rail-wishlist .shop-rail-empty {
+    color: #aaa !important;
+    background: #090909 !important;
+    border-color: #777 !important;
+    --il-knock: #090909;
+  }
+
+  .view-shop .shop-rail .rail-cart > .shop-rail-empty .pixel-illustration,
+  .view-shop .shop-rail .rail-wishlist .shop-rail-empty .pixel-illustration {
+    color: #f4f4ef !important;
+  }
+
+  .view-shop .shop-rail .rail-cart > .shop-rail-empty strong,
+  .view-shop .shop-rail .rail-wishlist .shop-rail-empty strong {
+    color: #f4f4ef !important;
+  }
+
+  .view-shop .shop-rail .rail-cart > .shop-rail-empty small,
+  .view-shop .shop-rail .rail-wishlist .shop-rail-empty small {
+    color: #aaa !important;
+  }
+}
+
+/* Career vacancy art is a compact identity marker in the reference cards,
+   not a second hero. Keep the actual illustration and hit area, while giving
+   the title and metadata the dominant reading tier. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-results .job-card .card-select {
+    grid-template-columns: 34px minmax(0, 1fr);
+    column-gap: 7px;
+  }
+
+  .career-section.market-mode .career-results .job-card .career-card-art {
+    width: 34px;
+    height: 34px;
+  }
+
+  .career-section.market-mode .career-results .job-card .career-card-art .pixel-illustration {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+/* The tall reference keeps the Career support band clear of the persistent
+   HUD. Reserve a compact 166px row after the market shell, then let each
+   panel's real empty state share the same header/content/action grid. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-bottom-panels {
+    margin-top: 21px;
+  }
+
+  .career-section.market-mode .career-bottom-panel {
+    height: 166px;
+    min-height: 166px;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: hidden;
+  }
+
+  .career-section.market-mode .career-bottom-empty {
+    min-height: 0 !important;
+    height: 100% !important;
+    box-sizing: border-box;
+    margin: 0 8px !important;
+    padding: 4px !important;
+    grid-template-rows: 28px 12px minmax(0, 1fr);
+    gap: 2px;
+    overflow: hidden;
+  }
+
+  .career-section.market-mode .career-bottom-empty .pixel-illustration {
+    width: 28px;
+    height: 28px;
+  }
+
+  .career-section.market-mode .career-bottom-empty small {
+    line-height: 10px;
+    overflow: hidden;
+  }
+
+  .career-section.market-mode .career-bottom-panel .inbox-foot {
+    margin-top: 0;
+  }
+}
+
+/* Empty Career support lanes stay on the dense inverse plane; populated rows
+   keep their own authored reading surface when real data exists. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty {
+    color: #aaa !important;
+    background: #090909 !important;
+    border-color: #777 !important;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty .pixel-illustration {
+    color: #f4f4ef !important;
+    --il-knock: #090909;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty strong {
+    color: #f4f4ef !important;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty small {
+    color: #aaa !important;
+  }
+}
+
+/* The forecast net is a light data row in the reference, not a second dark
+   hero. Keep its outlined value treatment and real amount, but return the
+   row to the same readable surface as income, expense, and attributes. */
+@media (min-width: 1181px) {
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net {
+    color: #070707 !important;
+    background: #f4f4ef !important;
+    border-color: #070707 !important;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net span,
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net strong {
+    color: #070707 !important;
+  }
+}
+
+/* Idle Career cards use a quieter frame line so the selected vacancy remains
+   the brightest card landmark without changing card geometry or semantics. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-results .job-card:not(.selected) {
+    --frame-corner-line: #c7c7c0;
+  }
+
+  .career-section.market-mode .career-results .job-card.selected {
+    --frame-corner-line: #f4f4ef;
+  }
+}
+
+/* Shop catalog cards use a quieter idle frame so the selected product remains
+   the brightest catalog landmark without changing the card hit areas. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card:not(.selected),
+  .view-shop .shop-main .activity-card:not(.selected) {
+    --frame-corner-line: #c7c7c0;
+  }
+
+  .view-shop .shop-main .item-card.selected,
+  .view-shop .shop-main .activity-card.selected {
+    --frame-corner-line: #f4f4ef;
+  }
+}
+
+/* Settlement allocation meters need the same hard-edged reading weight as
+   the reference board: zero-value segments stay quiet, but remain visible. */
+@media (min-width: 1181px) {
+  .monthly-summary.fullframe .settle-rows.alloc .segment-meter {
+    grid-auto-columns: minmax(5px, 1fr);
+    gap: 2px;
+    width: 100%;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc .segment-meter i {
+    width: auto;
+    height: 9px;
+    background: #444440;
+    border-color: #999990;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc .segment-meter i.filled {
+    background: #f4f4ef;
+    border-color: #f4f4ef;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc li.is-zero .segment-meter i {
+    background: #444440;
+    border-color: #999990;
+  }
+}
+
+/* The tall reference treats the Settlement footer as a two-line status rail:
+   the authored summary sits above the six real attributes, while the primary
+   advance action owns the right edge across both lines. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-footer {
+    grid-template-columns: 60px minmax(0, 1fr) 330px;
+    grid-template-rows: 49px 18px;
+    align-content: start;
+  }
+
+  .monthly-summary.fullframe .settle-foot-text {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .monthly-summary.fullframe .settle-attrs {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .monthly-summary.fullframe .settle-continue {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+}
+
+/* Shared pixel frame grammar: the reference uses a clipped outer rule plus
+   small, square L-marks at each corner. Draw those marks in the existing
+   pointer-free pseudo-elements so panel geometry and hit areas stay intact;
+   the same token also keeps the internal dotted dividers optically related. */
+:root {
+  --pixel-divider: #575753;
+  --pixel-corner-line: #f4f4ef;
+}
+
+@media (min-width: 1181px) {
+  :is(
+    .pixel-corners,
+    .time-console,
+    .forecast-strip.inverse,
+    .shop-detail
+  )::before,
+  :is(
+    .life-primary-dashboard .inbox-panel,
+    .career-section.market-mode .career-filters,
+    .career-section.market-mode .job-card,
+    .career-section.market-mode .career-bottom-panel,
+    .view-shop .item-card,
+    .view-shop .activity-card,
+    .view-shop .shop-rail .rail-module,
+    .monthly-summary.fullframe .settle-panel,
+    .monthly-summary.fullframe .highlight-card
+  )::after {
+    background-image:
+      linear-gradient(var(--frame-corner-line, var(--pixel-corner-line)), var(--frame-corner-line, var(--pixel-corner-line))),
+      linear-gradient(var(--frame-corner-line, var(--pixel-corner-line)), var(--frame-corner-line, var(--pixel-corner-line))),
+      linear-gradient(var(--frame-corner-line, var(--pixel-corner-line)), var(--frame-corner-line, var(--pixel-corner-line))),
+      linear-gradient(var(--frame-corner-line, var(--pixel-corner-line)), var(--frame-corner-line, var(--pixel-corner-line))),
+      linear-gradient(var(--frame-corner-line, var(--pixel-corner-line)), var(--frame-corner-line, var(--pixel-corner-line))),
+      linear-gradient(var(--frame-corner-line, var(--pixel-corner-line)), var(--frame-corner-line, var(--pixel-corner-line))),
+      linear-gradient(var(--frame-corner-line, var(--pixel-corner-line)), var(--frame-corner-line, var(--pixel-corner-line))),
+      linear-gradient(var(--frame-corner-line, var(--pixel-corner-line)), var(--frame-corner-line, var(--pixel-corner-line)));
+    background-position:
+      2px 2px,
+      2px 2px,
+      calc(100% - 2px) 2px,
+      calc(100% - 2px) 2px,
+      2px calc(100% - 2px),
+      2px calc(100% - 2px),
+      calc(100% - 2px) calc(100% - 2px),
+      calc(100% - 2px) calc(100% - 2px);
+    background-repeat: no-repeat;
+    background-size:
+      8px 1px,
+      1px 8px,
+      8px 1px,
+      1px 8px,
+      8px 1px,
+      1px 8px,
+      8px 1px,
+      1px 8px;
+  }
+
+  :is(
+    .forecast-strip.inverse,
+    .shop-detail,
+    .career-detail.inverse
+  ) {
+    --frame-corner-line: #070707;
+  }
+
+  .planner.pixel-corners {
+    --frame-corner-line: #0b0b0b;
+  }
+
+  :is(
+    .section-heading,
+    .view-life .inbox-head,
+    .view-life .inbox-foot,
+    .career-section.market-mode .career-toolbar,
+    .view-shop .shop-rail .rail-module > header,
+    .monthly-summary.fullframe .settle-highlights-head
+  ) {
+    border-color: var(--pixel-divider);
+  }
+}
+
+/* Career's real filter controls sit on the same readable label tier as the
+   reference toolbar. The fixed 34px select height keeps the stacked anatomy
+   intact while the one-step type increase removes the browser-form feel. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-market-filters label > span,
+  .career-section.market-mode .career-sort-control > span {
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .career-section.market-mode .career-market-filters select,
+  .career-section.market-mode .career-sort-control select {
+    min-height: 34px;
+    height: 34px;
+    font-size: 12px;
+  }
+}
+
+/* Empty Life panels reserve the same visual lane as roughly two real rows in
+   the reference. The lane is still a truthful status message, but its larger
+   framed footprint keeps the fixed four-panel band from reading as dead black
+   space when there are no messages, events, or offers yet. */
+@media (min-width: 1181px) {
+  .view-life .inbox-panel .inbox-empty {
+    flex: 0 0 96px;
+    min-height: 96px;
+    padding: 10px 14px;
+    background: #111;
+    border-color: #777;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark .pixel-illustration {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+/* Product names are the first scan target inside each real catalogue card.
+   Lift only that title tier by one pixel; the single-line row keeps the
+   existing card height, facts, CTA, and selection hit area unchanged. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card .catalog-title-row h2 {
+    font-size: 17px;
+  }
+}
+
+/* Tall Career cards have enough vertical room for the reference's stronger
+   metadata and description tiers. Keep the low-height desktop compression
+   untouched so its fixed card anatomy remains stable. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-results .job-card > .job-facts .job-fact {
+    font-size: 12px;
+    line-height: 1.15;
+  }
+
+  .career-results .job-card > .job-card-description {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+}
+
+/* The tall market toolbar is a first-level control surface, so its field
+   labels and selected values keep the same readable step as the cards. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-market-filters label > span,
+  .career-section.market-mode .career-sort-control > span {
+    font-size: 12px;
+  }
+
+  .career-section.market-mode .career-market-filters select,
+  .career-section.market-mode .career-sort-control select {
+    font-size: 13px;
+  }
+}
+
+/* At the primary 1440px desktop width the reference gives the Shop utility
+   Rail a full reading column beside narrower catalogue cards. Keep the
+   compact 1280px layout unchanged so low-height compatibility does not turn
+   the product cards into a cramped third column. */
+@media (min-width: 1321px) and (min-height: 801px) {
+  .view-shop .shop-layout {
+    grid-template-columns: minmax(0, 1fr) 310px;
+  }
+
+  .view-shop .shop-rail {
+    top: 0;
+    margin-top: 0;
+  }
+
+  .view-shop .shop-rail:has(.shop-rail-empty) {
+    top: 0;
+    margin-top: 0;
+    height: 815px;
+    min-height: 815px;
+    grid-template-rows: 171px 260px 150px 180px;
+  }
+}
+
+/* Empty Life states occupy the same full-width row as authored messages and
+   events. Their copy remains truthful, while the panel no longer reads as a
+   narrow centered widget surrounded by unused black space. */
+@media (min-width: 1181px) {
+  .view-life .inbox-panel .inbox-empty {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+}
+
+/* The tall Career reference keeps the three stacked filters compact, then
+   reserves a separate action tier for sort/filter and the opportunity count.
+   Preserve the looser low-height layout while restoring that high-desktop
+   toolbar rhythm at the primary visual-review width. */
+@media (min-width: 1321px) and (min-height: 801px) {
+  .career-section.market-mode .career-toolbar {
+    grid-template-columns: 396px 190px 68px;
+    column-gap: 0;
+    justify-content: space-between;
+  }
+
+  .career-section.market-mode .career-market-filters {
+    width: 396px;
+  }
+
+  .career-section.market-mode .career-toolbar-actions {
+    width: 190px;
+  }
+
+  .career-section.market-mode .career-toolbar-actions > * {
+    flex: 1 1 0;
+  }
+}
+
+/* Empty Shop rail modules keep their honest dark utility shells, but the
+   actual empty-state lane returns to the reference's light reading surface.
+   This preserves the real zero-row state while restoring the black/white
+   rhythm that makes each rail module legible at a glance. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty {
+    color: #070707 !important;
+    background: #f4f4ef !important;
+    border: 1px solid #070707 !important;
+    --il-knock: #f4f4ef;
+  }
+
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty .pixel-illustration,
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty strong {
+    color: #070707 !important;
+  }
+
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty small {
+    color: #555 !important;
+  }
+}
+
+/* The tall reference leaves a deliberate breathing lane between the third
+   vacancy and the inverse detail rail. Keep the existing 1280px compression,
+   but narrow only the primary desktop card grid and restore its wider gutters
+   so the three real vacancy cards read as separate pixel panels. */
+@media (min-width: 1321px) and (min-height: 801px) {
+  .career-section.market-mode .career-results > .job-grid {
+    width: calc(100% - 24px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .settings-button .pixel-icon {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* The review card closes the achievement row with a real net-worth readout.
+   Give its existing chart marker the same anchor weight as the neighbouring
+   achievement art without introducing a score or any synthetic content. */
+@media (min-width: 1181px) {
+  .monthly-summary.fullframe .highlight-card.reflection {
+    grid-template-columns: 36px minmax(0, 1fr);
+    column-gap: 8px;
+  }
+
+  .monthly-summary.fullframe .highlight-card.reflection > .pixel-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .monthly-summary.fullframe .highlight-card.reflection .reflection-metric {
+    font-size: 26px;
   }
 }

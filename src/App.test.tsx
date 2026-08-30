@@ -2,7 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, beforeEach } from 'vitest';
 import App from './App';
-import { appStore } from './App';
+import { appStore, highlightIconFor, highlightIllustrationFor, highlightTitleFor, workSceneFor } from './App';
+import { contentRegistry } from './game/content/registry';
 import type { MonthlyFinancialSummary } from './game/content/contracts';
 
 describe('余量 app flow', () => {
@@ -21,7 +22,7 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('button', { current: 'page' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('region', { name: '角色状态' })).toHaveTextContent('体能');
     expect(screen.getByText('第 1 周')).toBeInTheDocument();
-    expect(screen.getByText('便利店店员')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^便利店店员$/ })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '生活' }));
     await user.click(screen.getByRole('button', { name: /周一晚间计划/ }));
@@ -30,6 +31,53 @@ describe('余量 app flow', () => {
     expect(screen.getByText('运行中')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '暂停' }));
     expect(screen.getByText('已暂停')).toBeInTheDocument();
+  });
+
+  it('uses a compact six-cell meter for the persistent status HUD', () => {
+    render(<App />);
+
+    const meters = document.querySelectorAll('.persistent-status .segment-meter');
+    expect(meters).toHaveLength(5);
+    expect([...meters].every((meter) => meter.querySelectorAll('i').length === 6)).toBe(true);
+  });
+
+  it('keeps the reference forecast attribute table complete when a value is unchanged', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+
+    const forecast = screen.getByRole('heading', { name: '本周预测' }).closest('section') as HTMLElement;
+    expect(within(forecast).getByText('体能')).toBeInTheDocument();
+    expect(within(forecast).getByText('心情')).toBeInTheDocument();
+    expect(within(forecast).getByText('专业')).toBeInTheDocument();
+    expect(within(forecast).getByText('知识')).toBeInTheDocument();
+    expect(within(forecast).getByText('人脉')).toBeInTheDocument();
+    expect(within(forecast).getAllByText('±0').length).toBeGreaterThanOrEqual(4);
+    expect(forecast.querySelectorAll('.forecast-attr .pixel-icon')).toHaveLength(5);
+  });
+
+  it('gives an empty Life message panel a readable semantic status', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+
+    const messages = screen.getByRole('heading', { name: '消息' }).closest('article') as HTMLElement;
+    expect(messages).not.toBeNull();
+    expect(within(messages).getByRole('status', { name: '收件箱暂时是空的。' })).toBeInTheDocument();
+    expect(messages.querySelector('.inbox-empty-mark')).not.toBeNull();
+    expect(messages.querySelector('.inbox-empty-copy')).not.toBeNull();
+    expect(within(messages).getByText('新的对话会在关系变化后出现。')).toBeInTheDocument();
+  });
+
+  it('gives a partially populated Life inbox a neutral end row', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+
+    const pending = screen.getByRole('heading', { name: '待处理事项' }).closest('article') as HTMLElement;
+    expect(within(pending).getByText('本周计划待开始')).toBeInTheDocument();
+    expect(pending.querySelector('.inbox-list-end')).not.toBeNull();
+    expect(within(pending).getByText('暂无更多')).toBeInTheDocument();
   });
 
   it('keeps simulation controls in the Life console and gives the shell a semantic settings control', async () => {
@@ -80,6 +128,16 @@ describe('余量 app flow', () => {
     expect(screen.queryByRole('dialog', { name: '职业工具' })).not.toBeInTheDocument();
   });
 
+  it('keeps planning tools in the career heading instead of the result toolbar', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const career = document.querySelector('.career-section.market-mode') as HTMLElement;
+    expect(career.querySelector('.career-tools-heading-trigger')).not.toBeNull();
+    expect(career.querySelector('.career-toolbar .career-tools-trigger')).toBeNull();
+  });
+
   it('gives the career detail a dark match band and a distinct application action bar', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -111,6 +169,65 @@ describe('余量 app flow', () => {
     });
   });
 
+  it('keeps vacancy cards to one status line and one action footer', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const cards = Array.from(screen.getByRole('region', { name: '招聘市场布局' }).querySelectorAll<HTMLElement>('.career-results .job-card'));
+    expect(cards).toHaveLength(6);
+    cards.forEach((card) => {
+      expect(card.querySelectorAll('.requirement-box')).toHaveLength(0);
+      expect(card.querySelector('.job-card-status')).not.toBeNull();
+      expect(card.querySelector('.job-actions')).not.toBeNull();
+      expect(card.querySelector('.job-actions button')).not.toBeNull();
+    });
+  });
+
+  it('places vacancy facts before the description in each market card', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const card = screen.getByRole('region', { name: '招聘市场布局' }).querySelector('.career-results .job-card') as HTMLElement;
+    const facts = card.querySelector('.job-facts');
+    const description = card.querySelector('.job-card-description');
+
+    expect(facts).not.toBeNull();
+    expect(description).not.toBeNull();
+    expect(facts!.compareDocumentPosition(description!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps the company line directly after the vacancy title', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const card = screen.getByRole('region', { name: '招聘市场布局' }).querySelector('.career-results .job-card') as HTMLElement;
+    const title = card.querySelector('.card-select h2');
+    const company = card.querySelector('.card-select .job-company');
+    const facts = card.querySelector('.job-facts');
+
+    expect(title).not.toBeNull();
+    expect(company).not.toBeNull();
+    expect(facts).not.toBeNull();
+    expect(title!.compareDocumentPosition(company!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(company!.compareDocumentPosition(facts!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps secondary career navigation out of the vacancy filter strip', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const market = screen.getByRole('region', { name: '招聘市场布局' });
+    const pageTrigger = market.querySelector('.career-page-menu-trigger');
+
+    expect(pageTrigger).not.toBeNull();
+    expect(pageTrigger!.closest('.career-market-identity')).not.toBeNull();
+    expect(pageTrigger!.closest('.career-toolbar')).toBeNull();
+  });
+
   it('uses role-specific one-bit silhouettes across the visible career cards', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -119,6 +236,16 @@ describe('余量 app flow', () => {
     const cards = Array.from(screen.getByRole('region', { name: '招聘市场布局' }).querySelectorAll<HTMLElement>('.career-results .job-card'));
     const silhouettes = new Set(cards.map((card) => Array.from(card.querySelector('.career-card-art .pixel-illustration')?.classList ?? []).find((name) => name.startsWith('il-'))));
     expect(silhouettes.size).toBeGreaterThanOrEqual(5);
+  });
+
+  it('uses five compact role assets on the first career market page', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const cards = Array.from(screen.getByRole('region', { name: '招聘市场布局' }).querySelectorAll<HTMLElement>('.career-results .job-card'));
+    const roleAssets = new Set(cards.map((card) => Array.from(card.querySelector('.career-card-art .pixel-illustration')?.classList ?? []).find((name) => name.startsWith('il-job-'))));
+    expect(roleAssets).toEqual(new Set(['il-job-shop', 'il-job-warehouse', 'il-job-manager', 'il-job-office', 'il-job-logistics']));
   });
 
   it('keeps career page navigation out of the filter rail and exposes it from a compact toolbar menu', async () => {
@@ -151,11 +278,37 @@ describe('余量 app flow', () => {
     expect(region).toHaveValue('all');
     expect(salary).toHaveValue('all');
     expect(duration).toHaveValue('all');
-    expect(toolbar).toHaveTextContent('公开机会 18');
+    expect(toolbar).toHaveTextContent('共 18 个机会');
+    expect(toolbar.querySelector('.career-sort-popover summary')).toHaveTextContent('排序');
+    expect(toolbar.querySelector('.career-filter-popover summary')).toHaveTextContent('筛选');
 
     await user.selectOptions(region, 'location.central');
     expect(region).toHaveValue('location.central');
-    expect(toolbar.textContent).not.toContain('公开机会 18');
+    expect(toolbar.textContent).not.toContain('共 18 个机会');
+  });
+
+  it('renders real career filter counts with one-bit list markers and compact toolbar actions', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const market = screen.getByRole('region', { name: '招聘市场布局' });
+    const filters = market.querySelector('.career-filters') as HTMLElement;
+    const categoryOptions = filters.querySelectorAll('[data-filter-group="category"]');
+    const stateOptions = filters.querySelectorAll('[data-filter-group="state"]');
+
+    expect(categoryOptions).toHaveLength(8);
+    expect(stateOptions).toHaveLength(5);
+    expect(filters.querySelectorAll('.career-filter-count')).toHaveLength(13);
+    expect(filters.querySelectorAll('.career-filter-option .pixel-icon')).toHaveLength(13);
+    expect(filters).toHaveTextContent('全部18');
+
+    const toolbar = market.querySelector('.career-toolbar') as HTMLElement;
+    expect(toolbar.querySelector('.career-sort-popover summary')).toHaveTextContent('排序');
+    expect(toolbar.querySelector('.career-filter-popover summary')).toHaveTextContent('筛选');
+    expect(within(toolbar).getByRole('menuitem', { name: '匹配度' })).toHaveClass('selected');
+    expect(within(toolbar).getByRole('menuitem', { name: '薪资最高' })).not.toHaveClass('selected');
+    expect(within(toolbar).getByText('共 18 个机会')).toBeInTheDocument();
   });
 
   it('keeps Life secondary finance and housing details reachable without stacking them into the home dashboard', async () => {
@@ -193,6 +346,55 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '生活' }));
 
     expect(document.querySelector('.hero-activity .pixel-illustration')).toHaveClass('il-life-activity');
+  });
+
+  it('uses a dedicated pixel cat for the brand mark', () => {
+    render(<App />);
+
+    expect(document.querySelector('.brand-mascot')).toHaveClass('il-brand-cat');
+  });
+
+  it('gives settlement highlights role-specific pixel icons', () => {
+    expect(highlightIconFor({ kind: 'attribute_milestone', label: '办公室经验 · 熟悉', sourceId: 'office' })).toBe('book');
+    expect(highlightIconFor({ kind: 'attribute_milestone', label: '零售经验 · 熟悉', sourceId: 'retail' })).toBe('shop');
+    expect(highlightIconFor({ kind: 'attribute_milestone', label: '客户服务经验 · 熟悉', sourceId: 'customer_service' })).toBe('users');
+    expect(highlightIconFor({ kind: 'attribute_milestone', label: '获得资格 · office_basics' })).toBe('tag');
+    expect(highlightIconFor({ kind: 'attribute_milestone', label: '里程碑 · 第一万现金' })).toBe('target');
+    expect(highlightIconFor({ kind: 'new_asset', label: '新资产' })).toBe('house');
+  });
+
+  it('gives settlement highlights distinct semantic pixel illustrations', () => {
+    const illustrations = [
+      highlightIllustrationFor({ kind: 'new_job', label: '新工作' }),
+      highlightIllustrationFor({ kind: 'new_contact', label: '新联系人' }),
+      highlightIllustrationFor({ kind: 'attribute_milestone', label: '能力与资格' }),
+      highlightIllustrationFor({ kind: 'new_asset', label: '新房产' }),
+      highlightIllustrationFor({ kind: 'major_purchase', label: '新投资机会' }),
+    ];
+
+    expect(new Set(illustrations).size).toBe(5);
+    expect(illustrations).toEqual(['suitcase', 'users', 'tag', 'house', 'wealth']);
+  });
+
+  it('derives achievement headings from the real highlight kind', () => {
+    expect(highlightTitleFor({ kind: 'new_job', label: '店员' })).toBe('新工作');
+    expect(highlightTitleFor({ kind: 'new_contact', label: '新联系人' })).toBe('新联系人');
+    expect(highlightTitleFor({ kind: 'attribute_milestone', label: '获得资格 · office_basics' })).toBe('新资格');
+    expect(highlightTitleFor({ kind: 'attribute_milestone', label: '办公室经验 · 基础' })).toBe('经验进展');
+    expect(highlightTitleFor({ kind: 'major_purchase', label: '新投资机会' })).toBe('新投资机会');
+  });
+
+  it('keeps authored qualifications on a shared credential illustration', () => {
+    const illustrations = [
+      highlightIllustrationFor({ kind: 'attribute_milestone', label: '零售经验 · 基础', sourceId: 'retail' }),
+      highlightIllustrationFor({ kind: 'attribute_milestone', label: '获得资格 · retail_operations_experience', sourceId: 'retail_operations_experience' }),
+      highlightIllustrationFor({ kind: 'attribute_milestone', label: '客户服务经验 · 基础', sourceId: 'customer_service' }),
+      highlightIllustrationFor({ kind: 'attribute_milestone', label: '获得资格 · client_service_experience', sourceId: 'client_service_experience' }),
+      highlightIllustrationFor({ kind: 'attribute_milestone', label: '里程碑 · 第一份稳定收入', sourceId: 'milestone.seed-job' }),
+    ];
+
+    expect(new Set(illustrations).size).toBe(4);
+    expect(illustrations).toEqual(['job-shop', 'tag', 'social', 'tag', 'career-market']);
   });
 
   it('groups the four reference-driven surfaces into stable visual regions', async () => {
@@ -236,16 +438,78 @@ describe('余量 app flow', () => {
     expect(dialog).toHaveTextContent('资产变现');
     expect(dialog).toHaveTextContent('已实现收益');
     expect(dialog).toHaveTextContent('净资产变化');
+    expect(dialog).toHaveTextContent('本月收入主要来自工资。');
+    expect(dialog).toHaveTextContent('本月最大支出类别是住房。');
+    expect(dialog).toHaveTextContent('本月资产配置主要用于投资配置。');
     expect(within(dialog).getByRole('region', { name: '净资产结果' })).toHaveClass('settle-result-inverse');
     expect(dialog).toHaveTextContent('净资产从 ¥500 变化为 ¥1,250');
     expect(dialog).not.toHaveTextContent('增长至');
     expect(dialog.querySelectorAll('.settle-allocation .settle-rows .is-zero')).toHaveLength(3);
+    expect(dialog.querySelector('.settle-allocation .settle-rows .is-zero')).toHaveTextContent('±0');
     expect(dialog.querySelector('.highlight-row')).toHaveClass('highlight-row-1');
     expect(dialog.querySelectorAll('.highlight-card.placeholder')).toHaveLength(4);
+    const reflection = dialog.querySelector('.highlight-card.reflection') as HTMLElement;
+    expect(reflection).toHaveTextContent('本月回顾');
+    expect(reflection.querySelector('.pixel-icon')).not.toBeNull();
     expect(dialog.querySelector('.settle-result-motif')).toBeInTheDocument();
-    expect(dialog.querySelectorAll('.settle-result-motif .settle-ray')).toHaveLength(8);
+    expect(dialog.querySelectorAll('.settle-result-motif .settle-ray')).toHaveLength(16);
+    expect(dialog.querySelectorAll('.settle-result-motif .settle-spark')).toHaveLength(10);
+    expect(dialog.querySelectorAll('.settle-title-spark')).toHaveLength(3);
+    expect(dialog.querySelector('[aria-label="收入"] .settle-panel-art .il-settlement-income')).toBeInTheDocument();
+    expect(dialog.querySelector('[aria-label="支出"] .settle-panel-art .il-settlement-expense')).toBeInTheDocument();
+    expect(dialog.querySelector('[aria-label="资产配置"] .settle-panel-art .il-settlement-allocation')).toBeInTheDocument();
     expect(dialog).not.toHaveTextContent('✦');
     expect(dialog).not.toHaveTextContent('✧');
+  });
+
+  it('gives empty settlement ledgers a compact neutral state', () => {
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, simulationMode: 'paused', pendingMonthlySummary: {
+      month: 1,
+      resumeMode: 'planning',
+      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
+      highlights: [],
+    } } });
+
+    render(<App />);
+    const dialog = screen.getByRole('dialog');
+    for (const [label, copy] of [['收入', '本月没有收入记录。'], ['支出', '本月没有消费支出。'], ['资产配置', '本月没有资产配置流动。']] as const) {
+      const panel = dialog.querySelector(`[aria-label="${label}"]`) as HTMLElement;
+      expect(panel).toHaveClass('is-empty');
+      expect(panel.querySelector('.settle-empty-row')).not.toBeNull();
+      expect(within(panel).getByRole('status', { name: copy })).toBeInTheDocument();
+    }
+  });
+
+  it('keeps the global header in the foreground while settlement is pending', () => {
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, simulationMode: 'paused', pendingMonthlySummary: {
+      month: 1,
+      resumeMode: 'planning',
+      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
+      highlights: [],
+    } } });
+
+    render(<App />);
+
+    expect(document.querySelector('.app-shell')).toHaveClass('mode-monthly_summary');
+    expect(document.querySelector('.topbar')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '第 1 月结算' })).toBeInTheDocument();
+  });
+
+  it('lets the settlement footer own the bottom status surface', () => {
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, simulationMode: 'paused', pendingMonthlySummary: {
+      month: 1,
+      resumeMode: 'planning',
+      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
+      highlights: [],
+    } } });
+
+    render(<App />);
+
+    expect(document.querySelector('.settle-footer')).toBeInTheDocument();
+    expect(document.querySelector('.persistent-status')).not.toBeInTheDocument();
   });
 
   it('discovers an official course and schedules it into a free planning slot', async () => {
@@ -280,7 +544,9 @@ describe('余量 app flow', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: '职业' }));
-    await user.click(screen.getAllByRole('button', { name: '申请职位' })[0]);
+    await user.click(screen.getByRole('button', { name: '查看岗位详情：便利店店员' }));
+    await user.click(screen.getByRole('button', { name: '申请岗位' }));
+    expect(screen.getByRole('button', { name: '申请状态：已提交' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '职业页面' }));
     await user.click(screen.getByRole('button', { name: '我的申请' }));
     expect(screen.getByText(/当前竞争力：/)).toBeInTheDocument();
@@ -320,6 +586,21 @@ describe('余量 app flow', () => {
     expect(shop.querySelector('.shop-category-filters')).toHaveClass('is-open');
     await user.click(within(shop).getByRole('button', { name: '休闲用品' }));
     expect(within(shop).getByRole('heading', { name: '一束花' })).toBeInTheDocument();
+  });
+
+  it('keeps the shop rail in explicit header, content, and action modules', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '商店' }));
+
+    const rail = screen.getByRole('complementary', { name: '商店辅助信息' });
+    expect(rail.querySelector('.rail-cart')).not.toBeNull();
+    const schedule = rail.querySelector('.rail-schedule') as HTMLElement;
+    expect(schedule.querySelector('header')).not.toBeNull();
+    expect(schedule.querySelector('.rail-rows')).not.toBeNull();
+    expect(schedule.querySelector('.rail-link')).not.toBeNull();
+    expect(rail.querySelector('.rail-inventory')).not.toBeNull();
+    expect(rail.querySelector('.rail-wishlist')).not.toBeNull();
   });
 
   it('manages an owned durable item from the reachable shop inventory', async () => {
@@ -534,7 +815,7 @@ describe('余量 app flow', () => {
     expect(within(shop).getByRole('heading', { name: '旧城文化日 · 看一场展览' })).toBeInTheDocument();
   });
 
-  it('shows semantic segmented meters on every visible shop catalog card', async () => {
+  it('keeps effect meters on activity cards but out of product card anatomy', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -542,7 +823,7 @@ describe('余量 app flow', () => {
     const shop = screen.getByRole('region', { name: '商品目录布局' });
     const itemCards = Array.from(shop.querySelectorAll('[data-catalog-card]'));
     expect(itemCards).toHaveLength(12);
-    itemCards.forEach((card) => expect(card.querySelectorAll('.catalog-meter-row')).toHaveLength(2));
+    itemCards.forEach((card) => expect(card.querySelectorAll('.catalog-meter-row')).toHaveLength(0));
 
     await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
     const activityCards = Array.from(shop.querySelectorAll('[data-catalog-card]'));
@@ -650,6 +931,9 @@ describe('余量 app flow', () => {
     expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('效果');
     expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('前提');
     expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('类型');
+    const effectFact = detail.querySelector('.shop-detail-fact[data-fact="效果"]');
+    expect(effectFact?.querySelector('.catalog-meter-stack')).not.toBeNull();
+    expect(effectFact).toHaveTextContent('生活水平');
   });
 
   it('keeps an activity heading, facts, and action inside one semantic card body', async () => {
@@ -1006,6 +1290,16 @@ describe('余量 app flow', () => {
     expect(outing).not.toBeNull();
     await user.click(within(outing as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
     expect(screen.getByText(/旧城文化日 · 看一场展览/)).toBeInTheDocument();
+  });
+
+  it('reuses role-specific illustrations for Life work scenes', () => {
+    const shopJob = contentRegistry.jobs.find((job) => job.id === 'job.seed-shop-clerk');
+    const logisticsJob = contentRegistry.jobs.find((job) => job.id === 'job.huanliu-warehouse-assistant');
+
+    expect(shopJob).toBeDefined();
+    expect(logisticsJob).toBeDefined();
+    expect(workSceneFor(shopJob!)).toBe('job-shop');
+    expect(workSceneFor(logisticsJob!)).toBe('job-logistics');
   });
 
   it('shows an actionable acquisition hint for a gated activity', async () => {

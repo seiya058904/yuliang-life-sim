@@ -117,6 +117,1925 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
   await expect(page.getByTestId('clock-value')).toHaveText(pausedClock);
 });
 
+test('selects a shop product from its card surface without swallowing purchase controls', async ({ page }) => {
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const phone = page.locator('article.item-card').filter({ hasText: '实用手机' }).first();
+  await phone.getByRole('button', { name: '查看详情：实用手机', exact: true }).click();
+  await expect(phone).toHaveClass(/selected/);
+  await expect(page.getByRole('region', { name: '已选商品详情' }).getByRole('heading', { name: '实用手机', exact: true })).toBeVisible();
+
+  await phone.getByRole('button', { name: '加入购物袋：实用手机', exact: true }).click();
+  await expect(page.getByRole('button', { name: '一次购买' })).toBeVisible();
+});
+
+test('keeps the shop utility rail on the stepped header-row-footer surfaces', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'inverse Rail assertion targets the supported desktop landscape surface');
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const phone = page.locator('article.item-card').filter({ hasText: '实用手机' }).first();
+  await phone.getByRole('button', { name: '加入购物袋：实用手机', exact: true }).click();
+
+  const cart = page.locator('.shop-rail .rail-cart');
+  const schedule = page.locator('.shop-rail .rail-schedule');
+  await expect(cart).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(cart.locator('header')).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(cart.getByRole('button', { name: '一次购买' })).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(schedule).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(schedule.locator('header')).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(schedule.getByRole('button', { name: '查看完整安排 ▸' })).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(page.locator('.shop-rail .rail-inventory')).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+
+  for (const moduleSelector of ['.rail-inventory', '.rail-wishlist']) {
+    const heading = page.locator(`.shop-rail ${moduleSelector} .section-heading`);
+    await expect(heading).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+    await expect(heading.getByRole('heading')).toHaveCSS('color', 'rgb(255, 255, 255)');
+  }
+});
+
+test('keeps the Shop catalog and utility rail in the reference proportion', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop catalog proportions target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const layout = await page.locator('.view-shop .shop-layout').evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const main = element.querySelector('.shop-main')?.getBoundingClientRect();
+    const rail = element.querySelector('.shop-rail')?.getBoundingClientRect();
+    const tabs = element.querySelector('.shop-tab-bar')?.getBoundingClientRect();
+    return {
+      width: rect.width,
+      mainWidth: main?.width ?? 0,
+      railWidth: rail?.width ?? 0,
+      gap: rail && main ? rail.left - main.right : 0,
+      railTop: rail?.top ?? 0,
+      tabsTop: tabs?.top ?? 0,
+    };
+  });
+
+  expect(layout.mainWidth).toBeGreaterThanOrEqual(1060);
+  expect(layout.mainWidth).toBeLessThanOrEqual(1090);
+  expect(layout.railWidth).toBeGreaterThanOrEqual(300);
+  expect(layout.railWidth).toBeLessThanOrEqual(320);
+  expect(layout.gap).toBeGreaterThanOrEqual(10);
+  expect(layout.gap).toBeLessThanOrEqual(14);
+  expect(Math.abs(layout.railTop - layout.tabsTop)).toBeLessThanOrEqual(2);
+});
+
+test('keeps an empty Shop Rail as a full-height dark module stack', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'empty Shop Rail footprint targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const rail = page.locator('.shop-rail');
+  const footprint = await rail.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const modules = Array.from(element.querySelectorAll(':scope > .rail-module')).map((module) => {
+      const moduleRect = module.getBoundingClientRect();
+      return { height: moduleRect.height, bottom: moduleRect.bottom };
+    });
+    const footer = document.querySelector('.persistent-status')?.getBoundingClientRect();
+    return {
+      height: rect.height,
+      bottom: rect.bottom,
+      footerTop: footer?.top ?? Number.POSITIVE_INFINITY,
+      modules,
+    };
+  });
+
+  expect(footprint.height).toBeGreaterThanOrEqual(780);
+  expect(footprint.bottom).toBeLessThanOrEqual(footprint.footerTop);
+  expect(footprint.modules).toHaveLength(4);
+  expect(footprint.modules[2].height).toBeGreaterThanOrEqual(150);
+  expect(footprint.modules[3].height).toBeGreaterThanOrEqual(180);
+
+  const emptyStates = rail.locator('.shop-rail-empty');
+  await expect(emptyStates).toHaveCount(3);
+  for (let index = 0; index < await emptyStates.count(); index += 1) {
+    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  }
+});
+
+test('keeps the Life forecast header on the reference inverse surface', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast header assertion targets the supported desktop landscape surface');
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const forecast = page.locator('.view-life .life-hero-grid > .forecast-strip.inverse');
+  const header = forecast.locator('.forecast-head');
+  const title = header.getByRole('heading', { name: '本周预测', exact: true });
+  const headerGeometry = await header.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { height: rect.height, width: rect.width, scrollWidth: element.scrollWidth, clientWidth: element.clientWidth };
+  });
+
+  await expect(header).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(title).toHaveCSS('color', 'rgb(255, 255, 255)');
+  expect(headerGeometry.height).toBeGreaterThanOrEqual(42);
+  expect(headerGeometry.height).toBeLessThanOrEqual(58);
+  expect(headerGeometry.scrollWidth).toBeLessThanOrEqual(headerGeometry.clientWidth);
+});
+
+test('keeps the Life forecast net row on the light reading surface', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast surface assertion targets the supported desktop landscape surface');
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const net = page.locator('.view-life .life-hero-grid > .forecast-strip.inverse .forecast-net');
+  await expect(net).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(net).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(net.locator('span')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(net.locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+});
+
+test('keeps collapsed Life details as a floating affordance without a full-width row', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'life details affordance targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const drawer = page.locator('.view-life .life-secondary-drawer:not(.is-open)');
+  const row = drawer.locator('.life-secondary-toggle-row');
+  const button = drawer.getByRole('button', { name: '查看生活详情', exact: true });
+  await expect(button).toBeVisible();
+
+  const geometry = await drawer.evaluate((element) => {
+    const drawerRect = element.getBoundingClientRect();
+    const rowRect = element.querySelector('.life-secondary-toggle-row')?.getBoundingClientRect();
+    const buttonRect = element.querySelector('button')?.getBoundingClientRect();
+    const footerRect = document.querySelector('.persistent-status')?.getBoundingClientRect();
+    return {
+      drawerHeight: drawerRect.height,
+      rowHeight: rowRect?.height ?? 0,
+      buttonHeight: buttonRect?.height ?? 0,
+      buttonBottom: buttonRect?.bottom ?? 0,
+      footerTop: footerRect?.top ?? 0,
+    };
+  });
+
+  expect(geometry.drawerHeight).toBeLessThanOrEqual(2);
+  expect(geometry.rowHeight).toBeLessThanOrEqual(2);
+  expect(geometry.buttonHeight).toBeGreaterThanOrEqual(24);
+  expect(geometry.buttonBottom).toBeLessThanOrEqual(geometry.footerTop);
+  expect(geometry.buttonBottom).toBeGreaterThanOrEqual(geometry.footerTop - 32);
+  await expect(row).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+});
+
+test('keeps navigation and panel anchors in the shared structural pixel tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'structural icon tiers target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const sizes = await page.locator('.main-nav .nav-item .pixel-icon, .view-life .inbox-head .pixel-icon').evaluateAll((icons) => icons.map((icon) => {
+    const rect = icon.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  }));
+
+  expect(sizes.length).toBeGreaterThanOrEqual(11);
+  expect(sizes.every(({ width, height }) => width >= 20 && height >= 20 && width <= 24 && height <= 24)).toBe(true);
+});
+
+test('keeps the header brand cat as a dense stepped 1-bit mark', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'brand mark anatomy targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const metrics = await page.locator('.brand-mascot').evaluate((element) => {
+    const rects = Array.from(element.querySelectorAll('rect'));
+    const box = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const brandBlock = element.closest('.brand-block');
+    const wordmark = element.closest('.brand-block')?.querySelector('.brand-wordmark');
+    const subtitle = element.closest('.brand-block')?.querySelector('.brand-subtitle');
+    return {
+      rectCount: rects.length,
+      width: box.width,
+      height: box.height,
+      x: box.x,
+      backgroundColor: style.backgroundColor,
+      borderStyle: style.borderStyle,
+      padding: style.padding,
+      brandGap: brandBlock ? getComputedStyle(brandBlock).gap : '',
+      wordmarkGap: wordmark ? getComputedStyle(wordmark).gap : '',
+      subtitleFontSize: subtitle ? getComputedStyle(subtitle).fontSize : '',
+    };
+  });
+
+  expect(metrics.rectCount).toBeGreaterThanOrEqual(30);
+  expect(metrics.width).toBe(56);
+  expect(metrics.height).toBe(56);
+  expect(metrics.x).toBeGreaterThanOrEqual(260);
+  expect(metrics.brandGap).toBe('23px');
+  expect(metrics.wordmarkGap).toBe('18px');
+  expect(metrics.subtitleFontSize).toBe('18px');
+  expect(metrics.backgroundColor).toBe('rgba(0, 0, 0, 0)');
+  expect(metrics.borderStyle).toBe('none');
+  expect(metrics.padding).toBe('0px');
+});
+
+test('keeps empty Life inboxes as compact horizontal pixel states', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'life empty-state anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const states = await page.locator('.view-life .inbox-panel .inbox-empty').evaluateAll((items) => items.map((item) => {
+    const style = getComputedStyle(item);
+    const mark = item.querySelector('.inbox-empty-mark');
+    const markRect = mark?.getBoundingClientRect();
+    const copy = item.querySelector('.inbox-empty-copy');
+    const copyRect = copy?.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    return {
+      gridTemplateColumns: style.gridTemplateColumns,
+      textAlign: style.textAlign,
+      justifyItems: style.justifyItems,
+      markWidth: markRect?.width ?? 0,
+      markHeight: markRect?.height ?? 0,
+      emptyWidth: itemRect.width,
+      emptyHeight: itemRect.height,
+      copyLeft: copyRect?.left ?? 0,
+      copyTop: copyRect?.top ?? 0,
+      markRight: markRect?.right ?? 0,
+      markCenterY: markRect ? markRect.top + markRect.height / 2 : 0,
+      copyCenterY: copyRect ? copyRect.top + copyRect.height / 2 : 0,
+    };
+  }));
+
+  expect(states.length).toBeGreaterThanOrEqual(2);
+  expect(states.every(({ gridTemplateColumns, textAlign, justifyItems, markWidth, markHeight, emptyWidth, emptyHeight, copyLeft, copyTop, markRight, markCenterY, copyCenterY }) =>
+    gridTemplateColumns.trim().split(/\s+/).length === 2 && textAlign === 'left' && justifyItems === 'start' &&
+    markWidth >= 34 && markWidth <= 40 && markHeight >= 34 && markHeight <= 40 &&
+    emptyWidth >= 300 && emptyWidth <= 330 &&
+    emptyHeight >= 92 && emptyHeight <= 104 &&
+    copyLeft >= markRight + 6 && copyTop >= 0 &&
+    Math.abs(markCenterY - copyCenterY) <= 10
+  )).toBe(true);
+});
+
+test('keeps Life weekly plan activity icons on the reference anchor tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'weekly plan icon tier targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const cells = await page.locator('.view-life .life-planning-section .plan-cell').evaluateAll((items) => items.map((cell) => {
+    const icon = cell.querySelector('.pixel-icon')?.getBoundingClientRect();
+    const strong = cell.querySelector('strong');
+    const small = cell.querySelector('small');
+    const style = getComputedStyle(cell);
+    return {
+      iconWidth: icon?.width ?? 0,
+      iconHeight: icon?.height ?? 0,
+      gridColumns: style.gridTemplateColumns,
+      strongClientHeight: strong?.clientHeight ?? 0,
+      strongScrollHeight: strong?.scrollHeight ?? 0,
+      smallClientHeight: small?.clientHeight ?? 0,
+      smallScrollHeight: small?.scrollHeight ?? 0,
+    };
+  }));
+
+  expect(cells.length).toBe(14);
+  expect(cells.every(({ iconWidth, iconHeight, gridColumns }) =>
+    iconWidth >= 28 && iconHeight >= 28 && iconWidth <= 34 && iconHeight <= 34 && gridColumns.trim().split(/\s+/).length === 2
+  )).toBe(true);
+  expect(cells.every(({ strongClientHeight, strongScrollHeight, smallClientHeight, smallScrollHeight }) =>
+    strongClientHeight >= strongScrollHeight - 1 && smallClientHeight >= smallScrollHeight - 1
+  )).toBe(true);
+});
+
+test('anchors partially populated Life inboxes with a neutral end row', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'life inbox end-row anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const pending = page.locator('.view-life .inbox-pending');
+  await expect(pending).toContainText('本周计划待开始');
+  const endRow = pending.locator('.inbox-list-end');
+  await expect(endRow).toHaveText('暂无更多');
+
+  const geometry = await endRow.evaluate((element) => {
+    const row = element.getBoundingClientRect();
+    const panel = element.closest('.inbox-panel')?.getBoundingClientRect();
+    return { rowBottom: row.bottom, panelBottom: panel?.bottom ?? 0, rowHeight: row.height };
+  });
+  expect(geometry.rowHeight).toBeGreaterThanOrEqual(20);
+  expect(geometry.rowBottom).toBeLessThanOrEqual(geometry.panelBottom - 6);
+});
+
+test('keeps the persistent status bar at the reference HUD text tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'persistent HUD typography is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const metrics = await page.locator('.persistent-status .persistent-stat').evaluateAll((items) => items.map((item) => {
+    const label = item.querySelector(':scope > span');
+    const value = item.querySelector(':scope > strong');
+    const cell = item.querySelector('.segment-meter i');
+    const labelStyle = label ? getComputedStyle(label) : null;
+    const valueStyle = value ? getComputedStyle(value) : null;
+    const cellRect = cell?.getBoundingClientRect();
+    return {
+      labelFontSize: labelStyle ? Number.parseFloat(labelStyle.fontSize) : 0,
+      valueFontSize: valueStyle ? Number.parseFloat(valueStyle.fontSize) : 0,
+      cellWidth: cellRect?.width ?? 0,
+      cellHeight: cellRect?.height ?? 0,
+    };
+  }));
+  const bar = await page.locator('.persistent-status').evaluate((element) => ({
+    scrollWidth: element.scrollWidth,
+    clientWidth: element.clientWidth,
+  }));
+
+  expect(metrics).toHaveLength(5);
+  expect(metrics.every(({ labelFontSize, valueFontSize, cellWidth, cellHeight }) =>
+    labelFontSize >= 12 && valueFontSize >= 16 && cellWidth >= 12 && cellHeight >= 10
+  )).toBe(true);
+  expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth + 1);
+});
+
+test('keeps career toolbar filters in the reference stacked-label anatomy', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career toolbar reference anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const controls = await page.locator('.career-market-filters .career-toolbar-select').evaluateAll((labels) => labels.map((label) => {
+    const labelRect = label.querySelector('span')?.getBoundingClientRect();
+    const selectRect = label.querySelector('select')?.getBoundingClientRect();
+    return {
+      labelBottom: labelRect?.bottom ?? 0,
+      selectTop: selectRect?.top ?? 0,
+      selectHeight: selectRect?.height ?? 0,
+      selectWidth: selectRect?.width ?? 0,
+    };
+  }));
+
+  expect(controls).toHaveLength(3);
+  expect(controls.every(({ labelBottom, selectTop, selectHeight, selectWidth }) =>
+    selectTop - labelBottom >= 2 && selectHeight >= 30 && selectWidth >= 118 && selectWidth <= 132
+  )).toBe(true);
+});
+
+test('keeps Career toolbar labels in the readable pixel tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career toolbar typography targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const typography = await page.locator('.career-market-filters .career-toolbar-select').evaluateAll((labels) => labels.map((label) => ({
+    labelFontSize: Number.parseFloat(getComputedStyle(label.querySelector('span') ?? label).fontSize),
+    selectFontSize: Number.parseFloat(getComputedStyle(label.querySelector('select') ?? label).fontSize),
+    selectHeight: label.querySelector('select')?.getBoundingClientRect().height ?? 0,
+  })));
+
+  expect(typography).toHaveLength(3);
+  expect(typography.every(({ labelFontSize, selectFontSize, selectHeight }) =>
+    labelFontSize >= 12 && selectFontSize >= 13 && selectHeight >= 34
+  )).toBe(true);
+});
+
+test('keeps Career sorting and filtering as compact real disclosure controls', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career toolbar action anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const sort = page.locator('.career-sort-popover');
+  const filter = page.locator('.career-filter-popover');
+  await expect(sort.locator('summary')).toHaveAttribute('aria-label', '招聘排序：匹配度');
+  await expect(filter.locator('summary')).toHaveText('筛选');
+
+  const actionHeights = await sort.locator('summary').evaluateAll((items) => items.map((item) => item.getBoundingClientRect().height));
+  expect(actionHeights[0]).toBeGreaterThanOrEqual(30);
+
+  await sort.locator('summary').click();
+  await expect(sort.getByRole('menu', { name: '招聘排序选项' })).toBeVisible();
+  await sort.getByRole('menuitem', { name: '薪资最高', exact: true }).click();
+  await expect(sort.locator('summary')).toHaveAttribute('aria-label', '招聘排序：薪资最高');
+
+  await filter.locator('summary').click();
+  await expect(filter.getByRole('group', { name: '岗位类型快捷筛选' })).toBeVisible();
+  await filter.getByRole('button', { name: '兼职', exact: true }).click();
+  await expect(page.locator('.career-filters [data-filter-group="category"].career-filter-option.selected')).toContainText('兼职');
+});
+
+test('keeps the Career market on the reference filter, results, and detail proportions', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career market proportions target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const widths = await page.locator('.career-section.market-mode .career-market-shell > .career-filters, .career-section.market-mode .career-market-shell > .career-results, .career-section.market-mode .career-market-shell > .career-detail').evaluateAll((items) => items.map((item) => item.getBoundingClientRect().width));
+
+  expect(widths).toHaveLength(3);
+  const [filters, results, detail] = widths;
+  expect(filters).toBeGreaterThanOrEqual(230);
+  expect(filters).toBeLessThanOrEqual(250);
+  expect(results).toBeGreaterThanOrEqual(700);
+  expect(results).toBeLessThanOrEqual(770);
+  expect(detail).toBeGreaterThanOrEqual(380);
+  expect(detail).toBeLessThanOrEqual(410);
+});
+
+test('gives the inverse Career detail rail a visible shared pixel-corner frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career detail frame assertion targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const frame = await page.locator('.career-section.market-mode .career-detail.inverse').evaluate((element) => {
+    const style = getComputedStyle(element, '::before');
+    return { content: style.content, borderColor: style.borderTopColor, clipPath: style.clipPath };
+  });
+
+  expect(frame).toEqual({ content: '""', borderColor: 'rgb(7, 7, 7)', clipPath: expect.not.stringMatching(/^none$/) });
+});
+
+test('anchors a satisfied Career requirement state inside the inverse detail rail', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career detail empty-state treatment is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const status = page.locator('.career-section.market-mode .career-detail.inverse > section:first-of-type > .requirement-ok');
+  await expect(status).toBeVisible();
+  await expect(status).toHaveText('当前条件已满足');
+  await expect(status).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+});
+
+test('gives the Career market insight its readable pixel dashboard weight', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career insight reference anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const insight = page.locator('.career-bottom-insight');
+  await expect(insight).toBeVisible();
+  const metrics = await insight.locator('.career-insight-metric').evaluateAll((items) => items.map((item) => {
+    const root = getComputedStyle(item);
+    const label = item.querySelector('span');
+    const meterCell = item.querySelector('.segment-meter i');
+    const labelStyle = label ? getComputedStyle(label) : null;
+    const meterStyle = meterCell ? getComputedStyle(meterCell) : null;
+    const chart = item.parentElement?.parentElement?.querySelector('.pixel-illustration');
+    const chartRect = chart?.getBoundingClientRect();
+    return {
+      fontSize: Number.parseFloat(root.fontSize),
+      labelFontSize: labelStyle ? Number.parseFloat(labelStyle.fontSize) : 0,
+      meterHeight: meterStyle ? Number.parseFloat(meterStyle.height) : 0,
+      chartWidth: chartRect?.width ?? 0,
+      chartHeight: chartRect?.height ?? 0,
+    };
+  }));
+
+  expect(metrics.length).toBeGreaterThan(0);
+  expect(metrics.every(({ fontSize, labelFontSize, meterHeight, chartWidth, chartHeight }) =>
+    fontSize >= 10 && labelFontSize >= 10 && meterHeight >= 8 && chartWidth >= 56 && chartHeight >= 56
+  )).toBe(true);
+});
+
+test('keeps Career vacancy descriptions compact inside the fixed card anatomy', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career vacancy-card anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const cards = await page.locator('.career-results .job-card').evaluateAll((items) => items.slice(0, 6).map((card) => {
+    const description = card.querySelector('.job-card-description');
+    const actions = card.querySelector('.job-actions');
+    const cardStyle = getComputedStyle(card);
+    const descriptionStyle = description ? getComputedStyle(description) : null;
+    const cardRect = card.getBoundingClientRect();
+    const descriptionRect = description?.getBoundingClientRect();
+    const actionsRect = actions?.getBoundingClientRect();
+    return {
+      cardHeight: cardRect.height,
+      descriptionHeight: descriptionRect?.height ?? 0,
+      descriptionMinHeight: descriptionStyle ? Number.parseFloat(descriptionStyle.minHeight) : 0,
+      actionsHeight: actionsRect?.height ?? 0,
+      alignContent: cardStyle.alignContent,
+    };
+  }));
+
+  expect(cards.length).toBeGreaterThan(0);
+  expect(cards.every(({ cardHeight, descriptionHeight, descriptionMinHeight, actionsHeight, alignContent }) =>
+    cardHeight >= 240 && descriptionHeight <= 42 && descriptionMinHeight === 0 && actionsHeight >= 29 && alignContent === 'space-between'
+  )).toBe(true);
+});
+
+test('keeps Career vacancy art compact beside the card identity', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career vacancy-art anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const art = await page.locator('.career-results .job-card').evaluateAll((items) => items.slice(0, 6).map((card) => {
+    const frame = card.querySelector('.career-card-art');
+    const illustration = frame?.querySelector('.pixel-illustration');
+    const frameRect = frame?.getBoundingClientRect();
+    const illustrationRect = illustration?.getBoundingClientRect();
+    return {
+      frameWidth: Math.round(frameRect?.width ?? 0),
+      frameHeight: Math.round(frameRect?.height ?? 0),
+      illustrationWidth: Math.round(illustrationRect?.width ?? 0),
+      illustrationHeight: Math.round(illustrationRect?.height ?? 0),
+    };
+  }));
+
+  expect(art.length).toBeGreaterThan(0);
+  expect(art.every(({ frameWidth, frameHeight, illustrationWidth, illustrationHeight }) =>
+    frameWidth === 34 && frameHeight === 34 &&
+    illustrationWidth === 32 && illustrationHeight === 32
+  )).toBe(true);
+});
+
+test('keeps Career vacancy CTAs on the readable action tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career vacancy CTA anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const buttons = await page.locator('.career-results .job-card .job-actions button').evaluateAll((elements) => elements.slice(0, 6).map((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return { fontSize: Number.parseFloat(style.fontSize), height: rect.height };
+  }));
+
+  expect(buttons.length).toBeGreaterThan(0);
+  expect(buttons.every(({ fontSize, height }) => fontSize >= 11 && height >= 30)).toBe(true);
+});
+
+test('keeps the initial Career detail anchored to a visible selected vacancy', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career selection anchor targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const selected = page.locator('.career-results .job-card.selected');
+  await expect(selected).toHaveCount(1);
+  const detailTitle = await page.locator('.career-detail .career-detail-title').innerText();
+  await expect(selected).toContainText(detailTitle);
+});
+
+test('keeps the tall Career vacancy grid at the reference card rhythm', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career card-grid rhythm targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const geometry = await page.locator('.career-results .job-grid').evaluate((grid) => {
+    const gridRect = grid.getBoundingClientRect();
+    const results = grid.closest('.career-results');
+    const resultsRect = results?.getBoundingClientRect();
+    const resultsStyle = results ? getComputedStyle(results) : null;
+    const contentRight = resultsRect ? resultsRect.right - Number.parseFloat(resultsStyle?.paddingRight ?? '0') : gridRect.right;
+    const cards = Array.from(grid.querySelectorAll(':scope > .job-card')).slice(0, 3).map((card) => {
+      const rect = card.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, width: rect.width };
+    });
+    return {
+      width: gridRect.width,
+      rightInset: contentRight - (cards.at(-1)?.right ?? contentRight),
+      cards,
+      firstGap: cards[1] ? cards[1].left - cards[0].right : 0,
+      secondGap: cards[2] ? cards[2].left - cards[1].right : 0,
+    };
+  });
+
+  expect(geometry.cards).toHaveLength(3);
+  expect(geometry.width).toBeGreaterThanOrEqual(690);
+  expect(geometry.width).toBeLessThanOrEqual(700);
+  expect(geometry.cards.every(({ width }) => width >= 218 && width <= 225)).toBe(true);
+  expect(geometry.firstGap).toBeGreaterThanOrEqual(13);
+  expect(geometry.firstGap).toBeLessThanOrEqual(16);
+  expect(geometry.secondGap).toBeGreaterThanOrEqual(13);
+  expect(geometry.secondGap).toBeLessThanOrEqual(16);
+  expect(geometry.rightInset).toBeGreaterThanOrEqual(20);
+  expect(geometry.rightInset).toBeLessThanOrEqual(28);
+});
+
+test('keeps Career vacancy facts on the readable metadata tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career vacancy metadata is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const facts = await page.locator('.career-results .job-card .job-fact').evaluateAll((elements) => elements.slice(0, 6).map((element) => {
+    const icon = element.querySelector('.pixel-icon');
+    return {
+      fontSize: Number.parseFloat(getComputedStyle(element).fontSize),
+      iconSize: icon?.getBoundingClientRect().width ?? 0,
+    };
+  }));
+
+  expect(facts.length).toBeGreaterThan(0);
+  expect(facts.every(({ fontSize, iconSize }) => fontSize >= 11 && iconSize >= 13)).toBe(true);
+});
+
+test('keeps Career card facts and descriptions on the primary reading tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career card copy hierarchy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const typography = await page.locator('.career-results .job-card').evaluateAll((cards) => cards.slice(0, 6).map((card) => ({
+    factFontSize: Number.parseFloat(getComputedStyle(card.querySelector('.job-fact')!).fontSize),
+    descriptionFontSize: Number.parseFloat(getComputedStyle(card.querySelector('.job-card-description')!).fontSize),
+  })));
+
+  expect(typography.length).toBeGreaterThan(0);
+  expect(typography.every(({ factFontSize, descriptionFontSize }) => factFontSize >= 12 && descriptionFontSize >= 13)).toBe(true);
+});
+
+test('keeps Career support panels on the reference inverse surface split', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career support surface split is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const surfaces = await page.locator('.career-bottom-panel').evaluateAll((elements) => elements.map((element) => ({
+    background: getComputedStyle(element).backgroundColor,
+    color: getComputedStyle(element).color,
+  })));
+
+  expect(surfaces).toHaveLength(4);
+  expect(surfaces).toEqual([
+    { background: 'rgb(9, 9, 9)', color: 'rgb(244, 244, 239)' },
+    { background: 'rgb(9, 9, 9)', color: 'rgb(244, 244, 239)' },
+    { background: 'rgb(9, 9, 9)', color: 'rgb(244, 244, 239)' },
+    { background: 'rgb(12, 12, 12)', color: 'rgb(244, 244, 239)' },
+  ]);
+});
+
+test('keeps empty Career support lanes on dark shells', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career support lane surfaces are desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const lanes = await page.locator('.career-bottom-panel:nth-child(-n+3) > .career-bottom-empty').evaluateAll((elements) => elements.map((element) => {
+    const icon = element.querySelector('.pixel-illustration');
+    const strong = element.querySelector('strong');
+    return {
+      background: getComputedStyle(element).backgroundColor,
+      color: getComputedStyle(element).color,
+      border: getComputedStyle(element).borderColor,
+      iconColor: icon ? getComputedStyle(icon).color : '',
+      strongColor: strong ? getComputedStyle(strong).color : '',
+    };
+  }));
+
+  expect(lanes).toHaveLength(3);
+  expect(lanes.every(({ background, color, border, iconColor, strongColor }) =>
+    background === 'rgb(9, 9, 9)' &&
+    color === 'rgb(170, 170, 170)' &&
+    border === 'rgb(119, 119, 119)' &&
+    iconColor === 'rgb(244, 244, 239)' &&
+    strongColor === 'rgb(244, 244, 239)'
+  )).toBe(true);
+  await expect(page.locator('.career-bottom-insight')).toHaveCSS('background-color', 'rgb(12, 12, 12)');
+});
+
+test('keeps the selected Career card frame brighter than idle cards', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career card frame contrast is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const frames = await page.locator('.career-results .job-card').evaluateAll((cards) => cards.map((card) => {
+    const style = getComputedStyle(card, '::after');
+    return {
+      selected: card.classList.contains('selected'),
+      borderColor: style.borderTopColor,
+      clipPath: style.clipPath,
+    };
+  }));
+
+  expect(frames.length).toBeGreaterThan(1);
+  expect(frames.filter(({ selected }) => selected)).toHaveLength(1);
+  expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(244, 244, 239)');
+  expect(frames.filter(({ selected }) => !selected).every(({ borderColor, clipPath }) =>
+    borderColor === 'rgb(199, 199, 192)' && clipPath !== 'none'
+  )).toBe(true);
+});
+
+test('keeps tall Career support panels above the persistent footer', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career footer boundary targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const geometry = await page.evaluate(() => {
+    const panels = Array.from(document.querySelectorAll<HTMLElement>('.career-bottom-panel'));
+    const footer = document.querySelector<HTMLElement>('.persistent-status');
+    return {
+      panelHeight: panels[0]?.getBoundingClientRect().height ?? 0,
+      panelBottom: Math.max(...panels.map((panel) => panel.getBoundingClientRect().bottom)),
+      footerTop: footer?.getBoundingClientRect().top ?? 0,
+    };
+  });
+
+  expect(geometry.panelHeight).toBeGreaterThanOrEqual(160);
+  expect(geometry.panelHeight).toBeLessThanOrEqual(170);
+  expect(geometry.panelBottom).toBeLessThanOrEqual(geometry.footerTop - 4);
+});
+
+test('uses the installed pixel console face for high-signal display headings', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'display font tier is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const fontFamily = await page.locator('.career-results .job-card .card-select h2').first().evaluate((heading) =>
+    getComputedStyle(heading).fontFamily
+  );
+
+  expect(fontFamily).toContain('MS Gothic');
+});
+
+test('keeps Shop product metadata and secondary actions in the readable pixel tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const cards = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
+    const art = card.querySelector('.card-art');
+    const illustration = card.querySelector('.card-art .pixel-illustration');
+    const facts = card.querySelector('.catalog-facts > div');
+    const secondary = card.querySelector('.catalog-secondary-action');
+    const primary = card.querySelector('.item-card-foot .primary-button');
+    const factStyle = facts ? getComputedStyle(facts) : null;
+    const secondaryStyle = secondary ? getComputedStyle(secondary) : null;
+    const primaryStyle = primary ? getComputedStyle(primary) : null;
+    const cardRect = card.getBoundingClientRect();
+    return {
+      cardHeight: cardRect.height,
+      artWidth: art?.getBoundingClientRect().width ?? 0,
+      artHeight: art?.getBoundingClientRect().height ?? 0,
+      illustrationWidth: illustration?.getBoundingClientRect().width ?? 0,
+      illustrationHeight: illustration?.getBoundingClientRect().height ?? 0,
+      factFontSize: factStyle ? Number.parseFloat(factStyle.fontSize) : 0,
+      secondaryFontSize: secondaryStyle ? Number.parseFloat(secondaryStyle.fontSize) : 0,
+      primaryFontSize: primaryStyle ? Number.parseFloat(primaryStyle.fontSize) : 0,
+      primaryHeight: primary?.getBoundingClientRect().height ?? 0,
+    };
+  }));
+
+  expect(cards.length).toBeGreaterThan(0);
+  expect(cards.every(({ cardHeight, artWidth, artHeight, illustrationWidth, illustrationHeight, factFontSize, secondaryFontSize, primaryFontSize, primaryHeight }) =>
+    cardHeight >= 150 && artWidth >= 64 && artHeight >= 64 && illustrationWidth >= 60 && illustrationHeight >= 60 &&
+    factFontSize >= 10 && secondaryFontSize >= 9 && primaryFontSize >= 11 && primaryHeight >= 25
+  )).toBe(true);
+});
+
+test('keeps Shop product facts and CTA above the tiny web-copy tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card typography is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const typography = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
+    const fact = card.querySelector('.catalog-facts > div');
+    const secondary = card.querySelector('.catalog-secondary-action');
+    const primary = card.querySelector('.item-card-foot .primary-button');
+    return {
+      factFontSize: fact ? Number.parseFloat(getComputedStyle(fact).fontSize) : 0,
+      secondaryFontSize: secondary ? Number.parseFloat(getComputedStyle(secondary).fontSize) : 0,
+      primaryFontSize: primary ? Number.parseFloat(getComputedStyle(primary).fontSize) : 0,
+    };
+  }));
+
+  expect(typography.length).toBeGreaterThan(0);
+  expect(typography.every(({ factFontSize, secondaryFontSize, primaryFontSize }) =>
+    factFontSize >= 11 && secondaryFontSize >= 10 && primaryFontSize >= 12
+  )).toBe(true);
+});
+
+test('keeps Shop product titles on the primary catalog tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product title hierarchy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const typography = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
+    const title = card.querySelector('.catalog-title-row h2');
+    const price = card.querySelector('.catalog-price');
+    return {
+      titleFontSize: title ? Number.parseFloat(getComputedStyle(title).fontSize) : 0,
+      priceFontSize: price ? Number.parseFloat(getComputedStyle(price).fontSize) : 0,
+    };
+  }));
+
+  expect(typography.length).toBeGreaterThan(0);
+  expect(typography.every(({ titleFontSize, priceFontSize }) => titleFontSize >= 17 && priceFontSize >= 13)).toBe(true);
+});
+
+test('keeps the selected Shop product frame brighter than idle cards', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product frame contrast is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const frames = await page.locator('.view-shop .shop-main .item-card').evaluateAll((cards) => cards.map((card) => {
+    const style = getComputedStyle(card, '::after');
+    return {
+      selected: card.classList.contains('selected'),
+      borderColor: style.borderTopColor,
+      clipPath: style.clipPath,
+    };
+  }));
+
+  expect(frames.length).toBeGreaterThan(1);
+  expect(frames.filter(({ selected }) => selected)).toHaveLength(1);
+  expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(244, 244, 239)');
+  expect(frames.filter(({ selected }) => !selected).every(({ borderColor, clipPath }) =>
+    borderColor === 'rgb(199, 199, 192)' && clipPath !== 'none'
+  )).toBe(true);
+});
+
+test('keeps Shop Entertainment cards on the Goods card and action tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop entertainment-card anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '娱乐', exact: true }).click();
+
+  const cards = await page.locator('.view-shop .shop-main .activity-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
+    const art = card.querySelector('.card-art');
+    const body = card.querySelector('.activity-card-body');
+    const fact = card.querySelector('.catalog-facts > div');
+    const cta = card.querySelector('.secondary-button');
+    const cardRect = card.getBoundingClientRect();
+    const artRect = art?.getBoundingClientRect();
+    const bodyRect = body?.getBoundingClientRect();
+    const ctaRect = cta?.getBoundingClientRect();
+    return {
+      cardHeight: cardRect.height,
+      artWidth: artRect?.width ?? 0,
+      artHeight: artRect?.height ?? 0,
+      factFontSize: fact ? Number.parseFloat(getComputedStyle(fact).fontSize) : 0,
+      ctaFontSize: cta ? Number.parseFloat(getComputedStyle(cta).fontSize) : 0,
+      ctaWidth: ctaRect?.width ?? 0,
+      bodyWidth: bodyRect?.width ?? 0,
+    };
+  }));
+
+  expect(cards.length).toBeGreaterThan(0);
+  expect(cards.every(({ cardHeight, artWidth, artHeight, factFontSize, ctaFontSize, ctaWidth, bodyWidth }) =>
+    cardHeight >= 150 && artWidth >= 54 && artHeight >= 54 &&
+    factFontSize >= 11 && ctaFontSize >= 11 && ctaWidth >= bodyWidth - 1
+  )).toBe(true);
+});
+
+test('keeps Shop Entertainment CTA inside the card at low-height desktop', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height desktop layout is desktop-only');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '娱乐', exact: true }).click();
+
+  const layout = await page.evaluate(() => {
+    const cards = Array.from(document.querySelectorAll('.activity-card')).slice(0, 4).map((card) => {
+      const cardRect = card.getBoundingClientRect();
+      const ctaRect = card.querySelector('.secondary-button')?.getBoundingClientRect();
+      return { ctaBottom: ctaRect?.bottom ?? 0, cardBottom: cardRect.bottom };
+    });
+    const main = document.querySelector('.main-content')?.getBoundingClientRect();
+    const footer = document.querySelector('.persistent-status')?.getBoundingClientRect();
+    return {
+      cards,
+      mainBottom: main?.bottom ?? 0,
+      footerTop: footer?.top ?? 0,
+      horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    };
+  });
+
+  expect(layout.cards.length).toBeGreaterThan(0);
+  expect(layout.cards.every(({ ctaBottom, cardBottom }) => ctaBottom <= cardBottom + 0.5)).toBe(true);
+  expect(layout.footerTop).toBeGreaterThanOrEqual(layout.mainBottom - 0.5);
+  expect(layout.horizontalOverflow).toBe(false);
+});
+
+test('keeps Shop product CTAs across the full card frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const ctas = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
+    const footer = card.querySelector('.item-card-foot');
+    const cardRect = card.getBoundingClientRect();
+    const footerRect = footer?.getBoundingClientRect();
+    const style = footer ? getComputedStyle(footer) : null;
+    return {
+      cardWidth: cardRect.width,
+      footerWidth: footerRect?.width ?? 0,
+      leftInset: footerRect ? footerRect.left - cardRect.left : 0,
+      rightInset: footerRect ? cardRect.right - footerRect.right : 0,
+      footerTop: footerRect?.top ?? 0,
+      footerBottom: footerRect?.bottom ?? 0,
+      cardTop: cardRect.top,
+      cardBottom: cardRect.bottom,
+      gridColumn: style?.gridColumn ?? '',
+    };
+  }));
+
+  expect(ctas.length).toBeGreaterThan(0);
+  expect(ctas.every(({ cardWidth, footerWidth, leftInset, rightInset, footerTop, footerBottom, cardTop, cardBottom, gridColumn }) =>
+    gridColumn === '1 / -1' && footerWidth >= cardWidth - 22 && leftInset <= 11 && rightInset <= 11 &&
+    footerTop > cardTop + (cardBottom - cardTop) / 2 && footerBottom <= cardBottom + 0.5
+  )).toBe(true);
+});
+
+test('shows the pending settlement mode in the top status while the ceremony is open', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  await expect(page.locator('.status-clock .status-clock-copy > small')).toHaveText('月结待确认');
+  const settlementHud = await page.evaluate(() => {
+    const topbar = document.querySelector<HTMLElement>('.topbar');
+    const brand = document.querySelector<HTMLElement>('.brand-mark');
+    const style = topbar ? getComputedStyle(topbar) : null;
+    const brandStyle = brand ? getComputedStyle(brand) : null;
+    return {
+      position: style?.position ?? '',
+      zIndex: style?.zIndex ?? '',
+      opacity: style?.opacity ?? '',
+      filter: style?.filter ?? '',
+      brandColor: brandStyle?.color ?? '',
+    };
+  });
+  expect(settlementHud).toEqual(expect.objectContaining({
+    position: 'relative',
+    zIndex: '21',
+    opacity: '1',
+    filter: 'none',
+    brandColor: 'rgb(255, 255, 255)',
+  }));
+
+  const settlementCopy = await page.locator('.monthly-summary.fullframe').innerText();
+  expect(settlementCopy).not.toMatch(/\b[A-Za-z]+(?:_[A-Za-z0-9-]+)+\b/);
+});
+
+test('keeps Shop catalog art on the open 1-bit illustration tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop catalog-art anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const art = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
+    const frame = card.querySelector('.card-art');
+    const illustration = card.querySelector('.card-art .pixel-illustration');
+    const frameStyle = frame ? getComputedStyle(frame) : null;
+    return {
+      background: frameStyle?.backgroundColor ?? '',
+      topBorder: frameStyle?.borderTopStyle ?? '',
+      rightBorder: frameStyle?.borderRightStyle ?? '',
+      illustrationSize: illustration?.getBoundingClientRect().width ?? 0,
+    };
+  }));
+
+  expect(art.length).toBeGreaterThan(0);
+  expect(art.every(({ background, topBorder, rightBorder, illustrationSize }) =>
+    background === 'rgba(0, 0, 0, 0)' && topBorder === 'none' && rightBorder === 'dotted' && illustrationSize >= 52
+  )).toBe(true);
+});
+
+test('keeps the breakfast voucher visually distinct from meal products', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop semantic-art assertion is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const voucherCard = page.locator('.view-shop .shop-main .item-card').filter({ hasText: '早餐券' });
+  await expect(voucherCard).toHaveCount(1);
+  await expect(voucherCard.locator('.pixel-illustration.il-voucher')).toHaveCount(1);
+});
+
+test('keeps low-height life content scrollable above the persistent footer', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height desktop footer boundary is desktop-only');
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  const main = page.locator('.main-content');
+  await main.evaluate((element) => { element.scrollTop = element.scrollHeight - element.clientHeight; });
+  await page.waitForTimeout(80);
+
+  const geometry = await page.evaluate(() => {
+    const content = document.querySelector('.main-content');
+    const planner = document.querySelector('.planner');
+    const footer = document.querySelector('.persistent-status');
+    const plannerRect = planner?.getBoundingClientRect();
+    const footerRect = footer?.getBoundingClientRect();
+    return {
+      scrollTop: content?.scrollTop ?? 0,
+      plannerBottom: plannerRect?.bottom ?? 0,
+      footerTop: footerRect?.top ?? 0,
+    };
+  });
+
+  expect(geometry.scrollTop).toBeGreaterThan(0);
+  expect(geometry.plannerBottom).toBeLessThanOrEqual(geometry.footerTop);
+});
+
+test('keeps the Life forecast attribute rows on the readable pixel tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast attribute tier is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const rows = await page.locator('.view-life .forecast-attr').evaluateAll((elements) => elements.map((element) => {
+    const row = element.getBoundingClientRect();
+    const label = element.querySelector(':scope > span:not(.forecast-sub)');
+    const icon = element.querySelector('.pixel-icon');
+    return {
+      rowHeight: row.height,
+      labelFontSize: label ? Number.parseFloat(getComputedStyle(label).fontSize) : 0,
+      iconSize: icon?.getBoundingClientRect().width ?? 0,
+    };
+  }));
+
+  expect(rows.length).toBe(5);
+  expect(rows.every(({ rowHeight, labelFontSize, iconSize }) => rowHeight >= 22 && labelFontSize >= 11 && iconSize >= 14)).toBe(true);
+});
+
+test('keeps the weekly planner utility row compact without removing its controls', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'planner utility density is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const utilities = page.locator('.life-planning-section .planner-actions');
+  await expect(utilities).toBeVisible();
+  const geometry = await utilities.evaluate((element) => ({
+    height: element.getBoundingClientRect().height,
+    buttonHeight: element.querySelector('button')?.getBoundingClientRect().height ?? 0,
+  }));
+
+  expect(geometry.height).toBeLessThanOrEqual(32);
+  expect(geometry.buttonHeight).toBeGreaterThanOrEqual(22);
+  await expect(utilities.getByRole('checkbox', { name: '自动重复计划' })).toBeVisible();
+  await expect(utilities.getByText(/预计/)).toBeVisible();
+});
+
+test('keeps settlement achievement copy inside cards at low-height desktop', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const bounds = await page.locator('.monthly-summary.fullframe .highlight-card:not(.reflection)').evaluateAll((cards) => cards.map((card) => {
+    const frame = card.getBoundingClientRect();
+    const content = [...card.querySelectorAll('h3, .highlight-description, small')].map((element) => {
+      const rect = element.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom };
+    });
+    return { frame: { top: frame.top, bottom: frame.bottom }, content };
+  }));
+
+  expect(bounds).toHaveLength(5);
+  expect(bounds.every(({ frame, content }) => content.every(({ top, bottom }) => top >= frame.top && bottom <= frame.bottom))).toBe(true);
+});
+
+test('keeps settlement footer attributes in one readable desktop row', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'footer row assertion targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const attrs = await page.locator('.monthly-summary.fullframe .settle-attrs > div').evaluateAll((items) => items.map((item) => {
+    const rect = item.getBoundingClientRect();
+    const label = item.querySelector('dt')?.getBoundingClientRect();
+    const meter = item.querySelector('.segment-meter i')?.getBoundingClientRect();
+    return { top: rect.top, labelHeight: label?.height ?? 0, meterHeight: meter?.height ?? 0, segmentCount: item.querySelectorAll('.segment-meter i').length };
+  }));
+
+  expect(attrs).toHaveLength(6);
+  expect(new Set(attrs.map(({ top }) => Math.round(top))).size).toBe(1);
+  expect(attrs.every(({ labelHeight, meterHeight, segmentCount }) => labelHeight >= 14 && meterHeight >= 9 && segmentCount === 6)).toBe(true);
+});
+
+test('keeps the Settlement footer summary and attribute rail stacked beside the primary CTA', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'footer anatomy targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const layout = await page.locator('.monthly-summary.fullframe .settle-footer').evaluate((footer) => {
+    const rect = (selector: string) => {
+      const element = footer.querySelector<HTMLElement>(selector);
+      if (!element) return null;
+      const box = element.getBoundingClientRect();
+      return { x: box.x, y: box.y, width: box.width, height: box.height };
+    };
+    return { text: rect('.settle-foot-text'), attrs: rect('.settle-attrs'), cta: rect('.settle-continue') };
+  });
+
+  expect(layout.text).not.toBeNull();
+  expect(layout.attrs).not.toBeNull();
+  expect(layout.cta).not.toBeNull();
+  expect(Math.abs((layout.text?.x ?? 0) - (layout.attrs?.x ?? 0))).toBeLessThanOrEqual(1);
+  expect(layout.attrs?.y ?? 0).toBeGreaterThan((layout.text?.y ?? 0) + (layout.text?.height ?? 0) - 2);
+  expect(layout.cta?.x ?? 0).toBeGreaterThan((layout.attrs?.x ?? 0) + (layout.attrs?.width ?? 0));
+  expect(layout.cta?.y ?? 0).toBeLessThanOrEqual((layout.text?.y ?? 0) + 2);
+  expect((layout.cta?.y ?? 0) + (layout.cta?.height ?? 0)).toBeGreaterThanOrEqual((layout.attrs?.y ?? 0) - 2);
+});
+
+test('keeps settlement financial panels in the reference proportion', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement panel proportions target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const widths = await page.locator('.monthly-summary.fullframe .settle-grid > .settle-panel, .monthly-summary.fullframe .settle-grid > .settle-result-column').evaluateAll((items) => items.map((item) => item.getBoundingClientRect().width));
+
+  expect(widths).toHaveLength(4);
+  const [income, expense, allocation, result] = widths;
+  expect(income / expense).toBeGreaterThan(1.02);
+  expect(allocation / expense).toBeLessThan(0.93);
+  expect(result / expense).toBeGreaterThan(1.32);
+});
+
+test('keeps settlement totals as outlined readouts on black panels', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement total contrast targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const totals = await page.locator('.monthly-summary.fullframe .settle-panel .metric-box').evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element);
+    return { background: style.backgroundColor, color: style.color, border: style.borderTopStyle, borderColor: style.borderTopColor };
+  }));
+
+  expect(totals).toHaveLength(2);
+  expect(totals.every(({ background, color, border, borderColor }) =>
+    background === 'rgb(9, 9, 9)' && color === 'rgb(244, 244, 239)' && border === 'solid' && borderColor === 'rgb(244, 244, 239)'
+  )).toBe(true);
+});
+
+test('keeps settlement NEW ribbons as stepped corner flags at low height', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement achievement flags target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const ribbon = await page.locator('.monthly-summary.fullframe .highlight-card:not(.reflection) .new-ribbon').first().evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { left: style.left, clipPath: style.clipPath, width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height };
+  });
+
+  expect(ribbon.left).toBe('-1px');
+  expect(ribbon.clipPath).toContain('polygon');
+  expect(ribbon.width).toBeGreaterThanOrEqual(28);
+  expect(ribbon.height).toBeGreaterThanOrEqual(18);
+});
+
+test('keeps settlement allocation meters legible on the black board', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement allocation contrast targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const meters = await page.locator('.monthly-summary.fullframe .settle-rows.alloc .segment-meter').evaluateAll((items) => items.map((meter) => {
+    const cells = [...meter.querySelectorAll('i')];
+    return {
+      cellCount: cells.length,
+      emptyCells: cells.filter((cell) => !cell.classList.contains('filled')).map((cell) => {
+        const style = getComputedStyle(cell);
+        return { background: style.backgroundColor, border: style.borderTopColor, height: cell.getBoundingClientRect().height };
+      }),
+    };
+  }));
+
+  expect(meters.length).toBeGreaterThanOrEqual(4);
+  expect(meters.every(({ cellCount, emptyCells }) => cellCount === 10 && emptyCells.length > 0 && emptyCells.every(({ background, border, height }) => {
+    const channels = background.match(/\d+/g)?.map(Number) ?? [];
+    const borderChannels = border.match(/\d+/g)?.map(Number) ?? [];
+    return height >= 8 && channels[0] >= 56 && channels[1] >= 56 && channels[2] >= 56 && borderChannels[0] >= 110;
+  }))).toBe(true);
+});
+
+test('keeps Settlement allocation meters on the readable segment tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement allocation meter tier targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const cells = await page.locator('.monthly-summary.fullframe .settle-rows.alloc .segment-meter i').evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element);
+    return {
+      filled: element.classList.contains('filled'),
+      height: element.getBoundingClientRect().height,
+      background: style.backgroundColor,
+      border: style.borderTopColor,
+    };
+  }));
+
+  expect(cells.length).toBeGreaterThan(0);
+  expect(cells.every(({ filled, height, background, border }) =>
+    height >= 9 && (filled
+      ? background === 'rgb(244, 244, 239)' && border === 'rgb(244, 244, 239)'
+      : background === 'rgb(68, 68, 64)' && border === 'rgb(153, 153, 144)')
+  )).toBe(true);
+});
+
+test('keeps the Settlement allocation illustration visible as a lower-right anchor', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement illustration anchor targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const anchor = await page.locator('.monthly-summary.fullframe .settle-allocation .settle-panel-art').evaluate((element) => {
+    const panel = element.closest('.settle-panel');
+    const svg = element.querySelector('svg');
+    const artRect = element.getBoundingClientRect();
+    const panelRect = panel?.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const svgStyle = svg ? getComputedStyle(svg) : null;
+    const whiteCells = [...(svg?.querySelectorAll('rect') ?? [])].filter((cell) => getComputedStyle(cell).fill === 'rgb(244, 244, 239)');
+    return {
+      display: style.display,
+      opacity: Number.parseFloat(style.opacity),
+      svgDisplay: svgStyle?.display ?? '',
+      svgVisibility: svgStyle?.visibility ?? '',
+      artWidth: artRect.width,
+      artHeight: artRect.height,
+      insidePanel: Boolean(panelRect && artRect.right <= panelRect.right + 1 && artRect.bottom <= panelRect.bottom + 1),
+      whiteCellCount: whiteCells.length,
+    };
+  });
+
+  expect(anchor).toEqual(expect.objectContaining({ display: 'grid', svgDisplay: 'block', svgVisibility: 'visible', insidePanel: true }));
+  expect(anchor.opacity).toBeGreaterThan(0.5);
+  expect(anchor.artWidth).toBeGreaterThanOrEqual(88);
+  expect(anchor.artHeight).toBeGreaterThanOrEqual(88);
+  expect(anchor.whiteCellCount).toBeGreaterThanOrEqual(8);
+});
+
+test('gives empty settlement ledgers a framed neutral status lane', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'empty settlement anatomy targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.pendingMonthlySummary = {
+      month: 1,
+      resumeMode: 'planning',
+      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
+      highlights: [],
+    };
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await expect(page.getByRole('dialog', { name: '第 1 月结算' })).toBeVisible({ timeout: 15_000 });
+
+  const lanes = await page.locator('.monthly-summary.fullframe .settle-panel.is-empty .settle-empty-row').evaluateAll((items) => items.map((item) => {
+    const style = getComputedStyle(item);
+    const rect = item.getBoundingClientRect();
+    return { height: rect.height, borderStyle: style.borderTopStyle, background: style.backgroundColor };
+  }));
+
+  expect(lanes).toHaveLength(3);
+  expect(lanes.every(({ height, borderStyle, background }) => height >= 78 && borderStyle === 'dashed' && background === 'rgb(16, 16, 16)')).toBe(true);
+
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const lowHeight = await page.locator('.monthly-summary.fullframe .settle-panel.is-empty .settle-empty-row').evaluateAll((items) => items.map((item) => {
+    const style = getComputedStyle(item);
+    const copyStyle = getComputedStyle(item.querySelector('.settle-empty-copy') ?? item);
+    const rect = item.getBoundingClientRect();
+    return { height: rect.height, whiteSpace: copyStyle.whiteSpace, borderStyle: style.borderTopStyle };
+  }));
+  expect(lowHeight).toHaveLength(3);
+  expect(lowHeight.every(({ height, whiteSpace, borderStyle }) => height >= 28 && whiteSpace === 'nowrap' && borderStyle === 'dashed')).toBe(true);
+});
+
+test('gives settlement financial panels a shared pixel-corner frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement frame assertion targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const frames = await page.locator('.monthly-summary.fullframe .settle-grid > .settle-panel').evaluateAll((items) => items.map((item) => {
+    const style = getComputedStyle(item, '::after');
+    return { content: style.content, borderWidth: style.borderTopWidth, clipPath: style.clipPath };
+  }));
+
+  expect(frames).toHaveLength(3);
+  expect(frames.every(({ content, borderWidth, clipPath }) => content === '""' && Number.parseFloat(borderWidth) >= 1 && clipPath !== 'none')).toBe(true);
+});
+
+test('gives the settlement Hero a full-width title divider', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero assertion targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const title = page.locator('.monthly-summary.fullframe .settle-result-title');
+  const titleStyle = await title.evaluate((item) => {
+    const style = getComputedStyle(item);
+    const rect = item.getBoundingClientRect();
+    return { borderWidth: style.borderBottomWidth, width: rect.width };
+  });
+
+  expect(Number.parseFloat(titleStyle.borderWidth)).toBeGreaterThanOrEqual(1);
+  expect(titleStyle.width).toBeGreaterThan(300);
+});
+
+test('keeps the settlement title on the reference three-spark rhythm', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement title decoration targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const sparks = await page.locator('.monthly-summary.fullframe .settle-title-spark').evaluateAll((items) => items.map((item) => {
+    const rect = item.getBoundingClientRect();
+    return { className: item.className, width: Math.round(rect.width), height: Math.round(rect.height) };
+  }));
+
+  expect(sparks).toHaveLength(3);
+  expect(sparks.map(({ width, height }) => [width, height])).toEqual([[26, 26], [16, 16], [22, 22]]);
+});
+
+test('keeps the settlement Hero character at the reference character tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement character assertion targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const art = page.locator('.monthly-summary.fullframe .settle-result-art');
+  const artSize = await art.evaluate((item) => {
+    const rect = item.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  });
+
+  expect(artSize.width).toBeGreaterThanOrEqual(104);
+  expect(artSize.height).toBeGreaterThanOrEqual(104);
+});
+
+test('gives populated settlement achievements a title-body-meta hierarchy', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'achievement anatomy targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const anatomy = await page.locator('.monthly-summary.fullframe .highlight-card:not(.reflection):not(.placeholder)').evaluateAll((cards) => cards.map((card) => {
+    const style = getComputedStyle(card);
+    const title = card.querySelector('h3')?.getBoundingClientRect();
+    const art = card.querySelector('.highlight-art')?.getBoundingClientRect();
+    const detail = card.querySelector('.highlight-description')?.getBoundingClientRect();
+    const meta = card.querySelector('small')?.getBoundingClientRect();
+    return {
+      areas: style.gridTemplateAreas,
+      titleTop: title?.top ?? 0,
+      artTop: art?.top ?? 0,
+      artWidth: art?.width ?? 0,
+      detailTop: detail?.top ?? 0,
+      metaTop: meta?.top ?? 0,
+      titleWidth: title?.width ?? 0,
+      cardWidth: card.getBoundingClientRect().width,
+    };
+  }));
+
+  expect(anatomy).toHaveLength(5);
+  expect(anatomy.every(({ areas, titleTop, artTop, artWidth, detailTop, metaTop, titleWidth, cardWidth }) =>
+    areas === '"title title" "icon detail" "meta meta"' &&
+    titleTop < artTop &&
+    artWidth >= 56 &&
+    detailTop <= artTop + 8 &&
+    artTop < metaTop &&
+    detailTop < metaTop &&
+    titleWidth >= cardWidth * 0.8
+  )).toBe(true);
+});
+
+test('keeps populated settlement achievement copy above the tiny metadata tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'achievement typography targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const typography = await page.locator('.monthly-summary.fullframe .highlight-card:not(.reflection):not(.placeholder)').evaluateAll((cards) => cards.map((card) => ({
+    titleFontSize: Number.parseFloat(getComputedStyle(card.querySelector('h3')!).fontSize),
+    descriptionFontSize: Number.parseFloat(getComputedStyle(card.querySelector('.highlight-description')!).fontSize),
+    metaFontSize: Number.parseFloat(getComputedStyle(card.querySelector('small')!).fontSize),
+  })));
+
+  expect(typography).toHaveLength(5);
+  expect(typography.every(({ titleFontSize, descriptionFontSize, metaFontSize }) =>
+    titleFontSize >= 16 && descriptionFontSize >= 12 && metaFontSize >= 10
+  )).toBe(true);
+});
+
+test('keeps populated settlement achievement art open on the black board', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'achievement art treatment targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const art = await page.locator('.monthly-summary.fullframe .highlight-card:not(.reflection):not(.placeholder) .highlight-art').first().evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return { width: rect.width, height: rect.height, background: style.backgroundColor, border: style.borderTopStyle, padding: style.padding };
+  });
+
+  expect(art).toEqual({ width: expect.any(Number), height: expect.any(Number), background: 'rgba(0, 0, 0, 0)', border: 'none', padding: '0px' });
+  expect(art.width).toBeGreaterThanOrEqual(60);
+  expect(art.height).toBeGreaterThanOrEqual(60);
+});
+
+test('keeps the Settlement review card on the shared visual anchor tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement review anchor targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const metrics = await page.locator('.monthly-summary.fullframe .highlight-card.reflection').evaluate((card) => {
+    const icon = card.querySelector('.pixel-icon')?.getBoundingClientRect();
+    const metric = card.querySelector('.reflection-metric')?.getBoundingClientRect();
+    return {
+      cardWidth: card.getBoundingClientRect().width,
+      iconWidth: icon?.width ?? 0,
+      iconHeight: icon?.height ?? 0,
+      metricHeight: metric?.height ?? 0,
+    };
+  });
+
+  expect(metrics.cardWidth).toBeGreaterThanOrEqual(210);
+  expect(metrics.iconWidth).toBeGreaterThanOrEqual(32);
+  expect(metrics.iconHeight).toBeGreaterThanOrEqual(32);
+  expect(metrics.metricHeight).toBeGreaterThanOrEqual(22);
+});
+
+test('opens the settlement stage without revealing the underlying page', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement stage opacity targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const backdropStyle = await page.locator('.modal-backdrop.settlement-mode').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { backgroundColor: style.backgroundColor, animationName: style.animationName, opacity: style.opacity };
+  });
+  expect(backdropStyle).toEqual({ backgroundColor: 'rgb(5, 5, 5)', animationName: 'none', opacity: '1' });
+});
+
+test('fills the low-height settlement frame without a trailing dead band', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height settlement framing is desktop-only');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const frame = await page.locator('.modal-backdrop.settlement-mode .monthly-summary.fullframe').evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { top: rect.top, bottom: rect.bottom, height: rect.height, viewportHeight: window.innerHeight };
+  });
+
+  expect(frame.top).toBeGreaterThanOrEqual(100);
+  expect(frame.bottom).toBeGreaterThanOrEqual(frame.viewportHeight - 20);
+  expect(frame.height).toBeGreaterThanOrEqual(590);
+});
+
+test('uses crisp grayscale typography across the desktop console', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'typography rendering contract targets the supported desktop landscape surface');
+  const typography = await page.evaluate(() => {
+    const body = getComputedStyle(document.body);
+    const button = getComputedStyle(document.querySelector('.nav-item') ?? document.body);
+    const title = getComputedStyle(document.querySelector('.life-planning-section .section-heading h1') ?? document.body);
+    const copy = getComputedStyle(document.querySelector('.view-life .forecast-attr') ?? document.body);
+    const firstFamily = (value: string) => value.split(',')[0].replaceAll('"', '').trim();
+    return {
+      bodyFamily: firstFamily(body.fontFamily),
+      buttonFamily: firstFamily(button.fontFamily),
+      titleFamily: firstFamily(title.fontFamily),
+      copyFamily: firstFamily(copy.fontFamily),
+      bodySmoothing: body.getPropertyValue('-webkit-font-smoothing'),
+      buttonSmoothing: button.getPropertyValue('-webkit-font-smoothing'),
+      bodyRendering: body.textRendering,
+      buttonRendering: button.textRendering,
+    };
+  });
+  expect(typography).toEqual({
+    bodyFamily: 'MS Gothic',
+    buttonFamily: 'MS Gothic',
+    titleFamily: 'MS Gothic',
+    copyFamily: 'MS Gothic',
+    bodySmoothing: 'none',
+    buttonSmoothing: 'none',
+    bodyRendering: 'geometricprecision',
+    buttonRendering: 'geometricprecision',
+  });
+});
+
+test('extends the crisp pixel edge to shared desktop copy', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'desktop copy rendering contract targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const strokeWidths = await page.evaluate(() => [
+    document.body,
+    document.querySelector('.career-market-identity p'),
+    document.querySelector('.career-results .job-card .job-card-description'),
+    document.querySelector('.career-results .job-card .job-card-status small'),
+  ].map((element) => Number.parseFloat(getComputedStyle(element ?? document.body).webkitTextStrokeWidth)));
+
+  expect(strokeWidths.every((width) => width >= 0.1)).toBe(true);
+});
+
+test('keeps the header settings glyph on an integer pixel scale', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'header icon scale targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const icon = await page.locator('.settings-button .pixel-icon').evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return { width: rect.width, height: rect.height };
+  });
+
+  expect(icon).toEqual({ width: 32, height: 32 });
+});
+
+test('keeps shared panels on the stepped corner and divider grammar', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shared frame grammar targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const grammar = await page.evaluate(() => {
+    const read = (selector: string, pseudo: '::before' | '::after') => {
+      const element = document.querySelector(selector);
+      if (!element) return null;
+      const style = getComputedStyle(element, pseudo);
+      return {
+        backgroundImage: style.backgroundImage,
+        borderWidth: style.borderTopWidth,
+        borderColor: style.borderTopColor,
+      };
+    };
+    const divider = document.querySelector('.view-life .inbox-head');
+    const dividerStyle = divider ? getComputedStyle(divider) : null;
+    return {
+      hero: read('.view-life .time-console', '::before'),
+      inbox: read('.view-life .inbox-panel', '::after'),
+      planner: read('.view-life .planner.pixel-corners', '::before'),
+      divider: dividerStyle ? {
+        style: dividerStyle.borderBottomStyle,
+        color: dividerStyle.borderBottomColor,
+      } : null,
+    };
+  });
+
+  expect(grammar.hero?.backgroundImage).toContain('linear-gradient');
+  expect(grammar.inbox?.backgroundImage).toContain('linear-gradient');
+  expect(grammar.planner?.backgroundImage).toContain('linear-gradient');
+  expect(grammar.divider).toEqual({ style: 'dotted', color: 'rgb(87, 87, 83)' });
+});
+
+test('keeps the desktop outer frame as a restrained one-bit boundary', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'outer frame treatment targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const frame = await page.locator('.outer-frame').evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return {
+      inset: Math.round(rect.left),
+      borderWidth: style.borderTopWidth,
+      borderColor: style.borderTopColor,
+    };
+  });
+
+  expect(frame).toEqual({
+    inset: 7,
+    borderWidth: '1px',
+    borderColor: 'rgb(119, 119, 119)',
+  });
+});
+
+test('keeps the wide desktop navigation at the reference rhythm', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'wide navigation rhythm targets the primary desktop surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const navigation = await page.locator('.main-nav').evaluate((element) => {
+    const items = Array.from(element.querySelectorAll<HTMLElement>('.nav-tabs .nav-item'));
+    const first = items[0]?.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      paddingLeft: Math.round(Number.parseFloat(style.paddingLeft)),
+      firstLeft: first ? Math.round(first.left) : null,
+      widths: items.map((item) => Math.round(item.getBoundingClientRect().width)),
+    };
+  });
+
+  expect(navigation).toEqual({
+    paddingLeft: 36,
+    firstLeft: 36,
+    widths: [118, 118, 118, 118, 118, 118, 118],
+  });
+});
+
+test('keeps desktop footer portraits open instead of boxed terminal icons', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'footer portrait anatomy targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const portrait = await page.locator('.persistent-status .pixel-avatar').evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const illustration = element.querySelector('svg')?.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    const cells = Array.from(element.querySelectorAll('svg.il-mascot rect')).map((cell) => ({
+      x: cell.getAttribute('x'),
+      y: cell.getAttribute('y'),
+      width: cell.getAttribute('width'),
+      height: cell.getAttribute('height'),
+      fill: cell.getAttribute('fill'),
+    }));
+    return {
+      boxWidth: Math.round(box.width),
+      boxHeight: Math.round(box.height),
+      svgWidth: Math.round(illustration?.width ?? 0),
+      svgHeight: Math.round(illustration?.height ?? 0),
+      svgBottom: Math.round(illustration?.bottom ?? 0),
+      footerTop: Math.round(element.closest('.persistent-status')?.getBoundingClientRect().top ?? 0),
+      footerBottom: Math.round(element.closest('.persistent-status')?.getBoundingClientRect().bottom ?? 0),
+      footerHeight: Math.round(element.closest('.persistent-status')?.getBoundingClientRect().height ?? 0),
+      backgroundColor: style.backgroundColor,
+      borderStyle: style.borderStyle,
+      hasOpenShoulder: cells.some(({ x, y, width, height }) => x === '9' && y === '18' && width === '1' && height === '1'),
+      hasSeparatedShoulder: cells.some(({ x, y, width, height }) => x === '6' && y === '21' && width === '2' && height === '2'),
+    };
+  });
+
+  expect(portrait).toEqual(expect.objectContaining({
+    boxWidth: 60,
+    boxHeight: 58,
+    svgWidth: 60,
+    svgHeight: 60,
+    svgBottom: expect.any(Number),
+    footerTop: 1000,
+    footerBottom: expect.any(Number),
+    footerHeight: 80,
+    backgroundColor: 'rgba(0, 0, 0, 0)',
+    borderStyle: 'none',
+    hasOpenShoulder: true,
+    hasSeparatedShoulder: true,
+  }));
+  expect(portrait.svgBottom).toBeLessThanOrEqual(portrait.footerBottom - 2);
+});
+
+test('keeps low-height desktop footer portraits open without a frame', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'low-height footer portrait anatomy targets desktop landscape');
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  const portrait = await page.locator('.persistent-status .pixel-avatar').evaluate((element) => {
+    const illustration = element.querySelector('svg')?.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      svgWidth: Math.round(illustration?.width ?? 0),
+      svgHeight: Math.round(illustration?.height ?? 0),
+      backgroundColor: style.backgroundColor,
+      borderStyle: style.borderStyle,
+    };
+  });
+
+  expect(portrait).toEqual({
+    svgWidth: 46,
+    svgHeight: 46,
+    backgroundColor: 'rgba(0, 0, 0, 0)',
+    borderStyle: 'none',
+  });
+});
+
+test('gives low-height desktop content a visible pixel scroll affordance', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'low-height scroll affordance targets desktop landscape');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const scrolling = await page.locator('.main-content').evaluate((element) => {
+    const style = getComputedStyle(element);
+    const scrollbar = getComputedStyle(element, '::-webkit-scrollbar');
+    return {
+      overflowY: style.overflowY,
+      scrollbarWidth: style.scrollbarWidth,
+      webkitWidth: scrollbar.width,
+      canScroll: element.scrollHeight > element.clientHeight,
+    };
+  });
+
+  expect(scrolling).toEqual({
+    overflowY: 'auto',
+    scrollbarWidth: 'thin',
+    webkitWidth: '6px',
+    canScroll: true,
+  });
+});
+
+test('keeps empty Shop rail modules on dark shells with light status lanes', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'Shop rail surface anatomy targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const surfaces = await page.evaluate(() => Object.fromEntries([
+    ['cart', '.rail-cart > .shop-rail-empty'],
+    ['inventory', '.rail-inventory .shop-rail-empty'],
+    ['wishlist', '.rail-wishlist .shop-rail-empty'],
+  ].map(([key, selector]) => {
+    const element = document.querySelector(selector);
+    const style = element ? getComputedStyle(element) : null;
+    const shell = element?.closest('.rail-module');
+    const shellStyle = shell ? getComputedStyle(shell) : null;
+    return [key, {
+      backgroundColor: style?.backgroundColor,
+      color: style?.color,
+      shellBackgroundColor: shellStyle?.backgroundColor,
+    }];
+  })));
+
+  expect(surfaces).toEqual({
+    cart: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(7, 7, 7)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    inventory: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(7, 7, 7)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    wishlist: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(7, 7, 7)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+  });
+});
+
+test('keeps desktop card descriptions above the micro-copy tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'desktop card copy tier targets the supported landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  const careerDescriptionSize = await page.locator('.career-results .job-card > .job-card-description').first().evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const shopDescriptionSize = await page.locator('.view-shop .shop-main .item-card p').first().evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+  const lifeInboxSize = await page.locator('.view-life .inbox-list li').first().evaluate((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+
+  expect(careerDescriptionSize).toBeGreaterThanOrEqual(12);
+  expect(shopDescriptionSize).toBeGreaterThanOrEqual(11);
+  expect(lifeInboxSize).toBeGreaterThanOrEqual(11);
+});
+
+test('lets the tall Life inbox strip use the board height before the footer', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Life board proportions target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+  const panels = await page.locator('.view-life .life-primary-dashboard .inbox-panel').evaluateAll((elements) => elements.map((element) => {
+    const rect = element.getBoundingClientRect();
+    return { height: rect.height, bottom: rect.bottom };
+  }));
+  const footerTop = await page.locator('.persistent-status').evaluate((element) => element.getBoundingClientRect().top);
+
+  expect(panels).toHaveLength(4);
+  expect(panels.every(({ height }) => height >= 226)).toBe(true);
+  expect(Math.max(...panels.map(({ bottom }) => bottom))).toBeLessThanOrEqual(footerTop - 8);
+});
+
 test('discovers and applies to the official education operations route', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
@@ -174,7 +2093,7 @@ test('turns the education course qualification into a persistent teaching assist
   await expect(page.getByText('线上课程助教 4 小时', { exact: true })).toBeVisible();
   await closeCareerTools(page);
   await runLongPeriod(page, 1);
-  await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('线上课程助教');
   await page.getByRole('button', { name: '进入下个月' }).click();
   await page.getByLabel('主导航').getByRole('button', { name: '我的', exact: true }).click();
@@ -619,7 +2538,7 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   await page.getByRole('button', { name: '买入公开股权 ¥208' }).click();
   await expect(page.getByRole('region', { name: '公开股权' })).toContainText('你持有公开份额 10%');
   await runLongPeriod(page, 1);
-  await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('投资分红');
   await page.getByRole('button', { name: '进入下个月' }).click();
   await page.getByRole('button', { name: '我的', exact: true }).click();
@@ -654,7 +2573,7 @@ test('runs a business from purchase through funding, listing, daily profit and p
   await page.getByRole('button', { name: '申请上市' }).click();
   await expect(page.getByRole('button', { name: '已上市' })).toBeVisible();
   await runLongPeriod(page, 1);
-  await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('企业收入');
   await page.getByRole('button', { name: '进入下个月' }).click();
   await page.getByRole('button', { name: '我的', exact: true }).click();
@@ -749,7 +2668,7 @@ test('joins and settles the official consulting studio partnership through the b
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await expect(page.getByText(/咨询工作室/).first()).toBeVisible();
   await runLongPeriod(page, 1);
-  await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('企业收入');
   await page.getByRole('button', { name: '进入下个月' }).click();
   await page.getByRole('button', { name: '我的', exact: true }).click();
@@ -1902,7 +3821,7 @@ test('shows cross-industry mobility distance and a senior expert ladder', async 
 
   await page.getByRole('button', { name: '职业', exact: true }).click();
   await runLongPeriod(page, 1);
-  await expect(page.getByText('月结待确认')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await page.getByRole('button', { name: '进入下个月' }).click();
 
   // Dedicated tab keeps the market list untouched while framing movement between industries.
@@ -1976,7 +3895,7 @@ test('discovers the new districts and reaches their venue activities', async ({ 
 });
 test('runs a multi-year life in the real browser and keeps annual records consistent', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  await page.goto('http://127.0.0.1:4173');
+  await page.goto('/');
   await page.evaluate(() => localStorage.setItem('yuliang-e2e-hook', '1'));
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
   await page.evaluate(({ key, state }) => {

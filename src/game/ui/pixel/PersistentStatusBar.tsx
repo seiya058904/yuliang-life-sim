@@ -12,8 +12,8 @@ export function PersistentStatusBar({ game, onNavigate }: { game: GameState; onN
     ['人脉', getAttribute(game, 'network')],
   ] as const;
   return <aside className="persistent-status" role="region" aria-label="角色状态">
-    <span className="pixel-avatar"><PixelIllustration name="mascot" size={34} /></span>
-    {entries.map(([label, value]) => <div className="persistent-stat" key={label}><span>{label}</span><SegmentMeter value={value} segments={10} label={`${label} ${value}`} /><strong>{Math.round(value)}</strong></div>)}
+    <span className="pixel-avatar"><PixelIllustration name="mascot" size={56} /></span>
+    {entries.map(([label, value]) => <div className="persistent-stat" key={label}><span>{label}</span><SegmentMeter value={value} segments={6} label={`${label} ${value}`} /><strong>{Math.round(value)}</strong></div>)}
     <button className="status-detail" onClick={() => onNavigate?.('profile')}>属性详情 ▸</button>
   </aside>;
 }
