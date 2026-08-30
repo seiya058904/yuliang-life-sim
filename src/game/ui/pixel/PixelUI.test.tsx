@@ -64,7 +64,7 @@ describe('PixelIllustration', () => {
     expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(70);
   });
 
-  it('keeps the brand mark on a recognizable stepped cat silhouette', () => {
+  it('keeps the brand mark on a reference-density stepped cat silhouette', () => {
     render(<PixelIllustration name="brand-cat" data-testid="brand-cat" />);
 
     const illustration = screen.getByTestId('brand-cat');
@@ -74,18 +74,16 @@ describe('PixelIllustration', () => {
       rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && (!fill || rect.getAttribute('fill') === fill)
     );
 
-    expect(hasCell('7', '1', '1', '1')).toBe(true);
-    expect(hasCell('5', '3', '1', '2')).toBe(true);
-    expect(hasCell('9', '5', '6', '1')).toBe(true);
-    expect(hasCell('4', '9', '1', '5')).toBe(true);
-    expect(hasCell('19', '9', '1', '5')).toBe(true);
-    expect(hasCell('8', '10', '2', '2')).toBe(true);
-    expect(hasCell('14', '10', '2', '2')).toBe(true);
-    expect(hasCell('11', '13', '2', '1')).toBe(true);
-    expect(hasCell('8', '17', '8', '1')).toBe(true);
-    expect(hasCell('0', '12', '3', '1')).toBe(true);
+    expect(cells.every((rect) => rect.getAttribute('width') === '1' && rect.getAttribute('height') === '1')).toBe(true);
+    expect(hasCell('4', '0', '1', '1')).toBe(true);
+    expect(hasCell('21', '4', '1', '1')).toBe(true);
+    expect(hasCell('0', '12', '1', '1')).toBe(true);
+    expect(hasCell('23', '12', '1', '1')).toBe(true);
+    expect(hasCell('5', '19', '1', '1')).toBe(true);
+    expect(hasCell('19', '19', '1', '1')).toBe(true);
+    expect(hasCell('4', '9', '1', '5')).toBe(false);
     expect(cells.some((rect) => rect.getAttribute('fill') === 'var(--il-knock, #090909)')).toBe(false);
-    expect(cells.length).toBeGreaterThanOrEqual(45);
+    expect(cells.length).toBeGreaterThanOrEqual(150);
   });
 
   it('keeps the persistent mascot on the open reference portrait grid', () => {
