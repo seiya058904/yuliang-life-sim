@@ -1482,6 +1482,40 @@ test('keeps the Settlement allocation illustration visible as a lower-right anch
   expect(anchor.whiteCellCount).toBeGreaterThanOrEqual(8);
 });
 
+test('gives sparse Settlement ledger panels a readable character-and-note anchor', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'sparse settlement composition targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const anchors = await page.locator('.monthly-summary.fullframe .settle-panel:not(.settle-allocation)').evaluateAll((panels) => panels.map((panel) => {
+    const art = panel.querySelector<HTMLElement>('.settle-panel-art')?.getBoundingClientRect();
+    const note = panel.querySelector<HTMLElement>('.settle-panel-note')?.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    return {
+      artWidth: art?.width ?? 0,
+      artHeight: art?.height ?? 0,
+      noteHeight: note?.height ?? 0,
+      artInside: Boolean(art && art.left >= panelRect.left && art.bottom <= panelRect.bottom + 1),
+      noteInside: Boolean(note && note.left >= panelRect.left && note.right <= panelRect.right + 1 && note.bottom <= panelRect.bottom + 1),
+    };
+  }));
+
+  expect(anchors).toHaveLength(2);
+  expect(anchors.every(({ artWidth, artHeight, noteHeight, artInside, noteInside }) =>
+    artWidth >= 126 && artHeight >= 126 && noteHeight >= 48 && artInside && noteInside
+  )).toBe(true);
+});
+
 test('gives empty settlement ledgers a framed neutral status lane', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'empty settlement anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

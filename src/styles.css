@@ -9373,3 +9373,26 @@ textarea {
     display: none;
   }
 }
+
+/* Sparse settlement ledgers still carry real character and summary anchors.
+   Give those two black panels enough physical weight to read as an authored
+   lower composition, while leaving the allocation chart and low-height
+   compression untouched. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) > .settle-panel-art {
+    width: 126px;
+    height: 126px;
+  }
+
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) > .settle-panel-art .pixel-illustration {
+    width: 120px;
+    height: 120px;
+  }
+
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) > .settle-panel-note {
+    min-height: 48px;
+    padding: 8px 10px;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+}
