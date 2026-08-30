@@ -8907,6 +8907,17 @@ textarea {
   }
 }
 
+/* Short desktop windows may scroll the main board, but the first Career
+   market page must still leave its pager above the persistent status HUD.
+   Tighten only this low-height card rhythm; the 1440px reference frame keeps
+   its established card height and all vacancy data/actions stay unchanged. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .career-section.market-mode .career-results .job-card {
+    height: 216px;
+    min-height: 216px;
+  }
+}
+
 /* Settlement allocation meters need the same hard-edged reading weight as
    the reference board: zero-value segments stay quiet, but remain visible. */
 @media (min-width: 1181px) {

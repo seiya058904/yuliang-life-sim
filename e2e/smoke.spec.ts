@@ -872,6 +872,37 @@ test('keeps tall Career support panels above the persistent footer', async ({ pa
   expect(geometry.panelBottom).toBeLessThanOrEqual(geometry.footerTop - 4);
 });
 
+test('keeps the low-height Career pager above the persistent footer', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height desktop footer boundary is desktop-only');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const geometry = await page.evaluate(() => {
+    const main = document.querySelector<HTMLElement>('.main-content');
+    const footer = document.querySelector<HTMLElement>('.persistent-status');
+    const grid = document.querySelector<HTMLElement>('.career-results .job-grid');
+    const pager = document.querySelector<HTMLElement>('.career-results .pager-row');
+    const mainRect = main?.getBoundingClientRect();
+    const footerRect = footer?.getBoundingClientRect();
+    const gridRect = grid?.getBoundingClientRect();
+    const pagerRect = pager?.getBoundingClientRect();
+    return {
+      mainBottom: mainRect?.bottom ?? 0,
+      footerTop: footerRect?.top ?? 0,
+      gridBottom: gridRect?.bottom ?? 0,
+      pagerTop: pagerRect?.top ?? 0,
+      pagerBottom: pagerRect?.bottom ?? 0,
+      scrollHeight: main?.scrollHeight ?? 0,
+      clientHeight: main?.clientHeight ?? 0,
+    };
+  });
+
+  expect(geometry.footerTop).toBeGreaterThanOrEqual(geometry.mainBottom - 0.5);
+  expect(geometry.gridBottom).toBeLessThanOrEqual(geometry.pagerTop + 0.5);
+  expect(geometry.pagerBottom).toBeLessThanOrEqual(geometry.mainBottom + 0.5);
+  expect(geometry.scrollHeight).toBeGreaterThan(geometry.clientHeight);
+});
+
 test('uses the installed pixel console face for high-signal display headings', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'display font tier is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
