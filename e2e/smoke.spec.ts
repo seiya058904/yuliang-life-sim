@@ -1738,7 +1738,7 @@ test('keeps populated settlement achievement copy above the tiny metadata tier',
 
   expect(typography).toHaveLength(5);
   expect(typography.every(({ titleFontSize, descriptionFontSize, metaFontSize }) =>
-    titleFontSize >= 16 && descriptionFontSize >= 12 && metaFontSize >= 10
+    titleFontSize >= 17 && descriptionFontSize >= 13 && metaFontSize >= 11
   )).toBe(true);
 });
 
@@ -1764,8 +1764,8 @@ test('keeps populated settlement achievement art open on the black board', async
   });
 
   expect(art).toEqual({ width: expect.any(Number), height: expect.any(Number), background: 'rgba(0, 0, 0, 0)', border: 'none', padding: '0px' });
-  expect(art.width).toBeGreaterThanOrEqual(60);
-  expect(art.height).toBeGreaterThanOrEqual(60);
+  expect(art.width).toBeGreaterThanOrEqual(68);
+  expect(art.height).toBeGreaterThanOrEqual(68);
 });
 
 test('keeps the Settlement review card on the shared visual anchor tier', async ({ page }) => {

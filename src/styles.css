@@ -9332,3 +9332,33 @@ textarea {
     height: 24px;
   }
 }
+
+/* Populated settlement records are the visual close of the board, not tiny
+   badges. Give the existing real illustration, title, description, and day
+   marker one stronger reading tier while preserving the six-card row and its
+   neutral, non-grading meaning. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) {
+    grid-template-columns: 68px minmax(0, 1fr);
+    gap: 7px 10px;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) > .highlight-art {
+    width: 68px;
+    height: 68px;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) h3 {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) .highlight-description {
+    font-size: 13px;
+    line-height: 1.3;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) small {
+    font-size: 11px;
+  }
+}
