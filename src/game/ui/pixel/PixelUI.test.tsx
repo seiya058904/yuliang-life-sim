@@ -100,7 +100,20 @@ describe('PixelIllustration', () => {
     expect(hasCell('19', '19', '1', '1')).toBe(true);
     expect(hasCell('4', '9', '1', '5')).toBe(false);
     expect(cells.some((rect) => rect.getAttribute('fill') === 'var(--il-knock, #090909)')).toBe(false);
-    expect(cells.length).toBeGreaterThanOrEqual(150);
+    expect(cells.length).toBeGreaterThanOrEqual(140);
+  });
+
+  it('keeps the header cat on the reference open-line density', () => {
+    render(<PixelIllustration name="brand-cat" data-testid="brand-cat-open" />);
+
+    const cells = [...screen.getByTestId('brand-cat-open').querySelectorAll('rect')];
+    const hasCell = (x: string, y: string) => cells.some((rect) =>
+      rect.getAttribute('x') === x && rect.getAttribute('y') === y
+    );
+
+    expect(cells.length).toBeLessThanOrEqual(160);
+    expect(hasCell('7', '1')).toBe(false);
+    expect(hasCell('8', '10')).toBe(false);
   });
 
   it('keeps the persistent mascot on the open reference portrait grid', () => {
