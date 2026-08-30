@@ -218,6 +218,20 @@ test('keeps an empty Shop Rail as a full-height dark module stack', async ({ pag
   }
 });
 
+test('keeps Shop Rail modules on the shared stepped outer-frame grammar', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Rail frame grammar targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const frames = await page.locator('.view-shop .shop-rail > .rail-module').evaluateAll((modules) => modules.map((module) => {
+    const style = getComputedStyle(module);
+    return { clipPath: style.clipPath, borderWidth: style.borderTopWidth };
+  }));
+
+  expect(frames).toHaveLength(4);
+  expect(frames.every(({ clipPath, borderWidth }) => clipPath !== 'none' && borderWidth === '2px')).toBe(true);
+});
+
 test('keeps the Life forecast header on the reference inverse surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast header assertion targets the supported desktop landscape surface');
   await page.getByRole('button', { name: '生活', exact: true }).click();

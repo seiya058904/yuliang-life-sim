@@ -9674,3 +9674,20 @@ textarea {
     border-color: #090909;
   }
 }
+
+/* Shop Rail modules share the catalogue's stepped outer silhouette. The
+   existing corner-line overlay still supplies the crisp one-bit border; the
+   clip only removes the four square corners and leaves all real rail content
+   and hit targets in place. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail > .rail-module {
+    clip-path: polygon(
+      0 0, calc(100% - 9px) 0, calc(100% - 9px) 1px,
+      calc(100% - 1px) 1px, calc(100% - 1px) 9px, 100% 9px,
+      100% calc(100% - 9px), calc(100% - 1px) calc(100% - 9px),
+      calc(100% - 1px) calc(100% - 1px), calc(100% - 9px) calc(100% - 1px),
+      calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 1px),
+      1px calc(100% - 1px), 1px calc(100% - 9px), 0 calc(100% - 9px)
+    );
+  }
+}
