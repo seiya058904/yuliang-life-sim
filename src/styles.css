@@ -9606,3 +9606,12 @@ textarea {
     transform: translateX(-50%);
   }
 }
+
+/* The tall reference gives the current-activity panel a clear lower reading
+   band. Let the real progress and next-activity rows use that space instead
+   of clustering directly below the activity title. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-life .hero-activity .activity-progress {
+    margin-top: 54px;
+  }
+}

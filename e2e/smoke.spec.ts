@@ -248,6 +248,27 @@ test('keeps the Life forecast net row on the light reading surface', async ({ pa
   await expect(net.locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
 });
 
+test('keeps the Life activity progress and next-action band in the lower half of the hero', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Life Hero rhythm targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const geometry = await page.locator('.view-life .life-hero-grid .time-console').evaluate((hero) => {
+    const progress = hero.querySelector<HTMLElement>('.hero-activity .activity-progress')?.getBoundingClientRect();
+    const next = hero.querySelector<HTMLElement>('.hero-activity .hero-next')?.getBoundingClientRect();
+    const heroRect = hero.getBoundingClientRect();
+    return {
+      heroTop: heroRect.top,
+      heroHeight: heroRect.height,
+      progressTop: progress?.top ?? 0,
+      nextBottom: next?.bottom ?? 0,
+    };
+  });
+
+  expect(geometry.progressTop).toBeGreaterThanOrEqual(geometry.heroTop + geometry.heroHeight * 0.55);
+  expect(geometry.nextBottom).toBeGreaterThanOrEqual(geometry.heroTop + geometry.heroHeight * 0.74);
+});
+
 test('keeps collapsed Life details as a floating affordance without a full-width row', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'life details affordance targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
