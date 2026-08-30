@@ -1084,6 +1084,27 @@ test('shows the pending settlement mode in the top status while the ceremony is 
   expect(settlementCopy).not.toMatch(/\b[A-Za-z]+(?:_[A-Za-z0-9-]+)+\b/);
 });
 
+test('keeps visible Settlement copy free of internal identifiers', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement copy audit targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const visibleCopy = await page.locator('.monthly-summary.fullframe').innerText();
+  expect(visibleCopy).not.toMatch(/[A-Za-z][A-Za-z0-9]*_[A-Za-z0-9_]*/);
+  expect(visibleCopy).not.toContain('sourceId');
+  expect(visibleCopy).not.toContain('pendingReward');
+});
+
 test('keeps Shop catalog art on the open 1-bit illustration tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop catalog-art anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
