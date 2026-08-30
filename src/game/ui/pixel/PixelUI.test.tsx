@@ -131,6 +131,21 @@ describe('PixelIllustration', () => {
     expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(35);
   });
 
+  it('keeps the persistent mascot face readable as stepped eyewear', () => {
+    render(<PixelIllustration name="mascot" data-testid="mascot-glasses" />);
+
+    const illustration = screen.getByTestId('mascot-glasses');
+    const hasKnockout = (x: string, y: string, width: string, height: string) => [...illustration.querySelectorAll('rect')].some((rect) =>
+      rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && rect.getAttribute('fill') === 'var(--il-knock, #090909)'
+    );
+
+    expect(hasKnockout('8', '9', '3', '1')).toBe(true);
+    expect(hasKnockout('13', '9', '3', '1')).toBe(true);
+    expect(hasKnockout('10', '10', '4', '1')).toBe(true);
+    expect(hasKnockout('9', '12', '2', '1')).toBe(true);
+    expect(hasKnockout('13', '12', '2', '1')).toBe(true);
+  });
+
   it('keeps career and settlement anchors on the same fine grid', () => {
     render(<>
       <PixelIllustration name="job-shop" data-testid="job-shop" />

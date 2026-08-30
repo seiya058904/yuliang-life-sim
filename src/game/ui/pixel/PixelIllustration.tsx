@@ -389,7 +389,12 @@ const fineScenes: Partial<Record<PixelIllustrationName, readonly Cell[]>> = {
     // Hair cap and a light face carry the reference portrait's high-contrast
     // expression; the black knockouts keep the features crisp on white.
     [9, 6, 6, 1], [8, 7, 8, 1], [7, 7, 1, 1], [16, 7, 1, 1], [7, 8, 10, 6], [7, 9, 10, 1],
+    // Stepped dark lenses and bridge echo the reference portrait's eyewear;
+    // keep them as knock-outs so the same avatar remains readable on either
+    // the dark footer or an inverted light surface.
+    [8, 9, 3, 1, 1], [13, 9, 3, 1, 1], [10, 10, 4, 1, 1],
     [8, 10, 2, 2, 1], [14, 10, 2, 2, 1], [11, 12, 2, 1, 1], [10, 13, 4, 1, 1],
+    [9, 12, 2, 1, 1], [13, 12, 2, 1, 1],
     [8, 14, 8, 1], [9, 15, 6, 1],
     // A compact white shoulder and shirt block gives the portrait a human
     // base without introducing a boxed icon or a second status meaning.
