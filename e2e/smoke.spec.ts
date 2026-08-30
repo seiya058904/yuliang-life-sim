@@ -356,18 +356,22 @@ test('keeps empty Life inboxes as compact horizontal pixel states', async ({ pag
       markRight: markRect?.right ?? 0,
       markCenterY: markRect ? markRect.top + markRect.height / 2 : 0,
       copyCenterY: copyRect ? copyRect.top + copyRect.height / 2 : 0,
+      backgroundColor: style.backgroundColor,
+      borderStyle: style.borderStyle,
       hintVisible: hint ? getComputedStyle(hint).display !== 'none' : false,
     };
   }));
 
   expect(states.length).toBeGreaterThanOrEqual(2);
-  expect(states.every(({ gridTemplateColumns, textAlign, justifyItems, markWidth, markHeight, emptyWidth, emptyHeight, copyLeft, copyTop, markRight, markCenterY, copyCenterY, hintVisible }) =>
+  expect(states.every(({ gridTemplateColumns, textAlign, justifyItems, markWidth, markHeight, emptyWidth, emptyHeight, copyLeft, copyTop, markRight, markCenterY, copyCenterY, backgroundColor, borderStyle, hintVisible }) =>
     gridTemplateColumns.trim().split(/\s+/).length === 2 && textAlign === 'left' && justifyItems === 'start' &&
-    markWidth >= 34 && markWidth <= 40 && markHeight >= 34 && markHeight <= 40 &&
+    markWidth >= 26 && markWidth <= 32 && markHeight >= 26 && markHeight <= 32 &&
     emptyWidth >= 300 && emptyWidth <= 330 &&
-    emptyHeight >= 92 && emptyHeight <= 104 &&
+    emptyHeight >= 52 && emptyHeight <= 64 &&
     copyLeft >= markRight + 6 && copyTop >= 0 &&
-    Math.abs(markCenterY - copyCenterY) <= 10 && !hintVisible
+    Math.abs(markCenterY - copyCenterY) <= 10 &&
+    backgroundColor === 'rgba(0, 0, 0, 0)' && borderStyle === 'none' &&
+    !hintVisible
   )).toBe(true);
 });
 

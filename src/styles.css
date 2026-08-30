@@ -9264,3 +9264,32 @@ textarea {
     display: none;
   }
 }
+
+/* Empty Life inboxes are compact status rows, not nested dashboard cards.
+   Keep the fixed four-panel rhythm and truthful one-line copy, but let the
+   surrounding panel carry the black surface instead of drawing a second
+   framed rectangle around a quiet state. */
+@media (min-width: 1181px) {
+  .view-life .inbox-panel .inbox-empty {
+    flex: 0 0 56px;
+    min-height: 56px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 8px;
+    margin-block: auto;
+    padding: 6px 8px;
+    background: transparent;
+    border: 0;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark {
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 0;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark .pixel-illustration {
+    width: 24px;
+    height: 24px;
+  }
+}
