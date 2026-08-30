@@ -961,8 +961,10 @@ describe('余量 app flow', () => {
     await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
     await user.click(within(shop).getAllByRole('button', { name: '查看详情：看电影 普通影厅' })[0]);
 
-    const detail = within(shop).getByRole('region', { name: '已选商品详情' });
+    const detail = within(shop).getByRole('region', { name: '已选活动详情' });
     expect(detail).toHaveTextContent('看电影 · 普通影厅');
+    expect(detail).toHaveAttribute('aria-label', '已选活动详情');
+    expect(detail.querySelector('.eyebrow')).toHaveTextContent('已选活动');
     expect(detail.querySelectorAll('.shop-detail-fact')).toHaveLength(4);
     expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('时间');
     expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('费用');
