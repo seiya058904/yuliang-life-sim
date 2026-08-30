@@ -851,6 +851,51 @@ test('keeps empty Career support lanes on dark shells', async ({ page }) => {
   await expect(page.locator('.career-bottom-insight')).toHaveCSS('background-color', 'rgb(12, 12, 12)');
 });
 
+test('uses light inverse surfaces for populated Career support rows', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'populated Career support surfaces are desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.applications = [{
+      applicationId: 'application.visual-career',
+      vacancyId: 'vacancy.visual-career',
+      jobId: 'job.seed-remote',
+      companyId: 'company.xinghe',
+      salaryRange: [80, 100],
+      route: 'market',
+      submittedDay: 1,
+      resultDay: 2,
+      status: 'offer',
+      competitivenessTier: 'competitive',
+      probabilityBand: 0.7,
+      willReceiveOffer: true,
+      feedback: ['条件符合岗位期待'],
+      offerExpiresDay: 8,
+    }];
+    state.employmentHistory = [{ jobId: 'job.seed-warehouse', companyId: 'company.yuanwang', startedDay: 1, endedDay: 4, finalPay: 130 }];
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const surfaces = await page.locator('.career-bottom-panel:nth-child(-n+3):has(> .rail-rows)').evaluateAll((elements) => elements.map((element) => ({
+    background: getComputedStyle(element).backgroundColor,
+    color: getComputedStyle(element).color,
+    headerBackground: getComputedStyle(element.querySelector('.inbox-head')!).backgroundColor,
+    rowBackground: getComputedStyle(element.querySelector('.rail-rows')!).backgroundColor,
+  })));
+
+  expect(surfaces).toHaveLength(3);
+  expect(surfaces.every(({ background, color, headerBackground, rowBackground }) =>
+    background === 'rgb(244, 244, 239)' &&
+    color === 'rgb(7, 7, 7)' &&
+    headerBackground === 'rgb(244, 244, 239)' &&
+    rowBackground === 'rgb(244, 244, 239)'
+  )).toBe(true);
+});
+
 test('keeps the selected Career card frame brighter than idle cards', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career card frame contrast is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });

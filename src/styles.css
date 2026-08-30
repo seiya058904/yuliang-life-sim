@@ -9615,3 +9615,62 @@ textarea {
     margin-top: 54px;
   }
 }
+
+/* Populated Career support records use the reference's light inverse plane.
+   Empty records remain dark status lanes; only a real direct row list earns
+   the brighter surface and its matching title/body/footer hierarchy. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) {
+    color: #070707;
+    background: #f4f4ef;
+    border-color: #070707;
+    --frame-corner-line: #070707;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-head {
+    color: #070707;
+    background: #f4f4ef;
+    border-bottom-color: #999;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-head h2,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-head .pixel-icon {
+    color: #070707;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-count {
+    color: #070707;
+    background: #fff;
+    border-color: #070707;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows {
+    color: #222;
+    background: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows li {
+    color: #222;
+    background: transparent;
+    border-bottom-color: #999;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows li span,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows li b {
+    color: #070707;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows li small {
+    color: #555;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-foot {
+    border-top-color: #999;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-foot button {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #090909;
+  }
+}
