@@ -9691,3 +9691,36 @@ textarea {
     );
   }
 }
+
+/* Career vacancy cards use the same stepped silhouette as the shared frame
+   overlay. Clip the real black surface as well as its decorative border so
+   the four corners do not read as ordinary web rectangles. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-results .job-card {
+    clip-path: polygon(
+      0 0, calc(100% - 9px) 0, calc(100% - 9px) 1px,
+      calc(100% - 1px) 1px, calc(100% - 1px) 9px, 100% 9px,
+      100% calc(100% - 9px), calc(100% - 1px) calc(100% - 9px),
+      calc(100% - 1px) calc(100% - 1px), calc(100% - 9px) calc(100% - 1px),
+      calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 1px),
+      1px calc(100% - 1px), 1px calc(100% - 9px), 0 calc(100% - 9px)
+    );
+  }
+}
+
+/* Keep the four real product facts in their vertical scan lane. The card's
+   fixed desktop row reserves a compact slot; tightening only its internal
+   rhythm prevents the facts from entering the purchase rail while keeping
+   their readable 11px type and the reference's one-column anatomy. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card .catalog-facts {
+    gap: 0;
+    margin-top: 0;
+    padding-block: 0;
+  }
+
+  .view-shop .shop-main .item-card .catalog-facts > div {
+    font-size: 11px;
+    line-height: .95;
+  }
+}

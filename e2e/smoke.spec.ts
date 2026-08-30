@@ -129,6 +129,26 @@ test('selects a shop product from its card surface without swallowing purchase c
   await expect(page.getByRole('button', { name: '一次购买' })).toBeVisible();
 });
 
+test('keeps Shop product facts above the purchase rail', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product-card rhythm targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const cards = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 12).map((card) => {
+    const facts = card.querySelector('.catalog-facts');
+    const foot = card.querySelector('.item-card-foot');
+    const factStyle = facts ? getComputedStyle(facts.querySelector('dd') ?? facts) : null;
+    return {
+      factsBottom: facts?.getBoundingClientRect().bottom ?? 0,
+      footTop: foot?.getBoundingClientRect().top ?? 0,
+      factFontSize: factStyle ? Number.parseFloat(factStyle.fontSize) : 0,
+    };
+  }));
+
+  expect(cards.length).toBe(12);
+  expect(cards.every(({ factsBottom, footTop, factFontSize }) => factsBottom <= footTop && factFontSize >= 10)).toBe(true);
+});
+
 test('keeps the shop utility rail on the stepped header-row-footer surfaces', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'inverse Rail assertion targets the supported desktop landscape surface');
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -930,6 +950,20 @@ test('keeps the selected Career card frame brighter than idle cards', async ({ p
   expect(frames.filter(({ selected }) => !selected).every(({ borderColor, clipPath }) =>
     borderColor === 'rgb(199, 199, 192)' && clipPath !== 'none'
   )).toBe(true);
+});
+
+test('keeps Career vacancy surfaces on the shared stepped outer frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career card silhouettes are desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const frames = await page.locator('.career-results .job-card').evaluateAll((cards) => cards.map((card) => {
+    const style = getComputedStyle(card);
+    return { borderWidth: style.borderTopWidth, clipPath: style.clipPath };
+  }));
+
+  expect(frames.length).toBeGreaterThan(1);
+  expect(frames.every(({ borderWidth, clipPath }) => borderWidth === '1px' && clipPath !== 'none')).toBe(true);
 });
 
 test('keeps tall Career support panels above the persistent footer', async ({ page }) => {
