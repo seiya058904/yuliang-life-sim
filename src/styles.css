@@ -7634,6 +7634,7 @@ textarea {
   .app-shell.mode-monthly_summary > .topbar {
     position: relative;
     z-index: 21;
+    opacity: .78;
   }
 }
 
