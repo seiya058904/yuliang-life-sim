@@ -441,7 +441,9 @@ const fineScenes: Partial<Record<PixelIllustrationName, readonly Cell[]>> = {
     [8, 17, 2, 1], [14, 17, 2, 1],
   ],
   phone: [
-    [9, 1, 6, 1], [7, 2, 2, 19], [15, 2, 2, 19], [9, 21, 6, 1],
+    // Keep the device outline one pixel wide so the inset screen remains
+    // readable instead of collapsing into a heavy vertical block at card size.
+    [9, 1, 6, 1], [7, 3, 1, 18], [16, 3, 1, 18], [9, 21, 6, 1],
     [9, 4, 6, 1], [9, 5, 1, 11], [14, 5, 1, 11], [10, 16, 4, 1],
     [10, 7, 2, 2], [13, 7, 1, 1], [10, 10, 4, 1], [11, 18, 2, 1],
     [4, 8, 1, 1], [19, 8, 1, 1],
@@ -476,9 +478,11 @@ const fineScenes: Partial<Record<PixelIllustrationName, readonly Cell[]>> = {
   ],
   coffee: [
     [8, 3, 1, 3], [13, 2, 1, 4], [7, 6, 1, 2], [14, 6, 1, 2],
-    [5, 9, 1, 8], [6, 8, 10, 1], [15, 9, 1, 8], [6, 17, 9, 1],
+    // A broad rim, open cup body, handle, and stepped saucer keep this
+    // small scene reading as a mug rather than a generic tall container.
+    [6, 8, 10, 1], [6, 9, 10, 1], [6, 9, 1, 7], [15, 9, 1, 7], [7, 16, 8, 1],
     [16, 10, 3, 1], [19, 11, 1, 5], [16, 16, 3, 1], [16, 12, 1, 4],
-    [3, 19, 17, 1], [5, 20, 13, 1], [8, 10, 7, 1], [8, 13, 5, 1],
+    [4, 18, 16, 1], [3, 19, 17, 1], [5, 20, 13, 1], [8, 10, 7, 1], [8, 13, 5, 1],
     [7, 2, 1, 1], [10, 1, 1, 1], [6, 11, 1, 1], [14, 11, 1, 1],
     [7, 14, 1, 1], [13, 14, 1, 1], [20, 10, 1, 1], [20, 15, 1, 1],
   ],

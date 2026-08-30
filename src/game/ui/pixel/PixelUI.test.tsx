@@ -182,6 +182,22 @@ describe('PixelIllustration', () => {
     }
   });
 
+  it('keeps coffee and phone silhouettes open and semantically legible at card scale', () => {
+    render(<>
+      <PixelIllustration name="coffee" data-testid="shop-coffee-anchors" />
+      <PixelIllustration name="phone" data-testid="shop-phone-anchors" />
+    </>);
+
+    const hasCell = (id: string, x: string, y: string, width: string, height: string) => [...screen.getByTestId(id).querySelectorAll('rect')].some((rect) =>
+      rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height
+    );
+
+    expect(hasCell('shop-coffee-anchors', '6', '9', '10', '1')).toBe(true);
+    expect(hasCell('shop-coffee-anchors', '4', '18', '16', '1')).toBe(true);
+    expect(hasCell('shop-phone-anchors', '7', '3', '1', '18')).toBe(true);
+    expect(hasCell('shop-phone-anchors', '16', '3', '1', '18')).toBe(true);
+  });
+
   it('keeps the primary Career vacancy art on the same dense 1-bit tier', () => {
     const jobs = ['job-shop', 'job-office', 'job-manager', 'job-warehouse', 'job-logistics'] as const;
     render(<>{jobs.map((name) => <PixelIllustration name={name} data-testid={name} key={name} />)}</>);
