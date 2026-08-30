@@ -1246,7 +1246,7 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
           {growthPercent !== null && <em className="settle-badge">增幅 {netWorthChange >= 0 ? '+' : ''}{growthPercent}%</em>}
           <div className="settle-result-motif" aria-hidden="true">
             {Array.from({ length: 16 }, (_, index) => <i className={`settle-ray settle-ray-${index + 1}`} key={`ray-${index}`} />)}
-            {Array.from({ length: 10 }, (_, index) => <i className={`settle-spark settle-spark-${index + 1}`} key={`spark-${index}`} />)}
+            {Array.from({ length: 14 }, (_, index) => <i className={`settle-spark settle-spark-${index + 1}`} key={`spark-${index}`} />)}
           </div>
           <PixelIllustration name="settlement" size={108} className="settle-result-art" />
         </section>

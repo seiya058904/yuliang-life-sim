@@ -1736,6 +1736,78 @@ test('keeps the Settlement net-worth Hero burst centered at the reference anchor
   expect(Math.max(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(180);
 });
 
+test('keeps the Settlement Hero secondary spark field dense enough for the reference rhythm', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero spark density targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const sparks = await page.locator('.monthly-summary.fullframe .settle-result-motif .settle-spark').evaluateAll((items) => items.map((item) => {
+    const rect = item.getBoundingClientRect();
+    return { width: rect.width, height: rect.height, top: rect.top, left: rect.left };
+  }));
+  const motif = await page.locator('.monthly-summary.fullframe .settle-result-motif').boundingBox();
+
+  expect(sparks).toHaveLength(14);
+  expect(motif).not.toBeNull();
+  expect(sparks.every(({ width, height, top, left }) => width >= 4 && height >= 4 && top >= (motif?.y ?? 0) && left >= (motif?.x ?? 0))).toBe(true);
+});
+
+test('keeps a compact Settlement Hero motif visible at low desktop height', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Settlement Hero targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const anatomy = await page.locator('.monthly-summary.fullframe .settle-result-inverse').evaluate((hero) => {
+    const motif = hero.querySelector<HTMLElement>('.settle-result-motif');
+    const art = hero.querySelector<HTMLElement>('.settle-result-art');
+    const motifStyle = motif ? getComputedStyle(motif) : null;
+    const motifRect = motif?.getBoundingClientRect();
+    const artRect = art?.getBoundingClientRect();
+    const rays = Array.from(hero.querySelectorAll<HTMLElement>('.settle-ray')).map((ray) => ({
+      display: getComputedStyle(ray).display,
+      height: Number.parseFloat(getComputedStyle(ray).height),
+    }));
+    return {
+      motifDisplay: motifStyle?.display ?? 'none',
+      motifWidth: motifRect?.width ?? 0,
+      motifHeight: motifRect?.height ?? 0,
+      artDisplay: art ? getComputedStyle(art).display : 'none',
+      artWidth: artRect?.width ?? 0,
+      artHeight: artRect?.height ?? 0,
+      rays,
+    };
+  });
+
+  expect(anatomy.motifDisplay).toBe('block');
+  expect(anatomy.motifWidth).toBeGreaterThanOrEqual(120);
+  expect(anatomy.motifHeight).toBeGreaterThanOrEqual(90);
+  expect(anatomy.artDisplay).not.toBe('none');
+  expect(anatomy.artWidth).toBeGreaterThanOrEqual(56);
+  expect(anatomy.artHeight).toBeGreaterThanOrEqual(56);
+  expect(anatomy.rays).toHaveLength(16);
+  expect(anatomy.rays.every(({ display, height }) => display !== 'none' && height >= 1 && height <= 2)).toBe(true);
+});
+
 test('keeps the settlement Hero character near the burst origin', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero composition targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

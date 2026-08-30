@@ -5746,6 +5746,10 @@ textarea {
   .settle-result-motif .settle-spark-8 { top: 111px; left: 337px; transform: scale(.95); }
   .settle-result-motif .settle-spark-9 { top: 143px; left: 276px; transform: scale(.7); }
   .settle-result-motif .settle-spark-10 { top: 158px; left: 326px; transform: scale(1.05); }
+  .settle-result-motif .settle-spark-11 { top: 48px; left: 12px; transform: scale(.85); }
+  .settle-result-motif .settle-spark-12 { top: 155px; left: 72px; transform: scale(.7); }
+  .settle-result-motif .settle-spark-13 { top: 42px; left: 214px; transform: scale(.9); }
+  .settle-result-motif .settle-spark-14 { top: 176px; left: 238px; transform: scale(.8); }
 
   .monthly-summary.fullframe .highlight-card:not(.reflection) {
     grid-template-columns: 48px minmax(0, 1fr);
@@ -9506,5 +9510,99 @@ textarea {
     max-width: 30ch;
     margin: 0;
     text-align: center;
+  }
+}
+
+/* Keep the Settlement Hero recognizable in the supported low-height desktop
+   frame. Compress the same data-free burst and real character instead of
+   hiding the ceremony's visual anchor when the viewport is 1280x720. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe .settle-result-motif {
+    display: block;
+    right: auto;
+    bottom: 0;
+    left: 50%;
+    width: 190px;
+    height: 126px;
+    transform: translateX(-50%);
+    opacity: .78;
+  }
+
+  .monthly-summary.fullframe .settle-result-motif .settle-ray {
+    top: 72%;
+    left: 50%;
+    height: 1px;
+    background-color: #f4f4ef;
+    background-image: none;
+  }
+
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(1) { width: 76px !important; transform: rotate(-170deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(2) { width: 60px !important; transform: rotate(-147deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(3) { width: 72px !important; transform: rotate(-124deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(4) { width: 54px !important; transform: rotate(-101deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(5) { width: 78px !important; transform: rotate(-78deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(6) { width: 64px !important; transform: rotate(-55deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(7) { width: 82px !important; transform: rotate(-32deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(8) { width: 62px !important; transform: rotate(-9deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(9) { width: 78px !important; transform: rotate(14deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(10) { width: 60px !important; transform: rotate(37deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(11) { width: 76px !important; transform: rotate(60deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(12) { width: 62px !important; transform: rotate(83deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(13) { width: 72px !important; transform: rotate(106deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(14) { width: 54px !important; transform: rotate(129deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(15) { width: 76px !important; transform: rotate(152deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(16) { width: 64px !important; transform: rotate(175deg); }
+
+  .monthly-summary.fullframe .settle-result-motif .settle-spark {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: transparent;
+  }
+
+  .monthly-summary.fullframe .settle-result-motif .settle-spark::before,
+  .monthly-summary.fullframe .settle-result-motif .settle-spark::after {
+    content: '';
+    position: absolute;
+    background: #f4f4ef;
+  }
+
+  .monthly-summary.fullframe .settle-result-motif .settle-spark::before {
+    top: 0;
+    left: 2px;
+    width: 1px;
+    height: 5px;
+  }
+
+  .monthly-summary.fullframe .settle-result-motif .settle-spark::after {
+    top: 2px;
+    left: 0;
+    width: 5px;
+    height: 1px;
+  }
+
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-1 { top: 15px; left: 20px; transform: scale(1.1); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-2 { top: 28px; left: 54px; transform: scale(.8); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-3 { top: 62px; left: 13px; transform: scale(.75); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-4 { top: 67px; left: 72px; transform: scale(1); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-5 { top: 14px; left: 150px; transform: scale(.8); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-6 { top: 31px; left: 171px; transform: scale(1); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-7 { top: 50px; left: 149px; transform: scale(.65); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-8 { top: 68px; left: 173px; transform: scale(.95); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-9 { top: 82px; left: 146px; transform: scale(.7); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-10 { top: 93px; left: 168px; transform: scale(.9); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-11 { top: 25px; left: 6px; transform: scale(.85); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-12 { top: 70px; left: 42px; transform: scale(.7); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-13 { top: 22px; left: 110px; transform: scale(.9); }
+  .monthly-summary.fullframe .settle-result-motif .settle-spark-14 { top: 92px; left: 116px; transform: scale(.8); }
+
+  .monthly-summary.fullframe .settle-result-inverse > .settle-result-art {
+    display: block;
+    right: auto;
+    bottom: 2px;
+    left: 55%;
+    width: 64px;
+    height: 64px;
+    transform: translateX(-50%);
   }
 }
