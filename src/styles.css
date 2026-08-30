@@ -9368,7 +9368,7 @@ textarea {
    rhythm between the shared tabs and the card matrix. Service headings stay
    nested inside their own detail panel and are unaffected. */
 @media (min-width: 1181px) {
-  .view-shop .shop-main > .section-heading {
+  .view-shop .shop-main-tab-fun > .section-heading {
     display: none;
   }
 }

@@ -822,7 +822,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
   return <section className="shop-page" aria-label="商品目录布局">
     <div className="section-heading compact"><div><span className="eyebrow">商店 · 生活内容</span><h1>商品</h1></div><p>浏览不消耗时间；购买与安排都会进入真实账本、周计划和人生记录。</p></div>
     <div className="shop-layout">
-      <div className="shop-main">
+      <div className={`shop-main shop-main-tab-${tab}`}>
         <div className="shop-tab-bar">
           <div className="shop-tabs" role="tablist" aria-label="商店分类">{shopTabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'shop-tab selected' : 'shop-tab'} onClick={() => { setTab(id); setActivityPage(0); }}>{label}</button>)}</div>
           {tab === 'goods' && <div className="shop-toolbar" aria-label="商品工具栏"><label className="shop-sort-control"><span>排序</span><select aria-label="商品排序" value={itemSort} onChange={(event) => { setItemSort(event.target.value as 'default' | 'price-asc' | 'price-desc'); setItemPage(0); }}><option value="default">默认排序</option><option value="price-asc">价格从低到高</option><option value="price-desc">价格从高到低</option></select></label><button className="shop-toolbar-button" aria-controls="shop-category-filters" aria-expanded={shopFiltersOpen} onClick={() => setShopFiltersOpen((open) => !open)}>筛选{itemCategory === 'all' ? '' : ' 1'} ▾</button></div>}
