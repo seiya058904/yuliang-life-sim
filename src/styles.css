@@ -9297,12 +9297,8 @@ textarea {
   .monthly-summary.fullframe .settle-result-motif .settle-ray {
     top: 72%;
     height: 2px;
-    background-color: transparent;
-    background-image: repeating-linear-gradient(
-      to right,
-      #f4f4ef 0 16px,
-      transparent 16px 26px
-    );
+    background-color: #f4f4ef;
+    background-image: none;
   }
 
   .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(1) { width: 206px !important; transform: rotate(-170deg); }
