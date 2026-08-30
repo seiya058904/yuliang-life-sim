@@ -1015,6 +1015,33 @@ test('keeps Shop Entertainment cards on the Goods card and action tier', async (
   )).toBe(true);
 });
 
+test('keeps a real selected activity detail visible when switching Shop tabs', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop activity detail anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '娱乐', exact: true }).click();
+
+  await expect(page.locator('.view-shop .shop-detail')).toBeVisible();
+  const anatomy = await page.evaluate(() => {
+    const selected = document.querySelectorAll('.view-shop .shop-main .activity-card.selected');
+    const grid = document.querySelector('.view-shop .shop-main .activity-grid');
+    const detail = document.querySelector('.view-shop .shop-detail');
+    const detailRect = detail?.getBoundingClientRect();
+    return {
+      selectedCount: selected.length,
+      detailLabel: detail?.querySelector('.eyebrow')?.textContent?.trim() ?? '',
+      detailTop: detailRect?.top ?? 0,
+      gridBottom: grid?.getBoundingClientRect().bottom ?? 0,
+      detailHeight: detailRect?.height ?? 0,
+    };
+  });
+
+  expect(anatomy.selectedCount).toBe(1);
+  expect(anatomy.detailLabel).toBe('已选活动');
+  expect(anatomy.detailTop).toBeGreaterThan(anatomy.gridBottom);
+  expect(anatomy.detailHeight).toBeGreaterThanOrEqual(100);
+});
+
 test('keeps Shop Entertainment CTA inside the card at low-height desktop', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height desktop layout is desktop-only');
   await page.setViewportSize({ width: 1280, height: 720 });

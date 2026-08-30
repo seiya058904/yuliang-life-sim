@@ -820,6 +820,24 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
     (tab !== 'services' && selectedActivityVisible)
   ));
   const detailIsActivity = selectedKey?.startsWith('act:') ?? false;
+  const selectShopTab = (nextTab: string) => {
+    setTab(nextTab);
+    setActivityPage(0);
+    if (nextTab === 'services') {
+      setSelectedKey(null);
+      return;
+    }
+    if (nextTab === 'goods') {
+      const first = items[0];
+      setSelectedKey(first ? `item:${first.id}` : null);
+      return;
+    }
+    const categories = shopTabCategories[nextTab] ?? [];
+    const first = (contentRegistry.activities ?? [])
+      .filter((activity) => categories.includes(activity.category))
+      .flatMap((activity) => activity.options.map((option) => ({ activity, option })))[0];
+    setSelectedKey(first ? `act:${first.activity.id}|${first.option.id}` : null);
+  };
   const selectedDetail = shouldRenderSelectedDetail && detail ? <section className="shop-detail inverse pixel-corners" aria-label={detailIsActivity ? '已选活动详情' : '已选商品详情'}><PixelIllustration name={detail.icon} size={72} /><div className="shop-detail-copy"><div className="shop-detail-title-row"><div><span className="eyebrow">{detailIsActivity ? '已选活动' : '已选商品'}</span><h2>{detail.title}</h2></div>{detail.price && <strong className="shop-detail-price">{detail.price}</strong>}</div><p>{detail.desc}</p></div><dl className="shop-detail-facts" aria-label={`${detail.title} 详情事实`}>{detail.facts.filter(([, value]) => Boolean(value)).map(([label, value]) => <div className="shop-detail-fact" data-fact={label} key={label}><dt>{label}</dt><dd title={value}>{label === '效果' && detail.metrics?.length ? <CatalogMeters metrics={detail.metrics} ariaLabel={`${detail.title}效果变化`} /> : value}</dd></div>)}</dl><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section> : null;
   const renderItemCard = (item: (typeof contentRegistry.items)[number]) => {
     const hasItem = owned(item.id);
@@ -831,7 +849,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
     <div className="shop-layout">
       <div className={`shop-main shop-main-tab-${tab}`}>
         <div className="shop-tab-bar">
-          <div className="shop-tabs" role="tablist" aria-label="商店分类">{shopTabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'shop-tab selected' : 'shop-tab'} onClick={() => { setTab(id); setActivityPage(0); }}>{label}</button>)}</div>
+          <div className="shop-tabs" role="tablist" aria-label="商店分类">{shopTabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'shop-tab selected' : 'shop-tab'} onClick={() => selectShopTab(id)}>{label}</button>)}</div>
           {tab === 'goods' && <div className="shop-toolbar" aria-label="商品工具栏"><label className="shop-sort-control"><span>排序</span><select aria-label="商品排序" value={itemSort} onChange={(event) => { setItemSort(event.target.value as 'default' | 'price-asc' | 'price-desc'); setItemPage(0); }}><option value="default">默认排序</option><option value="price-asc">价格从低到高</option><option value="price-desc">价格从高到低</option></select></label><button className="shop-toolbar-button" aria-controls="shop-category-filters" aria-expanded={shopFiltersOpen} onClick={() => setShopFiltersOpen((open) => !open)}>筛选{itemCategory === 'all' ? '' : ' 1'} ▾</button></div>}
         </div>
         {tab === 'goods' && <>

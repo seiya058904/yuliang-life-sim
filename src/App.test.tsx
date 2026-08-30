@@ -959,6 +959,8 @@ describe('余量 app flow', () => {
 
     const shop = screen.getByRole('region', { name: '商品目录布局' });
     await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
+    const initialActivityDetail = within(shop).getByRole('region', { name: '已选活动详情' });
+    expect(initialActivityDetail).toHaveTextContent('看电影 · 普通影厅');
     await user.click(within(shop).getAllByRole('button', { name: '查看详情：看电影 普通影厅' })[0]);
 
     const detail = within(shop).getByRole('region', { name: '已选活动详情' });
@@ -972,7 +974,7 @@ describe('余量 app flow', () => {
     expect(within(detail).getByRole('button', { name: '安排到本周自由时间' })).toBeInTheDocument();
 
     await user.click(within(shop).getByRole('tab', { name: '商品' }));
-    expect(within(shop).queryByRole('region', { name: '已选商品详情' })).not.toBeInTheDocument();
+    expect(within(shop).getByRole('region', { name: '已选商品详情' })).toBeInTheDocument();
   });
 
   it('keeps an activity heading, facts, and action inside one semantic card body', async () => {
