@@ -1475,7 +1475,8 @@ button:focus-visible, input:focus-visible { outline-color: #fff; outline-offset:
   align-items: center;
   gap: 5px;
 }
-.settle-attrs dt { color: #aaa; font-size: 10px; }
+.settle-attrs dt { display: inline-flex; align-items: center; gap: 3px; color: #aaa; font-size: 10px; }
+.settle-attrs dt .pixel-icon { flex: none; width: 14px; height: 14px; color: #f4f4ef; }
 .settle-attrs dd { margin: 0; }
 .settle-attrs b { color: #fff; font-size: 11px; font-variant-numeric: tabular-nums; }
 .settle-continue {

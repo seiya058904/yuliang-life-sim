@@ -512,6 +512,22 @@ describe('余量 app flow', () => {
     expect(document.querySelector('.persistent-status')).not.toBeInTheDocument();
   });
 
+  it('uses semantic pixel icons for settlement footer attributes', () => {
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, simulationMode: 'paused', pendingMonthlySummary: {
+      month: 1,
+      resumeMode: 'planning',
+      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
+      highlights: [],
+    } } });
+
+    render(<App />);
+
+    const icons = Array.from(document.querySelectorAll<SVGElement>('.settle-footer .settle-attrs dt .pixel-icon'));
+    expect(icons).toHaveLength(6);
+    expect(icons.map((icon) => icon.getAttribute('data-attribute-icon'))).toEqual(['专业', '知识', '沟通', '体能', '形象', '人脉']);
+  });
+
   it('discovers an official course and schedules it into a free planning slot', async () => {
     const user = userEvent.setup();
     render(<App />);

@@ -1133,6 +1133,7 @@ export function highlightTitleFor(highlight: Pick<MonthlyHighlight, 'kind' | 'la
 }
 const incomeCategoryIcon: Record<string, PixelIconName> = { wage: 'career', side_job: 'clock', bonus: 'spark', business_income: 'city', property_income: 'house', investment_dividend: 'wealth', event_income: 'mail', other_income: 'tag' };
 const expenseCategoryIcon: Record<string, PixelIconName> = { housing: 'house', living: 'home', food: 'bag', transport: 'plane', communication: 'mail', shopping: 'shop', entertainment: 'controller', social: 'users', education: 'book', travel: 'plane', service: 'spark', maintenance: 'settings', other_expense: 'tag' };
+const settlementAttributeIcons: Record<string, PixelIconName> = { 专业: 'career', 知识: 'book', 沟通: 'users', 体能: 'bolt', 形象: 'profile', 人脉: 'users' };
 
 /** 参考图整幅月结仪式：状态栏保持可见，下方是一个完整的结算大框，而不是小弹窗。 */
 function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
@@ -1256,7 +1257,7 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
     <footer className="settle-footer">
       <div className="settle-avatar"><PixelIllustration name="mascot" size={56} /></div>
       <div className="settle-foot-text">这些数字都来自真实账本，本月变化已经记录。</div>
-      <dl className="settle-attrs">{attributes.map(([label, value]) => <div key={label}><dt>{label}</dt><dd><SegmentMeter value={value} segments={6} label={`${label} ${value}`} /></dd><b>{Math.round(value)}</b></div>)}</dl>
+      <dl className="settle-attrs">{attributes.map(([label, value]) => <div key={label}><dt><PixelIcon name={settlementAttributeIcons[label] ?? 'users'} size={14} data-attribute-icon={label} />{label}</dt><dd><SegmentMeter value={value} segments={6} label={`${label} ${value}`} /></dd><b>{Math.round(value)}</b></div>)}</dl>
       <button className="primary-button settle-continue" onClick={() => dispatch({ type: 'acknowledge_monthly_summary' })}>进入下个月</button>
       <small className="settle-continue-note">时间不会停止，机会稍纵即逝</small>
     </footer>
