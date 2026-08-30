@@ -964,6 +964,7 @@ test('keeps Shop Entertainment cards on the Goods card and action tier', async (
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '娱乐', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '娱乐与生活活动', exact: true })).toBeHidden();
 
   const cards = await page.locator('.view-shop .shop-main .activity-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
     const art = card.querySelector('.card-art');

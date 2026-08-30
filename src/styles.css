@@ -9362,3 +9362,13 @@ textarea {
     font-size: 11px;
   }
 }
+
+/* Entertainment reuses the Goods catalog scan: its real activity content
+   changes, but an extra section banner must not insert a second vertical
+   rhythm between the shared tabs and the card matrix. Service headings stay
+   nested inside their own detail panel and are unaffected. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main > .section-heading {
+    display: none;
+  }
+}
