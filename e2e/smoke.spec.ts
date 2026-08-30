@@ -202,7 +202,7 @@ test('keeps the Shop catalog and utility rail in the reference proportion', asyn
   expect(Math.abs(layout.railTop - layout.tabsTop)).toBeLessThanOrEqual(2);
 });
 
-test('keeps an empty Shop Rail as a full-height dark module stack', async ({ page }) => {
+test('keeps an empty Shop Rail as a compact dark module stack', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'empty Shop Rail footprint targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -223,11 +223,12 @@ test('keeps an empty Shop Rail as a full-height dark module stack', async ({ pag
     };
   });
 
-  expect(footprint.height).toBeGreaterThanOrEqual(780);
+  expect(footprint.height).toBeLessThanOrEqual(660);
   expect(footprint.bottom).toBeLessThanOrEqual(footprint.footerTop);
   expect(footprint.modules).toHaveLength(4);
-  expect(footprint.modules[2].height).toBeGreaterThanOrEqual(150);
-  expect(footprint.modules[3].height).toBeGreaterThanOrEqual(180);
+  expect(footprint.modules[0].height).toBeLessThanOrEqual(140);
+  expect(footprint.modules[2].height).toBeLessThanOrEqual(140);
+  expect(footprint.modules[3].height).toBeLessThanOrEqual(140);
 
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);

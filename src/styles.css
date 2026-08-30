@@ -9157,9 +9157,10 @@ textarea {
   .view-shop .shop-rail:has(.shop-rail-empty) {
     top: 0;
     margin-top: 0;
-    height: 815px;
-    min-height: 815px;
-    grid-template-rows: 171px 260px 150px 180px;
+    height: auto;
+    min-height: 0;
+    grid-template-rows: auto auto auto auto;
+    align-content: start;
   }
 }
 
