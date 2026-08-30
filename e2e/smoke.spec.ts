@@ -1869,13 +1869,21 @@ test('keeps the Settlement review card on the shared visual anchor tier', async 
   const metrics = await page.locator('.monthly-summary.fullframe .highlight-card.reflection').evaluate((card) => {
     const icon = card.querySelector('.pixel-icon')?.getBoundingClientRect();
     const metric = card.querySelector('.reflection-metric')?.getBoundingClientRect();
+    const title = card.querySelector('h3')?.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    const centered = (rect?: DOMRect) => rect ? rect.left + rect.width / 2 : 0;
     const recordWidths = Array.from(card.parentElement?.querySelectorAll<HTMLElement>('.highlight-card:not(.reflection)') ?? [])
       .map((record) => record.getBoundingClientRect().width);
     return {
-      cardWidth: card.getBoundingClientRect().width,
+      cardWidth: cardRect.width,
       iconWidth: icon?.width ?? 0,
       iconHeight: icon?.height ?? 0,
       metricHeight: metric?.height ?? 0,
+      metricFontSize: metric ? Number.parseFloat(getComputedStyle(card.querySelector('.reflection-metric')!).fontSize) : 0,
+      cardCenterX: cardRect.left + cardRect.width / 2,
+      iconCenterX: centered(icon),
+      titleCenterX: centered(title),
+      metricCenterX: centered(metric),
       recordWidths,
     };
   });
@@ -1886,6 +1894,10 @@ test('keeps the Settlement review card on the shared visual anchor tier', async 
   expect(metrics.iconWidth).toBeGreaterThanOrEqual(32);
   expect(metrics.iconHeight).toBeGreaterThanOrEqual(32);
   expect(metrics.metricHeight).toBeGreaterThanOrEqual(22);
+  expect(metrics.metricFontSize).toBeGreaterThanOrEqual(28);
+  expect(Math.abs(metrics.iconCenterX - metrics.cardCenterX)).toBeLessThanOrEqual(1);
+  expect(Math.abs(metrics.titleCenterX - metrics.cardCenterX)).toBeLessThanOrEqual(1);
+  expect(Math.abs(metrics.metricCenterX - metrics.cardCenterX)).toBeLessThanOrEqual(1);
 });
 
 test('opens the settlement stage without revealing the underlying page', async ({ page }) => {
