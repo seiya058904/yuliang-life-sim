@@ -1104,7 +1104,7 @@ test('shows the pending settlement mode in the top status while the ceremony is 
   expect(settlementHud).toEqual(expect.objectContaining({
     position: 'relative',
     zIndex: '21',
-    opacity: '0.78',
+    opacity: '1',
     filter: 'none',
     brandColor: 'rgb(255, 255, 255)',
   }));
@@ -1891,7 +1891,7 @@ test('opens the settlement stage without revealing the underlying page', async (
     backgroundColor: 'rgb(5, 5, 5)',
     animationName: 'none',
     opacity: '1',
-    topbarOpacity: '0.78',
+    topbarOpacity: '1',
   });
 });
 
