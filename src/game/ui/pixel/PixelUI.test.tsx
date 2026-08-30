@@ -170,6 +170,18 @@ describe('PixelIllustration', () => {
     expect(cells.length).toBeGreaterThanOrEqual(16);
   });
 
+  it('keeps the primary Shop goods on a dense shared 1-bit illustration tier', () => {
+    const goods = ['coffee', 'phone', 'laptop', 'desk', 'hoodie', 'watch', 'record', 'meal', 'film', 'book'] as const;
+    render(<>{goods.map((name) => <PixelIllustration name={name} data-testid={`shop-${name}`} key={name} />)}</>);
+
+    for (const name of goods) {
+      const illustration = screen.getByTestId(`shop-${name}`);
+      expect(illustration).toHaveClass('fine-grid');
+      expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
+      expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(22);
+    }
+  });
+
   it('keeps settlement ledger people on dense, distinct reference grids', () => {
     render(<>
       <PixelIllustration name="settlement-income" data-testid="settlement-income-bag-test" />
