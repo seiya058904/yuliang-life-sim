@@ -1591,7 +1591,11 @@ test('keeps the Settlement net-worth Hero burst centered at the reference anchor
     const art = hero.querySelector<HTMLElement>('.settle-result-art')?.getBoundingClientRect();
     const rayStyles = Array.from(hero.querySelectorAll<HTMLElement>('.settle-ray')).map((ray) => {
       const style = getComputedStyle(ray);
-      return { width: Number.parseFloat(style.width), height: Number.parseFloat(style.height) };
+      return {
+        width: Number.parseFloat(style.width),
+        height: Number.parseFloat(style.height),
+        backgroundImage: style.backgroundImage,
+      };
     });
     return {
       hero: { left: heroRect.left, right: heroRect.right, center: (heroRect.left + heroRect.right) / 2 },
@@ -1612,6 +1616,7 @@ test('keeps the Settlement net-worth Hero burst centered at the reference anchor
   expect(anatomy.art?.height).toBeGreaterThanOrEqual(120);
   expect(anatomy.rayStyles).toHaveLength(16);
   expect(anatomy.rayStyles.every(({ height }) => height >= 2 && height <= 3)).toBe(true);
+  expect(anatomy.rayStyles.every(({ backgroundImage }) => backgroundImage.includes('repeating-linear-gradient'))).toBe(true);
   expect(Math.min(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(130);
   expect(Math.max(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(180);
 });
