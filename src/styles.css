@@ -7712,6 +7712,21 @@ textarea {
   }
 }
 
+/* Directional controls share the same stepped 1-bit glyph language as the
+   navigation and metadata icons. Keep the existing button hit areas and
+   accessible labels unchanged. */
+.catalog-pager .pixel-icon,
+.career-flow-track .pixel-icon {
+  display: block;
+}
+
+.career-flow-track i {
+  display: grid;
+  place-items: center;
+  min-width: 10px;
+  min-height: 10px;
+}
+
 /* Keep the vacancy description at its real two-line height. The fixed card
    still aligns its status and CTA at the bottom, but the unused room is
    shared between the identity, facts, description, and footer instead of

@@ -50,6 +50,23 @@ describe('PixelIcon', () => {
     expect(hasCell('10', '7')).toBe(false);
     expect(cells.length).toBeGreaterThanOrEqual(50);
   });
+
+  it('renders directional controls as shared 1-bit arrow glyphs', () => {
+    render(<>
+      <PixelIcon name="arrow-left" data-testid="arrow-left" />
+      <PixelIcon name="arrow-right" data-testid="arrow-right" />
+    </>);
+
+    for (const id of ['arrow-left', 'arrow-right']) {
+      const icon = screen.getByTestId(id);
+      expect(icon).toHaveAttribute('shape-rendering', 'crispEdges');
+      expect(icon.querySelectorAll('rect').length).toBeGreaterThan(0);
+      expect(icon.querySelectorAll('path')).toHaveLength(0);
+    }
+
+    expect([...screen.getByTestId('arrow-left').querySelectorAll('rect')].some((rect) => rect.getAttribute('x') === '1' && rect.getAttribute('y') === '7')).toBe(true);
+    expect([...screen.getByTestId('arrow-right').querySelectorAll('rect')].some((rect) => rect.getAttribute('x') === '13' && rect.getAttribute('y') === '7')).toBe(true);
+  });
 });
 
 describe('PixelIllustration', () => {

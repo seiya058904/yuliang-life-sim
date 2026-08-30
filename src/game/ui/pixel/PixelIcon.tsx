@@ -3,7 +3,7 @@ import type { SVGProps } from 'react';
 export type PixelIconName =
   | 'home' | 'career' | 'shop' | 'wealth' | 'social' | 'city' | 'profile' | 'cash' | 'calendar' | 'clock' | 'settings'
   | 'sleep' | 'book' | 'controller' | 'users' | 'house' | 'bag' | 'chart' | 'mail' | 'alert' | 'tag'
-  | 'plane' | 'cup' | 'target' | 'spark' | 'user' | 'heart' | 'bolt' | 'smile';
+  | 'plane' | 'cup' | 'target' | 'spark' | 'user' | 'heart' | 'bolt' | 'smile' | 'arrow-left' | 'arrow-right';
 
 /**
  * Shared micro icons use a 16×16 rect grid, matching the larger illustration
@@ -36,6 +36,8 @@ const glyphRects: Record<PixelIconName, readonly PixelRect[]> = {
   cash: [[2, 4, 12, 1], [1, 5, 1, 6], [14, 5, 1, 6], [2, 11, 12, 1], [3, 5, 10, 1], [3, 10, 10, 1], [6, 6, 4, 1], [6, 9, 4, 1], [5, 7, 1, 2], [10, 7, 1, 2], [7, 7, 2, 2]],
   calendar: [[3, 3, 10, 1], [2, 4, 12, 1], [2, 5, 1, 9], [13, 5, 1, 9], [3, 14, 10, 1], [5, 1, 1, 3], [10, 1, 1, 3], [4, 7, 8, 1], [5, 9, 2, 1], [9, 9, 2, 1]],
   clock: [[6, 1, 4, 1], [4, 2, 2, 1], [10, 2, 2, 1], [3, 3, 1, 2], [12, 3, 1, 2], [2, 5, 1, 6], [13, 5, 1, 6], [3, 11, 1, 2], [12, 11, 1, 2], [4, 13, 2, 1], [10, 13, 2, 1], [6, 14, 4, 1], [7, 5, 1, 4], [7, 8, 4, 1]],
+  'arrow-left': [[2, 7, 12, 2], [1, 7, 2, 2], [3, 6, 2, 1], [4, 5, 2, 1], [3, 9, 2, 1], [4, 10, 2, 1]],
+  'arrow-right': [[2, 7, 12, 2], [13, 7, 2, 2], [11, 6, 2, 1], [10, 5, 2, 1], [11, 9, 2, 1], [10, 10, 2, 1]],
   settings: [
     [7, 0, 2, 2], [4, 2, 2, 1], [7, 2, 2, 1], [10, 2, 2, 1],
     [2, 3, 12, 2], [3, 5, 3, 1], [10, 5, 3, 1],
