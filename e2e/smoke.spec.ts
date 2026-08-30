@@ -1543,6 +1543,43 @@ test('gives the settlement Hero a full-width title divider', async ({ page }) =>
   expect(titleStyle.width).toBeGreaterThan(300);
 });
 
+test('keeps the Settlement net-worth Hero burst centered at the reference anchor tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero burst targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const anatomy = await page.locator('.monthly-summary.fullframe .settle-result-inverse').evaluate((hero) => {
+    const heroRect = hero.getBoundingClientRect();
+    const motif = hero.querySelector<HTMLElement>('.settle-result-motif')?.getBoundingClientRect();
+    const art = hero.querySelector<HTMLElement>('.settle-result-art')?.getBoundingClientRect();
+    return {
+      hero: { left: heroRect.left, right: heroRect.right, center: (heroRect.left + heroRect.right) / 2 },
+      motif: motif ? { left: motif.left, right: motif.right, width: motif.width, height: motif.height, center: (motif.left + motif.right) / 2 } : null,
+      art: art ? { width: art.width, height: art.height } : null,
+    };
+  });
+
+  expect(anatomy.motif).not.toBeNull();
+  expect(anatomy.art).not.toBeNull();
+  expect(anatomy.motif?.width).toBeGreaterThanOrEqual(340);
+  expect(anatomy.motif?.height).toBeGreaterThanOrEqual(260);
+  expect(Math.abs((anatomy.motif?.center ?? 0) - anatomy.hero.center)).toBeLessThanOrEqual(2);
+  expect(anatomy.motif?.left).toBeGreaterThanOrEqual(anatomy.hero.left - 1);
+  expect(anatomy.motif?.right).toBeLessThanOrEqual(anatomy.hero.right + 1);
+  expect(anatomy.art?.width).toBeGreaterThanOrEqual(120);
+  expect(anatomy.art?.height).toBeGreaterThanOrEqual(120);
+});
+
 test('keeps the settlement title on the reference three-spark rhythm', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement title decoration targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
