@@ -1589,10 +1589,15 @@ test('keeps the Settlement net-worth Hero burst centered at the reference anchor
     const heroRect = hero.getBoundingClientRect();
     const motif = hero.querySelector<HTMLElement>('.settle-result-motif')?.getBoundingClientRect();
     const art = hero.querySelector<HTMLElement>('.settle-result-art')?.getBoundingClientRect();
+    const rayStyles = Array.from(hero.querySelectorAll<HTMLElement>('.settle-ray')).map((ray) => {
+      const style = getComputedStyle(ray);
+      return { width: Number.parseFloat(style.width), height: Number.parseFloat(style.height) };
+    });
     return {
       hero: { left: heroRect.left, right: heroRect.right, center: (heroRect.left + heroRect.right) / 2 },
       motif: motif ? { left: motif.left, right: motif.right, width: motif.width, height: motif.height, center: (motif.left + motif.right) / 2 } : null,
       art: art ? { width: art.width, height: art.height } : null,
+      rayStyles,
     };
   });
 
@@ -1605,6 +1610,10 @@ test('keeps the Settlement net-worth Hero burst centered at the reference anchor
   expect(anatomy.motif?.right).toBeLessThanOrEqual(anatomy.hero.right + 1);
   expect(anatomy.art?.width).toBeGreaterThanOrEqual(120);
   expect(anatomy.art?.height).toBeGreaterThanOrEqual(120);
+  expect(anatomy.rayStyles).toHaveLength(16);
+  expect(anatomy.rayStyles.every(({ height }) => height >= 2 && height <= 3)).toBe(true);
+  expect(Math.min(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(130);
+  expect(Math.max(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(180);
 });
 
 test('keeps the settlement title on the reference three-spark rhythm', async ({ page }) => {
