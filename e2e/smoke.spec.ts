@@ -559,6 +559,25 @@ test('keeps career toolbar filters in the reference stacked-label anatomy', asyn
   )).toBe(true);
 });
 
+test('keeps the Career toolbar on the shared stepped pixel frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career toolbar frame assertion targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const frame = await page.locator('.career-section.market-mode .career-toolbar').evaluate((element) => {
+    const style = getComputedStyle(element, '::after');
+    return {
+      borderWidth: style.borderTopWidth,
+      clipPath: style.clipPath,
+      pointerEvents: style.pointerEvents,
+    };
+  });
+
+  expect(frame.borderWidth).toBe('1px');
+  expect(frame.clipPath).not.toBe('none');
+  expect(frame.pointerEvents).toBe('none');
+});
+
 test('keeps Career toolbar labels in the readable pixel tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career toolbar typography targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

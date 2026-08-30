@@ -9745,3 +9745,30 @@ textarea {
     line-height: .95;
   }
 }
+
+/* Career's utility strip now shares the vacancy/detail frames' stepped outer
+   silhouette. The controls remain native and fully interactive; only the
+   one-bit border geometry changes. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-toolbar {
+    position: relative;
+    overflow: visible;
+  }
+
+  .career-section.market-mode .career-toolbar::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: 4;
+    pointer-events: none;
+    border: 1px solid #777772;
+    clip-path: polygon(
+      0 0, calc(100% - 9px) 0, calc(100% - 9px) 1px,
+      calc(100% - 1px) 1px, calc(100% - 1px) 9px, 100% 9px,
+      100% calc(100% - 9px), calc(100% - 1px) calc(100% - 9px),
+      calc(100% - 1px) calc(100% - 1px), calc(100% - 9px) calc(100% - 1px),
+      calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 1px),
+      1px calc(100% - 1px), 1px calc(100% - 9px), 0 calc(100% - 9px)
+    );
+  }
+}
