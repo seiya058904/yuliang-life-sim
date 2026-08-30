@@ -9397,3 +9397,28 @@ textarea {
     line-height: 1.35;
   }
 }
+
+/* Career market insight uses only real vacancy-derived metrics, so give those
+   rows the full analytical lane already reserved by the panel. Center the
+   chart with them and distribute the three meters vertically; this removes
+   the bottom-heavy dashboard void without changing the data or panel frame. */
+@media (min-width: 1181px) {
+  .career-bottom-insight .career-insight-body {
+    align-items: center;
+  }
+
+  .career-bottom-insight .career-insight-metrics {
+    height: 100%;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    align-content: stretch;
+  }
+
+  .career-bottom-insight .career-insight-metric {
+    align-self: center;
+  }
+
+  .career-bottom-insight .career-insight-body > .pixel-illustration {
+    width: 78px;
+    height: 78px;
+  }
+}

@@ -593,6 +593,27 @@ test('gives the Career market insight its readable pixel dashboard weight', asyn
 
   const insight = page.locator('.career-bottom-insight');
   await expect(insight).toBeVisible();
+  const bodyGeometry = await insight.locator('.career-insight-body').evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const metrics = element.querySelector('.career-insight-metrics');
+    const metricItems = Array.from(element.querySelectorAll('.career-insight-metric'));
+    const metricsRect = metrics?.getBoundingClientRect();
+    const first = metricItems[0]?.getBoundingClientRect();
+    const last = metricItems.at(-1)?.getBoundingClientRect();
+    const chart = element.querySelector('.pixel-illustration')?.getBoundingClientRect();
+    return {
+      bodyHeight: rect.height,
+      metricsHeight: metricsRect?.height ?? 0,
+      metricSpan: first && last ? last.bottom - first.top : 0,
+      chartWidth: chart?.width ?? 0,
+      chartHeight: chart?.height ?? 0,
+    };
+  });
+  expect(bodyGeometry.bodyHeight).toBeGreaterThanOrEqual(90);
+  expect(bodyGeometry.metricsHeight).toBeGreaterThanOrEqual(80);
+  expect(bodyGeometry.metricSpan).toBeGreaterThanOrEqual(65);
+  expect(bodyGeometry.chartWidth).toBeGreaterThanOrEqual(72);
+  expect(bodyGeometry.chartHeight).toBeGreaterThanOrEqual(72);
   const metrics = await insight.locator('.career-insight-metric').evaluateAll((items) => items.map((item) => {
     const root = getComputedStyle(item);
     const label = item.querySelector('span');
@@ -612,7 +633,7 @@ test('gives the Career market insight its readable pixel dashboard weight', asyn
 
   expect(metrics.length).toBeGreaterThan(0);
   expect(metrics.every(({ fontSize, labelFontSize, meterHeight, chartWidth, chartHeight }) =>
-    fontSize >= 11 && labelFontSize >= 11 && meterHeight >= 10 && chartWidth >= 60 && chartHeight >= 60
+    fontSize >= 11 && labelFontSize >= 11 && meterHeight >= 10 && chartWidth >= 72 && chartHeight >= 72
   )).toBe(true);
 });
 
