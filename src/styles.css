@@ -9116,10 +9116,11 @@ textarea {
 /* At the primary 1440px desktop width the reference gives the Shop utility
    Rail a full reading column beside narrower catalogue cards. Keep the
    compact 1280px layout unchanged so low-height compatibility does not turn
-   the product cards into a cramped third column. */
+   the product cards into a cramped third column. The 360px rail also keeps
+   the selected detail aligned with the reference's narrower catalogue body. */
 @media (min-width: 1321px) and (min-height: 801px) {
   .view-shop .shop-layout {
-    grid-template-columns: minmax(0, 1fr) 310px;
+    grid-template-columns: minmax(0, 1fr) 360px;
   }
 
   .view-shop .shop-rail {
