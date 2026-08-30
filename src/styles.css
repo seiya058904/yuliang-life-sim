@@ -8118,6 +8118,28 @@ textarea {
   }
 }
 
+/* Market insight is the quiet analytical close of the Career board. Give its
+   real vacancy-derived meters one readable pixel step and let the chart keep
+   a visible landmark without competing with the job grid. */
+@media (min-width: 1181px) {
+  .career-bottom-insight .career-insight-metric {
+    font-size: 11px;
+  }
+
+  .career-bottom-insight .career-insight-metric > small {
+    font-size: 11px;
+  }
+
+  .career-bottom-insight .career-insight-metric .segment-meter i {
+    height: 10px;
+  }
+
+  .career-bottom-insight .career-insight-body > .pixel-illustration {
+    width: 64px;
+    height: 64px;
+  }
+}
+
 /* The reference closes the achievement band with a wider review card. Give
    that real net-worth summary more visual weight while keeping the five
    authored records in the same row and leaving the low-height compression

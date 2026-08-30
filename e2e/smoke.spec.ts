@@ -611,7 +611,7 @@ test('gives the Career market insight its readable pixel dashboard weight', asyn
 
   expect(metrics.length).toBeGreaterThan(0);
   expect(metrics.every(({ fontSize, labelFontSize, meterHeight, chartWidth, chartHeight }) =>
-    fontSize >= 10 && labelFontSize >= 10 && meterHeight >= 8 && chartWidth >= 56 && chartHeight >= 56
+    fontSize >= 11 && labelFontSize >= 11 && meterHeight >= 10 && chartWidth >= 60 && chartHeight >= 60
   )).toBe(true);
 });
 
