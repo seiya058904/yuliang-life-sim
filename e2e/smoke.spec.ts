@@ -1735,6 +1735,37 @@ test('keeps the Settlement net-worth Hero burst centered at the reference anchor
   expect(Math.max(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(180);
 });
 
+test('keeps the settlement Hero character near the burst origin', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero composition targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const centers = await page.locator('.monthly-summary.fullframe .settle-result-inverse').evaluate((hero) => {
+    const heroRect = hero.getBoundingClientRect();
+    const motif = hero.querySelector<HTMLElement>('.settle-result-motif')?.getBoundingClientRect();
+    const art = hero.querySelector<HTMLElement>('.settle-result-art')?.getBoundingClientRect();
+    return {
+      heroWidth: heroRect.width,
+      motifCenter: motif ? (motif.left + motif.right) / 2 : null,
+      artCenter: art ? (art.left + art.right) / 2 : null,
+    };
+  });
+
+  expect(centers.motifCenter).not.toBeNull();
+  expect(centers.artCenter).not.toBeNull();
+  expect(Math.abs((centers.artCenter ?? 0) - (centers.motifCenter ?? 0))).toBeLessThanOrEqual(centers.heroWidth * 0.06);
+});
+
 test('keeps the settlement title on the reference three-spark rhythm', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement title decoration targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
