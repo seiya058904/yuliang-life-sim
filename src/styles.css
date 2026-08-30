@@ -9179,3 +9179,19 @@ textarea {
     font-size: 26px;
   }
 }
+
+/* Persistent attributes use the same semantic 1-bit icon tier as the
+   navigation and panel headers. Keep the meter flexible so the new icon
+   markers do not widen the fixed footer or create a horizontal overflow. */
+@media (min-width: 1181px) {
+  .persistent-status .persistent-stat {
+    grid-template-columns: 16px auto minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+
+  .persistent-status .persistent-stat > .pixel-icon {
+    width: 16px;
+    height: 16px;
+    color: #f4f4ef;
+  }
+}

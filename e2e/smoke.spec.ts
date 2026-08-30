@@ -449,6 +449,32 @@ test('keeps the persistent status bar at the reference HUD text tier', async ({ 
   expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth + 1);
 });
 
+test('keeps persistent attributes on the shared semantic pixel icon tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'persistent attribute icon anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const icons = await page.locator('.persistent-status .persistent-stat').evaluateAll((items) => items.map((item) => {
+    const icon = item.querySelector<SVGElement>(':scope > .pixel-icon');
+    const rect = icon?.getBoundingClientRect();
+    return {
+      label: item.querySelector(':scope > span')?.textContent?.trim() ?? '',
+      iconLabel: icon?.getAttribute('data-attribute-icon') ?? '',
+      width: rect?.width ?? 0,
+      height: rect?.height ?? 0,
+    };
+  }));
+
+  expect(icons).toEqual([
+    expect.objectContaining({ label: '体能', iconLabel: '体能' }),
+    expect.objectContaining({ label: '心情', iconLabel: '心情' }),
+    expect.objectContaining({ label: '专业', iconLabel: '专业' }),
+    expect.objectContaining({ label: '知识', iconLabel: '知识' }),
+    expect.objectContaining({ label: '人脉', iconLabel: '人脉' }),
+  ]);
+  expect(icons.every(({ width, height }) => width >= 14 && height >= 14 && width <= 18 && height <= 18)).toBe(true);
+});
+
 test('keeps career toolbar filters in the reference stacked-label anatomy', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career toolbar reference anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
