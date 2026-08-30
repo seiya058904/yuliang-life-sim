@@ -9238,6 +9238,29 @@ textarea {
   }
 }
 
+/* The detail rail already has a real job illustration; keep it as a compact
+   identity marker so it supports the title instead of reading as a second
+   white card beside the job facts. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-detail-visual {
+    width: 60px;
+    height: 60px;
+  }
+
+  .career-section.market-mode .career-detail-visual .pixel-illustration {
+    width: 42px;
+    height: 42px;
+  }
+
+  .career-section.market-mode .career-detail-visual span {
+    font-size: 6px;
+  }
+
+  .career-section.market-mode .career-detail-title {
+    max-width: calc(100% - 76px);
+  }
+}
+
 /* The review card closes the achievement row with a real net-worth readout.
    Give its existing chart marker the same anchor weight as the neighbouring
    achievement art without introducing a score or any synthetic content. */

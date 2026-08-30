@@ -649,6 +649,25 @@ test('gives the inverse Career detail rail a visible shared pixel-corner frame',
   expect(frame).toEqual({ content: '""', borderColor: 'rgb(7, 7, 7)', clipPath: expect.not.stringMatching(/^none$/) });
 });
 
+test('keeps the Career detail identity marker compact beside the job title', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career detail identity marker targets the supported desktop landscape surface');
+  for (const viewport of [{ width: 1440, height: 1080 }, { width: 1280, height: 720 }]) {
+    await page.setViewportSize(viewport);
+    await page.getByRole('button', { name: '职业', exact: true }).click();
+
+    const marker = await page.locator('.career-section.market-mode .career-detail-visual').evaluate((element) => {
+      const rect = element.getBoundingClientRect();
+      const art = element.querySelector('.pixel-illustration')?.getBoundingClientRect();
+      return { width: rect.width, height: rect.height, artWidth: art?.width ?? 0, artHeight: art?.height ?? 0 };
+    });
+
+    expect(marker.width).toBeLessThanOrEqual(64);
+    expect(marker.height).toBeLessThanOrEqual(64);
+    expect(marker.artWidth).toBeLessThanOrEqual(46);
+    expect(marker.artHeight).toBeLessThanOrEqual(46);
+  }
+});
+
 test('anchors a satisfied Career requirement state inside the inverse detail rail', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career detail empty-state treatment is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
