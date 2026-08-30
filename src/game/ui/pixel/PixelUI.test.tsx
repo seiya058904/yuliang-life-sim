@@ -98,15 +98,22 @@ describe('PixelIllustration', () => {
       rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height
     );
 
-    expect(hasCell('8', '0', '8', '1')).toBe(true);
-    expect(hasCell('6', '1', '13', '1')).toBe(true);
-    expect(hasCell('2', '5', '1', '1')).toBe(true);
-    expect(hasCell('0', '8', '2', '2')).toBe(true);
-    expect(hasCell('9', '8', '7', '1')).toBe(true);
-    expect(hasCell('6', '14', '12', '1')).toBe(true);
-    expect(hasCell('7', '19', '10', '1')).toBe(true);
+    const hasKnockout = (x: string, y: string, width: string, height: string) => [...illustration.querySelectorAll('rect')].some((rect) =>
+      rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && rect.getAttribute('fill') === 'var(--il-knock, #090909)'
+    );
+
+    expect(hasCell('8', '1', '8', '1')).toBe(true);
+    expect(hasCell('6', '2', '12', '1')).toBe(true);
+    expect(hasCell('3', '7', '1', '5')).toBe(true);
+    expect(hasCell('20', '7', '1', '5')).toBe(true);
+    expect(hasCell('7', '8', '10', '6')).toBe(true);
+    expect(hasKnockout('8', '10', '2', '2')).toBe(true);
+    expect(hasKnockout('14', '10', '2', '2')).toBe(true);
+    expect(hasKnockout('10', '13', '4', '1')).toBe(true);
+    expect(hasCell('9', '18', '1', '1')).toBe(true);
+    expect(hasCell('8', '17', '8', '1')).toBe(true);
     expect(hasCell('6', '21', '2', '2')).toBe(true);
-    expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(30);
+    expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(35);
   });
 
   it('keeps career and settlement anchors on the same fine grid', () => {
