@@ -9155,25 +9155,26 @@ textarea {
   }
 }
 
-/* Empty Shop rail modules keep their honest dark utility shells, but the
-   actual empty-state lane returns to the reference's light reading surface.
-   This preserves the real zero-row state while restoring the black/white
-   rhythm that makes each rail module legible at a glance. */
+/* Empty Shop Rail states are utility status lanes, not full white cards. Keep
+   their truthful copy and compact illustration, but let the surrounding dark
+   module carry the main surface so the Rail retains the reference's dense
+   black/white rhythm. Populated rows and their light reading surfaces are
+   intentionally unaffected. */
 @media (min-width: 1181px) {
   .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty {
-    color: #070707 !important;
-    background: #f4f4ef !important;
-    border: 1px solid #070707 !important;
-    --il-knock: #f4f4ef;
+    color: #aaa !important;
+    background: #090909 !important;
+    border: 1px dotted #777 !important;
+    --il-knock: #090909;
   }
 
   .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty .pixel-illustration,
   .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty strong {
-    color: #070707 !important;
+    color: #f4f4ef !important;
   }
 
   .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty small {
-    color: #555 !important;
+    color: #aaa !important;
   }
 }
 

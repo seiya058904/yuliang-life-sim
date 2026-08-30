@@ -212,8 +212,9 @@ test('keeps an empty Shop Rail as a full-height dark module stack', async ({ pag
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);
   for (let index = 0; index < await emptyStates.count(); index += 1) {
-    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(244, 244, 239)');
-    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(244, 244, 239)');
+    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
   }
 });
 
@@ -2118,7 +2119,7 @@ test('gives low-height desktop content a visible pixel scroll affordance', async
   });
 });
 
-test('keeps empty Shop rail modules on dark shells with light status lanes', async ({ page }, testInfo) => {
+test('keeps empty Shop rail modules on dark shells with dark status lanes', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'mobile', 'Shop rail surface anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -2140,9 +2141,9 @@ test('keeps empty Shop rail modules on dark shells with light status lanes', asy
   })));
 
   expect(surfaces).toEqual({
-    cart: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(7, 7, 7)', shellBackgroundColor: 'rgb(9, 9, 9)' },
-    inventory: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(7, 7, 7)', shellBackgroundColor: 'rgb(9, 9, 9)' },
-    wishlist: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(7, 7, 7)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    cart: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    inventory: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    wishlist: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
   });
 });
 
