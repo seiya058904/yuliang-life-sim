@@ -182,6 +182,18 @@ describe('PixelIllustration', () => {
     }
   });
 
+  it('keeps the primary Career vacancy art on the same dense 1-bit tier', () => {
+    const jobs = ['job-shop', 'job-office', 'job-manager', 'job-warehouse', 'job-logistics'] as const;
+    render(<>{jobs.map((name) => <PixelIllustration name={name} data-testid={name} key={name} />)}</>);
+
+    for (const name of jobs) {
+      const illustration = screen.getByTestId(name);
+      expect(illustration).toHaveClass('fine-grid');
+      expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
+      expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(22);
+    }
+  });
+
   it('keeps settlement ledger people on dense, distinct reference grids', () => {
     render(<>
       <PixelIllustration name="settlement-income" data-testid="settlement-income-bag-test" />
