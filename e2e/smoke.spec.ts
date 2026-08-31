@@ -848,6 +848,45 @@ test('keeps Career vacancy art compact beside the card identity', async ({ page 
   )).toBe(true);
 });
 
+test('keeps Career card identity beside a frameless semantic icon', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career identity anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const identity = await page.locator('.career-results .job-card').evaluateAll((items) => items.slice(0, 6).map((card) => {
+    const frame = card.querySelector<HTMLElement>('.career-card-art');
+    const icon = frame?.querySelector<HTMLElement>('.pixel-illustration');
+    const identityRow = card.querySelector<HTMLElement>('.job-card-identity');
+    const kind = identityRow?.querySelector<HTMLElement>('.job-card-head');
+    const title = identityRow?.querySelector<HTMLElement>('h2');
+    const company = identityRow?.querySelector<HTMLElement>('.job-company');
+    const frameStyle = frame ? getComputedStyle(frame) : null;
+    const bounds = (element?: HTMLElement | null) => {
+      const rect = element?.getBoundingClientRect();
+      return rect ? { top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height } : null;
+    };
+    return {
+      frame: bounds(frame),
+      icon: bounds(icon),
+      kind: bounds(kind),
+      title: bounds(title),
+      company: bounds(company),
+      frameBorder: frameStyle?.borderTopStyle ?? '',
+      frameBackground: frameStyle?.backgroundColor ?? '',
+    };
+  }));
+  expect(identity).toHaveLength(6);
+  expect(identity.every(({ frame, icon, kind, title, company, frameBorder, frameBackground }) =>
+    frame?.width === 34 && frame.height === 34 &&
+    icon && icon.width >= 31.5 && icon.width <= 32.5 && icon.height >= 31.5 && icon.height <= 32.5 &&
+    kind && title && company &&
+    Math.abs(kind.top - title.top) <= 5 &&
+    company.top >= title.bottom - 0.5 &&
+    frameBorder === 'none' &&
+    frameBackground === 'rgba(0, 0, 0, 0)'
+  )).toBe(true);
+});
+
 test('keeps low-height Career card identity clear of its fact strip', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Career card anatomy is desktop-only');
   await page.setViewportSize({ width: 1280, height: 720 });

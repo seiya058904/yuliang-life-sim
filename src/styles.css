@@ -8209,6 +8209,85 @@ textarea {
   }
 }
 
+/* Career vacancy identity follows the reference scan: a small semantic
+   illustration, category, title, and company share one compact landmark.
+   The icon keeps its 34px pixel scale, but the old thumbnail surface is
+   removed so the card reads as a job record rather than a media tile. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-results .job-card .card-select {
+    grid-template-columns: 34px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: start;
+    column-gap: 7px;
+    row-gap: 0;
+  }
+
+  .career-section.market-mode .career-results .job-card .career-card-art {
+    grid-column: 1;
+    grid-row: 1;
+    width: 34px;
+    height: 34px;
+    background: transparent;
+    border: 0;
+  }
+
+  .career-section.market-mode .career-results .job-card .career-card-art .pixel-illustration {
+    width: 32px;
+    height: 32px;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-card-identity {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    grid-template-areas: 'kind title' '. company';
+    align-items: baseline;
+    column-gap: 6px;
+    row-gap: 2px;
+    min-width: 0;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-card-identity .job-card-head {
+    grid-area: kind;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-card-identity .job-kind {
+    display: block;
+    overflow: hidden;
+    color: #aaa9a4;
+    font-size: 9px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-card-identity h2 {
+    grid-area: title;
+    min-width: 0;
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.08;
+    letter-spacing: -.045em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-card-identity .job-company {
+    grid-area: company;
+    margin: 0;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .career-section.market-mode .career-results .job-card .job-card-identity h2 {
+    font-size: 16px;
+    line-height: 1.05;
+  }
+}
+
 /* Shop identity rows mirror the reference scan order: category, product name,
    price, and the real wishlist/status affordance share one compact line above
    the fact lane. Keep the art column and card height frozen. */
