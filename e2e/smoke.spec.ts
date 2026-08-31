@@ -1650,12 +1650,16 @@ test('keeps the tall Settlement board attached to its compact HUD', async ({ pag
     const frame = read('.monthly-summary.fullframe');
     const title = read('.monthly-summary.fullframe .settle-title-wrap');
     const grid = read('.monthly-summary.fullframe .settle-grid');
+    const panels = Array.from(document.querySelectorAll<HTMLElement>('.monthly-summary.fullframe .settle-grid > .settle-panel, .monthly-summary.fullframe .settle-grid > .settle-result-column')).map((element) => element.getBoundingClientRect());
     return {
       topbarHeight: topbar?.height ?? 0,
       hudToFrameGap: (frame?.top ?? 0) - (topbar?.bottom ?? 0),
       frameLeft: frame?.left ?? 0,
       frameRight: frame?.right ?? 0,
       frameWidth: frame?.width ?? 0,
+      gridLeft: grid?.left ?? 0,
+      gridRight: grid?.right ?? 0,
+      panelGaps: panels.slice(1).map((panel, index) => panel.left - panels[index].right),
       titleTop: title?.top ?? 0,
       gridTop: grid?.top ?? 0,
       frameBottom: frame?.bottom ?? 0,
@@ -1669,6 +1673,9 @@ test('keeps the tall Settlement board attached to its compact HUD', async ({ pag
   expect(geometry.frameLeft).toBeLessThanOrEqual(8);
   expect(geometry.frameRight).toBeGreaterThanOrEqual(1432);
   expect(geometry.frameWidth).toBeGreaterThanOrEqual(1424);
+  expect(geometry.gridLeft).toBeGreaterThanOrEqual(36);
+  expect(geometry.gridRight).toBeLessThanOrEqual(1404);
+  expect(geometry.panelGaps.every((gap) => gap >= 12)).toBe(true);
   expect(geometry.titleTop).toBeGreaterThanOrEqual(124);
   expect(geometry.titleTop).toBeLessThanOrEqual(138);
   expect(geometry.gridTop).toBeGreaterThanOrEqual(224);

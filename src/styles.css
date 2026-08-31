@@ -8973,6 +8973,11 @@ textarea {
     max-width: none;
     height: calc(100dvh - 110px);
     padding-top: 44px;
+    padding-inline: 34px;
+  }
+
+  .monthly-summary.fullframe .settle-grid {
+    gap: 14px;
   }
 }
 
