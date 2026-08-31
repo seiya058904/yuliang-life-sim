@@ -445,7 +445,7 @@ test('renders the header brand cat on a fine 1-bit sprite grid', async ({ page }
     rectCount: element.querySelectorAll('rect').length,
   }));
 
-  expect(sprite.viewBox).toBe('0 0 48 40');
+  expect(sprite.viewBox).toBe('0 0 56 56');
   expect(sprite.className).toContain('fine-grid');
   expect(sprite.shapeRendering).toBe('crispEdges');
   expect(sprite.rectCount).toBeGreaterThanOrEqual(100);

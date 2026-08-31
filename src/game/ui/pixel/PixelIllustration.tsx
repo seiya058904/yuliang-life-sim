@@ -9,9 +9,9 @@ export type PixelIllustrationName =
 
 /**
  * Chunky monochrome rect-based scenes on a 16×16 pixel grid. The header cat
- * uses a finer 48×40 grid, while the hero activity scene uses a finer 32×32
- * grid so its face, furniture, and gesture can carry the reference's pixel
- * rhythm at the same physical size.
+ * uses a 56×56 physical canvas with a finer 50×40 contour, while the hero
+ * activity scene uses a finer 32×32 grid so its face, furniture, and gesture
+ * can carry the reference's pixel rhythm at the same physical size.
  * Ink is currentColor; interior details knock out via --il-knock so the
  * same asset works on dark panels (ink white) and inverted light panels
  * (ink near-black, --il-knock set to the light surface by CSS).
@@ -358,27 +358,25 @@ const scenes: Partial<Record<PixelIllustrationName, readonly Cell[]>> = {
  * turning every object into a solid 16-grid block.
  */
 const fineScenes: Partial<Record<PixelIllustrationName, readonly Cell[]>> = {
-  /* The brand cat keeps the reference's finer one-bit contour at the same
-     physical size as the header mark. The 48×40 source grid preserves the
-     stepped ears, face, whiskers and lower jaw without turning them into the
-     chunky 24-cell blocks used by the previous sprite. */
+  /* The brand cat is a direct one-bit raster of the reference contour. Keep
+     its 50×40 mark one pixel inside a 56×56 canvas so the header renders it
+     at the same physical bounds without a coarse scale transform. */
   'brand-cat': [
-    [7, 0, 2, 1], [6, 1, 4, 1], [37, 1, 3, 1], [6, 2, 4, 1], [37, 2, 3, 1], [6, 3, 6, 1], [35, 3, 5, 1], [6, 4, 6, 1],
-    [35, 4, 5, 1], [6, 5, 8, 1], [34, 5, 6, 1], [6, 6, 3, 1], [11, 6, 4, 1], [32, 6, 3, 1], [37, 6, 3, 1], [6, 7, 3, 1],
-    [12, 7, 4, 1], [31, 7, 4, 1], [38, 7, 2, 1], [6, 8, 3, 1], [12, 8, 5, 1], [30, 8, 4, 1], [38, 8, 2, 1], [6, 9, 3, 1],
-    [15, 9, 2, 1], [18, 9, 14, 1], [38, 9, 2, 1], [6, 10, 3, 1], [16, 10, 17, 1], [38, 10, 2, 1], [6, 11, 3, 1], [13, 11, 1, 1],
-    [16, 11, 14, 1], [32, 11, 3, 1], [38, 11, 2, 1], [6, 12, 3, 1], [12, 12, 3, 1], [17, 12, 3, 1], [27, 12, 2, 1], [32, 12, 3, 1],
-    [38, 12, 2, 1], [6, 13, 4, 1], [17, 13, 2, 1], [27, 13, 2, 1], [35, 13, 5, 1], [6, 14, 5, 1], [35, 14, 5, 1], [6, 15, 5, 1],
-    [36, 15, 4, 1], [6, 16, 3, 1], [38, 16, 2, 1], [5, 17, 3, 1], [38, 17, 2, 1], [4, 18, 4, 1], [38, 18, 2, 1], [5, 19, 2, 1],
-    [38, 19, 2, 1], [41, 19, 2, 1], [5, 20, 3, 1], [41, 20, 3, 1], [5, 21, 2, 1], [31, 21, 1, 1], [41, 21, 2, 1], [3, 22, 2, 1],
-    [12, 22, 4, 1], [30, 22, 4, 1], [41, 22, 3, 1], [3, 23, 2, 1], [12, 23, 4, 1], [30, 23, 5, 1], [41, 23, 3, 1], [3, 24, 2, 1],
-    [12, 24, 4, 1], [30, 24, 5, 1], [42, 24, 1, 1], [2, 25, 3, 1], [12, 25, 2, 1], [32, 25, 3, 1], [44, 25, 1, 1], [47, 25, 1, 1],
-    [0, 26, 5, 1], [12, 26, 1, 1], [32, 26, 3, 1], [44, 26, 4, 1], [0, 27, 3, 1], [23, 27, 1, 1], [33, 27, 1, 1], [44, 27, 4, 1],
-    [22, 28, 3, 1], [3, 29, 2, 1], [22, 29, 3, 1], [42, 29, 2, 1], [3, 30, 2, 1], [23, 30, 1, 1], [42, 30, 2, 1], [3, 31, 2, 1],
-    [19, 31, 3, 1], [25, 31, 2, 1], [42, 31, 2, 1], [3, 32, 2, 1], [19, 32, 3, 1], [25, 32, 2, 1], [41, 32, 3, 1], [3, 33, 3, 1],
-    [20, 33, 1, 1], [41, 33, 4, 1], [3, 34, 4, 1], [40, 34, 5, 1], [0, 35, 8, 1], [38, 35, 3, 1], [44, 35, 4, 1], [0, 36, 3, 1],
-    [6, 36, 3, 1], [38, 36, 2, 1], [44, 36, 4, 1], [0, 37, 3, 1], [7, 37, 3, 1], [38, 37, 2, 1], [44, 37, 4, 1], [9, 38, 29, 1],
-    [9, 39, 29, 1],
+    [11, 1, 3, 1], [42, 1, 3, 1], [10, 2, 4, 1], [41, 2, 4, 1], [10, 3, 4, 1], [41, 3, 4, 1], [10, 4, 7, 1], [38, 4, 7, 1],
+    [11, 5, 6, 1], [38, 5, 7, 1], [11, 6, 2, 1], [15, 6, 2, 1], [38, 6, 2, 1], [42, 6, 3, 1], [11, 7, 2, 1], [17, 7, 3, 1],
+    [35, 7, 4, 1], [42, 7, 3, 1], [11, 8, 2, 1], [17, 8, 3, 1], [35, 8, 3, 1], [43, 8, 2, 1], [11, 9, 2, 1], [18, 9, 2, 1],
+    [35, 9, 3, 1], [43, 9, 2, 1], [11, 10, 2, 1], [20, 10, 15, 1], [37, 10, 1, 1], [43, 10, 2, 1], [11, 11, 2, 1], [20, 11, 15, 1],
+    [37, 11, 1, 1], [43, 11, 2, 1], [11, 12, 2, 1], [21, 12, 2, 1], [33, 12, 1, 1], [37, 12, 2, 1], [43, 12, 2, 1], [10, 13, 3, 1],
+    [16, 13, 1, 1], [21, 13, 1, 1], [33, 13, 1, 1], [42, 13, 3, 1], [10, 14, 7, 1], [40, 14, 5, 1], [10, 15, 4, 1], [40, 15, 5, 1],
+    [10, 16, 3, 1], [43, 16, 2, 1], [10, 17, 3, 1], [43, 17, 2, 1], [11, 18, 2, 1], [43, 18, 2, 1], [8, 19, 1, 1], [7, 20, 3, 1],
+    [45, 20, 3, 1], [8, 21, 2, 1], [46, 21, 2, 1], [7, 22, 3, 1], [17, 22, 2, 1], [35, 22, 3, 1], [46, 22, 2, 1], [7, 23, 3, 1],
+    [17, 23, 3, 1], [35, 23, 3, 1], [46, 23, 2, 1], [8, 24, 2, 1], [17, 24, 2, 1], [35, 24, 3, 1], [46, 24, 2, 1], [6, 25, 1, 1],
+    [17, 25, 3, 1], [35, 25, 3, 1], [3, 26, 4, 1], [17, 26, 2, 1], [37, 26, 2, 1], [49, 26, 4, 1], [3, 27, 4, 1], [49, 27, 4, 1],
+    [27, 28, 1, 1], [7, 29, 3, 1], [26, 29, 3, 1], [46, 29, 2, 1], [7, 30, 3, 1], [27, 30, 2, 1], [46, 30, 2, 1], [8, 31, 1, 1],
+    [28, 31, 1, 1], [46, 31, 2, 1], [7, 32, 3, 1], [23, 32, 2, 1], [30, 32, 2, 1], [46, 32, 2, 1], [7, 33, 3, 1], [24, 33, 2, 1],
+    [30, 33, 2, 1], [46, 33, 2, 1], [7, 34, 3, 1], [46, 34, 3, 1], [3, 35, 4, 1], [10, 35, 3, 1], [42, 35, 3, 1], [49, 35, 4, 1],
+    [3, 36, 4, 1], [10, 36, 3, 1], [42, 36, 3, 1], [49, 36, 4, 1], [11, 37, 2, 1], [42, 37, 3, 1], [51, 37, 1, 1], [13, 38, 29, 1],
+    [13, 39, 29, 1], [14, 40, 10, 1], [36, 40, 6, 1],
   ],
   /* The active-life hero is a seated person at a small table. Keep the head,
      bent arm, mug, chair and desk as separate stepped shapes so the scene
@@ -697,8 +695,11 @@ const fineScenes: Partial<Record<PixelIllustrationName, readonly Cell[]>> = {
 
 export function PixelIllustration({ name, size = 64, className, ...props }: { name: PixelIllustrationName; size?: number } & Omit<SVGProps<SVGSVGElement>, 'name'>) {
   const cells = fineScenes[name] ?? scenes[name] ?? scenes.tag ?? [];
+  const cellNodes = cells.map(([x, y, w, h, knock], index) => (
+    <rect key={index} x={x} y={y} width={w} height={h} fill={knock ? 'var(--il-knock, #090909)' : 'currentColor'} />
+  ));
   const viewBox = name === 'brand-cat'
-    ? '0 0 48 40'
+    ? '0 0 56 56'
     : name === 'life-activity'
     ? '0 0 32 32'
     : name === 'mascot'
@@ -717,9 +718,7 @@ export function PixelIllustration({ name, size = 64, className, ...props }: { na
       focusable="false"
       {...props}
     >
-      {cells.map(([x, y, w, h, knock], index) => (
-        <rect key={index} x={x} y={y} width={w} height={h} fill={knock ? 'var(--il-knock, #090909)' : 'currentColor'} />
-      ))}
+      {cellNodes}
     </svg>
   );
 }

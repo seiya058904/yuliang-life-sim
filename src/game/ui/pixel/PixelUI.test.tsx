@@ -86,20 +86,20 @@ describe('PixelIllustration', () => {
 
     const illustration = screen.getByTestId('brand-cat');
     expect(illustration).toHaveClass('fine-grid');
-    expect(illustration).toHaveAttribute('viewBox', '0 0 48 40');
+    expect(illustration).toHaveAttribute('viewBox', '0 0 56 56');
     const cells = [...illustration.querySelectorAll('rect')];
     const hasCell = (x: string, y: string, width: string, height: string, fill?: string) => cells.some((rect) =>
       rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && (!fill || rect.getAttribute('fill') === fill)
     );
 
     expect(cells.every((rect) => Number(rect.getAttribute('width')) >= 1 && rect.getAttribute('height') === '1')).toBe(true);
-    expect(hasCell('7', '0', '2', '1')).toBe(true);
-    expect(hasCell('34', '5', '6', '1')).toBe(true);
-    expect(hasCell('0', '26', '5', '1')).toBe(true);
-    expect(hasCell('23', '27', '1', '1')).toBe(true);
-    expect(hasCell('9', '39', '29', '1')).toBe(true);
+    expect(hasCell('11', '1', '3', '1')).toBe(true);
+    expect(hasCell('38', '5', '7', '1')).toBe(true);
+    expect(hasCell('3', '26', '4', '1')).toBe(true);
+    expect(hasCell('27', '28', '1', '1')).toBe(true);
+    expect(hasCell('13', '39', '29', '1')).toBe(true);
     expect(cells.some((rect) => rect.getAttribute('fill') === 'var(--il-knock, #090909)')).toBe(false);
-    expect(cells.length).toBe(121);
+    expect(cells.length).toBe(115);
   });
 
   it('keeps the header cat on the reference open-line density without a coarse transform', () => {
@@ -113,9 +113,9 @@ describe('PixelIllustration', () => {
 
     expect(illustration).toHaveAttribute('shape-rendering', 'crispEdges');
     expect(illustration.querySelector('g')).toBeNull();
-    expect(cells.length).toBe(121);
-    expect(hasCell('7', '1')).toBe(false);
-    expect(hasCell('16', '10')).toBe(true);
+    expect(cells.length).toBe(115);
+    expect(hasCell('11', '1')).toBe(true);
+    expect(hasCell('20', '10')).toBe(true);
   });
 
   it('keeps the persistent mascot on the open reference portrait grid', () => {
