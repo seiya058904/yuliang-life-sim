@@ -674,6 +674,30 @@ test('keeps the Career toolbar on the shared stepped pixel frame', async ({ page
   expect(frame.pointerEvents).toBe('none');
 });
 
+test('keeps the Career search hint aligned with the reference filter rail', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career filter-rail typography targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  await expect(page.getByLabel('搜索岗位或公司')).toHaveAttribute('placeholder', '搜索岗位 / 公司 / 关键词');
+});
+
+test('keeps low-height Career toolbar filters readable', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Career toolbar anatomy is desktop-only');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const controls = await page.locator('.career-market-filters .career-toolbar-select').evaluateAll((labels) => labels.map((label) => {
+    const select = label.querySelector('select')?.getBoundingClientRect();
+    return { width: select?.width ?? 0, height: select?.height ?? 0 };
+  }));
+  const toolbar = await page.locator('.career-section.market-mode .career-toolbar').boundingBox();
+
+  expect(controls).toHaveLength(3);
+  expect(controls.every(({ width, height }) => width >= 120 && height >= 30)).toBe(true);
+  expect(toolbar?.height ?? 0).toBeGreaterThanOrEqual(60);
+});
+
 test('keeps Career toolbar labels in the readable pixel tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career toolbar typography targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

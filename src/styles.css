@@ -9287,8 +9287,8 @@ textarea {
    its established card height and all vacancy data/actions stay unchanged. */
 @media (min-width: 1181px) and (max-height: 800px) {
   .career-section.market-mode .career-results .job-card {
-    height: 216px;
-    min-height: 216px;
+    height: 200px;
+    min-height: 200px;
   }
 }
 
@@ -10244,5 +10244,66 @@ textarea {
 
   .view-life .inbox-panel .inbox-empty-copy small {
     display: none;
+  }
+}
+
+/* Short desktop Career boards still need readable native selects. At 1280px
+   the compact single-row flex layout leaves each real filter only a few
+   pixels wide, so reserve a second utility row while keeping the result list
+   and detail rail unchanged. Main already owns the low-height scroll budget. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .career-section.market-mode .career-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      '. actions count'
+      'filters filters filters';
+    grid-template-rows: 30px 36px;
+    align-items: end;
+    gap: 4px 8px;
+    min-height: 76px;
+    padding: 5px 0 6px;
+    box-sizing: border-box;
+  }
+
+  .career-section.market-mode .career-market-filters {
+    grid-area: filters;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+    flex: none;
+  }
+
+  .career-section.market-mode .career-toolbar-actions {
+    grid-area: actions;
+    align-self: end;
+    margin-left: 0;
+  }
+
+  .career-section.market-mode .career-toolbar-count {
+    grid-area: count;
+    align-self: end;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+  }
+
+  .career-section.market-mode .career-market-filters .career-toolbar-select {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 30px;
+    align-items: end;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .career-section.market-mode .career-market-filters .career-toolbar-select select {
+    width: 100%;
+    min-width: 0;
+    height: 30px;
+    min-height: 30px;
+    padding: 5px 8px;
+    font-size: 10px;
   }
 }
