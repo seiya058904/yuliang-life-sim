@@ -1197,6 +1197,32 @@ test('keeps empty Career support lanes on dark shells', async ({ page }) => {
   await expect(page.locator('.career-bottom-insight')).toHaveCSS('background-color', 'rgb(12, 12, 12)');
 });
 
+test('keeps empty Career support copy in a compact horizontal status lane', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career support empty-state anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const lanes = await page.locator('.career-bottom-panel:nth-child(-n+3) > .career-bottom-empty').evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element);
+    const icon = element.querySelector('.pixel-illustration')?.getBoundingClientRect();
+    const strong = element.querySelector('strong')?.getBoundingClientRect();
+    const small = element.querySelector('small')?.getBoundingClientRect();
+    return {
+      columns: style.gridTemplateColumns.split(' ').length,
+      textAlign: style.textAlign,
+      iconWidth: icon?.width ?? 0,
+      iconHeight: icon?.height ?? 0,
+      copyCenter: strong && small ? (strong.left + strong.width / 2 + small.left + small.width / 2) / 2 : 0,
+      iconCenter: icon ? icon.left + icon.width / 2 : 0,
+    };
+  }));
+
+  expect(lanes).toHaveLength(3);
+  expect(lanes.every(({ columns, textAlign, iconWidth, iconHeight, copyCenter, iconCenter }) =>
+    columns === 2 && textAlign === 'left' && iconWidth >= 30 && iconHeight >= 30 && Math.abs(copyCenter - iconCenter) <= 120
+  )).toBe(true);
+});
+
 test('uses light inverse surfaces for populated Career support rows', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'populated Career support surfaces are desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });

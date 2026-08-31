@@ -10417,3 +10417,41 @@ textarea {
     font-size: clamp(44px, 4.3vw, 64px);
   }
 }
+
+/* A tall Career board has enough width to let a truthful empty state read as
+   one compact status lane: keep the real marker and copy together instead of
+   stacking three small elements in the middle of a dead black block. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty {
+    grid-template-columns: 38px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    justify-items: start;
+    align-items: center;
+    gap: 2px 8px;
+    padding: 4px 10px !important;
+    text-align: left;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty .pixel-illustration {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    width: 32px;
+    height: 32px;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty strong,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty small {
+    grid-column: 2;
+    min-width: 0;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty strong {
+    grid-row: 1;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty small {
+    grid-row: 2;
+    max-width: none;
+  }
+}
