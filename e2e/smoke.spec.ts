@@ -350,6 +350,40 @@ test('keeps navigation and panel anchors in the shared structural pixel tier', a
   expect(sizes.every(({ width, height }) => width >= 20 && height >= 20 && width <= 24 && height <= 24)).toBe(true);
 });
 
+test('hides dormant scroll tracks on the fitted tall desktop surface', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall desktop scrollbar treatment targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const overflow = await page.locator('.main-nav, .main-content').evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element);
+    return {
+      className: element.className,
+      overflowX: style.overflowX,
+      overflowY: style.overflowY,
+      scrollWidth: element.scrollWidth,
+      clientWidth: element.clientWidth,
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+    };
+  }));
+
+  expect(overflow).toHaveLength(2);
+  expect(overflow.every(({ overflowX, overflowY, scrollWidth, clientWidth, scrollHeight, clientHeight }) =>
+    overflowX === 'hidden' && overflowY === 'hidden' &&
+    scrollWidth <= clientWidth + 2 && scrollHeight <= clientHeight + 1
+  )).toBe(true);
+
+  await page.getByRole('button', { name: '查看生活详情', exact: true }).click();
+  const detailOverflow = await page.locator('.main-content').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { overflowY: style.overflowY, scrollHeight: element.scrollHeight, clientHeight: element.clientHeight };
+  });
+
+  expect(detailOverflow.overflowY).toBe('auto');
+  expect(detailOverflow.scrollHeight).toBeGreaterThan(detailOverflow.clientHeight);
+});
+
 test('keeps the header brand cat as a dense stepped 1-bit mark', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'brand mark anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
@@ -1526,6 +1560,41 @@ test('keeps settlement achievement copy inside cards at low-height desktop', asy
   expect(bounds.every(({ frame, content }) => content.every(({ top, bottom }) => top >= frame.top && bottom <= frame.bottom))).toBe(true);
 });
 
+test('keeps the low-height settlement highlights row free of a dead band', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height settlement framing targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const layout = await page.locator('.monthly-summary.fullframe .settle-highlights').evaluate((element) => {
+    const section = element.getBoundingClientRect();
+    const heading = element.querySelector('.settle-highlights-head')?.getBoundingClientRect();
+    const row = element.querySelector('.highlight-row')?.getBoundingClientRect();
+    return {
+      sectionHeight: section.height,
+      headingHeight: heading?.height ?? 0,
+      headingBottom: heading?.bottom ?? 0,
+      rowTop: row?.top ?? 0,
+      rowBottom: row?.bottom ?? 0,
+      sectionBottom: section.bottom,
+    };
+  });
+
+  expect(layout.headingHeight).toBeLessThanOrEqual(24);
+  expect(layout.rowTop - layout.headingBottom).toBeLessThanOrEqual(8);
+  expect(layout.sectionBottom - layout.rowBottom).toBeLessThanOrEqual(2);
+  expect(layout.sectionHeight).toBeGreaterThanOrEqual(200);
+});
+
 test('keeps settlement footer attributes in one readable desktop row', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'footer row assertion targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
@@ -2206,6 +2275,40 @@ test('keeps populated settlement achievement art open on the black board', async
   expect(art).toEqual({ width: expect.any(Number), height: expect.any(Number), background: 'rgba(0, 0, 0, 0)', border: 'none', padding: '0px' });
   expect(art.width).toBeGreaterThanOrEqual(68);
   expect(art.height).toBeGreaterThanOrEqual(68);
+});
+
+test('gives populated settlement achievements a deliberate closing baseline', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'achievement footer treatment targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const baselines = await page.locator('.monthly-summary.fullframe .highlight-card:not(.reflection):not(.placeholder)').evaluateAll((cards) => cards.map((card) => {
+    const frame = card.getBoundingClientRect();
+    const meta = card.querySelector('small')?.getBoundingClientRect();
+    const style = getComputedStyle(card.querySelector('small')!);
+    return {
+      cardWidth: frame.width,
+      metaWidth: meta?.width ?? 0,
+      borderStyle: style.borderTopStyle,
+      borderColor: style.borderTopColor,
+      paddingTop: Number.parseFloat(style.paddingTop),
+    };
+  }));
+
+  expect(baselines).toHaveLength(5);
+  expect(baselines.every(({ cardWidth, metaWidth, borderStyle, borderColor, paddingTop }) =>
+    metaWidth >= cardWidth * 0.8 && borderStyle === 'dotted' && borderColor === 'rgb(85, 85, 85)' && paddingTop >= 4
+  )).toBe(true);
 });
 
 test('keeps the Settlement review card on the shared visual anchor tier', async ({ page }) => {

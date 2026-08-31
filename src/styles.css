@@ -8209,6 +8209,52 @@ textarea {
   }
 }
 
+/* Low-height Settlement keeps the section label as a single scan line. The
+   available black stage belongs to the real achievement cards, so prevent
+   the auto tracks from stretching the heading and creating a dead band above
+   the row. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .monthly-summary.fullframe .settle-highlights {
+    grid-template-rows: 18px minmax(0, 1fr);
+    gap: 5px;
+    align-content: stretch;
+  }
+
+  .monthly-summary.fullframe .settle-highlights-head,
+  .monthly-summary.fullframe .highlight-row {
+    min-height: 0;
+  }
+}
+
+/* Tall desktop pages are already composed to the viewport height. Keep their
+   fitted console surfaces clean; the low-height breakpoint above remains the
+   only desktop mode that exposes a scrollable main region. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .main-nav,
+  .main-content {
+    overflow: hidden;
+  }
+
+  .main-content:has(.life-secondary-drawer.is-open) {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+}
+
+/* Populated achievement cards close with their real day/record line. Give
+   that metadata a quiet dotted baseline so the card reads as title, body,
+   then footer instead of leaving the final line visually unanchored. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) > small {
+    justify-self: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    padding-top: 4px;
+    border-top: 1px dotted #555;
+    text-align: center;
+  }
+}
+
 /* Market insight is the quiet analytical close of the Career board. Give its
    real vacancy-derived meters one readable pixel step and let the chart keep
    a visible landmark without competing with the job grid. */
