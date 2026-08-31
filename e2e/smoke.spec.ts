@@ -129,6 +129,37 @@ test('selects a shop product from its card surface without swallowing purchase c
   await expect(page.getByRole('button', { name: '一次购买' })).toBeVisible();
 });
 
+test('keeps the selected Shop product detail in four reference information lanes', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'selected product detail lanes target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const detail = page.locator('.view-shop .shop-detail');
+  const labels = await detail.locator('.shop-detail-fact dt').allTextContents();
+  expect(labels).toEqual(['属性变化', '关系变化', '支出分类', '时间消耗']);
+  await expect(detail.getByText('无直接关系变化', { exact: true })).toBeVisible();
+  await expect(detail.getByText('购物', { exact: true })).toBeVisible();
+
+  const geometry = await detail.evaluate((element) => {
+    const frame = element.getBoundingClientRect();
+    const footer = document.querySelector('.persistent-status')?.getBoundingClientRect();
+    const lanes = [...element.querySelectorAll<HTMLElement>('.shop-detail-fact')].map((lane) => lane.getBoundingClientRect());
+    return {
+      height: frame.height,
+      bottomGap: (footer?.top ?? 0) - frame.bottom,
+      laneCount: lanes.length,
+      laneWidth: Math.min(...lanes.map((lane) => lane.width)),
+      laneHeights: lanes.map((lane) => lane.height),
+    };
+  });
+
+  expect(geometry.height).toBeGreaterThanOrEqual(104);
+  expect(geometry.bottomGap).toBeGreaterThanOrEqual(10);
+  expect(geometry.laneCount).toBe(4);
+  expect(geometry.laneWidth).toBeGreaterThanOrEqual(90);
+  expect(geometry.laneHeights.every((height) => height >= 34)).toBe(true);
+});
+
 test('keeps Shop product facts above the purchase rail', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product-card rhythm targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

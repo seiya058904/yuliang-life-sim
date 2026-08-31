@@ -948,11 +948,11 @@ describe('余量 app flow', () => {
     const detail = within(shop).getByRole('region', { name: '已选商品详情' });
     expect(detail.querySelector('.shop-detail-price')).toHaveTextContent('¥');
     expect(detail.querySelectorAll('.shop-detail-fact')).toHaveLength(4);
-    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('时间');
-    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('效果');
-    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('前提');
-    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('类型');
-    const effectFact = detail.querySelector('.shop-detail-fact[data-fact="效果"]');
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('属性变化');
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('关系变化');
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('支出分类');
+    expect(detail.querySelector('.shop-detail-facts')).toHaveTextContent('时间消耗');
+    const effectFact = detail.querySelector('.shop-detail-fact[data-fact="属性变化"]');
     expect(effectFact?.querySelector('.catalog-meter-stack')).not.toBeNull();
     expect(effectFact).toHaveTextContent('生活水平');
   });

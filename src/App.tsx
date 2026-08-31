@@ -691,6 +691,22 @@ function itemCatalogMetrics(item: (typeof contentRegistry.items)[number]): Catal
   }));
 }
 
+function itemCatalogDetailFacts(item: (typeof contentRegistry.items)[number], game: GameState): CatalogFact[] {
+  const effect = itemCatalogFacts(item, game).find(([label]) => label === '效果')?.[1] ?? '没有额外变化';
+  const relationEffects = (item.effects ?? [])
+    .filter((entry): entry is Extract<NonNullable<typeof item.effects>[number], { type: 'relation' }> => entry.type === 'relation')
+    .map((entry) => {
+      const character = contentRegistry.characters.find((candidate) => candidate.id === entry.characterId);
+      return `${character?.name ?? '联系人'} ${entry.amount >= 0 ? '+' : ''}${entry.amount}`;
+    });
+  return [
+    ['属性变化', effect],
+    ['关系变化', relationEffects.join(' · ') || '无直接关系变化'],
+    ['支出分类', displayMappedLabel(item.financialCategory ?? 'shopping', financialLabels)],
+    ['时间消耗', '不消耗'],
+  ];
+}
+
 function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate: (view: ViewId) => void; initialTab: string }) {
   const [cart, setCart] = useState<Record<ContentId, number>>({});
   const [itemCategory, setItemCategory] = useState<string>('all');
@@ -762,7 +778,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
         title: item.name,
         desc: item.description,
         price: money(getItemCost(game, item)),
-        facts: itemCatalogFacts(item, game),
+        facts: itemCatalogDetailFacts(item, game),
         metrics: itemCatalogMetrics(item),
         ctaLabel: '加入购物袋',
         onCta: () => setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 })),
@@ -819,7 +835,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
       .flatMap((activity) => activity.options.map((option) => ({ activity, option })))[0];
     setSelectedKey(first ? `act:${first.activity.id}|${first.option.id}` : null);
   };
-  const selectedDetail = shouldRenderSelectedDetail && detail ? <section className="shop-detail inverse pixel-corners" aria-label={detailIsActivity ? '已选活动详情' : '已选商品详情'}><PixelIllustration name={detail.icon} size={72} /><div className="shop-detail-copy"><div className="shop-detail-title-row"><div><span className="eyebrow">{detailIsActivity ? '已选活动' : '已选商品'}</span><h2>{detail.title}</h2></div>{detail.price && <strong className="shop-detail-price">{detail.price}</strong>}</div><p>{detail.desc}</p></div><dl className="shop-detail-facts" aria-label={`${detail.title} 详情事实`}>{detail.facts.filter(([, value]) => Boolean(value)).map(([label, value]) => <div className="shop-detail-fact" data-fact={label} key={label}><dt>{label}</dt><dd title={value}>{label === '效果' && detail.metrics?.length ? <CatalogMeters metrics={detail.metrics} ariaLabel={`${detail.title}效果变化`} /> : value}</dd></div>)}</dl><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section> : null;
+  const selectedDetail = shouldRenderSelectedDetail && detail ? <section className="shop-detail inverse pixel-corners" aria-label={detailIsActivity ? '已选活动详情' : '已选商品详情'}><PixelIllustration name={detail.icon} size={72} /><div className="shop-detail-copy"><div className="shop-detail-title-row"><div><span className="eyebrow">{detailIsActivity ? '已选活动' : '已选商品'}</span><h2>{detail.title}</h2></div>{detail.price && <strong className="shop-detail-price">{detail.price}</strong>}</div><p>{detail.desc}</p></div><dl className="shop-detail-facts" aria-label={`${detail.title} 详情事实`}>{detail.facts.filter(([, value]) => Boolean(value)).map(([label, value]) => <div className="shop-detail-fact" data-fact={label} key={label}><dt>{label}</dt><dd title={value}>{(label === '效果' || label === '属性变化') && detail.metrics?.length ? <CatalogMeters metrics={detail.metrics} ariaLabel={`${detail.title}效果变化`} /> : value}</dd></div>)}</dl><button className="primary-button" disabled={detail.disabled} onClick={() => detail?.onCta?.()}>{detail.ctaLabel}</button></section> : null;
   const renderItemCard = (item: (typeof contentRegistry.items)[number]) => {
     const hasItem = owned(item.id);
     const wishlisted = game.wishlist?.includes(item.id);

@@ -8910,16 +8910,19 @@ textarea {
    meter keeps the real effect visible in the reference detail rhythm without
    growing the fixed detail strip. */
 @media (min-width: 1181px) {
-  .view-shop .shop-detail-fact[data-fact='效果'] dd {
+  .view-shop .shop-detail-fact[data-fact='效果'] dd,
+  .view-shop .shop-detail-fact[data-fact='属性变化'] dd {
     overflow: visible;
   }
 
-  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-stack {
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-stack,
+  .view-shop .shop-detail-fact[data-fact='属性变化'] .catalog-meter-stack {
     gap: 2px;
     margin: 0;
   }
 
-  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row {
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row,
+  .view-shop .shop-detail-fact[data-fact='属性变化'] .catalog-meter-row {
     grid-template-columns: 31px minmax(0, 1fr) auto;
     gap: 3px;
     min-height: 12px;
@@ -8927,16 +8930,19 @@ textarea {
     font-size: 8px;
   }
 
-  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row > b {
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row > b,
+  .view-shop .shop-detail-fact[data-fact='属性变化'] .catalog-meter-row > b {
     color: #f4f4ef;
     font-size: 9px;
   }
 
-  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row .segment-meter {
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row .segment-meter,
+  .view-shop .shop-detail-fact[data-fact='属性变化'] .catalog-meter-row .segment-meter {
     gap: 2px;
   }
 
-  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row .segment-meter i {
+  .view-shop .shop-detail-fact[data-fact='效果'] .catalog-meter-row .segment-meter i,
+  .view-shop .shop-detail-fact[data-fact='属性变化'] .catalog-meter-row .segment-meter i {
     height: 5px;
   }
 }
