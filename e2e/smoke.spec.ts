@@ -1533,6 +1533,48 @@ test('shows the pending settlement mode in the top status while the ceremony is 
   expect(settlementCopy).not.toMatch(/\b[A-Za-z]+(?:_[A-Za-z0-9-]+)+\b/);
 });
 
+test('keeps the tall Settlement board attached to its compact HUD', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall Settlement frame geometry targets the primary desktop surface');
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const geometry = await page.evaluate(() => {
+    const read = (selector: string) => document.querySelector<HTMLElement>(selector)?.getBoundingClientRect();
+    const topbar = read('.topbar');
+    const frame = read('.monthly-summary.fullframe');
+    const title = read('.monthly-summary.fullframe .settle-title-wrap');
+    const grid = read('.monthly-summary.fullframe .settle-grid');
+    return {
+      topbarHeight: topbar?.height ?? 0,
+      hudToFrameGap: (frame?.top ?? 0) - (topbar?.bottom ?? 0),
+      titleTop: title?.top ?? 0,
+      gridTop: grid?.top ?? 0,
+      frameBottom: frame?.bottom ?? 0,
+      bodyWidth: document.body.scrollWidth,
+      viewportWidth: document.documentElement.clientWidth,
+    };
+  });
+
+  expect(geometry.topbarHeight).toBeLessThanOrEqual(82);
+  expect(geometry.hudToFrameGap).toBeLessThanOrEqual(4);
+  expect(geometry.titleTop).toBeGreaterThanOrEqual(124);
+  expect(geometry.titleTop).toBeLessThanOrEqual(138);
+  expect(geometry.gridTop).toBeGreaterThanOrEqual(224);
+  expect(geometry.gridTop).toBeLessThanOrEqual(236);
+  expect(geometry.frameBottom).toBeGreaterThanOrEqual(1040);
+  expect(geometry.bodyWidth).toBe(geometry.viewportWidth);
+});
+
 test('keeps visible Settlement copy free of internal identifiers', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement copy audit targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

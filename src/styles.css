@@ -8947,6 +8947,30 @@ textarea {
   }
 }
 
+/* The tall settlement reference docks its ceremony frame directly beneath a
+   compact HUD. Preserve the existing title/grid/footer anchors by moving the
+   frame upward and returning the same space as inner top breathing room. */
+@media (min-width: 1321px) and (min-height: 801px) {
+  .app-shell.mode-monthly_summary > .topbar {
+    height: 78px;
+    min-height: 78px;
+  }
+
+  .app-shell.mode-monthly_summary .status-line > span {
+    min-height: 58px;
+    padding-block: 6px;
+  }
+
+  .modal-backdrop.settlement-mode {
+    padding-top: 78px;
+  }
+
+  .monthly-summary.fullframe {
+    height: calc(100dvh - 110px);
+    padding-top: 44px;
+  }
+}
+
 /* A partially populated inbox still needs a quiet terminal state. Keep the
    real rows at the top, then let the neutral marker settle against the
    panel's lower rhythm without inventing another message or event. */
