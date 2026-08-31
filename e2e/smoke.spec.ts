@@ -760,6 +760,37 @@ test('keeps the Career search hint aligned with the reference filter rail', asyn
   await expect(page.getByLabel('搜索岗位或公司')).toHaveAttribute('placeholder', '搜索岗位 / 公司 / 关键词');
 });
 
+test('keeps Career planning tools as a quiet utility affordance outside the market filters', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career utility presentation targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const trigger = page.getByRole('button', { name: '安排本周与课程' });
+  const style = await trigger.evaluate((element) => {
+    const computed = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return {
+      height: rect.height,
+      background: computed.backgroundColor,
+      borderTop: computed.borderTopStyle,
+      borderRight: computed.borderRightStyle,
+      borderBottom: computed.borderBottomStyle,
+      borderLeft: computed.borderLeftStyle,
+      fontSize: Number.parseFloat(computed.fontSize),
+      textAlign: computed.textAlign,
+    };
+  });
+
+  expect(style.height).toBeLessThanOrEqual(23);
+  expect(style.background).toBe('rgba(0, 0, 0, 0)');
+  expect(style.borderTop).toBe('none');
+  expect(style.borderRight).toBe('none');
+  expect(style.borderBottom).toBe('none');
+  expect(style.borderLeft).toBe('dotted');
+  expect(style.fontSize).toBeGreaterThanOrEqual(10);
+  expect(style.textAlign).toBe('left');
+});
+
 test('keeps low-height Career toolbar filters readable', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Career toolbar anatomy is desktop-only');
   await page.setViewportSize({ width: 1280, height: 720 });

@@ -6696,6 +6696,29 @@ textarea {
   border-color: #f4f4ef;
 }
 
+/* On the supported desktop market board this is a utility lane, not a third
+   filter control. Keep the real button, but let it read as a quiet divider
+   beside the identity copy instead of a competing rectangular field. */
+@media (min-width: 1181px) {
+  .career-tools-heading-trigger {
+    display: inline-flex;
+    align-items: center;
+    min-height: 0;
+    height: auto;
+    padding: 3px 0 3px 7px;
+    border: 0;
+    border-left: 1px dotted #777772;
+    line-height: 1.15;
+  }
+
+  .career-tools-heading-trigger:hover,
+  .career-tools-heading-trigger:focus-visible {
+    color: #f4f4ef;
+    background: transparent;
+    border-color: #f4f4ef;
+  }
+}
+
 /* The reference board is genuinely monochrome. Browser subpixel text
    antialiasing can introduce blue/red fringes around white glyphs; keep the
    whole playable shell in the same grayscale channel without changing any
