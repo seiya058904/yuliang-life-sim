@@ -291,9 +291,9 @@ test('keeps empty Career and Shop support bodies on readable light lanes', async
   }
 });
 
-test('keeps an empty Shop Rail as a compact module stack', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'empty Shop Rail footprint targets the supported desktop landscape surface');
+test('keeps an empty Shop Rail in the tall reference frame', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall empty Shop Rail footprint targets the primary desktop surface');
   await page.getByRole('button', { name: '商店', exact: true }).click();
 
   const rail = page.locator('.shop-rail');
@@ -312,12 +312,13 @@ test('keeps an empty Shop Rail as a compact module stack', async ({ page }) => {
     };
   });
 
-  expect(footprint.height).toBeLessThanOrEqual(660);
+  expect(footprint.height).toBeGreaterThanOrEqual(780);
   expect(footprint.bottom).toBeLessThanOrEqual(footprint.footerTop);
   expect(footprint.modules).toHaveLength(4);
-  expect(footprint.modules[0].height).toBeLessThanOrEqual(140);
-  expect(footprint.modules[2].height).toBeLessThanOrEqual(140);
-  expect(footprint.modules[3].height).toBeLessThanOrEqual(140);
+  expect(footprint.modules[0].height).toBeGreaterThanOrEqual(180);
+  expect(footprint.modules[1].height).toBeGreaterThanOrEqual(240);
+  expect(footprint.modules[2].height).toBeGreaterThanOrEqual(140);
+  expect(footprint.modules[3].height).toBeGreaterThanOrEqual(170);
 
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);

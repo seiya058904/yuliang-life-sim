@@ -10592,3 +10592,17 @@ textarea {
     height: auto;
   }
 }
+
+/* The tall Shop frame reserves the Rail as a real right-hand column even
+   before its cart, inventory, or wishlist has records. Keep those empty
+   states honest, but let their existing dark shells occupy the same vertical
+   reading lane as the populated reference instead of ending halfway down the
+   board and leaving an unowned black void. */
+@media (min-width: 1321px) and (min-height: 801px) {
+  .view-shop .shop-rail:has(.shop-rail-empty) {
+    height: 815px;
+    min-height: 815px;
+    grid-template-rows: 195px 260px 150px 180px;
+    align-content: start;
+  }
+}
