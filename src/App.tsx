@@ -180,7 +180,7 @@ function App() {
     <div className={`app-shell mode-${shellMode} view-${activeView}`}>
       <div className="outer-frame" aria-hidden="true" />
       <header className="topbar">
-        <div className="brand-block"><div className="brand-wordmark"><h1 className="brand-mark">余量</h1><span className="brand-subtitle">人生模拟<small>v{game.contentVersion} · 澄川市</small></span></div><PixelIllustration name="brand-cat" size={48} className="brand-mascot" /></div>
+        <div className="brand-block"><div className="brand-wordmark"><h1 className="brand-mark"><span className="sr-only">余量</span><PixelIllustration name="brand-wordmark" size={120} className="brand-wordmark-art" /></h1><span className="brand-subtitle">人生模拟<small>v{game.contentVersion} · 澄川市</small></span></div><PixelIllustration name="brand-cat" size={48} className="brand-mascot" /></div>
         <div className="status-line" aria-label="当前状态">
           <span className="status-date"><PixelIcon name="calendar" /><span><b><span>第 {game.calendar.week} 周</span> · 周{weekdayLabel(game.calendar.weekday)}</b><small data-testid="date-value">{formatDate(game.time)}</small></span></span>
           <span className="status-clock"><PixelIcon name="clock" /><span className="status-clock-copy"><PixelClock className="status-clock-value" size="compact" data-testid={activeView === 'life' ? undefined : 'clock-value'} value={formatClock(game.time.hour, game.time.minute)} /><small>{game.pendingMonthlySummary ? modeText(shellMode) : activeView === 'life' ? '主循环' : modeText(shellMode)}</small></span></span>

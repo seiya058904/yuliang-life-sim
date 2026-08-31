@@ -8209,6 +8209,61 @@ textarea {
   }
 }
 
+/* The Header wordmark shares the cat's direct reference raster. Keep the
+   semantic h1 in place, but remove font metrics and text shadow from the
+   visible layer so the two brand assets read as one 1-bit system. */
+@media (min-width: 1321px) {
+  .brand-mark {
+    display: block;
+    width: 108px;
+    height: 56px;
+    position: relative;
+    top: 5px;
+    flex: none;
+    font-size: 0;
+    line-height: 0;
+    letter-spacing: 0;
+    text-shadow: none;
+  }
+
+  .brand-wordmark-art {
+    display: block;
+    width: 120px;
+    height: 56px;
+    position: relative;
+    top: -4px;
+    left: -2px;
+    color: #fff;
+  }
+
+  .brand-subtitle {
+    position: relative;
+    top: -5px;
+  }
+}
+
+@media (min-width: 1181px) and (max-width: 1320px) {
+  .brand-mark {
+    display: block;
+    width: 90px;
+    height: 45px;
+    flex: none;
+    font-size: 0;
+    line-height: 0;
+    letter-spacing: 0;
+    text-shadow: none;
+  }
+
+  .brand-wordmark-art {
+    display: block;
+    width: 96px;
+    height: 45px;
+    position: relative;
+    left: -2px;
+    color: #fff;
+  }
+}
+
 /* Low-height Settlement keeps the section label as a single scan line. The
    available black stage belongs to the real achievement cards, so prevent
    the auto tracks from stretching the heading and creating a dead band above

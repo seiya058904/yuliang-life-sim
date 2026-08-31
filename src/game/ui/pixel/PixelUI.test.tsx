@@ -118,6 +118,18 @@ describe('PixelIllustration', () => {
     expect(hasCell('20', '10')).toBe(true);
   });
 
+  it('renders the header wordmark as a fine 1-bit raster asset', () => {
+    render(<PixelIllustration name="brand-wordmark" data-testid="brand-wordmark" />);
+
+    const illustration = screen.getByTestId('brand-wordmark');
+    expect(illustration).toHaveClass('fine-grid');
+    expect(illustration).toHaveAttribute('viewBox', '0 0 120 56');
+    const cells = [...illustration.querySelectorAll('rect')];
+    expect(cells.length).toBeGreaterThan(100);
+    expect(cells.every((rect) => Number(rect.getAttribute('width')) >= 1 && rect.getAttribute('height') === '1')).toBe(true);
+    expect(cells.some((rect) => rect.getAttribute('x') === '0' && rect.getAttribute('y') === '0')).toBe(false);
+  });
+
   it('keeps the persistent mascot on the open reference portrait grid', () => {
     render(<PixelIllustration name="mascot" data-testid="mascot" />);
 
