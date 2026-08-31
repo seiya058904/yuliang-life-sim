@@ -831,7 +831,7 @@ describe('余量 app flow', () => {
     expect(within(shop).getByRole('heading', { name: '旧城文化日 · 看一场展览' })).toBeInTheDocument();
   });
 
-  it('keeps effect meters on activity cards but out of product card anatomy', async () => {
+  it('keeps effect meters in selected detail but out of both catalog card anatomies', async () => {
     const user = userEvent.setup();
     render(<App />);
 
@@ -841,10 +841,14 @@ describe('余量 app flow', () => {
     expect(itemCards).toHaveLength(12);
     itemCards.forEach((card) => expect(card.querySelectorAll('.catalog-meter-row')).toHaveLength(0));
 
+    const selectedProductDetail = within(shop).getByRole('region', { name: '已选商品详情' });
+    expect(selectedProductDetail.querySelectorAll('.catalog-meter-row').length).toBeGreaterThan(0);
+
     await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
     const activityCards = Array.from(shop.querySelectorAll('[data-catalog-card]'));
     expect(activityCards.length).toBeGreaterThan(0);
-    activityCards.forEach((card) => expect(card.querySelectorAll('.catalog-meter-row')).toHaveLength(2));
+    activityCards.forEach((card) => expect(card.querySelectorAll('.catalog-meter-row')).toHaveLength(0));
+    expect(within(shop).getByRole('region', { name: '已选活动详情' }).querySelectorAll('.catalog-meter-row')).toHaveLength(0);
   });
 
   it('keeps the entertainment catalog paged within the compact three-column surface', async () => {
@@ -978,7 +982,7 @@ describe('余量 app flow', () => {
     expect(within(shop).getByRole('region', { name: '已选商品详情' })).toBeInTheDocument();
   });
 
-  it('keeps an activity heading, facts, and action inside one semantic card body', async () => {
+  it('gives an activity card the shared product-card title, facts, and footer anatomy', async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: '商店' }));
@@ -987,9 +991,11 @@ describe('余量 app flow', () => {
 
     const card = shop.querySelector('.activity-card') as HTMLElement;
     const heading = card.querySelector('h3') as HTMLElement;
-    expect(heading.parentElement).toHaveClass('activity-card-body');
-    expect(within(heading.parentElement as HTMLElement).getByText('效果')).toBeInTheDocument();
-    expect(within(heading.parentElement as HTMLElement).getByRole('button', { name: '安排到本周自由时间' })).toBeInTheDocument();
+    expect(heading.parentElement).toHaveClass('catalog-title-row');
+    expect(card.querySelector('.activity-card-body')).toBeInTheDocument();
+    expect(within(card).getByText('效果')).toBeInTheDocument();
+    expect(within(card).getByRole('button', { name: '安排到本周自由时间' })).toBeInTheDocument();
+    expect(card.querySelector('.catalog-meter-stack')).toBeNull();
   });
 
   it('keeps the Life plan header compact instead of presenting a webpage slogan', async () => {

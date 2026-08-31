@@ -691,25 +691,6 @@ function itemCatalogMetrics(item: (typeof contentRegistry.items)[number]): Catal
   }));
 }
 
-function activityCatalogMeters(option: ActivityOption, cost: number): CatalogMeterDefinition[] {
-  const labels = { ...attributeLabels, ...statLabels };
-  const effectEntries = (option.effects ?? []).filter((effect): effect is Extract<EffectDefinition, { type: 'attribute' | 'stat' }> => effect.type === 'attribute' || effect.type === 'stat').map((effect) => [effect.type === 'attribute' ? effect.attribute : effect.stat, effect.amount] as const);
-  const metrics = effectEntries.slice(0, 2).map(([key, value]) => ({
-    label: displayMappedLabel(key, labels),
-    value: Math.abs(value),
-    max: catalogMeterMax(value),
-    caption: `${value >= 0 ? '+' : ''}${value}`,
-  }));
-  if (metrics.length < 2) {
-    const hours = option.durationMinutes / 60;
-    metrics.push({ label: '时间', value: Math.min(24, hours), max: 24, caption: hours >= 24 ? `${hours / 24}天` : `${hours}h` });
-  }
-  if (metrics.length < 2) {
-    metrics.push({ label: '费用', value: Math.min(10, Math.max(0, Math.round(cost / 100))), max: 10, caption: money(cost) });
-  }
-  return metrics.slice(0, 2);
-}
-
 function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate: (view: ViewId) => void; initialTab: string }) {
   const [cart, setCart] = useState<Record<ContentId, number>>({});
   const [itemCategory, setItemCategory] = useState<string>('all');
@@ -877,11 +858,9 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
                 <div className="card-art"><PixelIllustration name={activitySceneFor(activity)} size={64} /></div>
                 <div className="activity-card-body">
                   <div className="item-card-head"><span className="catalog-badge">{activityCategoryLabels[activity.category] ?? activity.category}</span><span className="catalog-card-status">{projectDone ? <span className="current-label">已完成</span> : cooldownRemaining > 0 ? <span className="requirement-missing">冷却中</span> : null}</span></div>
-                  <h3>{activity.name} · {option.label}</h3>
-                  <strong className="catalog-price">{money(cost)}</strong>
+                  <div className="catalog-title-row"><h3>{activity.name} · {option.label}</h3><strong className="catalog-price">{money(cost)}</strong></div>
                   <p>{activity.description}</p>
                   <CatalogFacts facts={[['时间', durationLabel], ['效果', effectLabel], ['前提', option.requirements ? explainCondition(option.requirements, game, contentRegistry, balanceConfig) : project ? '对应企业' : '无'], ['类型', `${activityCategoryLabels[activity.category] ?? activity.category}活动`]]} ariaLabel={`${activity.name} ${option.label} 活动信息`} />
-                  <CatalogMeters metrics={activityCatalogMeters(option, cost)} ariaLabel={`${activity.name} ${option.label} 影响计量`} />
                   {cooldownRemaining > 0 && <span className="requirement-missing">冷却中 · 还需 {cooldownRemaining} 天</span>}
                   <button className="secondary-button" disabled={!projectReady || projectDone || cooldownRemaining > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleActivity(activity.id, option.id)}>{projectDone ? '项目已完成' : cooldownRemaining > 0 ? `冷却中 · 还需 ${cooldownRemaining} 天` : '安排到本周自由时间'}</button>
                 </div>

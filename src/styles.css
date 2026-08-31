@@ -3701,6 +3701,76 @@ button, input, select { border-radius: 0; }
   }
 }
 
+/* Entertainment cards inherit the Goods card grammar on the desktop board:
+   one title row, one fact lane, and a full-width action rail. The semantic
+   body wrapper remains in the DOM for existing queries, but display: contents
+   lets its real children participate in the shared outer grid. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .activity-card {
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    align-content: stretch;
+  }
+
+  .view-shop .shop-main .activity-card > .activity-card-body {
+    display: contents;
+  }
+
+  .view-shop .shop-main .activity-card > .card-art {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+
+  .view-shop .shop-main .activity-card > .activity-card-body > .item-card-head,
+  .view-shop .shop-main .activity-card > .activity-card-body > .catalog-title-row,
+  .view-shop .shop-main .activity-card > .activity-card-body > .catalog-facts {
+    grid-column: 2;
+  }
+
+  .view-shop .shop-main .activity-card > .activity-card-body > .item-card-head {
+    grid-row: 1;
+  }
+
+  .view-shop .shop-main .activity-card > .activity-card-body > .catalog-title-row {
+    grid-row: 2;
+  }
+
+  .view-shop .shop-main .activity-card > .activity-card-body > p {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .view-shop .shop-main .activity-card > .activity-card-body > .catalog-facts {
+    grid-row: 3;
+    align-self: start;
+    gap: 0;
+    margin-top: 0;
+    padding-block: 0;
+  }
+
+  .view-shop .shop-main .activity-card > .activity-card-body > .catalog-facts > div {
+    font-size: 12px;
+    line-height: .95;
+  }
+
+  .view-shop .shop-main .activity-card > .activity-card-body > .requirement-missing {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: end;
+  }
+
+  .view-shop .shop-main .activity-card > .activity-card-body > .secondary-button {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    align-self: end;
+    width: 100%;
+    min-height: 25px;
+    padding: 5px 8px;
+    font-size: 11px;
+    line-height: 1.15;
+  }
+}
+
 /* Career conditions are a visual comparison in the reference HUD. Keep the
    source values as text, while making the same comparison legible at a
    glance through the shared one-bit segmented meter. */

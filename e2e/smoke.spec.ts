@@ -1210,12 +1210,12 @@ test('keeps Shop Entertainment cards on the Goods card and action tier', async (
 
   const cards = await page.locator('.view-shop .shop-main .activity-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
     const art = card.querySelector('.card-art');
-    const body = card.querySelector('.activity-card-body');
+    const titleRow = card.querySelector('.catalog-title-row');
     const fact = card.querySelector('.catalog-facts > div');
     const cta = card.querySelector('.secondary-button');
     const cardRect = card.getBoundingClientRect();
     const artRect = art?.getBoundingClientRect();
-    const bodyRect = body?.getBoundingClientRect();
+    const titleRect = titleRow?.getBoundingClientRect();
     const ctaRect = cta?.getBoundingClientRect();
     return {
       cardHeight: cardRect.height,
@@ -1224,14 +1224,16 @@ test('keeps Shop Entertainment cards on the Goods card and action tier', async (
       factFontSize: fact ? Number.parseFloat(getComputedStyle(fact).fontSize) : 0,
       ctaFontSize: cta ? Number.parseFloat(getComputedStyle(cta).fontSize) : 0,
       ctaWidth: ctaRect?.width ?? 0,
-      bodyWidth: bodyRect?.width ?? 0,
+      cardWidth: cardRect.width,
+      contentWidth: titleRect?.width ?? 0,
+      meterRows: card.querySelectorAll('.catalog-meter-row').length,
     };
   }));
 
   expect(cards.length).toBeGreaterThan(0);
-  expect(cards.every(({ cardHeight, artWidth, artHeight, factFontSize, ctaFontSize, ctaWidth, bodyWidth }) =>
+  expect(cards.every(({ cardHeight, artWidth, artHeight, factFontSize, ctaFontSize, ctaWidth, cardWidth, contentWidth, meterRows }) =>
     cardHeight >= 150 && artWidth >= 54 && artHeight >= 54 &&
-    factFontSize >= 11 && ctaFontSize >= 11 && ctaWidth >= bodyWidth - 1
+    factFontSize >= 11 && ctaFontSize >= 11 && ctaWidth >= cardWidth - 18 && contentWidth > 0 && meterRows === 0
   )).toBe(true);
 });
 
@@ -2806,7 +2808,7 @@ test('enforces the persisted travel cooldown in the activity market', async ({ p
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '旅行', exact: true }).click();
-  const getaway = page.getByRole('heading', { name: '周末短途旅行 · 慢慢走走' }).locator('..');
+  const getaway = page.getByRole('heading', { name: '周末短途旅行 · 慢慢走走' }).locator('xpath=ancestor::article[1]');
   await expect(getaway).toContainText('冷却中 · 还需 9 天');
   await expect(getaway.getByRole('button', { name: '冷却中 · 还需 9 天' })).toBeDisabled();
 });
@@ -3627,7 +3629,7 @@ test('discovers and plans the relationship-gated cinema outing with Zhou', async
 test('discovers and plans the old-town cultural trip', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '学习', exact: true }).click();
-  const outing = page.getByRole('heading', { name: '旧城文化日 · 看一场展览' }).locator('..');
+  const outing = page.getByRole('heading', { name: '旧城文化日 · 看一场展览' }).locator('xpath=ancestor::article[1]');
   await expect(outing).toContainText('旧城文化日 · 看一场展览');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
   await expect(page.getByText('旧城文化日 · 看一场展览')).toBeVisible();
@@ -3636,7 +3638,7 @@ test('discovers and plans the old-town cultural trip', async ({ page }) => {
 test('discovers and plans the riverside park ride', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '旅行', exact: true }).click();
-  const ride = page.getByRole('heading', { name: '临江公园骑行 · 沿江骑行' }).locator('..');
+  const ride = page.getByRole('heading', { name: '临江公园骑行 · 沿江骑行' }).locator('xpath=ancestor::article[1]');
   await expect(ride).toContainText('¥180');
   await expect(ride).toContainText('体能 +2');
   await ride.getByRole('button', { name: '安排到本周自由时间' }).click();
