@@ -858,6 +858,15 @@ test('uses the chart pixel mark for the Career market insight header', async ({ 
   await expect(page.locator('.career-bottom-insight .inbox-head .pixel-icon')).toHaveAttribute('data-panel-icon', 'chart');
 });
 
+test('uses reference-shaped marks for the Career offer and history headers', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career support panel icons target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  await expect(page.locator('.career-bottom-offers .inbox-head .pixel-icon')).toHaveAttribute('data-panel-icon', 'star');
+  await expect(page.locator('.career-bottom-history .inbox-head .pixel-icon')).toHaveAttribute('data-panel-icon', 'career');
+});
+
 test('keeps Career vacancy descriptions compact inside the fixed card anatomy', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career vacancy-card anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });

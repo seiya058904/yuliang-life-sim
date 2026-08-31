@@ -307,7 +307,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
       action: '全部申请 ▸', target: () => onOpenTab('applications'),
     },
     {
-      key: 'offers', icon: 'tag' as const, title: 'Offer', count: offers.length,
+      key: 'offers', icon: 'star' as const, title: 'Offer', count: offers.length,
       rows: offers.map((offer) => ({ label: jobs.find((job) => job.id === offer.jobId)?.name ?? humanizeContentId(offer.jobId), value: offer.offerExpiresDay ? `第 ${offer.offerExpiresDay} 天前有效` : '等待处理' })),
       empty: '暂无等待回复的 Offer。',
       emptyIllustration: 'tag' as const,
@@ -315,7 +315,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
       action: '查看 Offer ▸', target: () => onOpenTab('applications'),
     },
     {
-      key: 'history', icon: 'chart' as const, title: '职业履历', count: (game.employmentHistory ?? []).length,
+      key: 'history', icon: 'career' as const, title: '职业履历', count: (game.employmentHistory ?? []).length,
       rows: history.map((entry) => ({ label: jobs.find((job) => job.id === entry.jobId)?.name ?? humanizeContentId(entry.jobId), value: `${moneyFmt(entry.finalPay)} / 班` })).slice(0, 3),
       empty: '职业履历会在换岗或离职后出现。',
       emptyIllustration: 'career-market' as const,
