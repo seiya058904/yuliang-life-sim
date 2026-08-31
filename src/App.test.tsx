@@ -228,6 +228,22 @@ describe('余量 app flow', () => {
     expect(pageTrigger!.closest('.career-toolbar')).toBeNull();
   });
 
+  it('gives the Career market identity a dedicated one-bit mark before its title', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const identity = screen.getByRole('region', { name: '招聘市场布局' }).querySelector('.career-market-identity') as HTMLElement;
+    const mark = identity.querySelector('.career-market-identity-mark');
+    const title = identity.querySelector('h1');
+
+    expect(mark).not.toBeNull();
+    expect(mark).toHaveClass('pixel-illustration', 'il-career-market');
+    expect(mark).toHaveAttribute('aria-hidden', 'true');
+    expect(title).not.toBeNull();
+    expect(mark!.compareDocumentPosition(title!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('uses role-specific one-bit silhouettes across the visible career cards', async () => {
     const user = userEvent.setup();
     render(<App />);

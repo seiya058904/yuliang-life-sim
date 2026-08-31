@@ -791,6 +791,38 @@ test('keeps Career planning tools as a quiet utility affordance outside the mark
   expect(style.textAlign).toBe('left');
 });
 
+test('keeps the Career identity mark beside the market title without expanding the filter rail', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career identity anatomy targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const identity = page.locator('.career-market-identity');
+  const geometry = await identity.evaluate((element) => {
+    const mark = element.querySelector('.career-market-identity-mark')?.getBoundingClientRect();
+    const title = element.querySelector('h1')?.getBoundingClientRect();
+    const input = element.parentElement?.querySelector('input')?.getBoundingClientRect();
+    const identityRect = element.getBoundingClientRect();
+    return {
+      markWidth: mark?.width ?? 0,
+      markHeight: mark?.height ?? 0,
+      markRight: mark?.right ?? 0,
+      titleLeft: title?.left ?? 0,
+      titleTop: title?.top ?? 0,
+      identityHeight: identityRect.height,
+      inputTop: input?.top ?? 0,
+    };
+  });
+
+  expect(geometry.markWidth).toBeGreaterThanOrEqual(28);
+  expect(geometry.markWidth).toBeLessThanOrEqual(34);
+  expect(geometry.markHeight).toBeGreaterThanOrEqual(28);
+  expect(geometry.markHeight).toBeLessThanOrEqual(34);
+  expect(geometry.titleLeft - geometry.markRight).toBeGreaterThanOrEqual(4);
+  expect(geometry.titleTop).toBeGreaterThanOrEqual(geometry.markHeight - 1);
+  expect(geometry.identityHeight).toBeLessThanOrEqual(82);
+  expect(geometry.inputTop).toBeLessThanOrEqual(252);
+});
+
 test('keeps low-height Career toolbar filters readable', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Career toolbar anatomy is desktop-only');
   await page.setViewportSize({ width: 1280, height: 720 });
