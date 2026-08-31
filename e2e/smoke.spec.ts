@@ -523,7 +523,7 @@ test('keeps empty Life inboxes as compact horizontal pixel states', async ({ pag
     copyLeft >= markRight + 6 && copyTop >= 0 &&
     Math.abs(markCenterY - copyCenterY) <= 10 &&
     backgroundColor === 'rgba(0, 0, 0, 0)' && borderStyle === 'none' &&
-    hintVisible
+    !hintVisible
   )).toBe(true);
 });
 

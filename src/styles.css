@@ -10231,3 +10231,18 @@ textarea {
     line-height: 1.35;
   }
 }
+
+/* The desktop reference treats an empty inbox as one quiet status line, not
+   a two-line web empty state. Keep the authored hint in the DOM for narrow
+   layouts while reducing the supported desktop scan to the small illustration
+   plus the authored muted label. */
+@media (min-width: 1181px) {
+  .view-life .inbox-panel .inbox-empty-copy strong {
+    color: #aaa9a2;
+    font-size: 10px;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy small {
+    display: none;
+  }
+}
