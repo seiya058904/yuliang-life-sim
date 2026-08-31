@@ -2517,6 +2517,8 @@ button, input, select { border-radius: 0; }
   .view-shop .shop-rail .rail-fill .detail-panel .section-heading .eyebrow,
   .view-shop .shop-rail .rail-fill .detail-panel .section-heading p { display: none; }
   .view-shop .shop-rail .rail-fill .detail-panel .section-heading h2 { margin: 0; font-size: 14px; }
+  .view-shop .shop-rail .rail-fill .detail-panel .section-heading > div { display: flex; align-items: center; gap: 7px; }
+  .view-shop .shop-rail .rail-fill .detail-panel .section-heading > div > .pixel-icon { flex: 0 0 auto; color: #fff; }
   .view-shop .shop-rail .rail-fill .detail-panel > .muted {
     margin: auto 0;
     padding: 10px 0;

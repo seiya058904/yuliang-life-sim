@@ -284,6 +284,15 @@ test('keeps Shop Rail modules on the shared stepped outer-frame grammar', async 
   expect(frames.every(({ clipPath, borderWidth }) => clipPath !== 'none' && borderWidth === '2px')).toBe(true);
 });
 
+test('keeps Shop inventory and wishlist rail headers on the shared icon grammar', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop Rail header icons target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  await expect(page.locator('.shop-rail .rail-inventory .section-heading .pixel-icon')).toHaveAttribute('data-rail-icon', 'bag');
+  await expect(page.locator('.shop-rail .rail-wishlist .section-heading .pixel-icon')).toHaveAttribute('data-rail-icon', 'heart');
+});
+
 test('keeps the Life forecast header on the reference inverse surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast header assertion targets the supported desktop landscape surface');
   await page.getByRole('button', { name: '生活', exact: true }).click();
