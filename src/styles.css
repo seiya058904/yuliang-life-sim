@@ -9421,6 +9421,7 @@ textarea {
   .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) .highlight-description {
     font-size: 13px;
     line-height: 1.3;
+    align-self: center;
   }
 
   .monthly-summary.fullframe .settle-highlights .highlight-card:not(.reflection):not(.placeholder) small {

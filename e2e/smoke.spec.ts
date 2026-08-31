@@ -2090,8 +2090,10 @@ test('gives populated settlement achievements a title-body-meta hierarchy', asyn
       areas: style.gridTemplateAreas,
       titleTop: title?.top ?? 0,
       artTop: art?.top ?? 0,
+      artCenter: art ? art.top + art.height / 2 : 0,
       artWidth: art?.width ?? 0,
       detailTop: detail?.top ?? 0,
+      detailCenter: detail ? detail.top + detail.height / 2 : 0,
       metaTop: meta?.top ?? 0,
       titleWidth: title?.width ?? 0,
       cardWidth: card.getBoundingClientRect().width,
@@ -2099,11 +2101,11 @@ test('gives populated settlement achievements a title-body-meta hierarchy', asyn
   }));
 
   expect(anatomy).toHaveLength(5);
-  expect(anatomy.every(({ areas, titleTop, artTop, artWidth, detailTop, metaTop, titleWidth, cardWidth }) =>
+  expect(anatomy.every(({ areas, titleTop, artTop, artCenter, artWidth, detailTop, detailCenter, metaTop, titleWidth, cardWidth }) =>
     areas === '"title title" "icon detail" "meta meta"' &&
     titleTop < artTop &&
     artWidth >= 56 &&
-    detailTop <= artTop + 8 &&
+    Math.abs(detailCenter - artCenter) <= 10 &&
     artTop < metaTop &&
     detailTop < metaTop &&
     titleWidth >= cardWidth * 0.8
