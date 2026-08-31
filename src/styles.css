@@ -8965,9 +8965,12 @@ textarea {
 
   .modal-backdrop.settlement-mode {
     padding-top: 78px;
+    padding-inline: 0;
   }
 
   .monthly-summary.fullframe {
+    width: min(1440px, calc(100vw - 8px));
+    max-width: none;
     height: calc(100dvh - 110px);
     padding-top: 44px;
   }

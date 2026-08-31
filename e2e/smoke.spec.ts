@@ -1653,6 +1653,9 @@ test('keeps the tall Settlement board attached to its compact HUD', async ({ pag
     return {
       topbarHeight: topbar?.height ?? 0,
       hudToFrameGap: (frame?.top ?? 0) - (topbar?.bottom ?? 0),
+      frameLeft: frame?.left ?? 0,
+      frameRight: frame?.right ?? 0,
+      frameWidth: frame?.width ?? 0,
       titleTop: title?.top ?? 0,
       gridTop: grid?.top ?? 0,
       frameBottom: frame?.bottom ?? 0,
@@ -1663,6 +1666,9 @@ test('keeps the tall Settlement board attached to its compact HUD', async ({ pag
 
   expect(geometry.topbarHeight).toBeLessThanOrEqual(82);
   expect(geometry.hudToFrameGap).toBeLessThanOrEqual(4);
+  expect(geometry.frameLeft).toBeLessThanOrEqual(8);
+  expect(geometry.frameRight).toBeGreaterThanOrEqual(1432);
+  expect(geometry.frameWidth).toBeGreaterThanOrEqual(1424);
   expect(geometry.titleTop).toBeGreaterThanOrEqual(124);
   expect(geometry.titleTop).toBeLessThanOrEqual(138);
   expect(geometry.gridTop).toBeGreaterThanOrEqual(224);
