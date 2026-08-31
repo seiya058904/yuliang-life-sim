@@ -8209,6 +8209,80 @@ textarea {
   }
 }
 
+/* Shop identity rows mirror the reference scan order: category, product name,
+   price, and the real wishlist/status affordance share one compact line above
+   the fact lane. Keep the art column and card height frozen. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card,
+  .view-shop .shop-main .activity-card {
+    grid-template-rows: 28px minmax(0, 1fr) 30px;
+  }
+
+  .view-shop .shop-main .item-card .catalog-title-row,
+  .view-shop .shop-main .activity-card > .activity-card-body > .catalog-title-row {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) auto max-content;
+    align-items: center;
+    gap: 6px;
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .view-shop .shop-main .item-card .catalog-title-row .catalog-badge,
+  .view-shop .shop-main .activity-card .catalog-title-row .catalog-badge {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .view-shop .shop-main .item-card .catalog-title-row h2,
+  .view-shop .shop-main .activity-card .catalog-title-row h3 {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .view-shop .shop-main .item-card .catalog-title-row .catalog-price,
+  .view-shop .shop-main .activity-card .catalog-title-row .catalog-price {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .view-shop .shop-main .item-card .catalog-title-row .catalog-card-status,
+  .view-shop .shop-main .activity-card .catalog-title-row .catalog-card-status {
+    grid-column: 4;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .view-shop .shop-main .catalog-card-status:empty {
+    display: none;
+  }
+
+  .view-shop .shop-main .item-card .catalog-facts,
+  .view-shop .shop-main .activity-card > .activity-card-body > .catalog-facts {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: start;
+  }
+
+  .view-shop .shop-main .item-card .item-card-foot,
+  .view-shop .shop-main .activity-card > .activity-card-body > .secondary-button {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    align-self: end;
+  }
+
+  .view-shop .shop-main .item-card .card-art,
+  .view-shop .shop-main .activity-card > .card-art {
+    grid-row: 1 / span 2;
+  }
+}
+
 /* The Header wordmark shares the cat's direct reference raster. Keep the
    semantic h1 in place, but remove font metrics and text shadow from the
    visible layer so the two brand assets read as one 1-bit system. */

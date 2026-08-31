@@ -1226,6 +1226,36 @@ test('keeps Shop product titles on the primary catalog tier', async ({ page }) =
   expect(typography.every(({ titleFontSize, priceFontSize }) => titleFontSize >= 17 && priceFontSize >= 13)).toBe(true);
 });
 
+test('keeps Shop product identity on one first-scan row', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product identity anatomy is desktop-only');
+  for (const viewport of [{ width: 1440, height: 1080 }, { width: 1280, height: 720 }]) {
+    await page.setViewportSize(viewport);
+    await page.getByRole('button', { name: '商店', exact: true }).click();
+    for (const section of [
+      { tabName: '商品', cardSelector: '.item-card', titleSelector: '.catalog-title-row h2' },
+      { tabName: '娱乐', cardSelector: '.activity-card', titleSelector: '.catalog-title-row h3' },
+    ]) {
+      await page.getByRole('tab', { name: section.tabName, exact: true }).click();
+      const rows = await page.locator(`.view-shop .shop-main ${section.cardSelector}`).evaluateAll((items, titleSelector) => items.slice(0, 4).map((card) => {
+        const badge = card.querySelector('.catalog-badge')?.getBoundingClientRect();
+        const title = card.querySelector(titleSelector)?.getBoundingClientRect();
+        const price = card.querySelector('.catalog-price')?.getBoundingClientRect();
+        const status = card.querySelector('.catalog-card-status')?.getBoundingClientRect();
+        const tops = [badge?.top, title?.top, price?.top, status && status.width > 0 && status.height > 0 ? status.top : undefined]
+          .filter((value): value is number => value !== undefined);
+        return {
+          topSpread: tops.length ? Math.max(...tops) - Math.min(...tops) : Number.POSITIVE_INFINITY,
+          titleWidth: title?.width ?? 0,
+          priceWidth: price?.width ?? 0,
+        };
+      }), section.titleSelector);
+
+      expect(rows).toHaveLength(4);
+      expect(rows.every(({ topSpread, titleWidth, priceWidth }) => topSpread <= 5 && titleWidth > 0 && priceWidth > 0)).toBe(true);
+    }
+  }
+});
+
 test('gives Shop product cards a stronger reference reading tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product reading hierarchy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
