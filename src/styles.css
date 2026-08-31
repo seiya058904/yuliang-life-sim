@@ -9513,6 +9513,17 @@ textarea {
   }
 }
 
+/* Keep longer live activity names on the same single-line Hero tier as the
+   reference. The title remains sourced from the current activity; only its
+   desktop display size and wrapping are constrained. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-life .hero-activity h2 {
+    font-size: clamp(42px, 3.2vw, 46px);
+    letter-spacing: .08em;
+    white-space: nowrap;
+  }
+}
+
 /* At the primary 1440px desktop width the reference gives the Shop utility
    Rail a full reading column beside narrower catalogue cards. Keep the
    compact 1280px layout unchanged so low-height compatibility does not turn

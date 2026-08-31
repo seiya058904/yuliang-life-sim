@@ -345,6 +345,28 @@ test('keeps the Life activity progress and next-action band in the lower half of
   expect(geometry.nextBottom).toBeGreaterThanOrEqual(geometry.heroTop + geometry.heroHeight * 0.74);
 });
 
+test('keeps a long Life activity title on one reference-like Hero line', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Life Hero title assertion targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const titleGeometry = await page.locator('.view-life .hero-activity h2').evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return {
+      height: rect.height,
+      lineHeight: parseFloat(style.lineHeight),
+      whiteSpace: style.whiteSpace,
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    };
+  });
+
+  expect(titleGeometry.whiteSpace).toBe('nowrap');
+  expect(titleGeometry.height).toBeLessThanOrEqual(titleGeometry.lineHeight * 1.1);
+  expect(titleGeometry.scrollWidth).toBeLessThanOrEqual(titleGeometry.clientWidth);
+});
+
 test('keeps collapsed Life details as a floating affordance without a full-width row', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'life details affordance targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
