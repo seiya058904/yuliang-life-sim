@@ -562,7 +562,7 @@ test('renders the header brand cat on a fine 1-bit sprite grid', async ({ page }
   expect(sprite.rectCount).toBeGreaterThanOrEqual(100);
 });
 
-test('keeps empty Life inboxes as compact horizontal pixel states', async ({ page }) => {
+test('keeps empty Life inboxes as authored horizontal status lanes', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'life empty-state anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '生活', exact: true }).click();
@@ -588,22 +588,27 @@ test('keeps empty Life inboxes as compact horizontal pixel states', async ({ pag
       markRight: markRect?.right ?? 0,
       markCenterY: markRect ? markRect.top + markRect.height / 2 : 0,
       copyCenterY: copyRect ? copyRect.top + copyRect.height / 2 : 0,
+      strongFontSize: copy?.querySelector('strong') ? Number.parseFloat(getComputedStyle(copy.querySelector('strong')!).fontSize) : 0,
+      hintFontSize: hint ? Number.parseFloat(getComputedStyle(hint).fontSize) : 0,
+      hintHeight: hint?.getBoundingClientRect().height ?? 0,
       backgroundColor: style.backgroundColor,
-      borderStyle: style.borderStyle,
+      borderTopStyle: style.borderTopStyle,
+      borderBottomStyle: style.borderBottomStyle,
       hintVisible: hint ? getComputedStyle(hint).display !== 'none' : false,
     };
   }));
 
   expect(states.length).toBeGreaterThanOrEqual(2);
-  expect(states.every(({ gridTemplateColumns, textAlign, justifyItems, markWidth, markHeight, emptyWidth, emptyHeight, copyLeft, copyTop, markRight, markCenterY, copyCenterY, backgroundColor, borderStyle, hintVisible }) =>
+  expect(states.every(({ gridTemplateColumns, textAlign, justifyItems, markWidth, markHeight, emptyWidth, emptyHeight, copyLeft, copyTop, markRight, markCenterY, copyCenterY, strongFontSize, hintFontSize, hintHeight, backgroundColor, borderTopStyle, borderBottomStyle, hintVisible }) =>
     gridTemplateColumns.trim().split(/\s+/).length === 2 && textAlign === 'left' && justifyItems === 'start' &&
-    markWidth >= 32 && markWidth <= 36 && markHeight >= 32 && markHeight <= 36 &&
+    markWidth >= 38 && markWidth <= 44 && markHeight >= 38 && markHeight <= 44 &&
     emptyWidth >= 300 && emptyWidth <= 330 &&
-    emptyHeight >= 68 && emptyHeight <= 80 &&
+    emptyHeight >= 80 && emptyHeight <= 96 &&
     copyLeft >= markRight + 6 && copyTop >= 0 &&
-    Math.abs(markCenterY - copyCenterY) <= 10 &&
-    backgroundColor === 'rgba(0, 0, 0, 0)' && borderStyle === 'none' &&
-    !hintVisible
+    Math.abs(markCenterY - copyCenterY) <= 12 &&
+    strongFontSize >= 11.5 && hintFontSize >= 9 && hintHeight >= 8 &&
+    backgroundColor === 'rgba(0, 0, 0, 0)' &&
+    borderTopStyle === 'dotted' && borderBottomStyle === 'dotted' && hintVisible
   )).toBe(true);
 });
 
