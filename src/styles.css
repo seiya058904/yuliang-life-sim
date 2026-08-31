@@ -10307,3 +10307,16 @@ textarea {
     font-size: 10px;
   }
 }
+
+/* Product-card purchase controls keep the reference's compact icon-plus-label
+   rhythm while preserving the existing button hit area and click handler. */
+.view-shop .shop-main .item-card .item-card-foot .primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.view-shop .shop-main .item-card .item-card-foot .primary-button .pixel-icon {
+  flex: none;
+}

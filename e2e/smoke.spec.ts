@@ -1282,6 +1282,29 @@ test('keeps Shop product metadata and secondary actions in the readable pixel ti
   )).toBe(true);
 });
 
+test('keeps Shop product CTAs in the reference icon-plus-label anatomy', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card CTA anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const ctas = await page.locator('.view-shop .shop-main .item-card .item-card-foot .primary-button').evaluateAll((items) => items.slice(0, 4).map((button) => {
+    const icon = button.querySelector('.pixel-icon');
+    const iconRect = icon?.getBoundingClientRect();
+    return {
+      text: button.textContent?.trim() ?? '',
+      hasPixelIcon: Boolean(icon),
+      iconWidth: iconRect?.width ?? 0,
+      iconHeight: iconRect?.height ?? 0,
+      iconHidden: icon?.getAttribute('aria-hidden') === 'true',
+    };
+  }));
+
+  expect(ctas.length).toBeGreaterThan(0);
+  expect(ctas.every(({ text, hasPixelIcon, iconWidth, iconHeight, iconHidden }) =>
+    text.includes('加入清单') && hasPixelIcon && iconWidth >= 10 && iconHeight >= 10 && iconHidden
+  )).toBe(true);
+});
+
 test('keeps Shop product facts and primary CTA above the tiny web-copy tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card typography is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
