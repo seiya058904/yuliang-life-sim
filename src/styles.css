@@ -9082,7 +9082,7 @@ textarea {
   .persistent-status .pixel-avatar .pixel-illustration {
     width: 60px;
     height: 60px;
-    transform: translate(-14px, -8px);
+    transform: none;
   }
 }
 

@@ -639,6 +639,27 @@ test('renders the header brand cat on a fine 1-bit sprite grid', async ({ page }
   expect(sprite.rectCount).toBeGreaterThanOrEqual(100);
 });
 
+test('keeps the persistent mascot fully inside its tall portrait slot', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'persistent portrait framing targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const geometry = await page.locator('.persistent-status .pixel-avatar').evaluate((element) => {
+    const slot = element.getBoundingClientRect();
+    const sprite = element.querySelector('svg')?.getBoundingClientRect();
+    return {
+      slotLeft: slot.left,
+      slotRight: slot.right,
+      spriteLeft: sprite?.left ?? 0,
+      spriteRight: sprite?.right ?? 0,
+      spriteWidth: sprite?.width ?? 0,
+    };
+  });
+
+  expect(geometry.spriteWidth).toBeGreaterThanOrEqual(58);
+  expect(geometry.spriteLeft).toBeGreaterThanOrEqual(geometry.slotLeft - 0.5);
+  expect(geometry.spriteRight).toBeLessThanOrEqual(geometry.slotRight + 0.5);
+});
+
 test('keeps empty Life inboxes as authored horizontal status lanes', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'life empty-state anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
