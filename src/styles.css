@@ -9575,14 +9575,14 @@ textarea {
   }
 }
 
-/* At the primary 1440px desktop width the reference gives the Shop utility
-   Rail a full reading column beside narrower catalogue cards. Keep the
-   compact 1280px layout unchanged so low-height compatibility does not turn
-   the product cards into a cramped third column. The 360px rail also keeps
-   the selected detail aligned with the reference's narrower catalogue body. */
+/* At the primary 1440px desktop width the reference leaves a deliberate black
+   breathing lane after the Shop utility Rail. Keep the catalogue body's left
+   edge and card width unchanged while narrowing only the Rail and its local
+   layout footprint; the compact 1280px layout remains unchanged. */
 @media (min-width: 1321px) and (min-height: 801px) {
   .view-shop .shop-layout {
-    grid-template-columns: minmax(0, 1fr) 360px;
+    width: min(1290px, 100%);
+    grid-template-columns: minmax(0, 1fr) 250px;
   }
 
   .view-shop .shop-rail {
