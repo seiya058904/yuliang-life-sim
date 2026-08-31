@@ -2945,6 +2945,77 @@ test('keeps the Settlement review card on the shared visual anchor tier', async 
   expect(Math.abs(metrics.metricCenterX - metrics.cardCenterX)).toBeLessThanOrEqual(1);
 });
 
+test('keeps the tall Settlement achievement row on the reference width rhythm', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall settlement achievement rhythm targets the primary desktop surface');
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const rhythm = await page.locator('.monthly-summary.fullframe .highlight-row').evaluate((row) => {
+    const rowRect = row.getBoundingClientRect();
+    const cards = Array.from(row.querySelectorAll<HTMLElement>(':scope > .highlight-card')).map((card) => {
+      const rect = card.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, top: rect.top, width: rect.width, reflection: card.classList.contains('reflection') };
+    });
+    return {
+      left: rowRect.left,
+      right: rowRect.right,
+      width: rowRect.width,
+      gaps: cards.slice(1).map((card, index) => card.left - cards[index].right),
+      cards,
+    };
+  });
+
+  expect(rhythm.cards).toHaveLength(6);
+  expect(rhythm.left).toBeLessThanOrEqual(24);
+  expect(rhythm.right).toBeGreaterThanOrEqual(1414);
+  expect(rhythm.width).toBeGreaterThanOrEqual(1390);
+  expect(rhythm.cards[0].top).toBeLessThanOrEqual(730);
+  expect(rhythm.cards[0].width).toBeGreaterThanOrEqual(220);
+  expect(rhythm.cards.slice(1, 5).every(({ width }) => width >= 190 && width <= 205)).toBe(true);
+  expect(rhythm.cards[5].width).toBeGreaterThanOrEqual(260);
+  expect(rhythm.gaps.every((gap) => gap >= 18)).toBe(true);
+});
+
+test('keeps the tall Settlement footer attached to the achievement row', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall settlement footer rhythm targets the primary desktop surface');
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const geometry = await page.evaluate(() => {
+    const row = document.querySelector<HTMLElement>('.monthly-summary.fullframe .highlight-row')?.getBoundingClientRect();
+    const footer = document.querySelector<HTMLElement>('.monthly-summary.fullframe .settle-footer')?.getBoundingClientRect();
+    return {
+      rowBottom: row?.bottom ?? 0,
+      footerTop: footer?.top ?? 0,
+      footerHeight: footer?.height ?? 0,
+    };
+  });
+
+  expect(geometry.footerTop).toBeGreaterThanOrEqual(geometry.rowBottom);
+  expect(geometry.footerTop - geometry.rowBottom).toBeLessThanOrEqual(20);
+  expect(geometry.footerHeight).toBeGreaterThanOrEqual(110);
+});
+
 test('opens the settlement stage without revealing the underlying page', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement stage opacity targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

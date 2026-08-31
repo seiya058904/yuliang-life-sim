@@ -10570,3 +10570,25 @@ textarea {
     --pixel-clock-unit: 12px;
   }
 }
+
+/* The wide settlement reference gives the achievement strip its own
+   full-frame rhythm: one opening anchor, four standard records, and a wider
+   closing review. Keep the financial grid inset, but let this real six-card
+   row breathe to the inner frame edges. */
+@media (min-width: 1321px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-highlights {
+    margin-inline: -18px;
+    gap: 14px;
+  }
+
+  .monthly-summary.fullframe .settle-highlights .highlight-row {
+    grid-template-columns: 1.15fr repeat(4, minmax(0, 1fr)) 1.39fr;
+    gap: 22px;
+  }
+
+  .monthly-summary.fullframe .settle-footer {
+    align-self: stretch;
+    min-height: 0;
+    height: auto;
+  }
+}
