@@ -1277,7 +1277,7 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
       <div className="settle-avatar"><PixelIllustration name="mascot" size={56} /></div>
       <div className="settle-foot-text">这些数字都来自真实账本，本月变化已经记录。</div>
       <dl className="settle-attrs">{attributes.map(([label, value]) => <div key={label}><dt><PixelIcon name={settlementAttributeIcons[label] ?? 'users'} size={14} data-attribute-icon={label} />{label}</dt><dd><SegmentMeter value={value} segments={6} label={`${label} ${value}`} /></dd><b>{Math.round(value)}</b></div>)}</dl>
-      <button className="primary-button settle-continue" onClick={() => dispatch({ type: 'acknowledge_monthly_summary' })}>进入下个月</button>
+      <button className="primary-button settle-continue" onClick={() => dispatch({ type: 'acknowledge_monthly_summary' })}>进入下个月<PixelIcon name="arrow-right" size={14} aria-hidden="true" /></button>
       <small className="settle-continue-note">时间不会停止，机会稍纵即逝</small>
     </footer>
   </section></div>;

@@ -10320,3 +10320,35 @@ textarea {
 .view-shop .shop-main .item-card .item-card-foot .primary-button .pixel-icon {
   flex: none;
 }
+
+/* The tall settlement footer is a readable status rail, not a footnote. Keep
+   its real summary, labels, meters, and values one pixel tier above the
+   surrounding micro-copy while preserving the established two-line frame. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-foot-text {
+    font-size: 12px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs dt {
+    font-size: 12.5px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs .segment-meter i {
+    height: 11px;
+  }
+
+  .monthly-summary.fullframe .settle-attrs b {
+    font-size: 13px;
+  }
+}
+
+.monthly-summary.fullframe .settle-continue {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.monthly-summary.fullframe .settle-continue .pixel-icon {
+  flex: none;
+}

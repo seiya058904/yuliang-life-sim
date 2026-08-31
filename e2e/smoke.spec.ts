@@ -1828,6 +1828,72 @@ test('keeps settlement footer attributes in one readable desktop row', async ({ 
   expect(attrs.every(({ labelHeight, meterHeight, segmentCount }) => labelHeight >= 14 && meterHeight >= 9 && segmentCount === 6)).toBe(true);
 });
 
+test('keeps the tall Settlement footer above the micro-copy tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall settlement footer typography targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const typography = await page.locator('.monthly-summary.fullframe .settle-footer').evaluate((footer) => ({
+    summaryFontSize: Number.parseFloat(getComputedStyle(footer.querySelector<HTMLElement>('.settle-foot-text')!).fontSize),
+    attrs: Array.from(footer.querySelectorAll<HTMLElement>('.settle-attrs > div')).map((item) => ({
+      labelFontSize: Number.parseFloat(getComputedStyle(item.querySelector<HTMLElement>('dt')!).fontSize),
+      valueFontSize: Number.parseFloat(getComputedStyle(item.querySelector<HTMLElement>('b')!).fontSize),
+      meterHeight: Number.parseFloat(getComputedStyle(item.querySelector<HTMLElement>('.segment-meter i')!).height),
+    })),
+  }));
+
+  expect(typography.summaryFontSize).toBeGreaterThanOrEqual(12);
+  expect(typography.attrs).toHaveLength(6);
+  expect(typography.attrs.every(({ labelFontSize, valueFontSize, meterHeight }) =>
+    labelFontSize >= 12.5 && valueFontSize >= 13 && meterHeight >= 11
+  )).toBe(true);
+});
+
+test('keeps the Settlement advance CTA in the reference arrow-label anatomy', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall settlement CTA anatomy targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const cta = page.locator('.monthly-summary.fullframe .settle-continue');
+  const anatomy = await cta.evaluate((button) => {
+    const icon = button.querySelector('.pixel-icon');
+    const rect = icon?.getBoundingClientRect();
+    return {
+      text: button.textContent?.trim() ?? '',
+      hasPixelIcon: Boolean(icon),
+      iconWidth: rect?.width ?? 0,
+      iconHeight: rect?.height ?? 0,
+      iconHidden: icon?.getAttribute('aria-hidden') === 'true',
+    };
+  });
+
+  expect(anatomy.text).toContain('进入下个月');
+  expect(anatomy.hasPixelIcon).toBe(true);
+  expect(anatomy.iconWidth).toBeGreaterThanOrEqual(12);
+  expect(anatomy.iconHeight).toBeGreaterThanOrEqual(12);
+  expect(anatomy.iconHidden).toBe(true);
+});
+
 test('keeps the Settlement footer summary and attribute rail stacked beside the primary CTA', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'footer anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
