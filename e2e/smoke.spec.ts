@@ -403,6 +403,26 @@ test('keeps the Life forecast header on the reference inverse surface', async ({
   expect(headerGeometry.scrollWidth).toBeLessThanOrEqual(headerGeometry.clientWidth);
 });
 
+test('keeps the tall Life Hero clock on the dominant pixel-display tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Life Hero display tier is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const clock = await page.locator('.view-life .hero-clock').evaluate((element) => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return {
+      unit: Number.parseFloat(style.getPropertyValue('--pixel-clock-unit')),
+      width: rect.width,
+      height: rect.height,
+    };
+  });
+
+  expect(clock.unit).toBeGreaterThanOrEqual(12);
+  expect(clock.width).toBeGreaterThanOrEqual(315);
+  expect(clock.height).toBeGreaterThanOrEqual(90);
+});
+
 test('keeps the Life forecast net row on the light reading surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast surface assertion targets the supported desktop landscape surface');
   await page.getByRole('button', { name: '生活', exact: true }).click();

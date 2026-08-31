@@ -10561,3 +10561,12 @@ textarea {
     color: #555 !important;
   }
 }
+
+/* The reference's primary clock is a display surface, not the compact HUD
+   clock. Give the tall Hero one more raster step so its real current time has
+   the same visual authority without changing the low-height fit-safe scale. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-life .pixel-clock.hero-clock {
+    --pixel-clock-unit: 12px;
+  }
+}
