@@ -270,6 +270,38 @@ test('keeps an empty Shop Rail as a compact dark module stack', async ({ page })
   }
 });
 
+test('keeps low-height Shop support content in the main scroll context', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Shop scrolling targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const layout = await page.locator('.view-shop .shop-support-panels').evaluate((element) => {
+    const style = getComputedStyle(element);
+    const main = document.querySelector<HTMLElement>('.main-content');
+    const footer = document.querySelector<HTMLElement>('.persistent-status');
+    const mainRect = main?.getBoundingClientRect();
+    const footerRect = footer?.getBoundingClientRect();
+    return {
+      supportOverflowY: style.overflowY,
+      supportMaxHeight: style.maxHeight,
+      supportScrollHeight: element.scrollHeight,
+      supportClientHeight: element.clientHeight,
+      mainOverflowY: main ? getComputedStyle(main).overflowY : '',
+      mainScrollHeight: main?.scrollHeight ?? 0,
+      mainClientHeight: main?.clientHeight ?? 0,
+      mainBottom: mainRect?.bottom ?? 0,
+      footerTop: footerRect?.top ?? 0,
+    };
+  });
+
+  expect(layout.supportOverflowY).toBe('visible');
+  expect(layout.supportMaxHeight).toBe('none');
+  expect(layout.supportScrollHeight).toBe(layout.supportClientHeight);
+  expect(layout.mainOverflowY).toBe('auto');
+  expect(layout.mainScrollHeight).toBeGreaterThan(layout.mainClientHeight);
+  expect(layout.footerTop).toBeGreaterThanOrEqual(layout.mainBottom);
+});
+
 test('keeps Shop Rail modules on the shared stepped outer-frame grammar', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Rail frame grammar targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

@@ -9120,6 +9120,15 @@ textarea {
     background: #777;
     border: 1px solid #050505;
   }
+
+  /* Low-height Shop keeps one truthful scroll owner: the Main viewport. The
+     support panels continue below the catalog instead of becoming a nested,
+     clipped scroll box that hides the remaining guidance. */
+  .view-shop .shop-support-panels {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
 }
 
 /* In the tall Shop reference the first Rail module begins beside the product
