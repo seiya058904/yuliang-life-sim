@@ -8954,7 +8954,7 @@ textarea {
    advance action owns the right edge across both lines. */
 @media (min-width: 1181px) and (min-height: 801px) {
   .monthly-summary.fullframe .settle-footer {
-    grid-template-columns: 60px minmax(0, 1fr) 330px;
+    grid-template-columns: 60px minmax(0, 1fr) 346px;
     grid-template-rows: 49px 18px;
     align-content: start;
   }
@@ -8975,6 +8975,8 @@ textarea {
     grid-column: 3;
     grid-row: 1 / span 2;
     align-self: center;
+    justify-self: start;
+    width: 330px;
   }
 }
 

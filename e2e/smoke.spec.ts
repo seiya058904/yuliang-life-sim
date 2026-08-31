@@ -1540,7 +1540,14 @@ test('keeps the Settlement footer summary and attribute rail stacked beside the 
       const box = element.getBoundingClientRect();
       return { x: box.x, y: box.y, width: box.width, height: box.height };
     };
-    return { text: rect('.settle-foot-text'), attrs: rect('.settle-attrs'), cta: rect('.settle-continue') };
+    const summary = footer.closest<HTMLElement>('.monthly-summary.fullframe')?.getBoundingClientRect();
+    const cta = rect('.settle-continue');
+    return {
+      text: rect('.settle-foot-text'),
+      attrs: rect('.settle-attrs'),
+      cta,
+      ctaRightInset: summary && cta ? summary.right - cta.x - cta.width : null,
+    };
   });
 
   expect(layout.text).not.toBeNull();
@@ -1551,6 +1558,7 @@ test('keeps the Settlement footer summary and attribute rail stacked beside the 
   expect(layout.cta?.x ?? 0).toBeGreaterThan((layout.attrs?.x ?? 0) + (layout.attrs?.width ?? 0));
   expect(layout.cta?.y ?? 0).toBeLessThanOrEqual((layout.text?.y ?? 0) + 2);
   expect((layout.cta?.y ?? 0) + (layout.cta?.height ?? 0)).toBeGreaterThanOrEqual((layout.attrs?.y ?? 0) - 2);
+  expect(layout.ctaRightInset ?? 0).toBeGreaterThanOrEqual(36);
 });
 
 test('keeps settlement financial panels in the reference proportion', async ({ page }) => {
