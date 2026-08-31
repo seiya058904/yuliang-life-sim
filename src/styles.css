@@ -4506,7 +4506,8 @@ textarea {
     height: 48px;
   }
 
-  .view-shop .catalog-meter-stack {
+  .view-shop .item-card .catalog-meter-stack,
+  .view-shop .activity-card .catalog-meter-stack {
     display: none;
   }
 

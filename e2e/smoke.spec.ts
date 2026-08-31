@@ -160,6 +160,29 @@ test('keeps the selected Shop product detail in four reference information lanes
   expect(geometry.laneHeights.every((height) => height >= 34)).toBe(true);
 });
 
+test('keeps the selected Shop product effect meters visible in the detail lane', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'selected product effect meters target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const meters = await page.locator('.view-shop .shop-detail-fact[data-fact="属性变化"] .catalog-meter-row').evaluateAll((rows) => rows.map((row) => {
+    const rect = row.getBoundingClientRect();
+    const meter = row.querySelector('.segment-meter')?.getBoundingClientRect();
+    return {
+      display: getComputedStyle(row).display,
+      rowWidth: rect.width,
+      rowHeight: rect.height,
+      meterWidth: meter?.width ?? 0,
+      meterHeight: meter?.height ?? 0,
+    };
+  }));
+
+  expect(meters.length).toBeGreaterThan(0);
+  expect(meters.every(({ display, rowWidth, rowHeight, meterWidth, meterHeight }) =>
+    display === 'grid' && rowWidth > 0 && rowHeight >= 10 && meterWidth > 0 && meterHeight >= 5
+  )).toBe(true);
+});
+
 test('keeps Shop product facts above the purchase rail', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product-card rhythm targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
