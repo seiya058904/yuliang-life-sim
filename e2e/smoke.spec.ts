@@ -361,11 +361,19 @@ test('keeps the header brand cat as a dense stepped 1-bit mark', async ({ page }
     const brandBlock = element.closest('.brand-block');
     const wordmark = element.closest('.brand-block')?.querySelector('.brand-wordmark');
     const subtitle = element.closest('.brand-block')?.querySelector('.brand-subtitle');
+    const mark = element.closest('.brand-block')?.querySelector('.brand-mark');
+    const markRect = mark?.getBoundingClientRect();
+    const subtitleRect = subtitle?.getBoundingClientRect();
     return {
       rectCount: rects.length,
       width: box.width,
       height: box.height,
       x: box.x,
+      y: box.y,
+      markX: markRect ? Math.round(markRect.x) : null,
+      markY: markRect ? Math.round(markRect.y) : null,
+      subtitleX: subtitleRect ? Math.round(subtitleRect.x) : null,
+      subtitleY: subtitleRect ? Math.round(subtitleRect.y) : null,
       backgroundColor: style.backgroundColor,
       borderStyle: style.borderStyle,
       padding: style.padding,
@@ -378,7 +386,12 @@ test('keeps the header brand cat as a dense stepped 1-bit mark', async ({ page }
   expect(metrics.rectCount).toBeGreaterThanOrEqual(30);
   expect(metrics.width).toBe(56);
   expect(metrics.height).toBe(56);
-  expect(metrics.x).toBeGreaterThanOrEqual(260);
+  expect(Math.round(metrics.x)).toBe(272);
+  expect(Math.round(metrics.y)).toBe(33);
+  expect(metrics.markX).toBe(44);
+  expect(metrics.markY).toBe(27);
+  expect(metrics.subtitleX).toBe(174);
+  expect(metrics.subtitleY).toBe(35);
   expect(metrics.brandGap).toBe('23px');
   expect(metrics.wordmarkGap).toBe('18px');
   expect(metrics.subtitleFontSize).toBe('18px');

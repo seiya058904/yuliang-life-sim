@@ -693,7 +693,13 @@ export function PixelIllustration({ name, size = 64, className, ...props }: { na
       focusable="false"
       {...props}
     >
-      {cells.map(([x, y, w, h, knock], index) => (
+      {name === 'brand-cat' ? (
+        <g transform="translate(1.7 0.4) scale(0.91)">
+          {cells.map(([x, y, w, h, knock], index) => (
+            <rect key={index} x={x} y={y} width={w} height={h} fill={knock ? 'var(--il-knock, #090909)' : 'currentColor'} />
+          ))}
+        </g>
+      ) : cells.map(([x, y, w, h, knock], index) => (
         <rect key={index} x={x} y={y} width={w} height={h} fill={knock ? 'var(--il-knock, #090909)' : 'currentColor'} />
       ))}
     </svg>

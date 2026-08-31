@@ -8654,6 +8654,22 @@ textarea {
   .main-nav .nav-item {
     min-width: 118px;
   }
+
+  /* The wide reference carries the brand mark lower than the status copy:
+     keep the existing wordmark/cat hit boxes, but tune only their optical
+     anchors. The compact 1280 desktop header keeps its own compressed rule. */
+  .topbar .brand-block {
+    padding-left: 10px;
+  }
+
+  .topbar .brand-mark,
+  .topbar .brand-mascot {
+    transform: translateY(14px);
+  }
+
+  .topbar .brand-subtitle {
+    transform: translate(4px, -6px);
+  }
 }
 
 /* Persistent character portraits are part of the console frame, not boxed

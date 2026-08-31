@@ -106,11 +106,13 @@ describe('PixelIllustration', () => {
   it('keeps the header cat on the reference open-line density', () => {
     render(<PixelIllustration name="brand-cat" data-testid="brand-cat-open" />);
 
-    const cells = [...screen.getByTestId('brand-cat-open').querySelectorAll('rect')];
+    const illustration = screen.getByTestId('brand-cat-open');
+    const cells = [...illustration.querySelectorAll('rect')];
     const hasCell = (x: string, y: string) => cells.some((rect) =>
       rect.getAttribute('x') === x && rect.getAttribute('y') === y
     );
 
+    expect(illustration.querySelector('g')).toHaveAttribute('transform', 'translate(1.7 0.4) scale(0.91)');
     expect(cells.length).toBeLessThanOrEqual(160);
     expect(hasCell('7', '1')).toBe(false);
     expect(hasCell('8', '10')).toBe(false);
