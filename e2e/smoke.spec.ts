@@ -2949,6 +2949,20 @@ test('keeps empty Shop rail modules on dark shells with dark status lanes', asyn
   });
 });
 
+test('keeps tall Shop Rail empty-state copy above the micro tier', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name === 'mobile', 'tall Shop Rail copy tier targets the primary desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const copy = await page.locator('.view-shop .shop-rail .shop-rail-empty').evaluateAll((states) => states.map((state) => ({
+    title: Number.parseFloat(getComputedStyle(state.querySelector('strong')!).fontSize),
+    hint: Number.parseFloat(getComputedStyle(state.querySelector('small')!).fontSize),
+  })));
+
+  expect(copy).toHaveLength(3);
+  expect(copy.every(({ title, hint }) => title >= 11 && hint >= 9)).toBe(true);
+});
+
 test('keeps desktop card descriptions above the micro-copy tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'desktop card copy tier targets the supported landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
