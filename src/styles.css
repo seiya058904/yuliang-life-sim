@@ -9885,3 +9885,19 @@ textarea {
     );
   }
 }
+
+/* Low-height desktop cards keep their identity lane on one readable pixel
+   line so long real vacancy names cannot spill into the fact strip. The tall
+   reference keeps the established 18px display tier. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .career-section.market-mode .career-results .job-card .card-select h2 {
+    min-width: 0;
+    margin-block: 1px 2px;
+    font-size: 16px;
+    line-height: 1.05;
+    letter-spacing: -.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}

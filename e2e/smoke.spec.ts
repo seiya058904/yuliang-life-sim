@@ -797,6 +797,26 @@ test('keeps Career vacancy art compact beside the card identity', async ({ page 
   )).toBe(true);
 });
 
+test('keeps low-height Career card identity clear of its fact strip', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Career card anatomy is desktop-only');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const overlaps = await page.locator('.career-results .job-card').evaluateAll((cards) => cards.slice(0, 6).map((card) => {
+    const facts = card.querySelector('.job-facts')?.getBoundingClientRect();
+    const identityContentBottom = Math.max(...['.job-card-head', 'h2', '.job-company'].map((selector) =>
+      card.querySelector(selector)?.getBoundingClientRect().bottom ?? 0
+    ));
+    return {
+      identityContentBottom,
+      factsTop: facts?.top ?? 0,
+    };
+  }));
+
+  expect(overlaps.length).toBe(6);
+  expect(overlaps.every(({ identityContentBottom, factsTop }) => identityContentBottom <= factsTop + 0.5)).toBe(true);
+});
+
 test('keeps Career vacancy CTAs on the readable action tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career vacancy CTA anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
