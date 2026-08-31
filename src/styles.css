@@ -10379,3 +10379,13 @@ textarea {
 .monthly-summary.fullframe .settle-continue .pixel-icon {
   flex: none;
 }
+
+/* The net-worth change is the Settlement Hero's primary result, so its real
+   amount needs the same dominant reading tier as the reference. Keep this
+   increase on the tall desktop surface only; the compact 1280px ceremony
+   retains its existing fit-safe type scale. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-result-inverse .settle-big {
+    font-size: clamp(44px, 4.3vw, 64px);
+  }
+}

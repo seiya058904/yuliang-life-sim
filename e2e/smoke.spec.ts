@@ -1671,6 +1671,39 @@ test('keeps the tall Settlement board attached to its compact HUD', async ({ pag
   expect(geometry.bodyWidth).toBe(geometry.viewportWidth);
 });
 
+test('gives the Settlement net-worth Hero value a primary reading tier', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'Settlement Hero typography targets the primary desktop surface');
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const geometry = await page.locator('.monthly-summary.fullframe .settle-result-inverse').evaluate((element) => {
+    const big = element.querySelector<HTMLElement>('.settle-big');
+    const range = element.querySelector<HTMLElement>('.settle-range');
+    const bigRect = big?.getBoundingClientRect();
+    const rangeRect = range?.getBoundingClientRect();
+    return {
+      fontSize: Number.parseFloat(getComputedStyle(big!).fontSize),
+      height: bigRect?.height ?? 0,
+      bigBottom: bigRect?.bottom ?? 0,
+      rangeTop: rangeRect?.top ?? 0,
+    };
+  });
+
+  expect(geometry.fontSize).toBeGreaterThanOrEqual(60);
+  expect(geometry.height).toBeGreaterThanOrEqual(60);
+  expect(geometry.rangeTop).toBeGreaterThanOrEqual(geometry.bigBottom);
+});
+
 test('keeps visible Settlement copy free of internal identifiers', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement copy audit targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
