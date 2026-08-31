@@ -247,18 +247,51 @@ test('keeps the Shop catalog and utility rail in the reference proportion', asyn
     };
   });
 
-  expect(layout.width).toBeGreaterThanOrEqual(1280);
-  expect(layout.width).toBeLessThanOrEqual(1300);
+  expect(layout.width).toBeGreaterThanOrEqual(1390);
+  expect(layout.width).toBeLessThanOrEqual(1400);
   expect(layout.mainWidth).toBeGreaterThanOrEqual(1000);
   expect(layout.mainWidth).toBeLessThanOrEqual(1045);
-  expect(layout.railWidth).toBeGreaterThanOrEqual(240);
-  expect(layout.railWidth).toBeLessThanOrEqual(260);
+  expect(layout.railWidth).toBeGreaterThanOrEqual(350);
+  expect(layout.railWidth).toBeLessThanOrEqual(380);
   expect(layout.gap).toBeGreaterThanOrEqual(10);
-  expect(layout.gap).toBeLessThanOrEqual(14);
+  expect(layout.gap).toBeLessThanOrEqual(20);
   expect(Math.abs(layout.railTop - layout.tabsTop)).toBeLessThanOrEqual(2);
 });
 
-test('keeps an empty Shop Rail as a compact dark module stack', async ({ page }) => {
+test('keeps empty Career and Shop support bodies on readable light lanes', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'support-body surface assertions target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  const careerEmptyStyles = await page.locator('.career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty').evaluateAll((items) => items.map((item) => {
+    const style = getComputedStyle(item);
+    const icon = item.querySelector('.pixel-illustration');
+    const copy = item.querySelector('strong');
+    return {
+      background: style.backgroundColor,
+      border: style.borderTopColor,
+      color: copy ? getComputedStyle(copy).color : '',
+      iconColor: icon ? getComputedStyle(icon).color : '',
+    };
+  }));
+
+  expect(careerEmptyStyles).toHaveLength(3);
+  expect(careerEmptyStyles.every(({ background, border, color, iconColor }) =>
+    background === 'rgb(244, 244, 239)' && border === 'rgb(153, 153, 153)' && color === 'rgb(7, 7, 7)' && iconColor === 'rgb(7, 7, 7)'
+  )).toBe(true);
+
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  const rail = page.locator('.shop-rail');
+  const emptyStates = rail.locator('.shop-rail-empty');
+  await expect(emptyStates).toHaveCount(3);
+  for (let index = 0; index < await emptyStates.count(); index += 1) {
+    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
+  }
+});
+
+test('keeps an empty Shop Rail as a compact module stack', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'empty Shop Rail footprint targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -289,9 +322,9 @@ test('keeps an empty Shop Rail as a compact dark module stack', async ({ page })
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);
   for (let index = 0; index < await emptyStates.count(); index += 1) {
-    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(244, 244, 239)');
-    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
+    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
   }
 });
 
@@ -1262,7 +1295,7 @@ test('keeps Career support panels on the reference inverse surface split', async
   ]);
 });
 
-test('keeps empty Career support lanes on dark shells', async ({ page }) => {
+test('keeps empty Career support lanes readable inside dark shells', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career support lane surfaces are desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '职业', exact: true }).click();
@@ -1281,11 +1314,11 @@ test('keeps empty Career support lanes on dark shells', async ({ page }) => {
 
   expect(lanes).toHaveLength(3);
   expect(lanes.every(({ background, color, border, iconColor, strongColor }) =>
-    background === 'rgb(9, 9, 9)' &&
-    color === 'rgb(170, 170, 170)' &&
-    border === 'rgb(119, 119, 119)' &&
-    iconColor === 'rgb(244, 244, 239)' &&
-    strongColor === 'rgb(244, 244, 239)'
+    background === 'rgb(244, 244, 239)' &&
+    color === 'rgb(34, 34, 34)' &&
+    border === 'rgb(153, 153, 153)' &&
+    iconColor === 'rgb(7, 7, 7)' &&
+    strongColor === 'rgb(7, 7, 7)'
   )).toBe(true);
   await expect(page.locator('.career-bottom-insight')).toHaveCSS('background-color', 'rgb(12, 12, 12)');
 });
@@ -3181,7 +3214,7 @@ test('gives low-height desktop content a visible pixel scroll affordance', async
   });
 });
 
-test('keeps empty Shop rail modules on dark shells with dark status lanes', async ({ page }, testInfo) => {
+test('keeps empty Shop rail modules on dark shells with light status lanes', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'mobile', 'Shop rail surface anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -3203,9 +3236,9 @@ test('keeps empty Shop rail modules on dark shells with dark status lanes', asyn
   })));
 
   expect(surfaces).toEqual({
-    cart: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
-    inventory: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
-    wishlist: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    cart: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(34, 34, 34)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    inventory: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(34, 34, 34)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    wishlist: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(34, 34, 34)', shellBackgroundColor: 'rgb(9, 9, 9)' },
   });
 });
 

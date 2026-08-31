@@ -9576,14 +9576,14 @@ textarea {
   }
 }
 
-/* At the primary 1440px desktop width the reference leaves a deliberate black
-   breathing lane after the Shop utility Rail. Keep the catalogue body's left
-   edge and card width unchanged while narrowing only the Rail and its local
-   layout footprint; the compact 1280px layout remains unchanged. */
+/* At the primary 1440px desktop width the reference fills the fixed board with
+   a full utility Rail. Keep the catalogue's left edge stable while restoring
+   the Rail's readable width and right boundary; the compact 1280px layout
+   remains unchanged. */
 @media (min-width: 1321px) and (min-height: 801px) {
   .view-shop .shop-layout {
-    width: min(1290px, 100%);
-    grid-template-columns: minmax(0, 1fr) 250px;
+    width: min(1400px, 100%);
+    grid-template-columns: minmax(0, 1fr) 370px;
   }
 
   .view-shop .shop-rail {
@@ -10093,8 +10093,8 @@ textarea {
 }
 
 /* Populated Career support records use the reference's light inverse plane.
-   Empty records remain dark status lanes; only a real direct row list earns
-   the brighter surface and its matching title/body/footer hierarchy. */
+   Empty records keep their dark outer shell but use a readable light body lane;
+   only a real direct row list earns the full title/body/footer hierarchy. */
 @media (min-width: 1181px) {
   .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) {
     color: #070707;
@@ -10533,5 +10533,31 @@ textarea {
     left: 0;
     right: 0;
     white-space: nowrap;
+  }
+}
+
+/* Support panels keep the reference's outer black frame even when the save
+   has no records, but their real empty body is still a readable information
+   lane. This preserves truthful empty copy while matching the black-header /
+   light-body / black-CTA rhythm used by populated Career and Shop surfaces. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty,
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty {
+    color: #222 !important;
+    background: #f4f4ef !important;
+    border-color: #999 !important;
+    --il-knock: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty .pixel-illustration,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty strong,
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty .pixel-illustration,
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty strong {
+    color: #070707 !important;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .career-bottom-empty small,
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty small {
+    color: #555 !important;
   }
 }
