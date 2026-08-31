@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 
 export type PixelIllustrationName =
   | 'mascot' | 'brand-cat' | 'brand-wordmark' | 'life' | 'sleep' | 'work' | 'book' | 'coin' | 'controller' | 'users'
-  | 'suitcase' | 'house' | 'cash' | 'chart' | 'bag' | 'mail' | 'flag' | 'tag'
+  | 'suitcase' | 'house' | 'cash' | 'chart' | 'bag' | 'mail' | 'flag' | 'tag' | 'heart'
   | 'life-main' | 'life-activity' | 'career-market' | 'shop' | 'settlement' | 'settlement-income' | 'settlement-expense' | 'settlement-allocation' | 'wealth' | 'social' | 'social-alt' | 'social-mentor' | 'social-colleague' | 'city' | 'profile' | 'phone' | 'coffee'
   | 'camera' | 'laptop' | 'tablet' | 'headphones' | 'sneakers' | 'desk' | 'hoodie' | 'watch' | 'record' | 'film' | 'meal' | 'voucher' | 'dumbbell' | 'mountain' | 'painting' | 'flower' | 'diamond'
   | 'job-shop' | 'job-warehouse' | 'job-manager' | 'job-office' | 'job-logistics';
@@ -120,6 +120,10 @@ const scenes: Partial<Record<PixelIllustrationName, readonly Cell[]>> = {
     [4, 3, 2, 3], [10, 3, 2, 3], [5, 4, 6, 1, 1],
     [2, 6, 12, 10],
     [5, 9, 2, 2, 1], [9, 9, 2, 2, 1], [7, 13, 2, 1, 1],
+  ],
+  heart: [
+    [3, 4, 3, 2], [10, 4, 3, 2], [2, 6, 2, 4], [12, 6, 2, 4],
+    [4, 8, 8, 3], [5, 11, 6, 2], [7, 13, 2, 2],
   ],
   mail: [
     [1, 3, 14, 10],

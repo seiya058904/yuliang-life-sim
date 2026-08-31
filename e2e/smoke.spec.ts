@@ -291,6 +291,7 @@ test('keeps Shop inventory and wishlist rail headers on the shared icon grammar'
 
   await expect(page.locator('.shop-rail .rail-inventory .section-heading .pixel-icon')).toHaveAttribute('data-rail-icon', 'bag');
   await expect(page.locator('.shop-rail .rail-wishlist .section-heading .pixel-icon')).toHaveAttribute('data-rail-icon', 'heart');
+  await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty .pixel-illustration')).toHaveClass(/il-heart/);
 });
 
 test('keeps the Life forecast header on the reference inverse surface', async ({ page }) => {
