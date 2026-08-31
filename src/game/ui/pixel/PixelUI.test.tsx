@@ -93,13 +93,14 @@ describe('PixelIllustration', () => {
     );
 
     expect(cells.every((rect) => Number(rect.getAttribute('width')) >= 1 && rect.getAttribute('height') === '1')).toBe(true);
-    expect(hasCell('11', '1', '3', '1')).toBe(true);
-    expect(hasCell('38', '5', '7', '1')).toBe(true);
-    expect(hasCell('3', '26', '4', '1')).toBe(true);
-    expect(hasCell('27', '28', '1', '1')).toBe(true);
-    expect(hasCell('13', '39', '29', '1')).toBe(true);
+    expect(hasCell('11', '1', '4', '1')).toBe(true);
+    expect(hasCell('11', '5', '8', '1')).toBe(true);
+    expect(hasCell('39', '3', '6', '1')).toBe(true);
+    expect(hasCell('3', '27', '6', '1')).toBe(true);
+    expect(hasCell('27', '28', '3', '1')).toBe(true);
+    expect(hasCell('13', '39', '30', '1')).toBe(true);
     expect(cells.some((rect) => rect.getAttribute('fill') === 'var(--il-knock, #090909)')).toBe(false);
-    expect(cells.length).toBe(115);
+    expect(cells.length).toBe(127);
   });
 
   it('keeps the header cat on the reference open-line density without a coarse transform', () => {
@@ -113,8 +114,9 @@ describe('PixelIllustration', () => {
 
     expect(illustration).toHaveAttribute('shape-rendering', 'crispEdges');
     expect(illustration.querySelector('g')).toBeNull();
-    expect(cells.length).toBe(115);
+    expect(cells.length).toBe(127);
     expect(hasCell('11', '1')).toBe(true);
+    expect(hasCell('11', '5')).toBe(true);
     expect(hasCell('20', '10')).toBe(true);
   });
 
