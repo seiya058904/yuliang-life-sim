@@ -81,29 +81,28 @@ describe('PixelIllustration', () => {
     expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(70);
   });
 
-  it('keeps the brand mark on a reference-density stepped cat silhouette', () => {
+  it('keeps the brand mark on a fine reference-density stepped cat silhouette', () => {
     render(<PixelIllustration name="brand-cat" data-testid="brand-cat" />);
 
     const illustration = screen.getByTestId('brand-cat');
-    expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
+    expect(illustration).toHaveClass('fine-grid');
+    expect(illustration).toHaveAttribute('viewBox', '0 0 48 40');
     const cells = [...illustration.querySelectorAll('rect')];
     const hasCell = (x: string, y: string, width: string, height: string, fill?: string) => cells.some((rect) =>
       rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && (!fill || rect.getAttribute('fill') === fill)
     );
 
-    expect(cells.every((rect) => rect.getAttribute('width') === '1' && rect.getAttribute('height') === '1')).toBe(true);
-    expect(hasCell('4', '0', '1', '1')).toBe(true);
-    expect(hasCell('21', '4', '1', '1')).toBe(true);
-    expect(hasCell('0', '12', '1', '1')).toBe(true);
-    expect(hasCell('23', '12', '1', '1')).toBe(true);
-    expect(hasCell('5', '19', '1', '1')).toBe(true);
-    expect(hasCell('19', '19', '1', '1')).toBe(true);
-    expect(hasCell('4', '9', '1', '5')).toBe(false);
+    expect(cells.every((rect) => Number(rect.getAttribute('width')) >= 1 && rect.getAttribute('height') === '1')).toBe(true);
+    expect(hasCell('7', '0', '2', '1')).toBe(true);
+    expect(hasCell('34', '5', '6', '1')).toBe(true);
+    expect(hasCell('0', '26', '5', '1')).toBe(true);
+    expect(hasCell('23', '27', '1', '1')).toBe(true);
+    expect(hasCell('9', '39', '29', '1')).toBe(true);
     expect(cells.some((rect) => rect.getAttribute('fill') === 'var(--il-knock, #090909)')).toBe(false);
-    expect(cells.length).toBeGreaterThanOrEqual(140);
+    expect(cells.length).toBe(121);
   });
 
-  it('keeps the header cat on the reference open-line density', () => {
+  it('keeps the header cat on the reference open-line density without a coarse transform', () => {
     render(<PixelIllustration name="brand-cat" data-testid="brand-cat-open" />);
 
     const illustration = screen.getByTestId('brand-cat-open');
@@ -112,10 +111,11 @@ describe('PixelIllustration', () => {
       rect.getAttribute('x') === x && rect.getAttribute('y') === y
     );
 
-    expect(illustration.querySelector('g')).toHaveAttribute('transform', 'translate(1.7 0.4) scale(0.91)');
-    expect(cells.length).toBeLessThanOrEqual(160);
+    expect(illustration).toHaveAttribute('shape-rendering', 'crispEdges');
+    expect(illustration.querySelector('g')).toBeNull();
+    expect(cells.length).toBe(121);
     expect(hasCell('7', '1')).toBe(false);
-    expect(hasCell('8', '10')).toBe(false);
+    expect(hasCell('16', '10')).toBe(true);
   });
 
   it('keeps the persistent mascot on the open reference portrait grid', () => {

@@ -434,6 +434,23 @@ test('keeps the header brand cat as a dense stepped 1-bit mark', async ({ page }
   expect(metrics.padding).toBe('0px');
 });
 
+test('renders the header brand cat on a fine 1-bit sprite grid', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'brand sprite density targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const sprite = await page.locator('.brand-mascot').evaluate((element) => ({
+    viewBox: element.getAttribute('viewBox'),
+    className: element.getAttribute('class') ?? '',
+    shapeRendering: element.getAttribute('shape-rendering'),
+    rectCount: element.querySelectorAll('rect').length,
+  }));
+
+  expect(sprite.viewBox).toBe('0 0 48 40');
+  expect(sprite.className).toContain('fine-grid');
+  expect(sprite.shapeRendering).toBe('crispEdges');
+  expect(sprite.rectCount).toBeGreaterThanOrEqual(100);
+});
+
 test('keeps empty Life inboxes as compact horizontal pixel states', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'life empty-state anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
