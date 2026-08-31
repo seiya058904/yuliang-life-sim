@@ -9265,6 +9265,17 @@ textarea {
   }
 }
 
+/* Forecast rows are one continuous reading surface in the reference. Remove
+   the generic card inset from these real data groups while retaining the
+   outer frame and their authored horizontal dividers. */
+@media (min-width: 1181px) {
+  .view-life .life-hero-grid > .forecast-strip.inverse > .forecast-row::before,
+  .view-life .life-hero-grid > .forecast-strip.inverse > .forecast-net::before,
+  .view-life .life-hero-grid > .forecast-strip.inverse > .forecast-attrs::before {
+    display: none;
+  }
+}
+
 /* Idle Career cards use a quieter frame line so the selected vacancy remains
    the brightest card landmark without changing card geometry or semantics. */
 @media (min-width: 1181px) {

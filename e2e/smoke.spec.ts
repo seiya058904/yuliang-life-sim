@@ -324,6 +324,20 @@ test('keeps the Life forecast net row on the light reading surface', async ({ pa
   await expect(net.locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
 });
 
+test('keeps the fitted Life forecast data surface flat inside its inverse frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast frame assertion targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const innerFrames = await page.locator('.view-life .life-hero-grid > .forecast-strip.inverse > :is(.forecast-row, .forecast-net, .forecast-attrs)').evaluateAll((elements) => elements.map((element) => {
+    const pseudo = getComputedStyle(element, '::before');
+    return pseudo.display;
+  }));
+
+  expect(innerFrames).toHaveLength(4);
+  expect(innerFrames.every((display) => display === 'none')).toBe(true);
+});
+
 test('keeps the Life activity progress and next-action band in the lower half of the hero', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Life Hero rhythm targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
