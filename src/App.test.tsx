@@ -1515,4 +1515,18 @@ describe('余量 app flow', () => {
     expect(history).toHaveTextContent('第 2 月 · 1 次关系记录');
     expect(history).toHaveTextContent('第 1 年 · 联系人 2 人');
   });
+
+  it('humanizes canonical qualification ids in profile life history', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, lifeHistory: [
+      { id: 'career.qualification.client-service', day: 12, category: 'career', title: '获得client_service_experience资格', detail: '通过客户服务工作经验获得' },
+    ] } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '我的' }));
+    const history = screen.getByRole('region', { name: '人生记录' });
+    expect(history).toHaveTextContent('获得客户服务经验资格');
+    expect(history).not.toHaveTextContent('client_service_experience');
+  });
 });
