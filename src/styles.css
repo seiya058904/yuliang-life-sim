@@ -9901,3 +9901,49 @@ textarea {
     text-overflow: ellipsis;
   }
 }
+
+/* Life empty states keep their real hint visible as a quiet second line. A
+   34px marker gives the status lane a deliberate one-bit anchor without
+   turning the truthful empty state into another nested card. */
+@media (min-width: 1181px) {
+  .view-life .inbox-panel .inbox-empty {
+    flex: 0 0 72px;
+    min-height: 72px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    margin-block: auto;
+    padding: 8px 12px;
+    background: transparent;
+    border: 0;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark {
+    width: 34px;
+    height: 34px;
+    background: transparent;
+    border: 0;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark .pixel-illustration {
+    width: 30px;
+    height: 30px;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy {
+    display: grid;
+    gap: 2px;
+    align-self: center;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy strong {
+    color: #c7c7c0;
+    font-size: 11px;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy small {
+    display: block;
+    color: #777772;
+    font-size: 9px;
+    line-height: 1.35;
+  }
+}
