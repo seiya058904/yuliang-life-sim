@@ -323,7 +323,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
       action: '完整履历 ▸', target: () => onOpenTab('history'),
     },
     {
-      key: 'insight', icon: 'target' as const, title: '市场洞察', count: vacancies.length,
+      key: 'insight', icon: 'chart' as const, title: '市场洞察', count: vacancies.length,
       rows: [
         { label: '公开机会', value: `${vacancies.length} 个` },
         { label: '符合条件', value: `${eligibleCount} 个` },
@@ -337,7 +337,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
   ];
   return <div className="career-bottom-panels" aria-label="求职支持面板">
     {panels.map((panel) => <article className={`pixel-panel secondary career-bottom-panel career-bottom-${panel.key}`} key={panel.key}>
-      <header className="inbox-head"><PixelIcon name={panel.icon} size={18} /><h2>{panel.title}</h2>{panel.count > 0 && <b className="inbox-count">{panel.count}</b>}</header>
+      <header className="inbox-head"><PixelIcon name={panel.icon} size={18} data-panel-icon={panel.icon} /><h2>{panel.title}</h2>{panel.count > 0 && <b className="inbox-count">{panel.count}</b>}</header>
       {panel.key === 'insight' ? vacancies.length ? <div className="career-insight-body" aria-label="市场机会概览">
         <div className="career-insight-metrics">{insightMetrics.map((metric) => <div className="career-insight-metric" key={metric.label}><span>{metric.label}</span><SegmentMeter value={metric.value} max={metric.max} segments={7} label={`${metric.label} ${metric.caption}`} /><small>{metric.caption}</small></div>)}</div>
         <PixelIllustration name="chart" size={52} aria-hidden="true" />

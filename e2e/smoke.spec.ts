@@ -850,6 +850,14 @@ test('gives the Career market insight its readable pixel dashboard weight', asyn
   )).toBe(true);
 });
 
+test('uses the chart pixel mark for the Career market insight header', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career market insight icon targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  await expect(page.locator('.career-bottom-insight .inbox-head .pixel-icon')).toHaveAttribute('data-panel-icon', 'chart');
+});
+
 test('keeps Career vacancy descriptions compact inside the fixed card anatomy', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career vacancy-card anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
