@@ -386,8 +386,8 @@ test('keeps an empty Shop Rail in the tall reference frame', async ({ page }) =>
   expect(footprint.modules).toHaveLength(4);
   expect(footprint.modules[0].height).toBeGreaterThanOrEqual(180);
   expect(footprint.modules[1].height).toBeGreaterThanOrEqual(240);
-  expect(footprint.modules[2].height).toBeGreaterThanOrEqual(140);
-  expect(footprint.modules[3].height).toBeGreaterThanOrEqual(170);
+  expect(footprint.modules[2].height).toBeGreaterThanOrEqual(84);
+  expect(footprint.modules[3].height).toBeGreaterThanOrEqual(200);
 
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);
@@ -396,6 +396,29 @@ test('keeps an empty Shop Rail in the tall reference frame', async ({ page }) =>
     await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(244, 244, 239)');
     await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
   }
+});
+
+test('keeps the tall Shop inventory lane as a compact dark strip', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'inventory strip proportion targets the primary desktop surface');
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const inventory = page.locator('.shop-rail .rail-inventory');
+  const geometry = await inventory.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const heading = element.querySelector('.section-heading')?.getBoundingClientRect();
+    const state = element.querySelector('.shop-rail-empty')?.getBoundingClientRect();
+    return {
+      height: rect.height,
+      headingHeight: heading?.height ?? 0,
+      stateHeight: state?.height ?? 0,
+    };
+  });
+
+  expect(geometry.height).toBeGreaterThanOrEqual(84);
+  expect(geometry.height).toBeLessThanOrEqual(104);
+  expect(geometry.headingHeight).toBeLessThanOrEqual(42);
+  expect(geometry.stateHeight).toBeLessThanOrEqual(70);
 });
 
 test('keeps low-height Shop support content in the main scroll context', async ({ page }) => {

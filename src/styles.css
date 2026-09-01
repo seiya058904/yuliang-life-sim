@@ -10716,8 +10716,28 @@ textarea {
   .view-shop .shop-rail:has(.shop-rail-empty) {
     height: 815px;
     min-height: 815px;
-    grid-template-rows: 195px 260px 150px 180px;
+    grid-template-rows: 205px 270px 90px 220px;
     align-content: start;
+  }
+
+  .view-shop .shop-rail .rail-inventory .shop-rail-empty {
+    min-height: 0;
+    margin: 4px 0;
+    padding: 4px;
+  }
+
+  .view-shop .shop-rail .rail-inventory .shop-rail-empty .pixel-illustration {
+    width: 24px;
+    height: 24px;
+  }
+
+  .view-shop .shop-rail .rail-inventory .shop-rail-empty strong {
+    font-size: 11px;
+  }
+
+  .view-shop .shop-rail .rail-inventory .shop-rail-empty small {
+    font-size: 9px;
+    line-height: 1.1;
   }
 }
 
