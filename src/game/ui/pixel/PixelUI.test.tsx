@@ -218,6 +218,8 @@ describe('PixelIllustration', () => {
     );
 
     expect(hasCell('23', '10')).toBe(true);
+    expect(hasCell('4', '7')).toBe(true);
+    expect(hasCell('19', '7')).toBe(true);
     expect(cells.some((rect) => rect.getAttribute('x') === '0')).toBe(false);
   });
 
@@ -352,6 +354,6 @@ describe('PixelIllustration', () => {
     expect([...illustration.querySelectorAll('rect')].every((rect) =>
       rect.getAttribute('width') === '1' && rect.getAttribute('height') === '1' && rect.getAttribute('fill') === 'currentColor'
     )).toBe(true);
-    expect(illustration.querySelectorAll('rect').length).toBe(116);
+    expect(illustration.querySelectorAll('rect').length).toBe(118);
   });
 });
