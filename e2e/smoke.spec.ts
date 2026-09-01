@@ -304,12 +304,12 @@ test('keeps the Shop catalog and utility rail in the reference proportion', asyn
     };
   });
 
-  expect(layout.width).toBeGreaterThanOrEqual(1380);
-  expect(layout.width).toBeLessThanOrEqual(1400);
+  expect(layout.width).toBeGreaterThanOrEqual(1298);
+  expect(layout.width).toBeLessThanOrEqual(1312);
   expect(layout.mainWidth).toBeGreaterThanOrEqual(1000);
-  expect(layout.mainWidth).toBeLessThanOrEqual(1040);
-  expect(layout.railWidth).toBeGreaterThanOrEqual(350);
-  expect(layout.railWidth).toBeLessThanOrEqual(370);
+  expect(layout.mainWidth).toBeLessThanOrEqual(1030);
+  expect(layout.railWidth).toBeGreaterThanOrEqual(270);
+  expect(layout.railWidth).toBeLessThanOrEqual(290);
   expect(layout.gap).toBeGreaterThanOrEqual(10);
   expect(layout.gap).toBeLessThanOrEqual(20);
   expect(Math.abs(layout.railTop - layout.tabsTop)).toBeLessThanOrEqual(2);

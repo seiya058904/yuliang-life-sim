@@ -9617,8 +9617,8 @@ textarea {
    remains unchanged. */
 @media (min-width: 1321px) and (min-height: 801px) {
   .view-shop .shop-layout {
-    width: calc(100% - 8px);
-    grid-template-columns: minmax(0, 1fr) 360px;
+    width: min(1308px, 100%);
+    grid-template-columns: minmax(0, 1fr) 280px;
   }
 
   .view-shop .shop-rail {
