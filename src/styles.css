@@ -10463,6 +10463,31 @@ textarea {
   }
 }
 
+/* Keep the real Career requirement rows in the compact two-column information
+   block used by the reference detail rail. The rows and their values remain
+   authored by the game state; this only changes their desktop presentation. */
+@media (min-width: 1321px) and (min-height: 801px) {
+  .career-section.market-mode .career-detail.inverse > section:first-of-type {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+    align-content: start;
+  }
+
+  .career-section.market-mode .career-detail.inverse > section:first-of-type > h3 {
+    grid-column: 1 / -1;
+  }
+
+  .career-section.market-mode .career-detail.inverse > section:first-of-type > .requirement-line {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .career-section.market-mode .career-detail.inverse > section:first-of-type > .requirement-ok {
+    grid-column: 1 / -1;
+  }
+}
+
 /* A populated Life inbox keeps four real rows above its fixed action footer.
    The reference uses a tighter two-line row rhythm; compress populated rows
    on supported desktop surfaces while keeping empty-state spacing unchanged. */

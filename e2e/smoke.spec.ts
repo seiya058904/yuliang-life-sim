@@ -1445,6 +1445,32 @@ test('keeps the Career detail identity marker compact beside the job title', asy
   }
 });
 
+test('keeps populated Career requirements in a compact reference grid', async ({ page }) => {
+  test.skip(test.info().project.name !== 'desktop', 'Career requirement grid targets the primary desktop project');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+  await page.locator('.career-results .job-card').nth(2).getByRole('button').first().click();
+
+  const layout = await page.locator('.career-section.market-mode .career-detail.inverse').evaluate((detail) => {
+    const requirements = detail.querySelector<HTMLElement>(':scope > section:first-of-type');
+    const current = detail.querySelector<HTMLElement>(':scope > section:nth-of-type(2)');
+    const lines = Array.from(requirements?.querySelectorAll<HTMLElement>(':scope > .requirement-line') ?? []).map((line) => line.getBoundingClientRect());
+    return {
+      gridColumns: requirements ? getComputedStyle(requirements).gridTemplateColumns : '',
+      lineCount: lines.length,
+      firstLineTop: lines[0]?.top ?? 0,
+      secondLineTop: lines[1]?.top ?? 0,
+      requirementBottom: requirements?.getBoundingClientRect().bottom ?? 0,
+      currentTop: current?.getBoundingClientRect().top ?? 0,
+    };
+  });
+
+  expect(layout.lineCount).toBeGreaterThanOrEqual(4);
+  expect(layout.gridColumns.split(' ').length).toBe(2);
+  expect(layout.secondLineTop).toBeLessThan(layout.firstLineTop + 8);
+  expect(layout.requirementBottom).toBeLessThanOrEqual(layout.currentTop + 0.5);
+});
+
 test('anchors a satisfied Career requirement state inside the inverse detail rail', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career detail empty-state treatment is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
