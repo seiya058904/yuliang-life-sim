@@ -11786,3 +11786,21 @@ textarea {
     height: 12px;
   }
 }
+
+/* The inverse Forecast meter is a real ten-step display. Override the
+   generic forecast span rule so its hard-edged cells remain visible. */
+@media (min-width: 1181px) {
+  .view-life .forecast-strip.inverse .forecast-attr .segment-meter {
+    display: grid;
+    width: 128px;
+    min-width: 128px;
+    grid-auto-flow: column;
+    grid-auto-columns: 11px;
+    gap: 2px;
+  }
+
+  .view-life .forecast-strip.inverse .forecast-attr .segment-meter i {
+    width: 11px;
+    height: 7px;
+  }
+}

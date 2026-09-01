@@ -2714,10 +2714,13 @@ test('keeps Life forecast meters on the ten-step reference scale', async ({ page
   const meters = await page.locator('.view-life .forecast-attr .segment-meter').evaluateAll((elements) => elements.map((element) => ({
     segments: element.querySelectorAll('i').length,
     ariaMax: element.getAttribute('aria-valuemax'),
+    display: getComputedStyle(element).display,
+    width: element.getBoundingClientRect().width,
+    segmentWidth: element.querySelector('i')?.getBoundingClientRect().width ?? 0,
   })));
 
   expect(meters).toHaveLength(5);
-  expect(meters.every(({ segments, ariaMax }) => segments === 10 && ariaMax === '100')).toBe(true);
+  expect(meters.every(({ segments, ariaMax, display, width, segmentWidth }) => segments === 10 && ariaMax === '100' && display === 'grid' && width >= 120 && width <= 132 && segmentWidth >= 10 && segmentWidth <= 12)).toBe(true);
 });
 
 test('keeps the weekly planner utility row compact without removing its controls', async ({ page }) => {
