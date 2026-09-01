@@ -562,6 +562,42 @@ test('keeps the low-height Shop product matrix above the persistent footer', asy
   expect(layout.pagerTop).toBeGreaterThanOrEqual(layout.footerTop);
 });
 
+test('keeps the low-height Shop entertainment matrix above the persistent footer', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height desktop activity fit targets the supported landscape surface');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '娱乐', exact: true }).click();
+
+  const layout = await page.evaluate(() => {
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.view-shop .shop-main .activity-card')).slice(0, 12).map((card) => {
+      const rect = card.getBoundingClientRect();
+      const cta = card.querySelector<HTMLElement>('.activity-card-body > .secondary-button')?.getBoundingClientRect();
+      const contentBottom = Math.max(
+        card.querySelector<HTMLElement>('.card-art')?.getBoundingClientRect().bottom ?? 0,
+        card.querySelector<HTMLElement>('.catalog-title-row')?.getBoundingClientRect().bottom ?? 0,
+        card.querySelector<HTMLElement>('.catalog-facts')?.getBoundingClientRect().bottom ?? 0,
+        cta?.bottom ?? 0,
+      );
+      return { bottom: rect.bottom, height: rect.height, ctaBottom: cta?.bottom ?? 0, contentBottom };
+    });
+    const footer = document.querySelector('.persistent-status')?.getBoundingClientRect();
+    const pager = document.querySelector('.view-shop .catalog-pager')?.getBoundingClientRect();
+    return {
+      cards,
+      footerTop: footer?.top ?? 0,
+      pagerTop: pager?.top ?? 0,
+      maxBottom: Math.max(...cards.map(({ bottom }) => bottom)),
+    };
+  });
+
+  expect(layout.cards).toHaveLength(12);
+  expect(layout.cards.every(({ height, ctaBottom, contentBottom, bottom }) =>
+    height >= 108 && height <= 120 && ctaBottom <= bottom + 0.5 && contentBottom <= bottom - 1
+  )).toBe(true);
+  expect(layout.maxBottom).toBeLessThanOrEqual(layout.footerTop - 8);
+  expect(layout.pagerTop).toBeGreaterThanOrEqual(layout.footerTop);
+});
+
 test('keeps Shop Rail modules on the shared stepped outer-frame grammar', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Rail frame grammar targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
