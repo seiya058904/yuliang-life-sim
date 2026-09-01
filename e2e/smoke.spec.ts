@@ -1807,6 +1807,22 @@ test('uses light inverse surfaces for populated Career support rows', async ({ p
     headerBackground === 'rgb(244, 244, 239)' &&
     rowBackground === 'rgb(244, 244, 239)'
   )).toBe(true);
+
+  const rowGeometry = await page.locator('.career-bottom-panel:nth-child(-n+3):has(> .rail-rows)').evaluateAll((elements) => elements.map((element) => {
+    const rows = element.querySelector<HTMLElement>('.rail-rows')!;
+    const item = rows.querySelector<HTMLElement>('li')!;
+    const rowsRect = rows.getBoundingClientRect();
+    const itemRect = item.getBoundingClientRect();
+    return {
+      itemHeight: itemRect.height,
+      rowsHeight: rowsRect.height,
+      centerOffset: Math.abs((itemRect.top + itemRect.height / 2) - (rowsRect.top + rowsRect.height / 2)),
+    };
+  }));
+
+  expect(rowGeometry.every(({ itemHeight, rowsHeight, centerOffset }) =>
+    itemHeight < rowsHeight - 20 && centerOffset <= 2
+  )).toBe(true);
 });
 
 test('keeps the selected Career card frame brighter than idle cards', async ({ page }) => {

@@ -11242,6 +11242,15 @@ textarea {
   }
 }
 
+/* A populated support lane may contain only one real record. Keep that row
+   centered in the shared header/body/footer track so the light inverse
+   surface reads as an information lane instead of a top-heavy white block. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) > .rail-rows {
+    align-content: center;
+  }
+}
+
 /* Shop catalog cards use the same clipped outer silhouette as Career vacancy
    cards. The existing pseudo-frame keeps the border detail; clipping the real
    surface removes the ordinary rectangular corners underneath it. */
