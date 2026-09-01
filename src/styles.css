@@ -10787,11 +10787,11 @@ textarea {
 
   .modal-backdrop.settlement-mode {
     padding-top: 108px;
-    padding-bottom: 32px;
+    padding-bottom: 6px;
   }
 
   .monthly-summary.fullframe {
-    height: calc(100dvh - 144px);
+    height: calc(100dvh - 114px);
     padding-top: 10px;
   }
 }

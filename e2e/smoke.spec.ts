@@ -2169,6 +2169,26 @@ test('keeps the tall Settlement board separated from its compact HUD', async ({ 
   expect(geometry.bodyWidth).toBe(geometry.viewportWidth);
 });
 
+test('lets the tall Settlement frame use the reference bottom edge', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall Settlement frame footprint targets the primary desktop surface');
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const frameBottom = await page.locator('.monthly-summary.fullframe').evaluate((element) => element.getBoundingClientRect().bottom);
+  expect(frameBottom).toBeGreaterThanOrEqual(1068);
+  expect(frameBottom).toBeLessThanOrEqual(1078);
+});
+
 test('gives the Settlement net-worth Hero value a primary reading tier', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'Settlement Hero typography targets the primary desktop surface');
