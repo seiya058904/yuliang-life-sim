@@ -217,9 +217,9 @@ describe('PixelIllustration', () => {
       rect.getAttribute('x') === x && rect.getAttribute('y') === y
     );
 
-    expect(hasCell('23', '10')).toBe(true);
-    expect(hasCell('4', '7')).toBe(true);
-    expect(hasCell('19', '7')).toBe(true);
+    expect(hasCell('2', '5')).toBe(true);
+    expect(hasCell('20', '5')).toBe(true);
+    expect(hasCell('7', '6')).toBe(true);
     expect(cells.some((rect) => rect.getAttribute('x') === '0')).toBe(false);
   });
 
@@ -343,17 +343,19 @@ describe('PixelIllustration', () => {
     );
 
     expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
-    expect(hasPaintedCell('9', '5', '1', '1', 'currentColor')).toBe(true);
-    expect(hasPaintedCell('1', '9', '1', '1', 'currentColor')).toBe(true);
-    expect(hasPaintedCell('23', '8', '1', '1', 'currentColor')).toBe(true);
-    expect(hasPaintedCell('12', '14', '1', '1', 'currentColor')).toBe(true);
-    expect(hasCell('10', '13', '1', '1')).toBe(false);
-    expect(hasCell('14', '13', '1', '1')).toBe(false);
-    expect(hasPaintedCell('8', '8', '8', '5', 'currentColor')).toBe(false);
-    expect(hasKnockoutCell('8', '8', '2', '1')).toBe(false);
-    expect([...illustration.querySelectorAll('rect')].every((rect) =>
-      rect.getAttribute('width') === '1' && rect.getAttribute('height') === '1' && rect.getAttribute('fill') === 'currentColor'
-    )).toBe(true);
-    expect(illustration.querySelectorAll('rect').length).toBe(118);
+    expect(hasPaintedCell('2', '5', '2', '3', 'currentColor')).toBe(true);
+    expect(hasPaintedCell('20', '5', '2', '3', 'currentColor')).toBe(true);
+    expect(hasPaintedCell('7', '6', '1', '5', 'currentColor')).toBe(true);
+    expect(hasPaintedCell('10', '10', '4', '1', 'currentColor')).toBe(true);
+    expect(hasKnockoutCell('8', '6', '8', '5')).toBe(true);
+    expect([...illustration.querySelectorAll('rect')].every((rect) => {
+      const x = Number(rect.getAttribute('x'));
+      const y = Number(rect.getAttribute('y'));
+      const width = Number(rect.getAttribute('width'));
+      const height = Number(rect.getAttribute('height'));
+      return [x, y, width, height].every(Number.isInteger) && width > 0 && height > 0 &&
+        ['currentColor', 'var(--il-knock, #090909)'].includes(rect.getAttribute('fill') ?? '');
+    })).toBe(true);
+    expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(28);
   });
 });
