@@ -672,7 +672,7 @@ test('keeps the tall Life time column on the reference stepped rhythm', async ({
     const column = timeColumn.getBoundingClientRect();
     const read = (selector: string) => {
       const rect = timeColumn.querySelector<HTMLElement>(selector)?.getBoundingClientRect();
-      return { left: rect?.left ?? 0, top: rect?.top ?? 0, bottom: rect?.bottom ?? 0 };
+      return { left: rect?.left ?? 0, top: rect?.top ?? 0, bottom: rect?.bottom ?? 0, width: rect?.width ?? 0, height: rect?.height ?? 0 };
     };
     return {
       label: read('.console-kicker'),
@@ -692,6 +692,9 @@ test('keeps the tall Life time column on the reference stepped rhythm', async ({
   expect(geometry.date.top - geometry.column.top).toBeLessThanOrEqual(225);
   expect(geometry.icon.top - geometry.column.top).toBeGreaterThanOrEqual(175);
   expect(geometry.icon.top - geometry.column.top).toBeLessThanOrEqual(220);
+  expect(geometry.icon.width).toBeGreaterThanOrEqual(36);
+  expect(geometry.icon.width).toBeLessThanOrEqual(44);
+  expect(geometry.icon.height).toBe(geometry.icon.width);
   expect(geometry.icon.left).toBeLessThan(geometry.column.right - 36);
 });
 

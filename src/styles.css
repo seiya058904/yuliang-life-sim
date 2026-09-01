@@ -11097,8 +11097,10 @@ textarea {
   }
   .view-life .hero-time > .hero-day-icon {
     position: absolute;
-    top: 181px;
-    right: 52px;
+    top: 176px;
+    right: 44px;
+    width: 40px;
+    height: 40px;
     margin: 0;
   }
 }
