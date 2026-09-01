@@ -3250,6 +3250,8 @@ test('keeps desktop footer portraits open instead of boxed terminal icons', asyn
     return {
       boxWidth: Math.round(box.width),
       boxHeight: Math.round(box.height),
+      slotLeft: Math.round(box.left),
+      firstStatLeft: Math.round(element.closest('.persistent-status')?.querySelector<HTMLElement>('.persistent-stat')?.getBoundingClientRect().left ?? 0),
       svgWidth: Math.round(illustration?.width ?? 0),
       svgHeight: Math.round(illustration?.height ?? 0),
       svgBottom: Math.round(illustration?.bottom ?? 0),
@@ -3259,13 +3261,15 @@ test('keeps desktop footer portraits open instead of boxed terminal icons', asyn
       backgroundColor: style.backgroundColor,
       borderStyle: style.borderStyle,
       hasOpenShoulder: cells.some(({ x, y, width, height }) => x === '9' && y === '18' && width === '1' && height === '1'),
-      hasOpenCollar: cells.some(({ x, y, width, height }) => x === '8' && y === '20' && width === '1' && height === '1'),
+      hasOpenCollar: cells.some(({ x, y, width, height }) => x === '9' && y === '20' && width === '1' && height === '1'),
     };
   });
 
   expect(portrait).toEqual(expect.objectContaining({
     boxWidth: 60,
     boxHeight: 58,
+    slotLeft: 24,
+    firstStatLeft: 102,
     svgWidth: 60,
     svgHeight: 60,
     svgBottom: expect.any(Number),

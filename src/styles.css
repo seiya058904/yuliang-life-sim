@@ -9071,10 +9071,17 @@ textarea {
 }
 
 @media (min-width: 1181px) and (min-height: 801px) {
+  /* The reference portrait sits closer to the left frame than the HUD cells;
+     keep the right readout on its existing outer anchor while giving the
+     portrait its own wider breathing slot. */
+  .persistent-status {
+    padding: 5px 40px 5px 24px;
+  }
+
   .persistent-status .pixel-avatar {
     width: 60px;
     height: 58px;
-    margin-right: 8px;
+    margin-right: 18px;
     background: transparent;
     border: 0;
   }

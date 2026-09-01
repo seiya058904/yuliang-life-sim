@@ -146,10 +146,11 @@ describe('PixelIllustration', () => {
     expect(hasCell('0', '12', '1', '1')).toBe(true);
     expect(hasCell('23', '12', '1', '1')).toBe(true);
     expect(hasCell('9', '18', '1', '1')).toBe(true);
-    expect(hasCell('8', '20', '1', '1')).toBe(true);
+    expect(hasCell('9', '20', '1', '1')).toBe(true);
     expect(hasCell('9', '25', '1', '1')).toBe(true);
+    expect(hasCell('8', '20', '1', '1')).toBe(false);
     expect(hasCell('7', '8', '10', '6')).toBe(false);
-    expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(170);
+    expect(illustration.querySelectorAll('rect').length).toBe(191);
   });
 
   it('keeps the persistent portrait on the reference open-ring detail grid', () => {
@@ -162,9 +163,10 @@ describe('PixelIllustration', () => {
 
     expect(hasCell('0', '12')).toBe(true);
     expect(hasCell('23', '12')).toBe(true);
-    expect(hasCell('11', '12')).toBe(true);
+    expect(hasCell('9', '20')).toBe(true);
     expect(cells.some((rect) => rect.getAttribute('width') === '10' && rect.getAttribute('height') === '6')).toBe(false);
     expect(cells.every((rect) => rect.getAttribute('width') === '1' && rect.getAttribute('height') === '1')).toBe(true);
+    expect(cells.length).toBe(191);
   });
 
   it('keeps career and settlement anchors on the same fine grid', () => {
