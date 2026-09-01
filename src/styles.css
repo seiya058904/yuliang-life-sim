@@ -10963,3 +10963,56 @@ textarea {
     transform: translateY(-50%);
   }
 }
+
+/* Populated Career records stay on the same dark terminal plane as their
+   truthful empty states. The row list carries the real data; it should not
+   promote the whole support panel into a large light web card. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #777;
+    --frame-corner-line: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-head {
+    color: #f4f4ef;
+    background: #090909;
+    border-bottom-color: #555;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-head h2,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-head .pixel-icon {
+    color: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows {
+    color: #f4f4ef;
+    background: #090909;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows li {
+    color: #f4f4ef;
+    background: transparent;
+    border-bottom-color: #555;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows li span,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows li b {
+    color: #f4f4ef;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows li small {
+    color: #aaa;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-foot {
+    border-top-color: #555;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .inbox-foot button {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #777;
+  }
+}
