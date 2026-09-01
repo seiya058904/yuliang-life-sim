@@ -421,6 +421,48 @@ test('keeps the tall Shop inventory lane as a compact dark strip', async ({ page
   expect(geometry.stateHeight).toBeLessThanOrEqual(70);
 });
 
+test('keeps populated Shop inventory as an actionable pixel strip', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'populated inventory strip targets the primary desktop surface');
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.inventory = { 'item.seed-coffee': 1, 'item.seed-phone': 1 };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const inventory = page.locator('.shop-rail .rail-inventory');
+  const strip = inventory.locator('.inventory-strip');
+  await expect(strip).toBeVisible();
+  await expect(strip.locator('.inventory-item')).toHaveCount(2);
+  await expect(strip.getByText('现磨咖啡', { exact: true })).toBeVisible();
+  await expect(strip.getByText('实用手机', { exact: true })).toBeVisible();
+  await expect(strip.getByRole('button', { name: '使用一次', exact: true })).toBeVisible();
+  await expect(strip.getByRole('button', { name: '出售一次', exact: true })).toBeVisible();
+
+  const geometry = await inventory.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const stripRect = element.querySelector('.inventory-strip')?.getBoundingClientRect();
+    const strip = element.querySelector<HTMLElement>('.inventory-strip');
+    return {
+      height: rect.height,
+      stripHeight: stripRect?.height ?? 0,
+      stripScrollWidth: strip?.scrollWidth ?? 0,
+      stripClientWidth: strip?.clientWidth ?? 0,
+    };
+  });
+  expect(geometry.height).toBeLessThanOrEqual(104);
+  expect(geometry.stripHeight).toBeGreaterThanOrEqual(42);
+  expect(geometry.stripHeight).toBeLessThanOrEqual(62);
+  expect(geometry.stripScrollWidth).toBeLessThanOrEqual(geometry.stripClientWidth);
+
+  await strip.getByRole('button', { name: '使用一次', exact: true }).click();
+  await expect(strip.getByText('现磨咖啡', { exact: true })).toHaveCount(0);
+});
+
 test('keeps low-height Shop support content in the main scroll context', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Shop scrolling targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1280, height: 720 });

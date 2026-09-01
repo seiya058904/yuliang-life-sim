@@ -10707,17 +10707,100 @@ textarea {
   }
 }
 
-/* The tall Shop frame reserves the Rail as a real right-hand column even
-   before its cart, inventory, or wishlist has records. Keep those empty
-   states honest, but let their existing dark shells occupy the same vertical
-   reading lane as the populated reference instead of ending halfway down the
-   board and leaving an unowned black void. */
+/* The tall Shop frame reserves the Rail as a real right-hand column in both
+   empty and populated saves. The inventory lane is intentionally short like
+   the reference icon strip; its real item actions remain inside each tile. */
 @media (min-width: 1321px) and (min-height: 801px) {
+  .view-shop .shop-rail {
+    height: 815px;
+    min-height: 815px;
+    grid-template-rows: 205px 270px 90px 220px;
+    align-content: start;
+  }
+
   .view-shop .shop-rail:has(.shop-rail-empty) {
     height: 815px;
     min-height: 815px;
     grid-template-rows: 205px 270px 90px 220px;
     align-content: start;
+  }
+
+  .view-shop .shop-rail .rail-inventory .inventory-strip {
+    display: flex;
+    flex: 1;
+    min-height: 42px;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 6px;
+    padding: 4px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .view-shop .shop-rail .rail-inventory {
+    min-height: 0;
+    max-height: 90px;
+    overflow: hidden;
+  }
+
+  .view-shop .shop-rail .rail-inventory .inventory-item {
+    display: grid;
+    flex: 1 1 0;
+    grid-template-columns: 24px minmax(30px, 1fr) auto;
+    align-items: center;
+    gap: 4px;
+    min-height: 42px;
+    min-width: 0;
+    padding: 4px;
+    color: #f4f4ef;
+    background: #0c0c0c;
+    border: 1px dotted #555;
+    overflow: hidden;
+  }
+
+  .view-shop .shop-rail .rail-inventory .inventory-item-art {
+    width: 24px;
+    height: 24px;
+    color: #f4f4ef;
+  }
+
+  .view-shop .shop-rail .rail-inventory .inventory-item-copy {
+    min-width: 0;
+  }
+
+  .view-shop .shop-rail .rail-inventory .inventory-item-copy h3 {
+    margin: 0 0 2px;
+    overflow: hidden;
+    color: #f4f4ef;
+    font-size: 10px;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .view-shop .shop-rail .rail-inventory .inventory-item-copy span {
+    display: block;
+    overflow: hidden;
+    color: #aaa;
+    font-size: 9px;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .view-shop .shop-rail .rail-inventory .inventory-item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .view-shop .shop-rail .rail-inventory .inventory-item-actions button {
+    min-height: 18px;
+    padding: 2px 4px;
+    font-size: 8px;
+    line-height: 1;
+    white-space: nowrap;
   }
 
   .view-shop .shop-rail .rail-inventory .shop-rail-empty {
