@@ -10463,6 +10463,25 @@ textarea {
   }
 }
 
+/* The selected top-level tab is an inverse console marker, not a full-height
+   browser button. Keep the real navigation hit area and active semantics, but
+   give only the painted active surface the same stepped corners as the page
+   frames. */
+@media (min-width: 1181px) {
+  .main-nav .nav-item.active {
+    align-self: flex-start;
+    height: 39px;
+    min-height: 39px;
+    margin-top: 9px;
+    padding-block: 0;
+    clip-path: polygon(
+      0 7px, 7px 7px, 7px 0,
+      calc(100% - 7px) 0, calc(100% - 7px) 7px, 100% 7px,
+      100% 100%, 0 100%
+    );
+  }
+}
+
 /* Keep the real Career requirement rows in the compact two-column information
    block used by the reference detail rail. The rows and their values remain
    authored by the game state; this only changes their desktop presentation. */

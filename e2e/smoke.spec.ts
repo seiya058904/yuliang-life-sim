@@ -803,6 +803,27 @@ test('keeps navigation and panel anchors in the shared structural pixel tier', a
   expect(sizes.every(({ width, height }) => width >= 20 && height >= 20 && width <= 24 && height <= 24)).toBe(true);
 });
 
+test('keeps the active navigation state on a stepped inverse surface', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'desktop navigation surface targets the supported landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const active = await page.locator('.main-nav .nav-item.active').evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const style = getComputedStyle(element);
+    return {
+      background: style.backgroundColor,
+      clipPath: style.clipPath,
+      height: rect.height,
+    };
+  });
+
+  expect(active.background).toBe('rgb(244, 244, 239)');
+  expect(active.clipPath).not.toBe('none');
+  expect(active.height).toBeGreaterThanOrEqual(38);
+  expect(active.height).toBeLessThanOrEqual(41);
+});
+
 test('hides dormant scroll tracks on the fitted tall desktop surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall desktop scrollbar treatment targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
