@@ -352,6 +352,6 @@ describe('PixelIllustration', () => {
     expect([...illustration.querySelectorAll('rect')].every((rect) =>
       rect.getAttribute('width') === '1' && rect.getAttribute('height') === '1' && rect.getAttribute('fill') === 'currentColor'
     )).toBe(true);
-    expect(illustration.querySelectorAll('rect').length).toBe(115);
+    expect(illustration.querySelectorAll('rect').length).toBe(116);
   });
 });
