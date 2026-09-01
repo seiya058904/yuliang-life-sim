@@ -1237,7 +1237,7 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
           <span className="settle-ribbon">本月净资产{netWorthChange >= 0 ? '增加' : '减少'}</span>
           <strong className={`settle-big ${netWorthChange >= 0 ? 'positive' : 'negative'}`}>{netWorthChange >= 0 ? '+' : '-'}{money(Math.abs(netWorthChange))}</strong>
           <p className="settle-range">净资产从 {money(netWorthStart)} 变化为 {money(netWorthEnd)}（估值变化不等于现金收入）</p>
-          {growthPercent !== null && <em className="settle-badge">增幅 {netWorthChange >= 0 ? '+' : ''}{growthPercent}%</em>}
+          {growthPercent !== null && <em className="settle-badge"><span>增幅</span><strong>{netWorthChange >= 0 ? '+' : ''}{growthPercent}%</strong></em>}
           <div className="settle-result-motif" aria-hidden="true">
             {Array.from({ length: 16 }, (_, index) => <i className={`settle-ray settle-ray-${index + 1}`} key={`ray-${index}`} />)}
             {Array.from({ length: 14 }, (_, index) => <i className={`settle-spark settle-spark-${index + 1}`} key={`spark-${index}`} />)}
