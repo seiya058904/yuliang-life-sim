@@ -11249,8 +11249,15 @@ textarea {
   }
 
   .monthly-summary.fullframe {
-    height: calc(100dvh - 114px);
+    height: calc(100dvh - 122px);
     padding-top: 10px;
+  }
+
+  .monthly-summary.fullframe .settle-footer {
+    align-self: start;
+    min-height: 103px;
+    height: 103px;
+    margin-top: 24px;
   }
 }
 

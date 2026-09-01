@@ -2438,8 +2438,8 @@ test('lets the tall Settlement frame use the reference bottom edge', async ({ pa
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
 
   const frameBottom = await page.locator('.monthly-summary.fullframe').evaluate((element) => element.getBoundingClientRect().bottom);
-  expect(frameBottom).toBeGreaterThanOrEqual(1068);
-  expect(frameBottom).toBeLessThanOrEqual(1078);
+  expect(frameBottom).toBeGreaterThanOrEqual(1062);
+  expect(frameBottom).toBeLessThanOrEqual(1068);
 });
 
 test('gives the Settlement net-worth Hero value a primary reading tier', async ({ page }) => {
@@ -3636,16 +3636,22 @@ test('keeps the tall Settlement footer attached to the achievement row', async (
   const geometry = await page.evaluate(() => {
     const row = document.querySelector<HTMLElement>('.monthly-summary.fullframe .highlight-row')?.getBoundingClientRect();
     const footer = document.querySelector<HTMLElement>('.monthly-summary.fullframe .settle-footer')?.getBoundingClientRect();
+    const frame = document.querySelector<HTMLElement>('.monthly-summary.fullframe')?.getBoundingClientRect();
     return {
       rowBottom: row?.bottom ?? 0,
       footerTop: footer?.top ?? 0,
       footerHeight: footer?.height ?? 0,
+      frameBottom: frame?.bottom ?? 0,
     };
   });
 
   expect(geometry.footerTop).toBeGreaterThanOrEqual(geometry.rowBottom);
-  expect(geometry.footerTop - geometry.rowBottom).toBeLessThanOrEqual(20);
-  expect(geometry.footerHeight).toBeGreaterThanOrEqual(110);
+  expect(geometry.footerTop - geometry.rowBottom).toBeGreaterThanOrEqual(28);
+  expect(geometry.footerTop - geometry.rowBottom).toBeLessThanOrEqual(36);
+  expect(geometry.footerHeight).toBeGreaterThanOrEqual(100);
+  expect(geometry.footerHeight).toBeLessThanOrEqual(108);
+  expect(geometry.frameBottom).toBeGreaterThanOrEqual(1062);
+  expect(geometry.frameBottom).toBeLessThanOrEqual(1068);
 });
 
 test('opens the settlement stage without revealing the underlying page', async ({ page }) => {
