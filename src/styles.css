@@ -10463,6 +10463,35 @@ textarea {
   }
 }
 
+/* A populated Life inbox keeps four real rows above its fixed action footer.
+   The reference uses a tighter two-line row rhythm; compress populated rows
+   on supported desktop surfaces while keeping empty-state spacing unchanged. */
+@media (min-width: 1181px) {
+  .view-life .inbox-list li {
+    align-items: center;
+    padding: 3px 0;
+  }
+
+  .view-life .inbox-title {
+    gap: 1px;
+  }
+
+  .view-life .inbox-title b {
+    line-height: 1.15;
+  }
+
+  .view-life .inbox-title small {
+    line-height: 1.1;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .view-life .inbox-list li {
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+}
+
 /* Populated Career support panels use the reference's black-header / light-row
    rhythm. Keep the real records on their readable inverse plane, but return
    the outer shell, title band, and action footer to the dark console surface. */

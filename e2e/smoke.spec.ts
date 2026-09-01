@@ -1019,6 +1019,69 @@ test('keeps empty Life inboxes as compact one-line pixel status lanes', async ({
   )).toBe(true);
 });
 
+test('keeps a four-row Life inbox inside its fixed panel frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'life populated-row anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const messages = Array.from({ length: 4 }, (_, index) => ({
+    id: `message.visual-${index + 1}`,
+    day: index + 2,
+    characterId: 'character.seed-lin',
+    title: `林晨发来消息 ${index + 1}`,
+    body: '这是一条用于比较真实行高的消息。',
+    sourceId: 'interaction.seed-lin-meal',
+    read: index % 2 === 0,
+  }));
+  await page.evaluate((nextMessages) => {
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ messages: nextMessages }));
+  }, messages);
+  await page.reload();
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const geometry = await page.locator('.view-life .inbox-messages').evaluate((element) => {
+    const panel = element.getBoundingClientRect();
+    const footer = element.querySelector<HTMLElement>('.inbox-foot')?.getBoundingClientRect();
+    return {
+      rowCount: element.querySelectorAll('.inbox-list > li').length,
+      panelBottom: panel.bottom,
+      lastRowBottom: element.querySelector<HTMLElement>('.inbox-list > li:last-child')?.getBoundingClientRect().bottom ?? 0,
+      footerTop: footer?.top ?? 0,
+      footerBottom: footer?.bottom ?? 0,
+    };
+  });
+
+  expect(geometry.rowCount).toBe(4);
+  expect(geometry.lastRowBottom).toBeLessThanOrEqual(geometry.footerTop + 0.5);
+  expect(geometry.footerBottom).toBeLessThanOrEqual(geometry.panelBottom + 0.5);
+});
+
+test('keeps a four-row Life inbox inside its low-height panel frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Life populated-row anatomy is desktop-only');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const messages = Array.from({ length: 4 }, (_, index) => ({
+    id: `message.visual-low-${index + 1}`,
+    day: index + 2,
+    characterId: 'character.seed-lin',
+    title: `林晨发来消息 ${index + 1}`,
+    body: '这是一条用于比较真实行高的消息。',
+    sourceId: 'interaction.seed-lin-meal',
+    read: false,
+  }));
+  await page.evaluate((nextMessages) => {
+    localStorage.setItem('yuliang-save-v1', JSON.stringify({ messages: nextMessages }));
+  }, messages);
+  await page.reload();
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+  await page.locator('.view-life .inbox-messages').scrollIntoViewIfNeeded();
+
+  const geometry = await page.locator('.view-life .inbox-messages').evaluate((element) => {
+    const panel = element.getBoundingClientRect();
+    const footer = element.querySelector<HTMLElement>('.inbox-foot')?.getBoundingClientRect();
+    return { panelBottom: panel.bottom, footerBottom: footer?.bottom ?? 0 };
+  });
+
+  expect(geometry.footerBottom).toBeLessThanOrEqual(geometry.panelBottom + 0.5);
+});
+
 test('keeps Life weekly plan activity icons on the reference anchor tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'weekly plan icon tier targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
