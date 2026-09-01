@@ -659,8 +659,10 @@ test('keeps the tall Life Hero clock on the dominant pixel-display tier', async 
   });
 
   expect(clock.unit).toBeGreaterThanOrEqual(12);
-  expect(clock.width).toBeGreaterThanOrEqual(315);
-  expect(clock.height).toBeGreaterThanOrEqual(90);
+  expect(clock.width).toBeGreaterThanOrEqual(270);
+  expect(clock.width).toBeLessThanOrEqual(285);
+  expect(clock.height).toBeGreaterThanOrEqual(84);
+  expect(clock.height).toBeLessThanOrEqual(92);
 });
 
 test('keeps the tall Life time column on the reference stepped rhythm', async ({ page }) => {
@@ -688,6 +690,8 @@ test('keeps the tall Life time column on the reference stepped rhythm', async ({
   expect(geometry.label.top - geometry.column.top).toBeLessThanOrEqual(34);
   expect(geometry.clock.top - geometry.column.top).toBeGreaterThanOrEqual(68);
   expect(geometry.clock.top - geometry.column.top).toBeLessThanOrEqual(92);
+  expect(geometry.clock.left - geometry.column.left).toBeGreaterThanOrEqual(18);
+  expect(geometry.clock.left - geometry.column.left).toBeLessThanOrEqual(26);
   expect(geometry.date.top - geometry.column.top).toBeGreaterThanOrEqual(185);
   expect(geometry.date.top - geometry.column.top).toBeLessThanOrEqual(225);
   expect(geometry.icon.top - geometry.column.top).toBeGreaterThanOrEqual(175);

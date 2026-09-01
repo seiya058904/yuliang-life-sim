@@ -11091,6 +11091,15 @@ textarea {
   }
   .view-life .hero-time > .hero-clock {
     margin-top: 37px;
+    margin-left: 20px;
+  }
+  .view-life .hero-time > .hero-clock .pixel-clock-glyph {
+    grid-template-columns: repeat(var(--pixel-clock-columns), 11px);
+    column-gap: 0;
+    row-gap: 1px;
+  }
+  .view-life .hero-time > .hero-clock .pixel-clock-glyph i {
+    width: 11px;
   }
   .view-life .hero-time > .hero-date {
     margin-top: 30px;
