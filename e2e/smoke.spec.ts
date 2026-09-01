@@ -2430,6 +2430,37 @@ test('keeps the tall Settlement footer above the micro-copy tier', async ({ page
   )).toBe(true);
 });
 
+test('keeps tall settlement ledger rows in the readable reference tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall settlement ledger typography targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const typography = await page.locator('.monthly-summary.fullframe .settle-panel').evaluateAll((panels) => panels.map((panel) => ({
+    headingFontSize: Number.parseFloat(getComputedStyle(panel.querySelector<HTMLElement>('h3')!).fontSize),
+    rows: Array.from(panel.querySelectorAll<HTMLElement>('.settle-rows li')).map((row) => ({
+      fontSize: Number.parseFloat(getComputedStyle(row).fontSize),
+      iconWidth: row.querySelector<HTMLElement>('.pixel-icon')?.getBoundingClientRect().width ?? null,
+      amountFontSize: Number.parseFloat(getComputedStyle(row.querySelector<HTMLElement>('b')!).fontSize),
+    })),
+  })));
+
+  expect(typography.every(({ headingFontSize, rows }) =>
+    headingFontSize >= 15 && rows.every(({ fontSize, iconWidth, amountFontSize }) =>
+      fontSize >= 13 && (iconWidth === null || iconWidth >= 18) && amountFontSize >= 13
+    )
+  )).toBe(true);
+});
+
 test('keeps the Settlement advance CTA in the reference arrow-label anatomy', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall settlement CTA anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

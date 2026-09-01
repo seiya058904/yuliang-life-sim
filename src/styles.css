@@ -10525,6 +10525,41 @@ textarea {
   }
 }
 
+/* Tall settlement ledgers need the same readable row register as the
+   reference. Keep the compact low-height rules intact, but let headings,
+   labels, icons, and amounts carry enough weight on the primary canvas. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-panel > h3 {
+    font-size: 15px;
+    letter-spacing: .025em;
+  }
+
+  .monthly-summary.fullframe .settle-rows li {
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 8px 0;
+    font-size: 13px;
+    line-height: 1.2;
+  }
+
+  .monthly-summary.fullframe .settle-rows li .pixel-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .monthly-summary.fullframe .settle-rows li b {
+    font-size: 13px;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc li {
+    grid-template-columns: 74px minmax(0, 1fr) auto;
+  }
+
+  .monthly-summary.fullframe .settle-rows.alloc li.is-zero em {
+    display: none;
+  }
+}
+
 /* A tall Career board has enough width to let a truthful empty state read as
    one compact status lane: keep the real marker and copy together instead of
    stacking three small elements in the middle of a dead black block. */
