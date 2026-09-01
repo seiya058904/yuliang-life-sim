@@ -1339,9 +1339,9 @@ test('keeps Career vacancy art compact beside the card identity', async ({ page 
 
   expect(art.length).toBeGreaterThan(0);
   expect(art.every(({ frameWidth, frameHeight, illustrationWidth, illustrationHeight }) =>
-    frameWidth === 56 && frameHeight === 56 &&
-    illustrationWidth >= 58 && illustrationWidth <= 60 &&
-    illustrationHeight >= 58 && illustrationHeight <= 60
+    frameWidth === 40 && frameHeight === 40 &&
+    illustrationWidth >= 36 && illustrationWidth <= 38 &&
+    illustrationHeight >= 36 && illustrationHeight <= 38
   )).toBe(true);
 });
 
@@ -1374,8 +1374,8 @@ test('keeps Career card identity beside a frameless semantic icon', async ({ pag
   }));
   expect(identity).toHaveLength(6);
   expect(identity.every(({ frame, icon, kind, title, company, frameBorder, frameBackground }) =>
-    frame?.width === 56 && frame.height === 56 &&
-    icon && icon.width >= 58 && icon.width <= 60 && icon.height >= 58 && icon.height <= 60 &&
+    frame?.width === 40 && frame.height === 40 &&
+    icon && icon.width >= 36 && icon.width <= 38 && icon.height >= 36 && icon.height <= 38 &&
     kind && title && company &&
     Math.abs(kind.top - title.top) <= 5 &&
     company.top >= title.bottom - 0.5 &&

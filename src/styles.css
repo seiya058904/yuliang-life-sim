@@ -11030,25 +11030,26 @@ textarea {
   }
 }
 
-/* Tall Career cards give the authored 1-bit vacancy mark the same open visual
-   anchor as the reference card. The low-height desktop override above stays
-   compact so the 1280x720 surface keeps its existing fit-safe anatomy. */
+/* Tall Career cards keep the authored 1-bit vacancy mark compact like the
+   reference card. The low-height desktop override above stays fit-safe, while
+   the smaller tall mark gives the title and company the primary identity tier. */
 @media (min-width: 1181px) and (min-height: 801px) {
   .career-section.market-mode .career-results .job-card .card-select {
-    grid-template-columns: 56px minmax(0, 1fr);
-    column-gap: 8px;
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 6px;
   }
 
   .career-section.market-mode .career-results .job-card .career-card-art {
-    width: 56px;
-    height: 56px;
+    width: 40px;
+    height: 40px;
     border: 0;
     background: transparent;
   }
 
   .career-section.market-mode .career-results .job-card .career-card-art .pixel-illustration {
-    width: 52px;
-    height: 52px;
+    width: 34px;
+    height: 34px;
+    transform: scale(1.08);
   }
 }
 
