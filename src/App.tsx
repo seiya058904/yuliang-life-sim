@@ -316,7 +316,7 @@ function ForecastPanel({ game, scrollTarget = '.life-planning-section' }: { game
     <div className="forecast-row"><span>预计支出</span><strong>-{money(forecast.expense)}</strong></div>
     <div className="forecast-net"><span>现金净变化</span><strong>{forecast.netCash >= 0 ? '+' : '-'}{money(Math.abs(forecast.netCash))}</strong></div>
     <div className="forecast-attrs"><span className="forecast-sub">属性变化</span>
-      {attributes.map(([key, value]) => <div className="forecast-attr" key={key}><PixelIcon name={forecastAttributeIcons[key] ?? 'spark'} size={13} /><span>{attributeLabels[key] ?? key}</span><SegmentMeter value={getAttribute(game, key)} max={Math.max(60, getAttribute(game, key) + Math.abs(value))} segments={8} /><b>{value > 0 ? '+' : value < 0 ? '-' : '±'}{Math.abs(value)}</b></div>)}
+      {attributes.map(([key, value]) => <div className="forecast-attr" key={key}><PixelIcon name={forecastAttributeIcons[key] ?? 'spark'} size={13} /><span>{attributeLabels[key] ?? key}</span><SegmentMeter value={getAttribute(game, key)} max={100} segments={10} /><b>{value > 0 ? '+' : value < 0 ? '-' : '±'}{Math.abs(value)}</b></div>)}
     </div>
     <button className="forecast-more" onClick={() => document.querySelector(scrollTarget)?.scrollIntoView({ behavior: 'smooth' })}>详细预测 ▸</button>
   </section>;
