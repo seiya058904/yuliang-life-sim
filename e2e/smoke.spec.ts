@@ -1542,7 +1542,7 @@ test('keeps empty Career support copy in a compact horizontal status lane', asyn
   )).toBe(true);
 });
 
-test('keeps populated Career support rows on the shared dark record plane', async ({ page }) => {
+test('uses light inverse surfaces for populated Career support rows', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'populated Career support surfaces are desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
@@ -1580,10 +1580,10 @@ test('keeps populated Career support rows on the shared dark record plane', asyn
 
   expect(surfaces).toHaveLength(3);
   expect(surfaces.every(({ background, color, headerBackground, rowBackground }) =>
-    background === 'rgb(9, 9, 9)' &&
-    color === 'rgb(244, 244, 239)' &&
-    headerBackground === 'rgb(9, 9, 9)' &&
-    rowBackground === 'rgb(9, 9, 9)'
+    background === 'rgb(244, 244, 239)' &&
+    color === 'rgb(7, 7, 7)' &&
+    headerBackground === 'rgb(244, 244, 239)' &&
+    rowBackground === 'rgb(244, 244, 239)'
   )).toBe(true);
 });
 
