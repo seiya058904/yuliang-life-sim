@@ -1958,15 +1958,20 @@ test('keeps tall Career support panels above the persistent footer', async ({ pa
   await page.getByRole('button', { name: '职业', exact: true }).click();
 
   const geometry = await page.evaluate(() => {
+    const shell = document.querySelector<HTMLElement>('.career-market-shell');
+    const support = document.querySelector<HTMLElement>('.career-bottom-panels');
     const panels = Array.from(document.querySelectorAll<HTMLElement>('.career-bottom-panel'));
     const footer = document.querySelector<HTMLElement>('.persistent-status');
     return {
+      supportGap: (support?.getBoundingClientRect().top ?? 0) - (shell?.getBoundingClientRect().bottom ?? 0),
       panelHeight: panels[0]?.getBoundingClientRect().height ?? 0,
       panelBottom: Math.max(...panels.map((panel) => panel.getBoundingClientRect().bottom)),
       footerTop: footer?.getBoundingClientRect().top ?? 0,
     };
   });
 
+  expect(geometry.supportGap).toBeGreaterThanOrEqual(16);
+  expect(geometry.supportGap).toBeLessThanOrEqual(18);
   expect(geometry.panelHeight).toBeGreaterThanOrEqual(160);
   expect(geometry.panelHeight).toBeLessThanOrEqual(170);
   expect(geometry.panelBottom).toBeLessThanOrEqual(geometry.footerTop - 4);

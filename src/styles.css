@@ -9257,7 +9257,7 @@ textarea {
    panel's real empty state share the same header/content/action grid. */
 @media (min-width: 1181px) and (min-height: 801px) {
   .career-section.market-mode .career-bottom-panels {
-    margin-top: 21px;
+    margin-top: 16px;
   }
 
   .career-section.market-mode .career-bottom-panel {
