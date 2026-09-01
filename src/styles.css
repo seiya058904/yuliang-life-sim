@@ -10663,3 +10663,21 @@ textarea {
     padding-top: 10px;
   }
 }
+
+/* The reference keeps the date copy as the first read, then tucks the
+   calendar glyph onto the lower-right edge of the same status cell. */
+@media (min-width: 1181px) {
+  .status-date {
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  .status-date > span {
+    align-self: center;
+  }
+
+  .status-date > .pixel-icon {
+    align-self: flex-end;
+    margin-bottom: 4px;
+  }
+}

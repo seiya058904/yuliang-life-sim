@@ -3205,6 +3205,29 @@ test('keeps the header settings glyph on an integer pixel scale', async ({ page 
   expect(icon).toEqual({ width: 32, height: 32 });
 });
 
+test('keeps the header date copy before its trailing calendar anchor', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'header date anatomy targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const layout = await page.locator('.status-date').evaluate((element) => {
+    const icon = element.querySelector<SVGElement>(':scope > .pixel-icon');
+    const copy = element.querySelector<HTMLElement>(':scope > span');
+    const iconRect = icon?.getBoundingClientRect();
+    const copyRect = copy?.getBoundingClientRect();
+    return {
+      childOrder: Array.from(element.children).map((child) => child.tagName),
+      copyRight: copyRect?.right ?? 0,
+      iconLeft: iconRect?.left ?? 0,
+      iconTop: iconRect?.top ?? 0,
+      copyBottom: copyRect?.bottom ?? 0,
+    };
+  });
+
+  expect(layout.childOrder).toEqual(['SPAN', 'svg']);
+  expect(layout.iconLeft).toBeGreaterThanOrEqual(layout.copyRight);
+  expect(layout.iconTop).toBeGreaterThanOrEqual(layout.copyBottom - 20);
+});
+
 test('keeps shared panels on the stepped corner and divider grammar', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shared frame grammar targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
