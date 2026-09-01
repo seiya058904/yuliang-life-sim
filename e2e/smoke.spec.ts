@@ -2447,6 +2447,47 @@ test('keeps low-height life content scrollable above the persistent footer', asy
   expect(geometry.plannerBottom).toBeLessThanOrEqual(geometry.footerTop);
 });
 
+test('keeps the low-height Life weekly planner fully above the persistent footer', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height desktop planner fit is desktop-only');
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const geometry = await page.evaluate(() => {
+    const planner = document.querySelector('.view-life .planner');
+    const footer = document.querySelector('.persistent-status');
+    const plannerRect = planner?.getBoundingClientRect();
+    const footerRect = footer?.getBoundingClientRect();
+    const rows = [...document.querySelectorAll('.view-life .planner-row')].map((element) => {
+      const rect = element.getBoundingClientRect();
+      return { bottom: rect.bottom, clientHeight: element.clientHeight, scrollHeight: element.scrollHeight };
+    });
+    const actions = document.querySelector('.view-life .planner-actions');
+    const actionRect = actions?.getBoundingClientRect();
+    const actionButton = actions?.querySelector('button');
+    const actionButtonRect = actionButton?.getBoundingClientRect();
+    const cells = [...document.querySelectorAll('.view-life .planner-row .plan-cell')].map((element) => ({
+      clientHeight: element.clientHeight,
+      scrollHeight: element.scrollHeight,
+    }));
+    return {
+      plannerBottom: plannerRect?.bottom ?? 0,
+      footerTop: footerRect?.top ?? 0,
+      rowCount: rows.length,
+      rows,
+      actionsBottom: actionRect?.bottom ?? 0,
+      actionButtonBottom: actionButtonRect?.bottom ?? 0,
+      cells,
+    };
+  });
+
+  expect(geometry.rowCount).toBe(2);
+  expect(geometry.plannerBottom).toBeLessThanOrEqual(geometry.footerTop - 8);
+  expect(geometry.rows.every(({ bottom, clientHeight, scrollHeight }) => bottom <= geometry.plannerBottom + 1 && scrollHeight <= clientHeight + 1)).toBe(true);
+  expect(geometry.actionsBottom).toBeLessThanOrEqual(geometry.plannerBottom + 1);
+  expect(geometry.actionButtonBottom).toBeLessThanOrEqual(geometry.actionsBottom + 1);
+  expect(geometry.cells.every(({ clientHeight, scrollHeight }) => scrollHeight <= clientHeight + 1)).toBe(true);
+});
+
 test('keeps the Life forecast attribute rows on the readable pixel tier', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast attribute tier is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });

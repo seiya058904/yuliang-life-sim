@@ -10463,6 +10463,84 @@ textarea {
   }
 }
 
+/* Low-height Life keeps the complete authored Hero and weekly plan in the
+   first viewport. The plan still carries its real icon, activity label,
+   period, repeat toggle, and cost; only the surrounding vertical rhythm is
+   compressed so the persistent footer cannot cover the second row. */
+@media (min-width: 1181px) and (max-height: 800px) {
+  .view-life .life-hero-grid {
+    height: 334px;
+    min-height: 334px;
+  }
+
+  .view-life .life-hero-grid .time-console {
+    height: 334px;
+    min-height: 0;
+    padding: 14px 18px 8px;
+  }
+
+  .view-life .life-hero-grid .hero-cols {
+    height: 100%;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse {
+    height: 334px;
+    min-height: 334px;
+    max-height: 334px;
+    grid-template-rows: 46px 36px 36px 44px minmax(0, 1fr) 34px;
+    padding: 8px 10px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-head {
+    padding: 6px 12px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-row {
+    padding-block: 4px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net {
+    padding-block: 5px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attrs {
+    min-height: 0;
+    padding-block: 2px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr {
+    min-height: 20px;
+    padding-block: 1px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-more {
+    min-height: 30px;
+    padding-block: 5px;
+  }
+
+  .view-life .life-planning-section .planner-head {
+    height: 30px;
+    min-height: 30px;
+  }
+
+  .view-life .life-planning-section .planner-row,
+  .view-life .life-planning-section .plan-cell {
+    height: 42px;
+    min-height: 42px;
+  }
+
+  .view-life .life-planning-section .plan-cell {
+    padding: 3px 5px;
+  }
+
+  .view-life .life-planning-section .planner-actions {
+    height: 26px;
+    min-height: 26px;
+    gap: 12px;
+    padding-block: 1px;
+  }
+}
+
 /* At the supported 1280×720 desktop target, keep the real twelve-product
    matrix in four complete rows before the persistent HUD. This is a
    fit-only compression: the tall reference card keeps its larger art and
