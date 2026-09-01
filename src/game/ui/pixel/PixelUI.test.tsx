@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { PixelClock } from './PixelUI';
+import { PixelAction, PixelClock } from './PixelUI';
 import { PixelIcon } from './PixelIcon';
 import { PixelIllustration } from './PixelIllustration';
 
@@ -13,6 +13,20 @@ describe('PixelClock', () => {
     expect(clock).toHaveTextContent('08:00');
     expect(clock.querySelectorAll('.pixel-clock-glyph')).toHaveLength(5);
     expect(clock.querySelectorAll('.pixel-clock-glyph .filled').length).toBeGreaterThan(0);
+  });
+});
+
+describe('PixelAction', () => {
+  it('renders a decorative directional mark as a shared hard-edged glyph', () => {
+    render(<PixelAction label="查看完整安排" />);
+
+    const action = screen.getByText('查看完整安排').parentElement;
+    expect(action).toHaveClass('pixel-action');
+    const icon = action?.querySelector('.pixel-icon');
+    expect(icon).not.toBeNull();
+    expect(icon).toHaveAttribute('shape-rendering', 'crispEdges');
+    expect(icon?.querySelectorAll('path')).toHaveLength(0);
+    expect(icon?.querySelectorAll('rect').length).toBeGreaterThan(0);
   });
 });
 

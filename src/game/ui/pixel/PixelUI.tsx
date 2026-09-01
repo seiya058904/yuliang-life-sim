@@ -1,4 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
+import { PixelIcon } from './PixelIcon';
 
 const pixelClockGlyphs: Record<string, readonly string[]> = {
   '0': ['01110', '10001', '10011', '10101', '11001', '10001', '01110'],
@@ -28,6 +29,10 @@ export function PixelClock({ value, size = 'hero', className = '', ...props }: {
       })}
     </span>
   </span>;
+}
+
+export function PixelAction({ label, size = 10 }: { label: string; size?: number }) {
+  return <span className="pixel-action"><span className="pixel-action-label">{label}</span><PixelIcon name="chevron-right" size={size} /></span>;
 }
 
 export function SegmentMeter({ value, max = 100, segments = 8, label }: { value: number; max?: number; segments?: number; label?: string }) {

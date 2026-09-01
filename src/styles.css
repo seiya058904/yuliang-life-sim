@@ -7827,6 +7827,34 @@ textarea {
   min-height: 10px;
 }
 
+/* Decorative CTA direction markers use the same solid, stepped triangle as
+   the reference controls. The label remains normal text so the icon stays
+   hidden from the accessible name and does not alter button semantics. */
+.pixel-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  vertical-align: middle;
+}
+
+.pixel-action .pixel-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+}
+
+.career-section.market-mode .career-toolbar-popover > summary .pixel-action {
+  gap: 4px;
+}
+
+.career-section.market-mode .career-toolbar-popover > summary .pixel-action .pixel-icon {
+  width: 9px;
+  height: 9px;
+}
+
 /* Keep the vacancy description at its real two-line height. The fixed card
    still aligns its status and CTA at the bottom, but the unused room is
    shared between the identity, facts, description, and footer instead of

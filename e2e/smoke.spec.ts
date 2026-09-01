@@ -233,7 +233,7 @@ test('keeps the shop utility rail on the stepped header-row-footer surfaces', as
   await expect(cart.getByRole('button', { name: '一次购买' })).toHaveCSS('background-color', 'rgb(7, 7, 7)');
   await expect(schedule).toHaveCSS('background-color', 'rgb(244, 244, 239)');
   await expect(schedule.locator('header')).toHaveCSS('background-color', 'rgb(7, 7, 7)');
-  await expect(schedule.getByRole('button', { name: '查看完整安排 ▸' })).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(schedule.getByRole('button', { name: '查看完整安排' })).toHaveCSS('background-color', 'rgb(7, 7, 7)');
   await expect(page.locator('.shop-rail .rail-inventory')).toHaveCSS('background-color', 'rgb(9, 9, 9)');
 
   for (const moduleSelector of ['.rail-inventory', '.rail-wishlist']) {
@@ -612,6 +612,49 @@ test('hides dormant scroll tracks on the fitted tall desktop surface', async ({ 
 
   expect(detailOverflow.overflowY).toBe('auto');
   expect(detailOverflow.scrollHeight).toBeGreaterThan(detailOverflow.clientHeight);
+});
+
+test('keeps tall desktop marks on shared pixel primitives without live scrollbars', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall desktop pixel-system audit targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  for (const view of ['生活', '职业', '商店']) {
+    await page.getByRole('button', { name: view, exact: true }).click();
+    const audit = await page.evaluate(() => {
+      const visible = (element: HTMLElement) => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+      };
+      const liveScrollbars = Array.from(document.querySelectorAll<HTMLElement>('*'))
+        .filter((element) => visible(element))
+        .filter((element) => {
+          const style = getComputedStyle(element);
+          const scrollX = (style.overflowX === 'auto' || style.overflowX === 'scroll') && element.scrollWidth > element.clientWidth + 1;
+          const scrollY = (style.overflowY === 'auto' || style.overflowY === 'scroll') && element.scrollHeight > element.clientHeight + 1;
+          return scrollX || scrollY;
+        })
+        .map((element) => element.className || element.tagName);
+      const nonPixelSvgs = Array.from(document.querySelectorAll<SVGElement>('svg'))
+        .filter((element) => visible(element as unknown as HTMLElement))
+        .filter((element) => !element.classList.contains('pixel-icon') && !element.classList.contains('pixel-illustration'))
+        .map((element) => element.outerHTML.slice(0, 80));
+      const directionalTextMarkers = Array.from(document.querySelectorAll<HTMLElement>('.forecast-more, .inbox-foot button, .rail-link, .status-detail, .career-toolbar-popover > summary'))
+        .filter((element) => visible(element))
+        .filter((element) => element.textContent?.includes('▸'))
+        .map((element) => element.textContent?.trim() ?? '');
+      const directionalIconCount = Array.from(document.querySelectorAll<HTMLElement>('.forecast-more, .inbox-foot button, .rail-link, .status-detail, .career-toolbar-popover > summary'))
+        .filter((element) => visible(element))
+        .filter((element) => element.querySelector('.pixel-action .pixel-icon'))
+        .length;
+      return { liveScrollbars, nonPixelSvgs, directionalTextMarkers, directionalIconCount };
+    });
+
+    expect(audit.liveScrollbars, `${view} has a live scrollbar`).toEqual([]);
+    expect(audit.nonPixelSvgs, `${view} has a non-pixel SVG`).toEqual([]);
+    expect(audit.directionalTextMarkers, `${view} has a visible text arrow`).toEqual([]);
+    expect(audit.directionalIconCount, `${view} has no shared directional icon`).toBeGreaterThan(0);
+  }
 });
 
 test('keeps the header brand cat as a dense stepped 1-bit mark', async ({ page }) => {

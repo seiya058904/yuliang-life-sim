@@ -17,7 +17,7 @@ import { LifeHistoryList } from './game/ui/LifeHistoryList';
 import { PixelIcon, type PixelIconName } from './game/ui/pixel/PixelIcon';
 import { PixelIllustration } from './game/ui/pixel/PixelIllustration';
 import type { PixelIllustrationName } from './game/ui/pixel/PixelIllustration';
-import { PixelClock, SegmentMeter } from './game/ui/pixel/PixelUI';
+import { PixelAction, PixelClock, SegmentMeter } from './game/ui/pixel/PixelUI';
 import { PersistentStatusBar } from './game/ui/pixel/PersistentStatusBar';
 import { displayContentName, displayMappedLabel, displaySettlementHighlightLabel, humanizeContentId } from './game/ui/pixel/displayNames';
 import { forecastWeeklyPlan } from './game/engine/forecast';
@@ -318,7 +318,7 @@ function ForecastPanel({ game, scrollTarget = '.life-planning-section' }: { game
     <div className="forecast-attrs"><span className="forecast-sub">属性变化</span>
       {attributes.map(([key, value]) => <div className="forecast-attr" key={key}><PixelIcon name={forecastAttributeIcons[key] ?? 'spark'} size={13} /><span>{attributeLabels[key] ?? key}</span><SegmentMeter value={getAttribute(game, key)} max={100} segments={10} /><b>{value > 0 ? '+' : value < 0 ? '-' : '±'}{Math.abs(value)}</b></div>)}
     </div>
-    <button className="forecast-more" onClick={() => document.querySelector(scrollTarget)?.scrollIntoView({ behavior: 'smooth' })}>详细预测 ▸</button>
+    <button className="forecast-more" onClick={() => document.querySelector(scrollTarget)?.scrollIntoView({ behavior: 'smooth' })}><PixelAction label="详细预测" /></button>
   </section>;
 }
 
@@ -516,16 +516,16 @@ function InboxGrid({ game, onNavigate }: { game: GameState; onNavigate?: (view: 
   }
 
   const panels = [
-    { key: 'pending', icon: 'alert' as PixelIconName, title: '待处理事项', count: pending.length, empty: '世界会按计划继续运转。', emptyHint: '安排下一周后，新的节点会在这里出现。', emptyIllustration: 'flag' as PixelIllustrationName, rows: pending, hasMore: pending.length > 4, action: '我的档案 ▸', target: 'profile' as ViewId },
-    { key: 'messages', icon: 'mail' as PixelIconName, title: '消息', count: (game.messages ?? []).length, empty: '收件箱暂时是空的。', emptyHint: '新的对话会在关系变化后出现。', emptyIllustration: 'mail' as PixelIllustrationName, rows: messageRows, hasMore: messageRowSource.length > messageRows.length, action: '前往社交 ▸', target: 'relations' as ViewId },
-    { key: 'events', icon: 'spark' as PixelIconName, title: '事件', count: game.eventsToday || eventRows.length, empty: '这一周风平浪静。', emptyHint: '城市开始运行后，见闻会被记录在这里。', emptyIllustration: 'spark' as PixelIllustrationName, rows: eventRows, hasMore: ambientEntries.length > 3, action: '打开城市 ▸', target: 'city' as ViewId },
-    { key: 'offers', icon: 'tag' as PixelIconName, title: 'Offer 与机会', count: (game.opportunities?.length ?? 0) + (game.gigs?.length ?? 0), empty: '', emptyIllustration: 'tag' as PixelIllustrationName, rows: offerRows, hasMore: opportunities.length > 2 || gigs.length > 1, action: '进入招聘市场 ▸', target: 'work' as ViewId },
+    { key: 'pending', icon: 'alert' as PixelIconName, title: '待处理事项', count: pending.length, empty: '世界会按计划继续运转。', emptyHint: '安排下一周后，新的节点会在这里出现。', emptyIllustration: 'flag' as PixelIllustrationName, rows: pending, hasMore: pending.length > 4, action: '我的档案', target: 'profile' as ViewId },
+    { key: 'messages', icon: 'mail' as PixelIconName, title: '消息', count: (game.messages ?? []).length, empty: '收件箱暂时是空的。', emptyHint: '新的对话会在关系变化后出现。', emptyIllustration: 'mail' as PixelIllustrationName, rows: messageRows, hasMore: messageRowSource.length > messageRows.length, action: '前往社交', target: 'relations' as ViewId },
+    { key: 'events', icon: 'spark' as PixelIconName, title: '事件', count: game.eventsToday || eventRows.length, empty: '这一周风平浪静。', emptyHint: '城市开始运行后，见闻会被记录在这里。', emptyIllustration: 'spark' as PixelIllustrationName, rows: eventRows, hasMore: ambientEntries.length > 3, action: '打开城市', target: 'city' as ViewId },
+    { key: 'offers', icon: 'tag' as PixelIconName, title: 'Offer 与机会', count: (game.opportunities?.length ?? 0) + (game.gigs?.length ?? 0), empty: '', emptyIllustration: 'tag' as PixelIllustrationName, rows: offerRows, hasMore: opportunities.length > 2 || gigs.length > 1, action: '进入招聘市场', target: 'work' as ViewId },
   ];
   return <section className="inbox-grid" aria-label="生活信息四宫格">
     {panels.map((panel) => <article className={`pixel-panel secondary inbox-panel inbox-${panel.key} pixel-corners`} key={panel.key}>
       <header className="inbox-head"><PixelIcon name={panel.icon} size={18} /><h2>{panel.title}</h2>{panel.count > 0 && <b className="inbox-count">{panel.count}</b>}</header>
       {inboxList(panel.rows, panel.empty, panel.emptyIllustration, panel.emptyHint, panel.hasMore)}
-      <footer className="inbox-foot"><button onClick={() => onNavigate?.(panel.target)}>{panel.action}</button></footer>
+      <footer className="inbox-foot"><button onClick={() => onNavigate?.(panel.target)}><PixelAction label={panel.action} /></button></footer>
     </article>)}
   </section>;
 }
@@ -894,7 +894,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
             <button className="primary-button full" onClick={() => { dispatch({ type: 'purchase_items', items: cart }); setCart({}); }} aria-label="一次购买">一次购买</button>
           </>}
         </section>
-        <section className="rail-module rail-schedule" aria-label="本周安排"><header><PixelIcon name="calendar" size={16} /><h3>本周安排</h3></header><ul className="rail-rows compact">{weekRows.slice(0, 6).map((row) => <li key={row.key}><small>{row.day}</small><span>{row.text}</span></li>)}</ul><button className="text-button rail-link" onClick={() => onNavigate('life')}>查看完整安排 ▸</button></section>
+        <section className="rail-module rail-schedule" aria-label="本周安排"><header><PixelIcon name="calendar" size={16} /><h3>本周安排</h3></header><ul className="rail-rows compact">{weekRows.slice(0, 6).map((row) => <li key={row.key}><small>{row.day}</small><span>{row.text}</span></li>)}</ul><button className="text-button rail-link" onClick={() => onNavigate('life')}><PixelAction label="查看完整安排" /></button></section>
         <section className="rail-module rail-fill rail-inventory" aria-label="已拥有模块"><InventoryPanel game={game} dispatch={dispatch} /></section>
         <section className="rail-module rail-fill rail-wishlist" aria-label="消费目标快捷区"><WishlistPanel game={game} dispatch={dispatch} /></section>
       </aside>

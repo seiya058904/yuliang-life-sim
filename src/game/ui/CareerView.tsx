@@ -9,7 +9,7 @@ import { evaluateCondition } from '../engine/conditions';
 import { careerExperienceLabel, careerExperienceStage, careerRequirementsSatisfied } from '../engine/careerProgression';
 import { buildMobilityEntries } from '../engine/mobility';
 import { PixelIllustration, type PixelIllustrationName } from './pixel/PixelIllustration';
-import { SegmentMeter } from './pixel/PixelUI';
+import { PixelAction, SegmentMeter } from './pixel/PixelUI';
 import { displayContentName, displayMappedLabel, humanizeContentId } from './pixel/displayNames';
 
 const categories = ['全部', '基础岗位', '办公室', '技术', '销售', '服务', '管理', '兼职'] as const;
@@ -181,7 +181,7 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }:
      <aside className="career-filters"><div className="career-market-identity"><div className="career-market-identity-main"><PixelIllustration name="career-market" size={32} className="career-market-identity-mark" aria-hidden="true" /><div className="career-market-identity-copy"><span className="eyebrow">职业</span><h1>招聘市场</h1><p>发现你的下一份机会</p></div></div>{onOpenTools && <button type="button" className="career-tools-heading-trigger" onClick={onOpenTools}>安排本周与课程</button>}<div className="career-market-navigation"><button type="button" className="career-page-menu-trigger" aria-expanded={pageMenuOpen} aria-controls="career-page-menu" onClick={() => setPageMenuOpen((open) => !open)}>职业页面</button>{pageMenuOpen && <nav id="career-page-menu" className="career-page-menu" aria-label="职业页面导航">{Object.entries(labels).map(([id, label]) => <button key={id} type="button" className={id === 'market' ? 'filter-button selected' : 'filter-button'} onClick={() => openCareerPage(id as CareerTab)}>{label}</button>)}</nav>}</div></div><label>搜索岗位 / 公司<input aria-label="搜索岗位或公司" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索岗位 / 公司 / 关键词" /></label><strong>岗位类型</strong>{categories.map((entry) => <button type="button" key={entry} data-filter-group="category" className={category === entry ? 'filter-button career-filter-option selected' : 'filter-button career-filter-option'} onClick={() => setCategory(entry)}><PixelIcon name={categoryIcons[entry]} size={14} /><span>{entry}</span><b className="career-filter-count">{filterCounts.category[entry]}</b></button>)}<strong>申请状态</strong>{states.map((entry) => <button type="button" key={entry} data-filter-group="state" className={state === entry ? 'filter-button career-filter-option selected' : 'filter-button career-filter-option'} onClick={() => setState(entry)}><PixelIcon name={stateIcons[entry]} size={14} /><span>{entry}</span><b className="career-filter-count">{filterCounts.state[entry]}</b></button>)}</aside>
      <div className="career-results"><div className="career-toolbar"><div className="career-market-filters" aria-label="招聘筛选">{[ ['地区', region, regionOptions, setRegion], ['薪资范围', salaryBand, salaryOptions, setSalaryBand], ['时长', duration, durationOptions, setDuration] ].map(([label, value, options, setValue]) => <label className="career-toolbar-select" key={label as string}><span>{label as string}</span><select aria-label={label as string} value={value as string} onChange={(event) => { (setValue as (next: string) => void)(event.target.value); setPage(0); }}>{(options as readonly { value: string; label: string }[]).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>)}</div><div className="career-toolbar-actions">
        <details className="career-toolbar-popover career-sort-popover">
-         <summary aria-label={`招聘排序：${sort}`}>排序 <span aria-hidden="true">▸</span></summary>
+         <summary aria-label={`招聘排序：${sort}`}><PixelAction label="排序" /></summary>
          <div className="career-toolbar-menu" role="menu" aria-label="招聘排序选项">
            {sorts.map((entry) => <button type="button" role="menuitem" key={entry} aria-label={entry} className={entry === sort ? 'selected' : undefined} onClick={(event) => { setSort(entry); setPage(0); event.currentTarget.closest('details')?.removeAttribute('open'); }}>{entry}{entry === sort && <span aria-hidden="true">✓</span>}</button>)}
          </div>
@@ -304,7 +304,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
       empty: '还没有提交任何申请。',
       emptyIllustration: 'mail' as const,
       emptyHint: '去招聘市场申请岗位后，状态会在这里更新。',
-      action: '全部申请 ▸', target: () => onOpenTab('applications'),
+      action: '全部申请', target: () => onOpenTab('applications'),
     },
     {
       key: 'offers', icon: 'star' as const, title: 'Offer', count: offers.length,
@@ -312,7 +312,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
       empty: '暂无等待回复的 Offer。',
       emptyIllustration: 'tag' as const,
       emptyHint: '申请流程产生 Offer 后，会在这里处理。',
-      action: '查看 Offer ▸', target: () => onOpenTab('applications'),
+      action: '查看 Offer', target: () => onOpenTab('applications'),
     },
     {
       key: 'history', icon: 'career' as const, title: '职业履历', count: (game.employmentHistory ?? []).length,
@@ -320,7 +320,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
       empty: '职业履历会在换岗或离职后出现。',
       emptyIllustration: 'career-market' as const,
       emptyHint: '完成正式工作或离职后，经历会在这里留下记录。',
-      action: '完整履历 ▸', target: () => onOpenTab('history'),
+      action: '完整履历', target: () => onOpenTab('history'),
     },
     {
       key: 'insight', icon: 'chart' as const, title: '市场洞察', count: vacancies.length,
@@ -332,7 +332,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
       empty: '',
       emptyIllustration: 'chart' as const,
       emptyHint: '',
-      action: '跨行业距离 ▸', target: () => onOpenTab('mobility'),
+      action: '跨行业距离', target: () => onOpenTab('mobility'),
     },
   ];
   return <div className="career-bottom-panels" aria-label="求职支持面板">
@@ -342,7 +342,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
         <div className="career-insight-metrics">{insightMetrics.map((metric) => <div className="career-insight-metric" key={metric.label}><span>{metric.label}</span><SegmentMeter value={metric.value} max={metric.max} segments={7} label={`${metric.label} ${metric.caption}`} /><small>{metric.caption}</small></div>)}</div>
         <PixelIllustration name="chart" size={52} aria-hidden="true" />
        </div> : <div className="career-insight-empty" role="img" aria-label="市场洞察空态"><PixelIllustration name="chart" size={42} aria-hidden="true" /><strong>本期暂无公开机会</strong><small>市场刷新后，这里会显示机会数量与起薪走势。</small></div> : panel.rows.length ? <ul className="rail-rows compact">{panel.rows.map((row, index) => <li key={`${row.label}-${index}`}><span>{row.label}</span><small>{row.value}</small></li>)}</ul> : <div className="career-bottom-empty" role="status"><PixelIllustration name={panel.emptyIllustration} size={34} aria-hidden="true" /><strong>{panel.empty}</strong><small>{panel.emptyHint}</small></div>}
-      <footer className="inbox-foot"><button onClick={() => panel.target()}>{panel.action}</button></footer>
+      <footer className="inbox-foot"><button onClick={() => panel.target()}><PixelAction label={panel.action} /></button></footer>
     </article>)}
   </div>;
 }
