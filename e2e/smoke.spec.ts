@@ -2051,6 +2051,32 @@ test('keeps Shop product metadata and secondary actions in the readable pixel ti
   )).toBe(true);
 });
 
+test('keeps the tall Shop product matrix at the reference detail rhythm', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall Shop matrix rhythm targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const layout = await page.evaluate(() => {
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('.view-shop .shop-main .item-card')).slice(0, 12);
+    const grid = document.querySelector<HTMLElement>('.view-shop .shop-main .item-grid')?.getBoundingClientRect();
+    const pager = document.querySelector<HTMLElement>('.view-shop .shop-main .catalog-pager')?.getBoundingClientRect();
+    const detail = document.querySelector<HTMLElement>('.view-shop .shop-detail')?.getBoundingClientRect();
+    return {
+      cardHeights: cards.map((card) => card.getBoundingClientRect().height),
+      gridBottom: grid?.bottom ?? 0,
+      pagerTop: pager?.top ?? 0,
+      detailTop: detail?.top ?? 0,
+    };
+  });
+
+  expect(layout.cardHeights).toHaveLength(12);
+  expect(layout.cardHeights.every((height) => height >= 150 && height <= 152)).toBe(true);
+  expect(layout.gridBottom).toBeLessThanOrEqual(820);
+  expect(layout.pagerTop).toBeGreaterThanOrEqual(layout.gridBottom);
+  expect(layout.detailTop).toBeGreaterThanOrEqual(858);
+  expect(layout.detailTop).toBeLessThanOrEqual(866);
+});
+
 test('keeps Shop product goal actions as labeled pixel affordances', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card goal action is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });

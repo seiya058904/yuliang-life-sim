@@ -4809,8 +4809,8 @@ textarea {
 @media (min-width: 1181px) and (min-height: 801px) {
   .view-shop .shop-main .item-card,
   .view-shop .shop-main .activity-card {
-    height: 154px;
-    min-height: 154px;
+    height: 151px;
+    min-height: 151px;
   }
 
   .view-shop .item-card .card-art,
