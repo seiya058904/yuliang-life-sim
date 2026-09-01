@@ -10890,3 +10890,12 @@ textarea {
     );
   }
 }
+
+/* The page switch menu intentionally extends into the result column. Remove
+   only the parent clip while that real menu is open so its lower buttons stay
+   hittable; the closed filter rail keeps the shared stepped surface. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-filters:has(.career-page-menu) {
+    clip-path: none;
+  }
+}

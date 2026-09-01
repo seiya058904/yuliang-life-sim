@@ -900,6 +900,18 @@ test('keeps the Career toolbar on the shared stepped pixel frame', async ({ page
   expect(frame.pointerEvents).toBe('none');
 });
 
+test('keeps the Career page menu clickable above the clipped filter rail', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career page-menu stacking targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  await page.getByRole('button', { name: /^职业页面/ }).click();
+  const pageMenu = page.getByRole('navigation', { name: '职业页面导航' });
+  await expect(pageMenu).toBeVisible();
+  await pageMenu.getByRole('button', { name: '我的申请', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '我的申请', exact: true })).toBeVisible();
+});
+
 test('keeps the Career search hint aligned with the reference filter rail', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career filter-rail typography targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
