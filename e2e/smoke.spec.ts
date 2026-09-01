@@ -1489,7 +1489,7 @@ test('keeps tall Career cards on a strong identity and action tier', async ({ pa
 
   expect(typography.length).toBe(6);
   expect(typography.every(({ titleFontSize, companyFontSize, statusFontSize, ctaFontSize, ctaHeight }) =>
-    titleFontSize >= 20 && companyFontSize >= 11 && statusFontSize >= 11 && ctaFontSize >= 12 && ctaHeight >= 31
+    titleFontSize >= 17 && titleFontSize <= 19 && companyFontSize >= 11 && statusFontSize >= 11 && ctaFontSize >= 12 && ctaHeight >= 31
   )).toBe(true);
 });
 
