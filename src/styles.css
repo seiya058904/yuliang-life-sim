@@ -11231,3 +11231,37 @@ textarea {
     border-color: #555 !important;
   }
 }
+
+/* The wishlist control remains a real labeled button, but the catalogue
+   reference reserves the identity row for category, product name, and price.
+   Keep the label in the DOM for accessibility and tests while presenting the
+   affordance as a compact 1-bit heart so long real product names do not
+   collapse into ellipses. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card .catalog-secondary-action {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    min-width: 18px;
+    max-width: 18px;
+    min-height: 18px;
+    padding: 2px;
+    font-size: 0;
+    line-height: 0;
+  }
+
+  .view-shop .shop-main .item-card .catalog-secondary-action > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .view-shop .shop-main .item-card .catalog-secondary-action .pixel-icon {
+    width: 12px;
+    height: 12px;
+  }
+}

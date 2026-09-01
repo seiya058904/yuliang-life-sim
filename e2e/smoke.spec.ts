@@ -1876,10 +1876,11 @@ test('keeps Shop product goal actions as labeled pixel affordances', async ({ pa
   const actions = await page.locator('.view-shop .shop-main .item-card .catalog-secondary-action').evaluateAll((buttons) => buttons.slice(0, 4).map((button) => ({
     text: button.textContent?.trim() ?? '',
     hasPixelIcon: Boolean(button.querySelector('.pixel-icon')),
+    width: button.getBoundingClientRect().width,
   })));
 
   expect(actions.length).toBeGreaterThan(0);
-  expect(actions.every(({ text, hasPixelIcon }) => text.includes('加入目标') && hasPixelIcon)).toBe(true);
+  expect(actions.every(({ text, hasPixelIcon, width }) => text.includes('加入目标') && hasPixelIcon && width >= 18 && width <= 24)).toBe(true);
 });
 
 test('keeps Shop product CTAs in the reference icon-plus-label anatomy', async ({ page }) => {
