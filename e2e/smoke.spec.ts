@@ -253,6 +253,9 @@ test('keeps the Shop catalog and utility rail in the reference proportion', asyn
     const main = element.querySelector('.shop-main')?.getBoundingClientRect();
     const rail = element.querySelector('.shop-rail')?.getBoundingClientRect();
     const tabs = element.querySelector('.shop-tab-bar')?.getBoundingClientRect();
+    const tabButtons = Array.from(element.querySelectorAll<HTMLElement>('.shop-tab-bar .shop-tab')).map((tab) => tab.getBoundingClientRect());
+    const toolbar = element.querySelector('.shop-tab-bar .shop-toolbar')?.getBoundingClientRect();
+    const toolbarControls = Array.from(element.querySelectorAll<HTMLElement>('.shop-tab-bar .shop-toolbar > *')).map((control) => control.getBoundingClientRect());
     return {
       width: rect.width,
       mainWidth: main?.width ?? 0,
@@ -260,6 +263,13 @@ test('keeps the Shop catalog and utility rail in the reference proportion', asyn
       gap: rail && main ? rail.left - main.right : 0,
       railTop: rail?.top ?? 0,
       tabsTop: tabs?.top ?? 0,
+      tabWidths: tabButtons.map((tab) => tab.width),
+      tabGaps: tabButtons.slice(1).map((tab, index) => tab.left - tabButtons[index].right),
+      tabLeftInset: tabButtons[0] && main ? tabButtons[0].left - main.left : 0,
+      tabToToolbarGap: toolbar && tabButtons.length ? toolbar.left - tabButtons.at(-1)!.right : 0,
+      toolbarRightInset: toolbar && main ? main.right - toolbar.right : 0,
+      toolbarGaps: toolbarControls.slice(1).map((control, index) => control.left - toolbarControls[index].right),
+      toolbarControlWidths: toolbarControls.map((control) => control.width),
     };
   });
 
@@ -272,6 +282,20 @@ test('keeps the Shop catalog and utility rail in the reference proportion', asyn
   expect(layout.gap).toBeGreaterThanOrEqual(10);
   expect(layout.gap).toBeLessThanOrEqual(20);
   expect(Math.abs(layout.railTop - layout.tabsTop)).toBeLessThanOrEqual(2);
+  expect(layout.tabWidths).toHaveLength(6);
+  expect(layout.tabWidths.every((width) => width >= 94 && width <= 106)).toBe(true);
+  expect(layout.tabGaps.every((gap) => gap >= 14 && gap <= 24)).toBe(true);
+  expect(layout.tabLeftInset).toBeGreaterThanOrEqual(12);
+  expect(layout.tabLeftInset).toBeLessThanOrEqual(20);
+  expect(layout.tabToToolbarGap).toBeGreaterThanOrEqual(44);
+  expect(layout.tabToToolbarGap).toBeLessThanOrEqual(66);
+  expect(layout.toolbarRightInset).toBeGreaterThanOrEqual(12);
+  expect(layout.toolbarRightInset).toBeLessThanOrEqual(24);
+  expect(layout.toolbarGaps.every((gap) => gap >= 14 && gap <= 24)).toBe(true);
+  expect(layout.toolbarControlWidths[0]).toBeGreaterThanOrEqual(108);
+  expect(layout.toolbarControlWidths[0]).toBeLessThanOrEqual(118);
+  expect(layout.toolbarControlWidths[1]).toBeGreaterThanOrEqual(104);
+  expect(layout.toolbarControlWidths[1]).toBeLessThanOrEqual(116);
 });
 
 test('keeps empty Career and Shop support bodies on explicit state lanes', async ({ page }) => {

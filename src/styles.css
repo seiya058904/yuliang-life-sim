@@ -10963,3 +10963,34 @@ textarea {
     transform: translateY(-50%);
   }
 }
+
+/* Shop's reference toolbar gives the six primary tabs a compact, evenly
+   stepped rhythm and keeps both real utility controls readable at the end of
+   the strip. The catalog grid, values, and native select behavior are
+   unchanged. */
+@media (min-width: 1181px) {
+  .view-shop .shop-tab-bar {
+    justify-content: space-between;
+    gap: 0;
+    padding-inline: 16px 18px;
+  }
+
+  .view-shop .shop-tab-bar .shop-tabs {
+    flex: 0 0 70.3%;
+    gap: 18px;
+  }
+
+  .view-shop .shop-tab-bar .shop-toolbar {
+    gap: 18px;
+  }
+
+  .view-shop .shop-tab-bar .shop-sort-control select {
+    width: 110px;
+    min-width: 110px;
+    max-width: 110px;
+  }
+
+  .view-shop .shop-tab-bar .shop-toolbar-button {
+    min-width: 110px;
+  }
+}
