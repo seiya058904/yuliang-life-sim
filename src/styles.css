@@ -10814,3 +10814,20 @@ textarea {
     color: #aaa !important;
   }
 }
+
+/* Shop catalog cards use the same clipped outer silhouette as Career vacancy
+   cards. The existing pseudo-frame keeps the border detail; clipping the real
+   surface removes the ordinary rectangular corners underneath it. */
+@media (min-width: 1181px) {
+  .view-shop .shop-main .item-card,
+  .view-shop .shop-main .activity-card {
+    clip-path: polygon(
+      0 0, calc(100% - 9px) 0, calc(100% - 9px) 1px,
+      calc(100% - 1px) 1px, calc(100% - 1px) 9px, 100% 9px,
+      100% calc(100% - 9px), calc(100% - 1px) calc(100% - 9px),
+      calc(100% - 1px) calc(100% - 1px), calc(100% - 9px) calc(100% - 1px),
+      calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 1px),
+      1px calc(100% - 1px), 1px calc(100% - 9px), 0 calc(100% - 9px)
+    );
+  }
+}

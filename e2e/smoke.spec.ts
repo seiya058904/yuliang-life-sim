@@ -205,6 +205,20 @@ test('keeps Shop product facts above the purchase rail', async ({ page }) => {
   expect(cards.every(({ factsBottom, footTop, factFontSize, factRowHeight }) => factsBottom <= footTop && factFontSize >= 10 && factRowHeight >= 13)).toBe(true);
 });
 
+test('keeps Shop catalog cards on the shared stepped pixel corners', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop card frame geometry targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const frames = await page.locator('.view-shop .shop-main .item-card, .view-shop .shop-main .activity-card').evaluateAll((cards) => cards.map((card) => {
+    const style = getComputedStyle(card);
+    return { clipPath: style.clipPath, borderWidth: style.borderTopWidth };
+  }));
+
+  expect(frames.length).toBeGreaterThanOrEqual(12);
+  expect(frames.every(({ clipPath, borderWidth }) => clipPath !== 'none' && borderWidth === '1px')).toBe(true);
+});
+
 test('keeps the shop utility rail on the stepped header-row-footer surfaces', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'inverse Rail assertion targets the supported desktop landscape surface');
   await page.getByRole('button', { name: '商店', exact: true }).click();
