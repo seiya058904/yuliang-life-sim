@@ -10927,3 +10927,39 @@ textarea {
     clip-path: none;
   }
 }
+
+/* The Career search control keeps the real input semantics while adding the
+   same compact 1-bit affordance used by the reference filter rail. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-search-field {
+    display: block;
+  }
+
+  .career-section.market-mode .career-search-field > span:first-child {
+    display: block;
+  }
+
+  .career-section.market-mode .career-search-control {
+    position: relative;
+    display: block;
+    margin-top: 4px;
+  }
+
+  .career-section.market-mode .career-search-control input {
+    box-sizing: border-box;
+    width: 100%;
+    margin-top: 0;
+    padding-right: 28px;
+  }
+
+  .career-section.market-mode .career-search-control .pixel-icon {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    width: 14px;
+    height: 14px;
+    color: #aaa;
+    pointer-events: none;
+    transform: translateY(-50%);
+  }
+}

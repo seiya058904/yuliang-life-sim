@@ -943,6 +943,33 @@ test('keeps the Career toolbar on the shared stepped pixel frame', async ({ page
   expect(frame.pointerEvents).toBe('none');
 });
 
+test('keeps the Career search field on the shared stepped icon affordance', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career search affordance targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const input = page.locator('.career-search-control input');
+  const icon = page.locator('.career-search-control .pixel-icon');
+  await expect(input).toHaveAttribute('aria-label', '搜索岗位或公司');
+  await expect(icon).toHaveAttribute('shape-rendering', 'crispEdges');
+  await expect(icon.locator('path')).toHaveCount(0);
+
+  const geometry = await input.evaluate((element) => {
+    const inputRect = element.getBoundingClientRect();
+    const iconRect = element.parentElement?.querySelector('svg')?.getBoundingClientRect();
+    return {
+      input: { left: inputRect.left, right: inputRect.right },
+      icon: iconRect ? { left: iconRect.left, right: iconRect.right, width: iconRect.width } : null,
+    };
+  });
+
+  expect(geometry.icon).not.toBeNull();
+  expect(geometry.icon?.width).toBeGreaterThanOrEqual(12);
+  expect(geometry.icon?.width).toBeLessThanOrEqual(16);
+  expect(geometry.icon?.left).toBeGreaterThan(geometry.input.left + 90);
+  expect(geometry.icon?.right).toBeLessThanOrEqual(geometry.input.right - 4);
+});
+
 test('keeps the Career page menu clickable above the clipped filter rail', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career page-menu stacking targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

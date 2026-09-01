@@ -81,6 +81,17 @@ describe('PixelIcon', () => {
     expect([...screen.getByTestId('arrow-left').querySelectorAll('rect')].some((rect) => rect.getAttribute('x') === '1' && rect.getAttribute('y') === '7')).toBe(true);
     expect([...screen.getByTestId('arrow-right').querySelectorAll('rect')].some((rect) => rect.getAttribute('x') === '13' && rect.getAttribute('y') === '7')).toBe(true);
   });
+
+  it('renders the search affordance as a stepped 1-bit magnifier', () => {
+    render(<PixelIcon name="search" data-testid="search-icon" />);
+
+    const icon = screen.getByTestId('search-icon');
+    expect(icon).toHaveAttribute('shape-rendering', 'crispEdges');
+    expect(icon.querySelectorAll('path')).toHaveLength(0);
+    expect(icon.querySelectorAll('rect').length).toBeGreaterThan(0);
+    expect(icon.querySelectorAll('rect').length).toBeLessThan(45);
+    expect([...icon.querySelectorAll('rect')].some((rect) => rect.getAttribute('x') === '13' && rect.getAttribute('y') === '13')).toBe(true);
+  });
 });
 
 describe('PixelIllustration', () => {
@@ -196,6 +207,18 @@ describe('PixelIllustration', () => {
       expect(illustration).toHaveClass('fine-grid');
       expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
     }
+  });
+
+  it('keeps the settlement Hero sample centered inside its 24px frame', () => {
+    render(<PixelIllustration name="settlement" data-testid="settlement-hero" />);
+
+    const cells = [...screen.getByTestId('settlement-hero').querySelectorAll('rect')];
+    const hasCell = (x: string, y: string) => cells.some((rect) =>
+      rect.getAttribute('x') === x && rect.getAttribute('y') === y
+    );
+
+    expect(hasCell('23', '10')).toBe(true);
+    expect(cells.some((rect) => rect.getAttribute('x') === '0')).toBe(false);
   });
 
   it('gives mismatched shop devices and footwear their own fine-grid silhouettes', () => {
@@ -318,12 +341,12 @@ describe('PixelIllustration', () => {
     );
 
     expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
-    expect(hasPaintedCell('8', '5', '1', '1', 'currentColor')).toBe(true);
-    expect(hasPaintedCell('0', '9', '1', '1', 'currentColor')).toBe(true);
-    expect(hasPaintedCell('22', '8', '1', '1', 'currentColor')).toBe(true);
-    expect(hasPaintedCell('11', '14', '1', '1', 'currentColor')).toBe(true);
-    expect(hasCell('9', '13', '1', '1')).toBe(false);
-    expect(hasCell('13', '13', '1', '1')).toBe(false);
+    expect(hasPaintedCell('9', '5', '1', '1', 'currentColor')).toBe(true);
+    expect(hasPaintedCell('1', '9', '1', '1', 'currentColor')).toBe(true);
+    expect(hasPaintedCell('23', '8', '1', '1', 'currentColor')).toBe(true);
+    expect(hasPaintedCell('12', '14', '1', '1', 'currentColor')).toBe(true);
+    expect(hasCell('10', '13', '1', '1')).toBe(false);
+    expect(hasCell('14', '13', '1', '1')).toBe(false);
     expect(hasPaintedCell('8', '8', '8', '5', 'currentColor')).toBe(false);
     expect(hasKnockoutCell('8', '8', '2', '1')).toBe(false);
     expect([...illustration.querySelectorAll('rect')].every((rect) =>
