@@ -10730,3 +10730,41 @@ textarea {
     margin-bottom: 4px;
   }
 }
+
+/* Desktop empty inboxes keep the authored status truthful without reading as
+   a two-line web empty state. The hint stays in the DOM for accessibility and
+   narrow layouts, while the supported desktop scan uses one muted line. */
+@media (min-width: 1181px) {
+  .view-life .inbox-panel .inbox-empty {
+    flex: 0 0 68px;
+    min-height: 68px;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    padding: 6px 10px;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .view-life .inbox-panel .inbox-empty-mark .pixel-illustration {
+    width: 30px;
+    height: 30px;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy {
+    display: block;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy strong {
+    display: block;
+    color: #aaa9a2;
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .view-life .inbox-panel .inbox-empty-copy small {
+    display: none;
+  }
+}
