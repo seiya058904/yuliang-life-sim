@@ -10768,3 +10768,27 @@ textarea {
     display: none;
   }
 }
+
+/* Shop's empty Rail states belong to the black console plane. Keep the real
+   two-line explanation, but remove the large light web-surface treatment;
+   populated rows keep their own data-led reading surface. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty {
+    color: #aaa !important;
+    background: #090909 !important;
+    border-color: #777 !important;
+    --il-knock: #090909;
+  }
+
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty .pixel-illustration {
+    color: #f4f4ef !important;
+  }
+
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty strong {
+    color: #f4f4ef !important;
+  }
+
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty small {
+    color: #aaa !important;
+  }
+}

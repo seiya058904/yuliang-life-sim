@@ -260,7 +260,7 @@ test('keeps the Shop catalog and utility rail in the reference proportion', asyn
   expect(Math.abs(layout.railTop - layout.tabsTop)).toBeLessThanOrEqual(2);
 });
 
-test('keeps empty Career and Shop support bodies on readable light lanes', async ({ page }) => {
+test('keeps empty Career and Shop support bodies on explicit state lanes', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'support-body surface assertions target the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
 
@@ -287,9 +287,9 @@ test('keeps empty Career and Shop support bodies on readable light lanes', async
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);
   for (let index = 0; index < await emptyStates.count(); index += 1) {
-    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(244, 244, 239)');
-    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
-    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
+    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(244, 244, 239)');
+    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
   }
 });
 
@@ -325,9 +325,9 @@ test('keeps an empty Shop Rail in the tall reference frame', async ({ page }) =>
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);
   for (let index = 0; index < await emptyStates.count(); index += 1) {
-    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(244, 244, 239)');
-    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
-    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
+    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(244, 244, 239)');
+    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
   }
 });
 
@@ -3468,9 +3468,9 @@ test('keeps empty Shop rail modules on dark shells with light status lanes', asy
   })));
 
   expect(surfaces).toEqual({
-    cart: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(34, 34, 34)', shellBackgroundColor: 'rgb(9, 9, 9)' },
-    inventory: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(34, 34, 34)', shellBackgroundColor: 'rgb(9, 9, 9)' },
-    wishlist: { backgroundColor: 'rgb(244, 244, 239)', color: 'rgb(34, 34, 34)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    cart: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    inventory: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    wishlist: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
   });
 });
 
