@@ -192,15 +192,17 @@ test('keeps Shop product facts above the purchase rail', async ({ page }) => {
     const facts = card.querySelector('.catalog-facts');
     const foot = card.querySelector('.item-card-foot');
     const factStyle = facts ? getComputedStyle(facts.querySelector('dd') ?? facts) : null;
+    const factRow = facts?.querySelector('div');
     return {
       factsBottom: facts?.getBoundingClientRect().bottom ?? 0,
       footTop: foot?.getBoundingClientRect().top ?? 0,
       factFontSize: factStyle ? Number.parseFloat(factStyle.fontSize) : 0,
+      factRowHeight: factRow?.getBoundingClientRect().height ?? 0,
     };
   }));
 
   expect(cards.length).toBe(12);
-  expect(cards.every(({ factsBottom, footTop, factFontSize }) => factsBottom <= footTop && factFontSize >= 10)).toBe(true);
+  expect(cards.every(({ factsBottom, footTop, factFontSize, factRowHeight }) => factsBottom <= footTop && factFontSize >= 10 && factRowHeight >= 13)).toBe(true);
 });
 
 test('keeps the shop utility rail on the stepped header-row-footer surfaces', async ({ page }) => {
