@@ -1938,6 +1938,7 @@ test('keeps the tall Settlement board separated from its compact HUD', async ({ 
   expect(geometry.topbarHeight).toBeLessThanOrEqual(98);
   expect(geometry.hudToFrameGap).toBeGreaterThanOrEqual(14);
   expect(geometry.hudToFrameGap).toBeLessThanOrEqual(24);
+  expect(geometry.hudToFrameGap).toBeLessThanOrEqual(16);
   expect(geometry.frameLeft).toBeLessThanOrEqual(8);
   expect(geometry.frameRight).toBeGreaterThanOrEqual(1432);
   expect(geometry.frameWidth).toBeGreaterThanOrEqual(1424);
