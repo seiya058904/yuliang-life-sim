@@ -2580,7 +2580,7 @@ test('gives the settlement Hero a full-width title divider', async ({ page }) =>
   expect(titleStyle.width).toBeGreaterThan(300);
 });
 
-test('keeps the Settlement net-worth Hero burst centered at the reference anchor tier', async ({ page }) => {
+test('frames the Settlement net-worth Hero with distributed reference rays', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero burst targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
@@ -2604,6 +2604,8 @@ test('keeps the Settlement net-worth Hero burst centered at the reference anchor
       return {
         width: Number.parseFloat(style.width),
         height: Number.parseFloat(style.height),
+        left: style.left,
+        top: style.top,
         backgroundImage: style.backgroundImage,
         backgroundColor: style.backgroundColor,
       };
@@ -2628,8 +2630,9 @@ test('keeps the Settlement net-worth Hero burst centered at the reference anchor
   expect(anatomy.rayStyles).toHaveLength(16);
   expect(anatomy.rayStyles.every(({ height }) => height >= 2 && height <= 3)).toBe(true);
   expect(anatomy.rayStyles.every(({ backgroundImage, backgroundColor }) => backgroundImage === 'none' && backgroundColor === 'rgb(244, 244, 239)')).toBe(true);
-  expect(Math.min(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(130);
-  expect(Math.max(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(180);
+  expect(new Set(anatomy.rayStyles.map(({ left, top }) => `${left}|${top}`)).size).toBeGreaterThanOrEqual(8);
+  expect(Math.min(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(24);
+  expect(Math.max(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(50);
 });
 
 test('keeps the Settlement Hero secondary spark field dense enough for the reference rhythm', async ({ page }) => {
@@ -2682,6 +2685,8 @@ test('keeps a compact Settlement Hero motif visible at low desktop height', asyn
     const rays = Array.from(hero.querySelectorAll<HTMLElement>('.settle-ray')).map((ray) => ({
       display: getComputedStyle(ray).display,
       height: Number.parseFloat(getComputedStyle(ray).height),
+      left: getComputedStyle(ray).left,
+      top: getComputedStyle(ray).top,
     }));
     return {
       motifDisplay: motifStyle?.display ?? 'none',
@@ -2702,6 +2707,7 @@ test('keeps a compact Settlement Hero motif visible at low desktop height', asyn
   expect(anatomy.artHeight).toBeGreaterThanOrEqual(56);
   expect(anatomy.rays).toHaveLength(16);
   expect(anatomy.rays.every(({ display, height }) => display !== 'none' && height >= 1 && height <= 2)).toBe(true);
+  expect(new Set(anatomy.rays.map(({ left, top }) => `${left}|${top}`)).size).toBeGreaterThanOrEqual(8);
 });
 
 test('keeps the settlement Hero character near the burst origin', async ({ page }) => {

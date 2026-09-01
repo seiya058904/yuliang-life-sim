@@ -304,19 +304,17 @@ describe('PixelIllustration', () => {
     );
 
     expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
-    expect(hasCell('7', '6', '10', '1')).toBe(true);
-    expect(hasPaintedCell('8', '8', '8', '5', 'currentColor')).toBe(true);
-    expect(hasKnockoutCell('8', '8', '2', '1')).toBe(true);
-    expect(hasKnockoutCell('9', '9', '2', '2')).toBe(true);
-    expect(hasKnockoutCell('13', '9', '2', '2')).toBe(true);
-    expect(hasKnockoutCell('10', '11', '4', '2')).toBe(true);
-    expect(hasPaintedCell('7', '7', '10', '8', 'currentColor')).toBe(false);
-    expect(hasCell('8', '6', '2', '1')).toBe(true);
-    expect(hasCell('5', '8', '1', '1')).toBe(true);
-    expect(hasCell('1', '6', '3', '1')).toBe(true);
-    expect(hasCell('20', '9', '4', '1')).toBe(true);
-    expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(45);
-    expect(hasCell('1', '7', '3', '3')).toBe(true);
-    expect(hasCell('20', '7', '3', '3')).toBe(true);
+    expect(hasPaintedCell('8', '5', '1', '1', 'currentColor')).toBe(true);
+    expect(hasPaintedCell('0', '9', '1', '1', 'currentColor')).toBe(true);
+    expect(hasPaintedCell('22', '8', '1', '1', 'currentColor')).toBe(true);
+    expect(hasPaintedCell('11', '14', '1', '1', 'currentColor')).toBe(true);
+    expect(hasCell('9', '13', '1', '1')).toBe(false);
+    expect(hasCell('13', '13', '1', '1')).toBe(false);
+    expect(hasPaintedCell('8', '8', '8', '5', 'currentColor')).toBe(false);
+    expect(hasKnockoutCell('8', '8', '2', '1')).toBe(false);
+    expect([...illustration.querySelectorAll('rect')].every((rect) =>
+      rect.getAttribute('width') === '1' && rect.getAttribute('height') === '1' && rect.getAttribute('fill') === 'currentColor'
+    )).toBe(true);
+    expect(illustration.querySelectorAll('rect').length).toBe(115);
   });
 });

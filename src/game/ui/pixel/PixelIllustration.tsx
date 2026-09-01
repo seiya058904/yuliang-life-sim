@@ -201,43 +201,22 @@ const scenes: Partial<Record<PixelIllustrationName, readonly Cell[]>> = {
     [12, 4, 3, 2], [13, 6, 2, 3, 1],
   ],
   settlement: [
-    // A finer celebration figure: a stepped hairline and open face contour
-    // carry the reference's human expression without a solid mascot block.
-    // White eyes / mouth, raised fists, and the open torso keep the person
-    // readable when the Hero is rendered on the inverse black panel.
-    [10, 3, 4, 1], [8, 4, 8, 1], [7, 5, 10, 1],
-    [7, 6, 10, 1], [6, 7, 1, 6], [17, 7, 1, 6], [7, 13, 10, 1],
-    [8, 5, 8, 2, 1],
-    // A light face with knocked-out eyes and mouth follows the reference's
-    // human silhouette more closely than the previous white facial marks.
-    [8, 8, 8, 5],
-    [8, 8, 2, 1, 1], [11, 8, 2, 1, 1], [14, 8, 2, 1, 1],
-    [8, 10, 1, 2, 1], [15, 10, 1, 2, 1],
-    [9, 9, 2, 2, 1], [13, 9, 2, 2, 1],
-    [10, 11, 4, 2, 1], [8, 12, 2, 1], [14, 12, 2, 1],
-    [4, 9, 1, 3], [19, 9, 1, 3],
-    // Broken fringe, stepped cheek rails, and the small fist shoulders keep
-    // the celebration figure from collapsing into a single smooth block at
-    // the reference Hero scale.
-    [8, 6, 2, 1], [11, 6, 1, 1], [14, 6, 2, 1],
-    [7, 7, 1, 1], [16, 7, 1, 1], [5, 8, 1, 1], [18, 8, 1, 1],
-    [6, 13, 1, 1], [17, 13, 1, 1],
-    // Two separated sleeve rails leave the dark arm interior visible like
-    // the reference figure; adjacent diagonals were reading as solid white.
-    [2, 10, 1, 1], [3, 11, 1, 1], [4, 12, 1, 1], [5, 13, 1, 1], [6, 14, 1, 1], [7, 15, 1, 1], [8, 16, 1, 1], [9, 17, 1, 1],
-    [5, 10, 1, 1], [6, 11, 1, 1], [7, 12, 1, 1], [8, 13, 1, 1], [9, 14, 1, 1], [10, 15, 1, 1], [11, 16, 1, 1], [12, 17, 1, 1],
-    [1, 7, 3, 3], [2, 8, 1, 1, 1],
-    [21, 10, 1, 1], [20, 11, 1, 1], [19, 12, 1, 1], [18, 13, 1, 1], [17, 14, 1, 1], [16, 15, 1, 1], [15, 16, 1, 1], [14, 17, 1, 1],
-    [19, 10, 1, 1], [18, 11, 1, 1], [17, 12, 1, 1], [16, 13, 1, 1], [15, 14, 1, 1], [14, 15, 1, 1], [13, 16, 1, 1], [12, 17, 1, 1],
-    [20, 7, 3, 3], [21, 8, 1, 1, 1],
-    // The target fists widen toward the outside edge and step back at the
-    // wrist instead of reading as two identical square buttons.
-    [1, 6, 3, 1], [0, 7, 4, 2], [1, 9, 4, 1],
-    [21, 6, 3, 1], [20, 7, 4, 2], [20, 9, 4, 1],
-    [8, 16, 8, 1], [7, 17, 2, 3], [15, 17, 2, 3], [9, 20, 6, 1],
-    // Keep the side hair / pigtails open rather than reading as two solid
-    // machine ears when the illustration is rendered on a black Hero.
-    [5, 9, 1, 3, 1], [18, 9, 1, 3, 1],
+    // Reference-sampled 1-bit character: the open hair ring, face, raised fists,
+    // and split arm rails keep the Hero human without adding a second data source.
+    [8, 5, 1, 1], [9, 5, 1, 1], [13, 5, 1, 1],
+    [7, 6, 1, 1], [8, 6, 1, 1], [11, 6, 1, 1], [14, 6, 1, 1], [15, 6, 1, 1],
+    [5, 7, 1, 1], [6, 7, 1, 1], [7, 7, 1, 1], [8, 7, 1, 1], [16, 7, 1, 1],
+    [1, 8, 1, 1], [2, 8, 1, 1], [5, 8, 1, 1], [6, 8, 1, 1], [16, 8, 1, 1], [17, 8, 1, 1], [20, 8, 1, 1], [21, 8, 1, 1], [22, 8, 1, 1],
+    [0, 9, 1, 1], [1, 9, 1, 1], [2, 9, 1, 1], [3, 9, 1, 1], [5, 9, 1, 1], [7, 9, 1, 1], [15, 9, 1, 1], [17, 9, 1, 1], [20, 9, 1, 1], [21, 9, 1, 1], [22, 9, 1, 1],
+    [0, 10, 1, 1], [1, 10, 1, 1], [2, 10, 1, 1], [3, 10, 1, 1], [5, 10, 1, 1], [9, 10, 1, 1], [11, 10, 1, 1], [12, 10, 1, 1], [20, 10, 1, 1], [21, 10, 1, 1], [22, 10, 1, 1],
+    [1, 11, 1, 1], [2, 11, 1, 1], [3, 11, 1, 1], [4, 11, 1, 1], [5, 11, 1, 1], [9, 11, 1, 1], [10, 11, 1, 1], [11, 11, 1, 1], [12, 11, 1, 1], [13, 11, 1, 1], [14, 11, 1, 1], [19, 11, 1, 1], [20, 11, 1, 1], [21, 11, 1, 1], [22, 11, 1, 1],
+    [2, 12, 1, 1], [3, 12, 1, 1], [5, 12, 1, 1], [7, 12, 1, 1], [8, 12, 1, 1], [9, 12, 1, 1], [10, 12, 1, 1], [11, 12, 1, 1], [12, 12, 1, 1], [13, 12, 1, 1], [14, 12, 1, 1], [15, 12, 1, 1], [17, 12, 1, 1], [20, 12, 1, 1], [21, 12, 1, 1],
+    [2, 13, 1, 1], [6, 13, 1, 1], [7, 13, 1, 1], [8, 13, 1, 1], [10, 13, 1, 1], [11, 13, 1, 1], [12, 13, 1, 1], [14, 13, 1, 1], [15, 13, 1, 1], [16, 13, 1, 1], [21, 13, 1, 1],
+    [7, 14, 1, 1], [8, 14, 1, 1], [9, 14, 1, 1], [10, 14, 1, 1], [11, 14, 1, 1], [12, 14, 1, 1], [13, 14, 1, 1], [14, 14, 1, 1], [15, 14, 1, 1], [20, 14, 1, 1],
+    [3, 15, 1, 1], [8, 15, 1, 1], [9, 15, 1, 1], [10, 15, 1, 1], [12, 15, 1, 1], [13, 15, 1, 1], [14, 15, 1, 1],
+    [4, 16, 1, 1], [9, 16, 1, 1], [10, 16, 1, 1], [11, 16, 1, 1], [12, 16, 1, 1], [13, 16, 1, 1],
+    [5, 17, 1, 1], [10, 17, 1, 1], [11, 17, 1, 1], [12, 17, 1, 1], [13, 17, 1, 1], [18, 17, 1, 1],
+    [17, 18, 1, 1],
   ],
   'settlement-income': [
     // A small person presenting two coin stacks: the illustration supports

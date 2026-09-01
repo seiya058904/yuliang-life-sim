@@ -9755,19 +9755,17 @@ textarea {
   }
 }
 
-/* Restore the full-width settlement burst after the compact Hero override.
-   The reference uses the black result panel as one celebratory field: the
-   rays occupy its lower half and the real character sits on that same axis.
-   Keep the amount and its truthful explanatory line above this presentation
-   layer, without changing any settlement values. */
+/* Restore the full-width settlement frame after the compact Hero override.
+   The reference keeps the black result panel celebratory without collapsing
+   every ray into one white burst behind the real character. */
 @media (min-width: 1181px) and (min-height: 801px) {
   .monthly-summary.fullframe .settle-result-motif {
-    left: 50%;
+    left: 0;
     right: auto;
     bottom: 0;
-    width: 360px;
+    width: 100%;
     height: 280px;
-    transform: translateX(-50%);
+    transform: none;
     opacity: .88;
   }
 
@@ -9781,28 +9779,27 @@ textarea {
   }
 
   .monthly-summary.fullframe .settle-result-motif .settle-ray {
-    top: 72%;
     height: 2px;
     background-color: #f4f4ef;
     background-image: none;
   }
 
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(1) { width: 206px !important; transform: rotate(-170deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(2) { width: 156px !important; transform: rotate(-147deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(3) { width: 190px !important; transform: rotate(-124deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(4) { width: 146px !important; transform: rotate(-101deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(5) { width: 196px !important; transform: rotate(-78deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(6) { width: 162px !important; transform: rotate(-55deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(7) { width: 210px !important; transform: rotate(-32deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(8) { width: 156px !important; transform: rotate(-9deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(9) { width: 206px !important; transform: rotate(14deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(10) { width: 154px !important; transform: rotate(37deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(11) { width: 196px !important; transform: rotate(60deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(12) { width: 156px !important; transform: rotate(83deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(13) { width: 184px !important; transform: rotate(106deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(14) { width: 146px !important; transform: rotate(129deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(15) { width: 196px !important; transform: rotate(152deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(16) { width: 160px !important; transform: rotate(175deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(1) { left: 36px; top: 50px; width: 54px !important; transform: rotate(-150deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(2) { left: 72px; top: 32px; width: 34px !important; transform: rotate(-135deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(3) { left: 116px; top: 24px; width: 28px !important; transform: rotate(-110deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(4) { left: 160px; top: 18px; width: 24px !important; transform: rotate(-90deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(5) { left: 199px; top: 23px; width: 30px !important; transform: rotate(-72deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(6) { left: 244px; top: 31px; width: 44px !important; transform: rotate(-42deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(7) { left: 299px; top: 51px; width: 54px !important; transform: rotate(-25deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(8) { left: 353px; top: 91px; width: 43px !important; transform: rotate(-10deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(9) { left: 363px; top: 137px; width: 32px !important; transform: rotate(8deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(10) { left: 354px; top: 182px; width: 42px !important; transform: rotate(20deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(11) { left: 325px; top: 224px; width: 54px !important; transform: rotate(32deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(12) { left: 12px; top: 224px; width: 50px !important; transform: rotate(-32deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(13) { left: 0; top: 182px; width: 42px !important; transform: rotate(-18deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(14) { left: 4px; top: 136px; width: 34px !important; transform: rotate(-8deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(15) { left: 8px; top: 91px; width: 46px !important; transform: rotate(15deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(16) { left: 26px; top: 50px; width: 42px !important; transform: rotate(28deg); }
 }
 
 /* Life empty states use one muted status line beside a small pixel marker.
@@ -10004,37 +10001,35 @@ textarea {
     display: block;
     right: auto;
     bottom: 0;
-    left: 50%;
-    width: 190px;
+    left: 0;
+    width: 100%;
     height: 126px;
-    transform: translateX(-50%);
+    transform: none;
     opacity: .78;
   }
 
   .monthly-summary.fullframe .settle-result-motif .settle-ray {
-    top: 72%;
-    left: 50%;
     height: 1px;
     background-color: #f4f4ef;
     background-image: none;
   }
 
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(1) { width: 76px !important; transform: rotate(-170deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(2) { width: 60px !important; transform: rotate(-147deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(3) { width: 72px !important; transform: rotate(-124deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(4) { width: 54px !important; transform: rotate(-101deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(5) { width: 78px !important; transform: rotate(-78deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(6) { width: 64px !important; transform: rotate(-55deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(7) { width: 82px !important; transform: rotate(-32deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(8) { width: 62px !important; transform: rotate(-9deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(9) { width: 78px !important; transform: rotate(14deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(10) { width: 60px !important; transform: rotate(37deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(11) { width: 76px !important; transform: rotate(60deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(12) { width: 62px !important; transform: rotate(83deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(13) { width: 72px !important; transform: rotate(106deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(14) { width: 54px !important; transform: rotate(129deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(15) { width: 76px !important; transform: rotate(152deg); }
-  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(16) { width: 64px !important; transform: rotate(175deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(1) { left: 18px; top: 24px; width: 42px !important; transform: rotate(-150deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(2) { left: 50px; top: 14px; width: 26px !important; transform: rotate(-135deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(3) { left: 92px; top: 9px; width: 24px !important; transform: rotate(-110deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(4) { left: 135px; top: 6px; width: 20px !important; transform: rotate(-90deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(5) { left: 168px; top: 10px; width: 24px !important; transform: rotate(-72deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(6) { left: 204px; top: 14px; width: 34px !important; transform: rotate(-42deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(7) { left: 248px; top: 25px; width: 42px !important; transform: rotate(-25deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(8) { left: 304px; top: 43px; width: 34px !important; transform: rotate(-10deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(9) { left: 326px; top: 67px; width: 26px !important; transform: rotate(8deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(10) { left: 313px; top: 91px; width: 34px !important; transform: rotate(20deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(11) { left: 278px; top: 108px; width: 42px !important; transform: rotate(32deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(12) { left: 12px; top: 108px; width: 38px !important; transform: rotate(-32deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(13) { left: 0; top: 88px; width: 32px !important; transform: rotate(-18deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(14) { left: 4px; top: 66px; width: 26px !important; transform: rotate(-8deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(15) { left: 8px; top: 43px; width: 36px !important; transform: rotate(15deg); }
+  .monthly-summary.fullframe .settle-result-motif .settle-ray:nth-child(16) { left: 20px; top: 25px; width: 34px !important; transform: rotate(28deg); }
 
   .monthly-summary.fullframe .settle-result-motif .settle-spark {
     position: absolute;
