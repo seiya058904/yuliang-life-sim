@@ -10490,6 +10490,39 @@ textarea {
   }
 }
 
+/* Populated Shop cart and schedule modules keep the same black-shell / light-row
+   rhythm as the reference rail. The actual rows remain readable inverse data
+   surfaces while the surrounding utility block returns to the console plane. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail > .rail-cart:has(> .rail-rows),
+  .view-shop .shop-rail > .rail-schedule:has(> .rail-rows) {
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border-color: #c7c7c0 !important;
+    --frame-corner-line: #c7c7c0;
+  }
+
+  .view-shop .shop-rail > .rail-cart:has(> .rail-rows) > header,
+  .view-shop .shop-rail > .rail-schedule:has(> .rail-rows) > header {
+    color: #fff !important;
+    background: #070707 !important;
+    border-bottom-color: #777 !important;
+  }
+
+  .view-shop .shop-rail > .rail-cart:has(> .rail-rows) > .rail-rows,
+  .view-shop .shop-rail > .rail-schedule:has(> .rail-rows) > .rail-rows,
+  .view-shop .shop-rail > .rail-cart:has(> .rail-rows) > .rail-rows li,
+  .view-shop .shop-rail > .rail-schedule:has(> .rail-rows) > .rail-rows li {
+    color: #222 !important;
+    background: #f4f4ef !important;
+  }
+
+  .view-shop .shop-rail > .rail-cart:has(> .rail-rows) > .rail-rows li,
+  .view-shop .shop-rail > .rail-schedule:has(> .rail-rows) > .rail-rows li {
+    border-bottom-color: #aaa !important;
+  }
+}
+
 /* Low-height Life keeps the complete authored Hero and weekly plan in the
    first viewport. The plan still carries its real icon, activity label,
    period, repeat toggle, and cost; only the surrounding vertical rhythm is
