@@ -11227,6 +11227,28 @@ textarea {
   }
 }
 
+/* The Settlement Hero keeps its primary status as a compact white banner.
+   Give the real ribbon the same stepped edge language as the growth callout,
+   while leaving the low-height layout's compact label untouched. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-result-inverse .settle-ribbon {
+    justify-self: center;
+    min-width: 176px;
+    min-height: 30px;
+    box-sizing: border-box;
+    padding: 7px 26px;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1;
+    clip-path: polygon(
+      0 0, calc(100% - 8px) 0, calc(100% - 8px) 5px,
+      100% 5px, 100% calc(100% - 5px), calc(100% - 8px) calc(100% - 5px),
+      calc(100% - 8px) 100%, 0 100%, 0 calc(100% - 5px), 8px calc(100% - 5px),
+      8px 5px, 0 5px
+    );
+  }
+}
+
 @media (min-width: 1181px) and (max-height: 800px) {
   .effect-rail {
     bottom: 80px;
