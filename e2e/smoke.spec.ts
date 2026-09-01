@@ -129,6 +129,35 @@ test('selects a shop product from its card surface without swallowing purchase c
   await expect(page.getByRole('button', { name: '一次购买' })).toBeVisible();
 });
 
+test('keeps real Shop purchase feedback above the persistent HUD', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'desktop feedback rail geometry is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('button', { name: '加入购物袋：现磨咖啡', exact: true }).click();
+  await page.getByRole('button', { name: '一次购买', exact: true }).click();
+
+  const rail = page.locator('.effect-rail');
+  await expect(rail).toBeVisible();
+  const geometry = await rail.evaluate((element) => {
+    const railRect = element.getBoundingClientRect();
+    const item = element.querySelector<HTMLElement>('.effect-item');
+    const itemStyle = item ? getComputedStyle(item) : null;
+    const footer = document.querySelector('.persistent-status')?.getBoundingClientRect();
+    return {
+      railBottom: railRect.bottom,
+      footerTop: footer?.top ?? 0,
+      background: itemStyle?.backgroundColor ?? '',
+      color: itemStyle?.color ?? '',
+      border: itemStyle?.borderTopStyle ?? '',
+    };
+  });
+
+  expect(geometry.railBottom).toBeLessThanOrEqual(geometry.footerTop - 8);
+  expect(geometry.background).toBe('rgb(7, 7, 7)');
+  expect(geometry.color).toBe('rgb(245, 245, 241)');
+  expect(geometry.border).toBe('solid');
+});
+
 test('keeps the selected Shop product detail in four reference information lanes', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'selected product detail lanes target the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

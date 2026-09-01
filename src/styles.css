@@ -11016,3 +11016,26 @@ textarea {
     height: 52px;
   }
 }
+
+/* Transient feedback belongs to the dark console plane. Keep real purchase
+   messages readable and lift them above the static desktop HUD so they never
+   cover the persistent attributes or its detail affordance. */
+@media (min-width: 1181px) {
+  .effect-rail {
+    right: 22px;
+    bottom: 92px;
+  }
+
+  .effect-rail .effect-item {
+    padding: 8px 12px;
+    color: #f5f5f1;
+    background: #070707;
+    border: 1px solid #777;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .effect-rail {
+    bottom: 80px;
+  }
+}
