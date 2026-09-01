@@ -1599,6 +1599,20 @@ test('keeps Shop product metadata and secondary actions in the readable pixel ti
   )).toBe(true);
 });
 
+test('keeps Shop product goal actions as labeled pixel affordances', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card goal action is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const actions = await page.locator('.view-shop .shop-main .item-card .catalog-secondary-action').evaluateAll((buttons) => buttons.slice(0, 4).map((button) => ({
+    text: button.textContent?.trim() ?? '',
+    hasPixelIcon: Boolean(button.querySelector('.pixel-icon')),
+  })));
+
+  expect(actions.length).toBeGreaterThan(0);
+  expect(actions.every(({ text, hasPixelIcon }) => text.includes('加入目标') && hasPixelIcon)).toBe(true);
+});
+
 test('keeps Shop product CTAs in the reference icon-plus-label anatomy', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card CTA anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
