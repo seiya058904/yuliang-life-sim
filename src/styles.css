@@ -10608,3 +10608,38 @@ textarea {
     align-content: start;
   }
 }
+
+/* Tall Career cards use the reference's scan order as a clear display tier:
+   the real vacancy identity leads, while status and the real application
+   action remain legible anchors at the bottom of the same fixed card. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-section.market-mode .career-results .job-card .job-card-identity {
+    align-items: start;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-card-identity h2 {
+    font-size: 20px;
+    line-height: 1.02;
+    letter-spacing: -.08em;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-card-identity .job-company {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-card-status strong {
+    font-size: 11px;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-card-status small {
+    font-size: 10px;
+  }
+
+  .career-section.market-mode .career-results .job-card .job-actions > .primary-button,
+  .career-section.market-mode .career-results .job-card .job-actions > .secondary-button {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}

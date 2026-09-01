@@ -1318,6 +1318,32 @@ test('keeps Career card facts and descriptions on the primary reading tier', asy
   expect(typography.every(({ factFontSize, descriptionFontSize }) => factFontSize >= 12 && descriptionFontSize >= 13)).toBe(true);
 });
 
+test('keeps tall Career cards on a strong identity and action tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career card identity hierarchy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const typography = await page.locator('.career-results .job-card').evaluateAll((cards) => cards.slice(0, 6).map((card) => {
+    const title = card.querySelector('.job-card-identity h2');
+    const company = card.querySelector('.job-card-identity .job-company');
+    const status = card.querySelector('.job-card-status strong');
+    const cta = card.querySelector('.job-actions button');
+    const ctaRect = cta?.getBoundingClientRect();
+    return {
+      titleFontSize: Number.parseFloat(getComputedStyle(title!).fontSize),
+      companyFontSize: Number.parseFloat(getComputedStyle(company!).fontSize),
+      statusFontSize: Number.parseFloat(getComputedStyle(status!).fontSize),
+      ctaFontSize: Number.parseFloat(getComputedStyle(cta!).fontSize),
+      ctaHeight: ctaRect?.height ?? 0,
+    };
+  }));
+
+  expect(typography.length).toBe(6);
+  expect(typography.every(({ titleFontSize, companyFontSize, statusFontSize, ctaFontSize, ctaHeight }) =>
+    titleFontSize >= 20 && companyFontSize >= 11 && statusFontSize >= 11 && ctaFontSize >= 12 && ctaHeight >= 31
+  )).toBe(true);
+});
+
 test('keeps Career support panels on the reference inverse surface split', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career support surface split is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
