@@ -11077,6 +11077,30 @@ textarea {
   .view-life .pixel-clock.hero-clock {
     --pixel-clock-unit: 12px;
   }
+
+  /* The tall reference Hero gives the time column a stepped vertical read:
+     label, display, date, with the day mark held beside the date band. */
+  .view-life .hero-time {
+    position: relative;
+    box-sizing: border-box;
+    padding: 24px 8px 0 0;
+  }
+  .view-life .hero-time > .console-kicker,
+  .view-life .hero-time > .hero-date {
+    margin-left: 20px;
+  }
+  .view-life .hero-time > .hero-clock {
+    margin-top: 37px;
+  }
+  .view-life .hero-time > .hero-date {
+    margin-top: 30px;
+  }
+  .view-life .hero-time > .hero-day-icon {
+    position: absolute;
+    top: 181px;
+    right: 52px;
+    margin: 0;
+  }
 }
 
 /* The wide settlement reference gives the achievement strip its own

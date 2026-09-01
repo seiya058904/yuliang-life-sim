@@ -663,6 +663,38 @@ test('keeps the tall Life Hero clock on the dominant pixel-display tier', async 
   expect(clock.height).toBeGreaterThanOrEqual(90);
 });
 
+test('keeps the tall Life time column on the reference stepped rhythm', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1181 || (page.viewportSize()?.height ?? 0) < 801, 'Life time-column rhythm targets the primary desktop surface');
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const geometry = await page.locator('.view-life .hero-time').evaluate((timeColumn) => {
+    const column = timeColumn.getBoundingClientRect();
+    const read = (selector: string) => {
+      const rect = timeColumn.querySelector<HTMLElement>(selector)?.getBoundingClientRect();
+      return { left: rect?.left ?? 0, top: rect?.top ?? 0, bottom: rect?.bottom ?? 0 };
+    };
+    return {
+      label: read('.console-kicker'),
+      clock: read('.hero-clock'),
+      date: read('.hero-date'),
+      icon: read('.hero-day-icon'),
+      column: { left: column.left, top: column.top, right: column.right },
+    };
+  });
+
+  expect(geometry.label.left - geometry.column.left).toBeGreaterThanOrEqual(18);
+  expect(geometry.label.top - geometry.column.top).toBeGreaterThanOrEqual(20);
+  expect(geometry.label.top - geometry.column.top).toBeLessThanOrEqual(34);
+  expect(geometry.clock.top - geometry.column.top).toBeGreaterThanOrEqual(68);
+  expect(geometry.clock.top - geometry.column.top).toBeLessThanOrEqual(92);
+  expect(geometry.date.top - geometry.column.top).toBeGreaterThanOrEqual(185);
+  expect(geometry.date.top - geometry.column.top).toBeLessThanOrEqual(225);
+  expect(geometry.icon.top - geometry.column.top).toBeGreaterThanOrEqual(175);
+  expect(geometry.icon.top - geometry.column.top).toBeLessThanOrEqual(220);
+  expect(geometry.icon.left).toBeLessThan(geometry.column.right - 36);
+});
+
 test('keeps the Life forecast net row on the light reading surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast surface assertion targets the supported desktop landscape surface');
   await page.getByRole('button', { name: '生活', exact: true }).click();
