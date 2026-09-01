@@ -11178,3 +11178,56 @@ textarea {
     bottom: 80px;
   }
 }
+
+/* A populated Wishlist is a reading surface, not another empty dark lane:
+   keep its real rows light while retaining the black section header and the
+   existing actionable text controls. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) {
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border-color: #c7c7c0 !important;
+    --frame-corner-line: #c7c7c0;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .detail-panel {
+    color: #070707 !important;
+    background: transparent !important;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .section-heading {
+    display: flex !important;
+    margin: 0 0 8px;
+    padding: 7px 8px;
+    color: #fff !important;
+    background: #070707 !important;
+    border-bottom: 1px dotted #777 !important;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .section-heading h2,
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .section-heading .pixel-icon {
+    color: #fff !important;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .item-list {
+    border-top: 0 !important;
+    background: #090909 !important;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .item-row {
+    color: #070707 !important;
+    background: #f4f4ef !important;
+    border-bottom-color: #aaa !important;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .item-row h2,
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .item-row p,
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .item-row strong {
+    color: #070707 !important;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.item-list) .item-row .text-button {
+    color: #070707 !important;
+    border-color: #555 !important;
+  }
+}

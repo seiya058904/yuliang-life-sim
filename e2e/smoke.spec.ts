@@ -463,6 +463,33 @@ test('keeps populated Shop inventory as an actionable pixel strip', async ({ pag
   await expect(strip.getByText('现磨咖啡', { exact: true })).toHaveCount(0);
 });
 
+test('keeps populated Shop wishlist as light action rows under a dark header', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'populated wishlist surface targets the primary desktop surface');
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.wishlist = ['item.seed-phone'];
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await page.getByRole('button', { name: '商店', exact: true }).click();
+
+  const wishlist = page.locator('.shop-rail .rail-wishlist');
+  const heading = wishlist.locator('.section-heading');
+  const row = wishlist.locator('.item-row');
+  await expect(row).toHaveCount(1);
+  await expect(row).toContainText('实用手机');
+  await expect(row.getByRole('button', { name: '买下', exact: true })).toBeVisible();
+  await expect(row.getByRole('button', { name: '移除', exact: true })).toBeVisible();
+  await expect(wishlist).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+  await expect(heading).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(heading.getByRole('heading')).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await expect(row).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(row.getByRole('button', { name: '买下', exact: true })).toHaveCSS('color', 'rgb(7, 7, 7)');
+});
+
 test('keeps low-height Shop support content in the main scroll context', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Shop scrolling targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1280, height: 720 });
