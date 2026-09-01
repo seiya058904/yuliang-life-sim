@@ -437,6 +437,32 @@ test('keeps the Life forecast net row on the light reading surface', async ({ pa
   await expect(net.locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
 });
 
+test('keeps the tall Life forecast rail on the extended reference tier', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop', 'tall Life forecast footprint targets the desktop project');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1181 || (page.viewportSize()?.height ?? 0) < 801, 'tall Life forecast footprint targets the primary desktop surface');
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const geometry = await page.locator('.view-life .life-hero-grid > .forecast-strip.inverse').evaluate((forecast) => {
+    const forecastRect = forecast.getBoundingClientRect();
+    const consoleRect = forecast.parentElement?.querySelector('.time-console')?.getBoundingClientRect();
+    const planningRect = document.querySelector('.view-life .life-planning-section')?.getBoundingClientRect();
+    const moreRect = forecast.querySelector('.forecast-more')?.getBoundingClientRect();
+    return {
+      forecastHeight: forecastRect.height,
+      forecastBottom: forecastRect.bottom,
+      consoleBottom: consoleRect?.bottom ?? 0,
+      planningTop: planningRect?.top ?? 0,
+      moreBottom: moreRect?.bottom ?? 0,
+    };
+  });
+
+  expect(geometry.forecastHeight).toBeGreaterThanOrEqual(396);
+  expect(geometry.forecastBottom).toBeGreaterThan(geometry.consoleBottom + 18);
+  expect(geometry.forecastBottom).toBeLessThanOrEqual(geometry.planningTop + 24);
+  expect(geometry.moreBottom).toBeGreaterThan(geometry.consoleBottom + 12);
+});
+
 test('keeps the fitted Life forecast data surface flat inside its inverse frame', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast frame assertion targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

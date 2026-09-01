@@ -10435,6 +10435,26 @@ textarea {
   }
 }
 
+/* The tall reference lets the inverse Forecast rail carry a little more
+   information than the activity console. Keep the main Hero row anchored to
+   the console, then let the existing truthful rail extend into the plan
+   heading band without changing the low-height desktop budget. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-life .life-hero-grid {
+    position: relative;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 304px;
+    height: 400px;
+    max-height: none;
+    z-index: 2;
+  }
+}
+
 /* The tall settlement footer is a readable status rail, not a footnote. Keep
    its real summary, labels, meters, and values one pixel tier above the
    surrounding micro-copy while preserving the established two-line frame. */
