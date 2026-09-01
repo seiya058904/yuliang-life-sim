@@ -2647,11 +2647,11 @@ test('gives settlement financial panels a shared pixel-corner frame', async ({ p
 
   const frames = await page.locator('.monthly-summary.fullframe .settle-grid > .settle-panel').evaluateAll((items) => items.map((item) => {
     const style = getComputedStyle(item, '::after');
-    return { content: style.content, borderWidth: style.borderTopWidth, clipPath: style.clipPath };
+    return { content: style.content, borderWidth: style.borderTopWidth, clipPath: style.clipPath, surfaceClipPath: getComputedStyle(item).clipPath };
   }));
 
   expect(frames).toHaveLength(3);
-  expect(frames.every(({ content, borderWidth, clipPath }) => content === '""' && Number.parseFloat(borderWidth) >= 1 && clipPath !== 'none')).toBe(true);
+  expect(frames.every(({ content, borderWidth, clipPath, surfaceClipPath }) => content === '""' && Number.parseFloat(borderWidth) >= 1 && clipPath !== 'none' && surfaceClipPath !== 'none')).toBe(true);
 });
 
 test('gives the settlement Hero a full-width title divider', async ({ page }) => {
@@ -3330,6 +3330,29 @@ test('keeps Life board surfaces on the shared stepped pixel silhouette', async (
 
   expect(frames).toHaveLength(6);
   expect(frames.every(({ clipPath, overflowX, overflowY }) => clipPath !== 'none' && overflowX !== 'scroll' && overflowY !== 'scroll')).toBe(true);
+});
+
+test('keeps secondary desktop surfaces on the shared stepped pixel silhouette', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'secondary surface silhouettes target the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const surfaces = [
+    { nav: '职业', selector: '.career-filters, .career-detail.inverse, .career-bottom-panel' },
+    { nav: '商店', selector: '.view-shop .shop-rail .rail-module, .view-shop .shop-detail' },
+    { nav: '生活', selector: '.view-life .forecast-strip.inverse' },
+  ];
+
+  for (const { nav, selector } of surfaces) {
+    await page.getByRole('button', { name: nav, exact: true }).click();
+    const frames = await page.locator(selector).evaluateAll((elements) => elements.map((element) => ({
+      clipPath: getComputedStyle(element).clipPath,
+      overflowX: getComputedStyle(element).overflowX,
+      overflowY: getComputedStyle(element).overflowY,
+    })));
+
+    expect(frames.length, `${nav} should expose its real secondary surfaces`).toBeGreaterThan(0);
+    expect(frames.every(({ clipPath, overflowX, overflowY }) => clipPath !== 'none' && overflowX !== 'scroll' && overflowY !== 'scroll')).toBe(true);
+  }
 });
 
 test('keeps the desktop outer frame as a restrained one-bit boundary', async ({ page }) => {

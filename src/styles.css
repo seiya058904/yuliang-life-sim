@@ -10849,3 +10849,44 @@ textarea {
     );
   }
 }
+
+/* Settlement ledger, result, and achievement surfaces share the same clipped
+   plane as the Life and Shop boards. Their existing pseudo-frames still draw
+   the inner corner marks; clipping the real background removes the ordinary
+   rectangular corners underneath them. */
+@media (min-width: 1181px) {
+  .monthly-summary.fullframe .settle-panel,
+  .monthly-summary.fullframe .settle-result,
+  .monthly-summary.fullframe .settle-half,
+  .monthly-summary.fullframe .highlight-card {
+    clip-path: polygon(
+      0 0, calc(100% - 9px) 0, calc(100% - 9px) 1px,
+      calc(100% - 1px) 1px, calc(100% - 1px) 9px, 100% 9px,
+      100% calc(100% - 9px), calc(100% - 1px) calc(100% - 9px),
+      calc(100% - 1px) calc(100% - 1px), calc(100% - 9px) calc(100% - 1px),
+      calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 1px),
+      1px calc(100% - 1px), 1px calc(100% - 9px), 0 calc(100% - 9px)
+    );
+  }
+}
+
+/* The remaining secondary rails use the same real-surface silhouette: Career
+   filters/detail/support panels, Shop's selected detail, and Life's forecast
+   rail. Existing pseudo-frames continue to carry their page-specific stroke
+   and divider colors. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-filters,
+  .career-section.market-mode .career-detail.inverse,
+  .career-section.market-mode .career-bottom-panel,
+  .view-shop .shop-detail,
+  .view-life .forecast-strip.inverse {
+    clip-path: polygon(
+      0 0, calc(100% - 9px) 0, calc(100% - 9px) 1px,
+      calc(100% - 1px) 1px, calc(100% - 1px) 9px, 100% 9px,
+      100% calc(100% - 9px), calc(100% - 1px) calc(100% - 9px),
+      calc(100% - 1px) calc(100% - 1px), calc(100% - 9px) calc(100% - 1px),
+      calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 1px),
+      1px calc(100% - 1px), 1px calc(100% - 9px), 0 calc(100% - 9px)
+    );
+  }
+}
