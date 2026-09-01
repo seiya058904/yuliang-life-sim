@@ -3318,6 +3318,20 @@ test('keeps shared panels on the stepped corner and divider grammar', async ({ p
   expect(grammar.divider).toEqual({ style: 'dotted', color: 'rgb(87, 87, 83)' });
 });
 
+test('keeps Life board surfaces on the shared stepped pixel silhouette', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Life surface silhouette targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const frames = await page.locator('.view-life .time-console, .view-life .planner.pixel-corners, .view-life .inbox-panel.pixel-corners').evaluateAll((elements) => elements.map((element) => {
+    const style = getComputedStyle(element);
+    return { clipPath: style.clipPath, overflowX: style.overflowX, overflowY: style.overflowY };
+  }));
+
+  expect(frames).toHaveLength(6);
+  expect(frames.every(({ clipPath, overflowX, overflowY }) => clipPath !== 'none' && overflowX !== 'scroll' && overflowY !== 'scroll')).toBe(true);
+});
+
 test('keeps the desktop outer frame as a restrained one-bit boundary', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'outer frame treatment targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });

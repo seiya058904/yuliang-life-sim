@@ -10831,3 +10831,21 @@ textarea {
     );
   }
 }
+
+/* Life's Hero, Planner, and inbox modules now clip their real surfaces to the
+   same stepped silhouette as the catalog cards. Existing pseudo-frames still
+   provide the internal border and divider treatment. */
+@media (min-width: 1181px) {
+  .view-life .time-console,
+  .view-life .planner.pixel-corners,
+  .view-life .inbox-panel.pixel-corners {
+    clip-path: polygon(
+      0 0, calc(100% - 9px) 0, calc(100% - 9px) 1px,
+      calc(100% - 1px) 1px, calc(100% - 1px) 9px, 100% 9px,
+      100% calc(100% - 9px), calc(100% - 1px) calc(100% - 9px),
+      calc(100% - 1px) calc(100% - 1px), calc(100% - 9px) calc(100% - 1px),
+      calc(100% - 9px) 100%, 9px 100%, 9px calc(100% - 1px),
+      1px calc(100% - 1px), 1px calc(100% - 9px), 0 calc(100% - 9px)
+    );
+  }
+}
