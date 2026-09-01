@@ -10463,6 +10463,33 @@ textarea {
   }
 }
 
+/* Populated Career support panels use the reference's black-header / light-row
+   rhythm. Keep the real records on their readable inverse plane, but return
+   the outer shell, title band, and action footer to the dark console surface. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) {
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border-color: #c7c7c0 !important;
+    --frame-corner-line: #c7c7c0;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .inbox-head {
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border-bottom-color: #777 !important;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .inbox-head h2,
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .inbox-head .pixel-icon {
+    color: #f4f4ef !important;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .inbox-foot {
+    border-top-color: #777 !important;
+  }
+}
+
 /* Low-height Life keeps the complete authored Hero and weekly plan in the
    first viewport. The plan still carries its real icon, activity label,
    period, repeat toggle, and cost; only the surrounding vertical rhythm is

@@ -1802,9 +1802,9 @@ test('uses light inverse surfaces for populated Career support rows', async ({ p
 
   expect(surfaces).toHaveLength(3);
   expect(surfaces.every(({ background, color, headerBackground, rowBackground }) =>
-    background === 'rgb(244, 244, 239)' &&
-    color === 'rgb(7, 7, 7)' &&
-    headerBackground === 'rgb(244, 244, 239)' &&
+    background === 'rgb(9, 9, 9)' &&
+    color === 'rgb(244, 244, 239)' &&
+    headerBackground === 'rgb(9, 9, 9)' &&
     rowBackground === 'rgb(244, 244, 239)'
   )).toBe(true);
 
