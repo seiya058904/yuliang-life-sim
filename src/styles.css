@@ -10856,25 +10856,25 @@ textarea {
   }
 }
 
-/* Career's empty support states use the same black status treatment as the
-   other sparse console lanes. A populated application, Offer, or history
-   list keeps its light data surface because this selector only matches the
-   direct empty-state child. */
+/* Career's empty support states share the reference's light content plane with
+   populated rows. The state stays truthful and compact, while the black
+   header / light body / black CTA rhythm remains consistent across all four
+   support panels. */
 @media (min-width: 1181px) {
   .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .career-bottom-empty) > .career-bottom-empty {
-    color: #aaa !important;
-    background: #090909 !important;
-    border-color: #777 !important;
-    --il-knock: #090909;
+    color: #222 !important;
+    background: #f4f4ef !important;
+    border-color: #999 !important;
+    --il-knock: #f4f4ef;
   }
 
   .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .career-bottom-empty) > .career-bottom-empty .pixel-illustration,
   .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .career-bottom-empty) > .career-bottom-empty strong {
-    color: #f4f4ef !important;
+    color: #070707 !important;
   }
 
   .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .career-bottom-empty) > .career-bottom-empty small {
-    color: #aaa !important;
+    color: #555 !important;
   }
 }
 

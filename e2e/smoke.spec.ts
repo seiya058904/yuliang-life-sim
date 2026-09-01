@@ -346,7 +346,7 @@ test('keeps empty Career and Shop support bodies on explicit state lanes', async
 
   expect(careerEmptyStyles).toHaveLength(3);
   expect(careerEmptyStyles.every(({ background, border, color, iconColor }) =>
-    background === 'rgb(9, 9, 9)' && border === 'rgb(119, 119, 119)' && color === 'rgb(244, 244, 239)' && iconColor === 'rgb(244, 244, 239)'
+    background === 'rgb(244, 244, 239)' && border === 'rgb(153, 153, 153)' && color === 'rgb(7, 7, 7)' && iconColor === 'rgb(7, 7, 7)'
   )).toBe(true);
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -1561,11 +1561,11 @@ test('keeps empty Career support lanes readable inside dark shells', async ({ pa
 
   expect(lanes).toHaveLength(3);
   expect(lanes.every(({ background, color, border, iconColor, strongColor }) =>
-    background === 'rgb(9, 9, 9)' &&
-    color === 'rgb(170, 170, 170)' &&
-    border === 'rgb(119, 119, 119)' &&
-    iconColor === 'rgb(244, 244, 239)' &&
-    strongColor === 'rgb(244, 244, 239)'
+    background === 'rgb(244, 244, 239)' &&
+    color === 'rgb(34, 34, 34)' &&
+    border === 'rgb(153, 153, 153)' &&
+    iconColor === 'rgb(7, 7, 7)' &&
+    strongColor === 'rgb(7, 7, 7)'
   )).toBe(true);
   await expect(page.locator('.career-bottom-insight')).toHaveCSS('background-color', 'rgb(12, 12, 12)');
 });
