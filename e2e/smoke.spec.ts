@@ -1895,7 +1895,7 @@ test('shows the pending settlement mode in the top status while the ceremony is 
   expect(settlementCopy).not.toMatch(/\b[A-Za-z]+(?:_[A-Za-z0-9-]+)+\b/);
 });
 
-test('keeps the tall Settlement board attached to its compact HUD', async ({ page }) => {
+test('keeps the tall Settlement board separated from its compact HUD', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall Settlement frame geometry targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
@@ -1934,8 +1934,10 @@ test('keeps the tall Settlement board attached to its compact HUD', async ({ pag
     };
   });
 
-  expect(geometry.topbarHeight).toBeLessThanOrEqual(82);
-  expect(geometry.hudToFrameGap).toBeLessThanOrEqual(4);
+  expect(geometry.topbarHeight).toBeGreaterThanOrEqual(90);
+  expect(geometry.topbarHeight).toBeLessThanOrEqual(98);
+  expect(geometry.hudToFrameGap).toBeGreaterThanOrEqual(14);
+  expect(geometry.hudToFrameGap).toBeLessThanOrEqual(24);
   expect(geometry.frameLeft).toBeLessThanOrEqual(8);
   expect(geometry.frameRight).toBeGreaterThanOrEqual(1432);
   expect(geometry.frameWidth).toBeGreaterThanOrEqual(1424);

@@ -10643,3 +10643,23 @@ textarea {
     font-size: 12px;
   }
 }
+
+/* Keep the tall settlement ceremony visually separate from the live HUD like
+   the reference frame. The inner head/grid/footer anchors stay fixed; only
+   the outer black breathing gap and compensating frame padding change. */
+@media (min-width: 1321px) and (min-height: 801px) {
+  .app-shell.mode-monthly_summary > .topbar {
+    height: 94px;
+    min-height: 94px;
+  }
+
+  .modal-backdrop.settlement-mode {
+    padding-top: 112px;
+    padding-bottom: 32px;
+  }
+
+  .monthly-summary.fullframe {
+    height: calc(100dvh - 144px);
+    padding-top: 10px;
+  }
+}
