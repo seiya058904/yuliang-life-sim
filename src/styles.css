@@ -10463,6 +10463,25 @@ textarea {
   }
 }
 
+/* Populated Career support rows use the reference's small one-bit marker
+   before the label. Keep the row data and footer actions unchanged while
+   giving the light inverse lane the same icon-led scan order as the main
+   cards and Shop rail. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows > li {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3):has(> .rail-rows) > .rail-rows > li > .pixel-icon {
+    width: 14px;
+    height: 14px;
+    color: #070707;
+  }
+}
+
 /* The selected top-level tab is an inverse console marker, not a full-height
    browser button. Keep the real navigation hit area and active semantics, but
    give only the painted active surface the same stepped corners as the page

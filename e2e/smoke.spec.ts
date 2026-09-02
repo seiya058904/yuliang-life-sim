@@ -1990,6 +1990,16 @@ test('uses light inverse surfaces for populated Career support rows', async ({ p
   expect(rowGeometry.every(({ itemHeight, rowsHeight, centerOffset }) =>
     itemHeight < rowsHeight - 20 && centerOffset <= 2
   )).toBe(true);
+
+  const rowIcons = await page.locator('.career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .rail-rows li .pixel-icon').evaluateAll((elements) => elements.map((element) => {
+    const rect = element.getBoundingClientRect();
+    return { width: rect.width, height: rect.height, color: getComputedStyle(element).color };
+  }));
+
+  expect(rowIcons).toHaveLength(3);
+  expect(rowIcons.every(({ width, height, color }) =>
+    width >= 12 && width <= 18 && height >= 12 && height <= 18 && color === 'rgb(7, 7, 7)'
+  )).toBe(true);
 });
 
 test('keeps the selected Career card frame brighter than idle cards', async ({ page }) => {
