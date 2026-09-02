@@ -5432,7 +5432,7 @@ textarea {
    same visual weight as the reference without changing the 720px layout. */
 @media (min-width: 1181px) and (min-height: 801px) {
   .main-content {
-    padding-top: 4px;
+    padding-top: 0;
   }
 
   .career-results .job-card {
@@ -11802,5 +11802,9 @@ textarea {
   .view-life .forecast-strip.inverse .forecast-attr .segment-meter i {
     width: 11px;
     height: 7px;
+  }
+
+  .view-shop .shop-detail {
+    margin-top: 10px;
   }
 }

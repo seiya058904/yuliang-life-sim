@@ -863,6 +863,22 @@ test('keeps the active navigation state on a stepped inverse surface', async ({ 
   expect(active.height).toBeLessThanOrEqual(41);
 });
 
+test('keeps tall desktop boards flush with the navigation baseline', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+
+  const gaps = [];
+  for (const view of ['生活', '职业', '商店']) {
+    await page.getByRole('button', { name: view, exact: true }).click();
+    gaps.push(await page.evaluate(() => {
+      const nav = document.querySelector('.main-nav')?.getBoundingClientRect();
+      const board = document.querySelector('.view-life .life-hero-grid, .career-section, .shop-tab-bar')?.getBoundingClientRect();
+      return board && nav ? board.top - nav.bottom : Number.POSITIVE_INFINITY;
+    }));
+  }
+
+  expect(gaps.every((gap) => gap >= 0 && gap <= 2)).toBe(true);
+});
+
 test('hides dormant scroll tracks on the fitted tall desktop surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall desktop scrollbar treatment targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
