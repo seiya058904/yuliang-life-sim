@@ -11799,9 +11799,9 @@ textarea {
     gap: 2px;
   }
 
-  .view-life .forecast-strip.inverse .forecast-attr .segment-meter i {
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr .segment-meter i {
     width: 11px;
-    height: 7px;
+    height: 9px;
   }
 
   .view-shop .shop-detail {

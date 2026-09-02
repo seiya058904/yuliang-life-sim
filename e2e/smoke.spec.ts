@@ -2771,6 +2771,17 @@ test('keeps Life forecast meters on the ten-step reference scale', async ({ page
   expect(meters.every(({ segments, ariaMax, display, width, segmentWidth }) => segments === 10 && ariaMax === '100' && display === 'grid' && width >= 120 && width <= 132 && segmentWidth >= 10 && segmentWidth <= 12)).toBe(true);
 });
 
+test('keeps Life forecast meter cells on the chunky pixel tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast meter cell tier targets the supported desktop landscape surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const heights = await page.locator('.view-life .forecast-attr .segment-meter i').evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().height));
+
+  expect(heights.length).toBe(50);
+  expect(heights.every((height) => height >= 8 && height <= 10)).toBe(true);
+});
+
 test('keeps the weekly planner utility row compact without removing its controls', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'planner utility density is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
