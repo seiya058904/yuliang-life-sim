@@ -11808,3 +11808,42 @@ textarea {
     margin-top: 10px;
   }
 }
+
+/* On the primary settlement board, the income and expense totals belong to
+   the same heading register as their panel titles. Keep the authored rows and
+   notes below that register; this only changes the visual anatomy of the two
+   financial panels. */
+@media (min-width: 1321px) and (min-height: 801px) {
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    column-gap: 8px;
+    row-gap: 6px;
+    align-content: start;
+  }
+
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) > h3 {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) > .metric-box {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+  }
+
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) > .settle-rows {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    min-height: 0;
+    align-content: start;
+  }
+
+  .monthly-summary.fullframe .settle-panel:not(.settle-allocation) > .settle-panel-note {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+}

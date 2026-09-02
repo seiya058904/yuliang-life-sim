@@ -2582,6 +2582,38 @@ test('gives the Settlement net-worth Hero value a primary reading tier', async (
   expect(geometry.rangeTop).toBeGreaterThanOrEqual(geometry.bigBottom);
 });
 
+test('keeps tall Settlement ledger totals on the heading register', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall Settlement ledger anatomy targets the primary desktop surface');
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.simulationMode = 'paused';
+    state.majorEventsThisMonth = 3;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+  await runLongPeriod(page, 1);
+  await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
+
+  const registers = await page.locator('.monthly-summary.fullframe .settle-panel:not(.settle-allocation)').evaluateAll((panels) => panels.map((panel) => {
+    const heading = panel.querySelector<HTMLElement>('h3')?.getBoundingClientRect();
+    const total = panel.querySelector<HTMLElement>('.metric-box')?.getBoundingClientRect();
+    return {
+      headingRight: heading?.right ?? 0,
+      headingTop: heading?.top ?? 0,
+      totalLeft: total?.left ?? 0,
+      totalTop: total?.top ?? 0,
+    };
+  }));
+
+  expect(registers.length).toBe(2);
+  expect(registers.every(({ headingRight, headingTop, totalLeft, totalTop }) =>
+    totalLeft >= headingRight + 6 && totalTop <= headingTop + 4 && totalTop >= headingTop - 20
+  )).toBe(true);
+});
+
 test('keeps visible Settlement copy free of internal identifiers', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement copy audit targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
