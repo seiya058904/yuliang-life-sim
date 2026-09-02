@@ -306,7 +306,7 @@ function CareerToolsDrawer({ game, dispatch, onClose }: { game: GameState; dispa
   </section>;
 }
 
-/** 参考图反相面板：白底黑字的本周预测。 */
+/** 参考图反相面板：黑底白字的本周预测。 */
 function ForecastPanel({ game, scrollTarget = '.life-planning-section' }: { game: GameState; scrollTarget?: string }) {
   const forecast = useMemo(() => forecastWeeklyPlan(game, game.weeklyPlan, contentRegistry, balanceConfig), [game]);
   const attributes = forecastAttributeOrder.map((key) => [key, forecast.attributes[key] ?? 0] as const);

@@ -705,15 +705,20 @@ test('keeps the tall Life time column on the reference stepped rhythm', async ({
   expect(geometry.icon.left).toBeLessThan(geometry.column.right - 36);
 });
 
-test('keeps the Life forecast net row on the light reading surface', async ({ page }) => {
+test('keeps the Life forecast rail on the dark reference surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast surface assertion targets the supported desktop landscape surface');
   await page.getByRole('button', { name: '生活', exact: true }).click();
 
-  const net = page.locator('.view-life .life-hero-grid > .forecast-strip.inverse .forecast-net');
-  await expect(net).toHaveCSS('background-color', 'rgb(244, 244, 239)');
-  await expect(net).toHaveCSS('color', 'rgb(7, 7, 7)');
-  await expect(net.locator('span')).toHaveCSS('color', 'rgb(7, 7, 7)');
-  await expect(net.locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  const forecast = page.locator('.view-life .life-hero-grid > .forecast-strip.inverse');
+  const net = forecast.locator('.forecast-net');
+  await expect(forecast).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+  await expect(forecast).toHaveCSS('color', 'rgb(244, 244, 239)');
+  await expect(forecast.locator('.forecast-row').first()).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+  await expect(forecast.locator('.forecast-attrs')).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+  await expect(net).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+  await expect(net).toHaveCSS('color', 'rgb(244, 244, 239)');
+  await expect(net.locator('span')).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await expect(net.locator('strong')).toHaveCSS('color', 'rgb(255, 255, 255)');
 });
 
 test('keeps the tall Life forecast rail on the extended reference tier', async ({ page }, testInfo) => {

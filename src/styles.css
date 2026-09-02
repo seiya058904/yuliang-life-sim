@@ -11920,3 +11920,84 @@ textarea {
     grid-column: 2;
   }
 }
+
+/* Life's primary Forecast is a dark reading rail in the reference frame.
+   Keep the shared inverse component available to the secondary Career tools,
+   while the actual Life hero carries the high-contrast black-and-white tier. */
+@media (min-width: 1181px) {
+  .view-life .life-hero-grid > .forecast-strip.inverse {
+    color: #f4f4ef;
+    background: #090909;
+    border-color: #f4f4ef;
+    outline-color: #f4f4ef;
+    box-shadow: inset 0 0 0 1px #f4f4ef;
+    --il-knock: #090909;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse::before {
+    border-color: #f4f4ef;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-head {
+    border-bottom-color: #f4f4ef;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .eyebrow,
+  .view-life .life-hero-grid > .forecast-strip.inverse h2 {
+    color: #fff;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse small {
+    color: #aaa;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-row {
+    color: #ddd;
+    background: #090909;
+    border-bottom-color: #555;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-row span,
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr {
+    color: #ddd;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-row strong,
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr b {
+    color: #fff;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net {
+    color: #f4f4ef !important;
+    background: #090909 !important;
+    border-color: #f4f4ef !important;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net span,
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net strong,
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attrs .forecast-sub {
+    color: #fff !important;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr {
+    border-bottom-color: #555;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attrs {
+    background: #090909;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr .pixel-icon {
+    color: #f4f4ef;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .segment-meter i {
+    border-color: #777;
+    background: #333;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .segment-meter i.filled {
+    background: #f4f4ef;
+    border-color: #f4f4ef;
+  }
+}
