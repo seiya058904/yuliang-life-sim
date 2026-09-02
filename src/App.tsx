@@ -571,7 +571,7 @@ function InventoryPanel({ game, dispatch }: { game: GameState; dispatch: (action
 
 function WishlistPanel({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
   const items = (game.wishlist ?? []).map((itemId) => contentRegistry.items.find((item) => item.id === itemId)).filter((item): item is (typeof contentRegistry.items)[number] => Boolean(item));
-  return <section className="detail-panel" aria-label="愿望清单"><div className="section-heading compact"><div><PixelIcon name="heart" size={16} data-rail-icon="heart" /><span className="eyebrow">消费目标</span><h2>愿望清单</h2></div><p>把想买的东西先记下来，查看距离目标还差多少现金。</p></div>{items.length ? <div className="item-list">{items.map((item) => { const price = getItemCost(game, item); const missing = Math.max(0, price - game.cash); return <div className="item-row" key={item.id}><div><h2>{item.name}</h2><p>{missing ? `还差 ${money(missing)}` : '现在可以买'}</p></div><div className="row-meta"><strong>{money(price)}</strong><div className="button-pair"><button className="text-button" disabled={missing > 0} onClick={() => dispatch({ type: 'purchase_items', items: { [item.id]: 1 } })}>买下</button><button className="text-button" onClick={() => dispatch({ type: 'manage_wishlist', itemId: item.id, enabled: false })}>移除</button></div></div></div>; })}</div> : <ShopRailEmptyState illustration="heart" title="还没有消费目标" hint="在商品卡片加入目标后，会在这里查看进度。" />}</section>;
+  return <section className="detail-panel" aria-label="愿望清单"><div className="section-heading compact"><div><PixelIcon name="heart" size={16} data-rail-icon="heart" /><span className="eyebrow">消费目标</span><h2>愿望清单</h2></div><p>把想买的东西先记下来，查看距离目标还差多少现金。</p></div>{items.length ? <div className="item-list">{items.map((item) => { const price = getItemCost(game, item); const missing = Math.max(0, price - game.cash); return <div className="item-row" key={item.id}><div><PixelIcon name="heart" size={14} aria-hidden="true" data-wishlist-row-icon="heart" /><h2>{item.name}</h2><p>{missing ? `还差 ${money(missing)}` : '现在可以买'}</p></div><div className="row-meta"><strong>{money(price)}</strong><div className="button-pair"><button className="text-button" disabled={missing > 0} onClick={() => dispatch({ type: 'purchase_items', items: { [item.id]: 1 } })}>买下</button><button className="text-button" onClick={() => dispatch({ type: 'manage_wishlist', itemId: item.id, enabled: false })}>移除</button></div></div></div>; })}</div> : <ShopRailEmptyState illustration="heart" title="还没有消费目标" hint="在商品卡片加入目标后，会在这里查看进度。" />}</section>;
 }
 
 function ShopRailEmptyState({ illustration, title, hint }: { illustration: PixelIllustrationName; title: string; hint: string }) {
@@ -759,12 +759,13 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
   const safeActivityPage = Math.min(activityPage, activityPageCount - 1);
   const pagedActivityEntries = activityEntries.slice(safeActivityPage * 12, safeActivityPage * 12 + 12);
   const weekRows = ([1, 2, 3, 4, 5, 6, 7] as const).flatMap((weekday) => {
-    if (game.employment?.schedule.workDays.includes(weekday)) return [{ key: `w${weekday}`, day: `周${weekdayLabel(weekday)}`, text: '工作 · 自动排班' }];
+    if (game.employment?.schedule.workDays.includes(weekday)) return [{ key: `w${weekday}`, day: `周${weekdayLabel(weekday)}`, text: '工作 · 自动排班', icon: 'career' as PixelIconName }];
     return (['day', 'evening'] as const).map((slot) => {
       const plan = game.weeklyPlan.days[weekday][slot];
       const prefix = slot === 'day' ? '白天' : '晚间';
       const text = plan.kind === 'free' ? `${prefix} 自由` : plan.kind === 'study' ? `${prefix} 学习 ${plan.durationMinutes / 60} 小时` : plan.kind === 'side_job' ? `${prefix} 兼职 ${plan.durationMinutes / 60} 小时` : plan.kind === 'course' ? `${prefix} 课程 ${contentRegistry.courses?.find((course) => course.id === plan.courseId)?.name ?? ''}` : `${prefix} ${contentRegistry.activities?.find((entry) => entry.id === (plan as { activityId?: ContentId }).activityId)?.name ?? '活动'}`;
-      return { key: `w${weekday}${slot}`, day: `周${weekdayLabel(weekday)}`, text };
+      const icon: PixelIconName = plan.kind === 'free' ? 'controller' : plan.kind === 'study' || plan.kind === 'course' ? 'book' : plan.kind === 'side_job' ? 'bag' : 'cup';
+      return { key: `w${weekday}${slot}`, day: `周${weekdayLabel(weekday)}`, text, icon };
     });
   });
 
@@ -889,12 +890,12 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
       <aside className="shop-rail" aria-label="商店辅助信息">
         <section className="rail-module rail-cart" aria-label="购物清单"><header><PixelIcon name="bag" size={16} /><h3>购物袋（{cartCount}）</h3></header>
           {cartCount === 0 ? <ShopRailEmptyState illustration="bag" title="购物袋是空的" hint="选择商品后，会在这里结算。" /> : <>
-            <ul className="rail-rows">{Object.entries(cart).map(([itemId, quantity]) => <li key={itemId}><span>{contentRegistry.items.find((item) => item.id === itemId)?.name}</span><b>×{quantity}</b></li>)}</ul>
+            <ul className="rail-rows">{Object.entries(cart).map(([itemId, quantity]) => { const item = contentRegistry.items.find((entry) => entry.id === itemId); return <li key={itemId}><PixelIllustration name={item ? itemIllustrationFor(item) : 'bag'} size={18} className="rail-row-art" aria-hidden="true" /><span>{item?.name}</span><b>×{quantity}</b></li>; })}</ul>
             <div className="total-row"><span>消费合计</span><strong>{money(total)}</strong></div>
             <button className="primary-button full" onClick={() => { dispatch({ type: 'purchase_items', items: cart }); setCart({}); }} aria-label="一次购买">一次购买</button>
           </>}
         </section>
-        <section className="rail-module rail-schedule" aria-label="本周安排"><header><PixelIcon name="calendar" size={16} /><h3>本周安排</h3></header><ul className="rail-rows compact">{weekRows.slice(0, 6).map((row) => <li key={row.key}><small>{row.day}</small><span>{row.text}</span></li>)}</ul><button className="text-button rail-link" onClick={() => onNavigate('life')}><PixelAction label="查看完整安排" /></button></section>
+        <section className="rail-module rail-schedule" aria-label="本周安排"><header><PixelIcon name="calendar" size={16} /><h3>本周安排</h3></header><ul className="rail-rows compact">{weekRows.slice(0, 6).map((row) => <li key={row.key}><small>{row.day}</small><span>{row.text}</span><PixelIcon name={row.icon} size={14} aria-hidden="true" data-schedule-row-icon={row.icon} /></li>)}</ul><button className="text-button rail-link" onClick={() => onNavigate('life')}><PixelAction label="查看完整安排" /></button></section>
         <section className="rail-module rail-fill rail-inventory" aria-label="已拥有模块"><InventoryPanel game={game} dispatch={dispatch} /></section>
         <section className="rail-module rail-fill rail-wishlist" aria-label="消费目标快捷区"><WishlistPanel game={game} dispatch={dispatch} /></section>
       </aside>

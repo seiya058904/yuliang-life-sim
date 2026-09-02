@@ -11866,3 +11866,57 @@ textarea {
     grid-row: 3;
   }
 }
+
+/* Shop Rail rows carry the same one-bit marker language as the catalog: item
+   art for the cart, a plan icon at the schedule edge, and a heart beside each
+   real wishlist target. The data order, labels, and action hit areas remain
+   unchanged. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail .rail-cart .rail-rows > li {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .view-shop .shop-rail .rail-cart .rail-rows > li > .rail-row-art {
+    width: 16px;
+    height: 16px;
+    color: #222;
+  }
+
+  .view-shop .shop-rail .rail-schedule .rail-rows > li {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) 16px;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .view-shop .shop-rail .rail-schedule .rail-rows > li > .pixel-icon {
+    width: 14px;
+    height: 14px;
+    color: #222;
+    justify-self: end;
+  }
+
+  .view-shop .shop-rail .rail-wishlist .item-row > div:first-child {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: start;
+    column-gap: 6px;
+  }
+
+  .view-shop .shop-rail .rail-wishlist .item-row > div:first-child > .pixel-icon {
+    grid-row: 1 / span 2;
+    width: 14px;
+    height: 14px;
+    margin-top: 2px;
+    color: #222;
+  }
+
+  .view-shop .shop-rail .rail-wishlist .item-row > div:first-child > h2,
+  .view-shop .shop-rail .rail-wishlist .item-row > div:first-child > p {
+    grid-column: 2;
+  }
+}

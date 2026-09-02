@@ -260,10 +260,12 @@ test('keeps the shop utility rail on the stepped header-row-footer surfaces', as
   await expect(cart).toHaveCSS('background-color', 'rgb(9, 9, 9)');
   await expect(cart.locator('header')).toHaveCSS('background-color', 'rgb(7, 7, 7)');
   await expect(cart.locator('.rail-rows li').first()).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(cart.locator('.rail-rows li .pixel-illustration')).toHaveCount(1);
   await expect(cart.getByRole('button', { name: '一次购买' })).toHaveCSS('background-color', 'rgb(7, 7, 7)');
   await expect(schedule).toHaveCSS('background-color', 'rgb(9, 9, 9)');
   await expect(schedule.locator('header')).toHaveCSS('background-color', 'rgb(7, 7, 7)');
   await expect(schedule.locator('.rail-rows li').first()).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(schedule.locator('.rail-rows li .pixel-icon')).toHaveCount(6);
   await expect(schedule.getByRole('button', { name: '查看完整安排' })).toHaveCSS('background-color', 'rgb(7, 7, 7)');
   await expect(page.locator('.shop-rail .rail-inventory')).toHaveCSS('background-color', 'rgb(9, 9, 9)');
 
@@ -489,6 +491,7 @@ test('keeps populated Shop wishlist as light action rows under a dark header', a
   await expect(heading).toHaveCSS('background-color', 'rgb(7, 7, 7)');
   await expect(heading.getByRole('heading')).toHaveCSS('color', 'rgb(255, 255, 255)');
   await expect(row).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(row.locator('.pixel-icon')).toHaveCount(1);
   await expect(row.getByRole('button', { name: '买下', exact: true })).toHaveCSS('color', 'rgb(7, 7, 7)');
 });
 
