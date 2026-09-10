@@ -12,3 +12,6 @@ coverage/
 
 # Local visual-convergence capture output (screenshots, diffs, crops).
 output/
+
+# Ad-hoc Playwright output directories used to avoid rewriting test-results/.
+.e2e-out*/
