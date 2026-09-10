@@ -1,0 +1,49 @@
+《余量》当前状态 UI 审计包 · 量测记录
+
+1440 × 1080
+
+生活
+- document: scrollWidth=1440, scrollHeight=1080
+- hero: x=22, y=150, w≈1385.7, h=356
+- activity: x≈398.4, y≈169.7, w≈415.9, h≈318.6
+- activity title font-size≈48.96px; illustration=108×108px
+- planner: x=22, y=554, w≈1385.7, h≈205.4; plan cells=14; cell height≈62px
+- inbox: x=22, y≈769.4, w≈1385.7, h≈220
+- persistent status: y≈1002, h=78
+
+职业
+- document: scrollWidth=1440, scrollHeight=1080
+- market shell: x=22, y=150, w≈1385.7, h=662
+- filters/results/detail widths≈240 / 727.7 / 396
+- career cards=6
+- bottom panels: y≈824, h=160
+- persistent status: y≈1002, h=78
+
+商店 · 商品
+- document: scrollWidth=1440, scrollHeight=1080
+- layout: x=22, y=150, w≈1385.7, h≈840.1
+- main: w≈1073.7; rail: x≈1107.7, y=160, w=300, h=815
+- item cards=12; segmented effect meters=24
+- selected detail: y≈874.1, h=116, bottom≈990.1
+- persistent status starts at y≈1002; detail/status gap≈11.9px
+
+商店 · 娱乐
+- document: scrollWidth=1440, scrollHeight=1080
+- activity cards=12
+- activity grid: x=22, y≈276.1, w≈1073.7, h≈625.1
+- right rail: x≈1107.7, y=150, w=300, h=815
+- category switch does not render the product-detail panel; no page overflow
+
+月结算
+- document: scrollWidth=1440, scrollHeight=1080
+- summary: x=20, y=110, w=1400, h=930
+- result panel background: rgb(244, 244, 240)
+- result motif rays=8
+- footer: x≈42.7, y≈922.3, w≈1354.6, h=82
+- no rating labels; net-worth copy uses “变化为”
+
+1280 × 720
+
+- all captured pages: document scrollWidth=1280, scrollHeight=720
+- persistent status: y=642, h=78
+- this constrained-height canvas intentionally records the current lower-content visibility limitation; the main pixel-accurate acceptance canvas remains 1440 × 1080

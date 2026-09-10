@@ -3,7 +3,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 ROOT = Path(r"D:/xia zai/AI project/8.25")
-REF = ROOT / "output/yuliang-ui-audit-current/reference"
+REF = ROOT / "scripts/reference"
 CUR = ROOT / "output/round-current"
 OUT = ROOT / "output/round-current/crop"
 OUT.mkdir(parents=True, exist_ok=True)

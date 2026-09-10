@@ -22,7 +22,7 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(r"D:/xia zai/AI project/8.25")
-REF_DIR = ROOT / "output/yuliang-ui-audit-current/reference"
+REF_DIR = ROOT / "scripts/reference"
 CUR_DIR = ROOT / "output/round-current"
 
 # Reference file names are misleading; this is the mapping confirmed by

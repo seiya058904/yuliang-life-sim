@@ -1,23 +1,47 @@
+# Dependencies and build output
 node_modules/
 dist/
-test-results/
-.playwright-cli/
-artifacts/
-coverage/
-.impeccable/
-.codebase-memory/
-.env
-.env.*
-!.env.example
+build/
 
-# Local visual-convergence capture output (screenshots, diffs, crops).
+# Test output and reports
+test-results/
+playwright-report/
+blob-report/
+coverage/
+artifacts/
+
+# Local visual-convergence capture output (screenshots, diffs, crops, probes).
 output/
 
 # Ad-hoc Playwright output directories used to avoid rewriting test-results/.
 .e2e-out*/
 
-# Forensic backup of the corrupted pre-recovery git metadata
-/.git-broken-20260910/
+# Tool caches / agent data
+.playwright-cli/
+.impeccable/
+.codebase-memory/
+.workbuddy/
+.superpowers/
 
-# Workspace agent memory (kept out of feature commits)
-/.workbuddy/
+# Environment files
+.env
+.env.*
+!.env.example
+
+# TypeScript / Vite caches
+*.tsbuildinfo
+.vite/
+
+# Logs
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Merge / patch leftovers
+*.orig
+*.rej
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
