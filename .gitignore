@@ -9,3 +9,6 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Local visual-convergence capture output (screenshots, diffs, crops).
+output/
