@@ -2752,33 +2752,69 @@ button, input, select { border-radius: 0; }
     background: #000000;
     border-color: #c7c7c0;
   }
-  .career-bottom-insight .inbox-head { border-bottom-color: #777; }
+  .career-bottom-insight .inbox-head { padding: 12px 18px 0; gap: 22px; border-bottom: 0; }
+  .career-bottom-insight .inbox-head h2 { font-size: 16px; }
   .career-bottom-insight .inbox-head h2,
   .career-bottom-insight .inbox-head .pixel-icon { color: #f1f1f1; }
+  /* The reference insight is three market sentences, not three gauges: a
+     bulleted label, then the value the sentence carries — industry tags, a
+     salary chain, or the week's new postings beside its trend mark. */
   .career-insight-body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 52px;
-    align-items: end;
-    gap: 8px;
+    align-content: start;
+    gap: 0;
+    padding: 18px 11px 0;
     min-height: 0;
   }
-  .career-insight-metrics { display: grid; gap: 7px; min-width: 0; }
-  .career-insight-metric {
+  .career-insight-row {
     display: grid;
-    grid-template-columns: 48px minmax(0, 1fr) auto;
+    grid-template-columns: 93px minmax(0, 1fr);
     align-items: center;
-    gap: 4px;
+    gap: 12px;
+    min-height: 25px;
     min-width: 0;
-    color: #ddd;
-    font-size: 9px;
+    color: #f1f1f1;
+    font-size: 13px;
   }
-  .career-insight-metric > span,
-  .career-insight-metric > small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .career-insight-metric > small { color: #f1f1f1; font-size: 9px; }
-  .career-insight-metric .segment-meter { grid-auto-columns: minmax(4px, 1fr); gap: 2px; width: 100%; min-width: 0; }
-  .career-insight-metric .segment-meter i { width: auto; height: 6px; background: #242424; border-color: #666; }
-  .career-insight-metric .segment-meter i.filled { background: #f1f1f1; border-color: #f1f1f1; }
-  .career-insight-body > .pixel-illustration { width: 52px; height: 52px; color: #f1f1f1; }
+  .career-insight-row > span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    color: #c7c7c0;
+    white-space: nowrap;
+  }
+  .career-insight-row > span::before {
+    content: '\00b7';
+    flex: none;
+    color: #777772;
+    font-size: 15px;
+    line-height: 1;
+  }
+  .career-insight-chips { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
+  .career-insight-chips b {
+    flex: none;
+    padding: 4px 5px;
+    color: #f1f1f1;
+    border: 1px solid #454545;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .career-insight-chain { display: flex; align-items: center; gap: 7px; min-width: 0; overflow: hidden; }
+  .career-insight-chain b { flex: none; font-size: 12px; font-weight: 700; }
+  .career-insight-chain i { flex: none; color: #777772; font-size: 11px; font-style: normal; }
+  .career-insight-trend { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .career-insight-trend p {
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .career-insight-trend strong { font-weight: 700; }
+  .career-insight-trend > .pixel-illustration { flex: none; width: 22px; height: 22px; margin-left: auto; color: #f1f1f1; }
   .career-insight-empty {
     display: grid;
     align-content: center;
@@ -7829,39 +7865,6 @@ textarea {
   }
 }
 
-/* Market insight is a real secondary readout, so its bars and chart should
-   remain legible at the same compact desktop scale as the reference. The
-   vacancy-derived values stay unchanged; only the visual weight increases. */
-@media (min-width: 1181px) {
-  .career-bottom-insight .career-insight-body {
-    grid-template-columns: minmax(0, 1fr) 60px;
-    gap: 10px;
-  }
-
-  .career-bottom-insight .career-insight-metrics {
-    gap: 8px;
-  }
-
-  .career-bottom-insight .career-insight-metric {
-    grid-template-columns: 52px minmax(0, 1fr) auto;
-    gap: 6px;
-    font-size: 10px;
-  }
-
-  .career-bottom-insight .career-insight-metric > small {
-    font-size: 10px;
-  }
-
-  .career-bottom-insight .career-insight-metric .segment-meter i {
-    height: 8px;
-  }
-
-  .career-bottom-insight .career-insight-body > .pixel-illustration {
-    width: 60px;
-    height: 60px;
-  }
-}
-
 /* Directional controls share the same stepped 1-bit glyph language as the
    navigation and metadata icons. Keep the existing button hit areas and
    accessible labels unchanged. */
@@ -8564,28 +8567,6 @@ textarea {
     padding-top: 4px;
     border-top: 1px dotted #555;
     text-align: center;
-  }
-}
-
-/* Market insight is the quiet analytical close of the Career board. Give its
-   real vacancy-derived meters one readable pixel step and let the chart keep
-   a visible landmark without competing with the job grid. */
-@media (min-width: 1181px) {
-  .career-bottom-insight .career-insight-metric {
-    font-size: 11px;
-  }
-
-  .career-bottom-insight .career-insight-metric > small {
-    font-size: 11px;
-  }
-
-  .career-bottom-insight .career-insight-metric .segment-meter i {
-    height: 10px;
-  }
-
-  .career-bottom-insight .career-insight-body > .pixel-illustration {
-    width: 64px;
-    height: 64px;
   }
 }
 
@@ -9993,31 +9974,6 @@ textarea {
     padding: 8px 10px;
     font-size: 11px;
     line-height: 1.35;
-  }
-}
-
-/* Career market insight uses only real vacancy-derived metrics, so give those
-   rows the full analytical lane already reserved by the panel. Center the
-   chart with them and distribute the three meters vertically; this removes
-   the bottom-heavy dashboard void without changing the data or panel frame. */
-@media (min-width: 1181px) {
-  .career-bottom-insight .career-insight-body {
-    align-items: center;
-  }
-
-  .career-bottom-insight .career-insight-metrics {
-    height: 100%;
-    grid-template-rows: repeat(3, minmax(0, 1fr));
-    align-content: stretch;
-  }
-
-  .career-bottom-insight .career-insight-metric {
-    align-self: center;
-  }
-
-  .career-bottom-insight .career-insight-body > .pixel-illustration {
-    width: 78px;
-    height: 78px;
   }
 }
 

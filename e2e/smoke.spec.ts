@@ -1682,48 +1682,58 @@ test('gives the Career market insight its readable pixel dashboard weight', asyn
 
   const insight = page.locator('.career-bottom-insight');
   await expect(insight).toBeVisible();
-  const bodyGeometry = await insight.locator('.career-insight-body').evaluate((element) => {
+
+  // The reference reads as three market sentences: a bulleted label, then the
+  // value the sentence carries. Each row keeps a readable pixel tier and a
+  // real value derived from the live vacancy board.
+  const rows = insight.locator('.career-insight-row');
+  await expect(rows).toHaveCount(3);
+  await expect(rows.nth(0)).toContainText('热门行业');
+  await expect(rows.nth(1)).toContainText('高薪趋势');
+  await expect(rows.nth(2)).toContainText('机会趋势');
+
+  const geometry = await insight.locator('.career-insight-body').evaluate((element) => {
     const rect = element.getBoundingClientRect();
-    const metrics = element.querySelector('.career-insight-metrics');
-    const metricItems = Array.from(element.querySelectorAll('.career-insight-metric'));
-    const metricsRect = metrics?.getBoundingClientRect();
-    const first = metricItems[0]?.getBoundingClientRect();
-    const last = metricItems.at(-1)?.getBoundingClientRect();
-    const chart = element.querySelector('.pixel-illustration')?.getBoundingClientRect();
+    const items = Array.from(element.querySelectorAll('.career-insight-row'));
+    const first = items[0]?.getBoundingClientRect();
+    const last = items.at(-1)?.getBoundingClientRect();
+    const labels = items.map((item) => {
+      const label = item.querySelector('span');
+      const style = label ? getComputedStyle(label) : null;
+      return style ? Number.parseFloat(style.fontSize) : 0;
+    });
+    const chip = element.querySelector('.career-insight-chips b');
+    const chipStyle = chip ? getComputedStyle(chip) : null;
+    const chipRect = chip?.getBoundingClientRect();
+    const chainSeparators = element.querySelectorAll('.career-insight-chain i').length;
+    const chainParts = element.querySelectorAll('.career-insight-chain b').length;
+    const trend = element.querySelector('.career-insight-trend p');
+    const trendStyle = trend ? getComputedStyle(trend) : null;
+    const mark = element.querySelector('.career-insight-trend .pixel-illustration')?.getBoundingClientRect();
     return {
       bodyHeight: rect.height,
-      metricsHeight: metricsRect?.height ?? 0,
-      metricSpan: first && last ? last.bottom - first.top : 0,
-      chartWidth: chart?.width ?? 0,
-      chartHeight: chart?.height ?? 0,
+      rowSpan: first && last ? last.bottom - first.top : 0,
+      labels,
+      chipFontSize: chipStyle ? Number.parseFloat(chipStyle.fontSize) : 0,
+      chipSpan: chipRect ? chipRect.height : 0,
+      chainSeparators,
+      chainParts,
+      trendFontSize: trendStyle ? Number.parseFloat(trendStyle.fontSize) : 0,
+      markWidth: mark?.width ?? 0,
+      markHeight: mark?.height ?? 0,
     };
   });
-  expect(bodyGeometry.bodyHeight).toBeGreaterThanOrEqual(90);
-  expect(bodyGeometry.metricsHeight).toBeGreaterThanOrEqual(80);
-  expect(bodyGeometry.metricSpan).toBeGreaterThanOrEqual(65);
-  expect(bodyGeometry.chartWidth).toBeGreaterThanOrEqual(72);
-  expect(bodyGeometry.chartHeight).toBeGreaterThanOrEqual(72);
-  const metrics = await insight.locator('.career-insight-metric').evaluateAll((items) => items.map((item) => {
-    const root = getComputedStyle(item);
-    const label = item.querySelector('span');
-    const meterCell = item.querySelector('.segment-meter i');
-    const labelStyle = label ? getComputedStyle(label) : null;
-    const meterStyle = meterCell ? getComputedStyle(meterCell) : null;
-    const chart = item.parentElement?.parentElement?.querySelector('.pixel-illustration');
-    const chartRect = chart?.getBoundingClientRect();
-    return {
-      fontSize: Number.parseFloat(root.fontSize),
-      labelFontSize: labelStyle ? Number.parseFloat(labelStyle.fontSize) : 0,
-      meterHeight: meterStyle ? Number.parseFloat(meterStyle.height) : 0,
-      chartWidth: chartRect?.width ?? 0,
-      chartHeight: chartRect?.height ?? 0,
-    };
-  }));
 
-  expect(metrics.length).toBeGreaterThan(0);
-  expect(metrics.every(({ fontSize, labelFontSize, meterHeight, chartWidth, chartHeight }) =>
-    fontSize >= 11 && labelFontSize >= 11 && meterHeight >= 10 && chartWidth >= 72 && chartHeight >= 72
-  )).toBe(true);
+  expect(geometry.bodyHeight).toBeGreaterThanOrEqual(70);
+  expect(geometry.rowSpan).toBeGreaterThanOrEqual(46);
+  expect(geometry.labels.every((size) => size >= 11)).toBe(true);
+  expect(geometry.chipFontSize).toBeGreaterThanOrEqual(11);
+  expect(geometry.chipSpan).toBeGreaterThanOrEqual(18);
+  expect(geometry.chainParts).toBeGreaterThan(1);
+  expect(geometry.chainSeparators).toBe(geometry.chainParts - 1);
+  expect(geometry.trendFontSize).toBeGreaterThanOrEqual(11);
+  expect(geometry.markWidth).toBeGreaterThanOrEqual(20);
+  expect(geometry.markHeight).toBeGreaterThanOrEqual(20);
 });
 
 test('uses the chart pixel mark for the Career market insight header', async ({ page }) => {

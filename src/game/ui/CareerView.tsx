@@ -286,17 +286,35 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
   const offers = (game.applications ?? []).filter((application) => application.status === 'offer').slice(0, 3);
   const history = [...(game.employmentHistory ?? [])].reverse().slice(0, 2);
   const vacancies = game.vacancies ?? [];
-  const eligibleCount = vacancies.filter((vacancy) => {
-    const job = jobs.find((entry) => entry.id === vacancy.jobId);
-    return Boolean(job) && isJobEligible(job!, game);
-  }).length;
-  const averageSalary = vacancies.length ? Math.round(vacancies.reduce((sum, vacancy) => sum + vacancy.salaryRange[0], 0) / vacancies.length) : 0;
-  const salaryScale = vacancies.length ? Math.max(1, Math.max(...vacancies.map((vacancy) => vacancy.salaryRange[1]))) : 1;
-  const insightMetrics = [
-    { label: '公开机会', value: vacancies.length, max: Math.max(1, vacancies.length), caption: `${vacancies.length} 个` },
-    { label: '符合条件', value: eligibleCount, max: Math.max(1, vacancies.length), caption: `${eligibleCount} 个` },
-    { label: '平均起薪', value: averageSalary, max: salaryScale, caption: moneyFmt(averageSalary) },
-  ];
+  // Market insight reads the live vacancy board: which industries are hiring,
+  // where the pay is, and how many postings are actually new. Every number is
+  // derived from the open vacancies and their companies — nothing is authored.
+  const industryBuckets = new Map<string, { count: number; salaryTotal: number }>();
+  for (const vacancy of vacancies) {
+    const industry = contentRegistry.companies?.find((entry) => entry.id === vacancy.companyId)?.industry ?? '其他';
+    const bucket = industryBuckets.get(industry) ?? { count: 0, salaryTotal: 0 };
+    bucket.count += 1;
+    bucket.salaryTotal += vacancy.salaryRange[0];
+    industryBuckets.set(industry, bucket);
+  }
+  const industryStats = [...industryBuckets.entries()].map(([industry, bucket]) => ({
+    industry,
+    // Compound industries read as "汽车销售 / 汽车服务"; the chip keeps the
+    // primary name and leaves the full wording to the accessible title.
+    short: industry.split(' / ')[0],
+    count: bucket.count,
+    average: Math.round(bucket.salaryTotal / bucket.count),
+  }));
+  const hotIndustries = [...industryStats]
+    .sort((left, right) => right.count - left.count || left.industry.localeCompare(right.industry, 'zh-CN'))
+    // The reference lane fits about eleven CJK characters of tags; keep adding
+    // the busiest industries while they still fit instead of clipping one.
+    .reduce<typeof industryStats>((kept, entry) => {
+      const used = kept.reduce((total, item) => total + item.short.length, 0);
+      return used + entry.short.length <= 11 ? [...kept, entry] : kept;
+    }, []);
+  const highestPayingIndustries = [...industryStats].sort((left, right) => right.average - left.average || right.count - left.count).slice(0, 3);
+  const newThisWeek = vacancies.filter((vacancy) => vacancy.publishedDay > game.time.day - 7).length;
   const panels = [
     {
       key: 'applications', icon: 'mail' as const, title: '我的申请', count: (game.applications ?? []).length,
@@ -325,9 +343,9 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
     {
       key: 'insight', icon: 'chart' as const, title: '市场洞察', count: vacancies.length,
       rows: [
-        { label: '公开机会', value: `${vacancies.length} 个` },
-        { label: '符合条件', value: `${eligibleCount} 个` },
-        { label: '平均起薪', value: moneyFmt(averageSalary) },
+        { label: '热门行业', value: hotIndustries.map((entry) => entry.short).join(' / ') },
+        { label: '高薪趋势', value: highestPayingIndustries.map((entry) => entry.short).join(' > ') },
+        { label: '机会趋势', value: `本周新增 ${newThisWeek} 个岗位` },
       ],
       empty: '',
       emptyIllustration: 'chart' as const,
@@ -339,8 +357,23 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
     {panels.map((panel) => <article className={`pixel-panel secondary career-bottom-panel career-bottom-${panel.key}`} key={panel.key}>
       <header className="inbox-head"><PixelIcon name={panel.icon} size={18} data-panel-icon={panel.icon} /><h2>{panel.title}</h2>{panel.count > 0 && <b className="inbox-count">{panel.count}</b>}</header>
       {panel.key === 'insight' ? vacancies.length ? <div className="career-insight-body" aria-label="市场机会概览">
-        <div className="career-insight-metrics">{insightMetrics.map((metric) => <div className="career-insight-metric" key={metric.label}><span>{metric.label}</span><SegmentMeter value={metric.value} max={metric.max} segments={7} label={`${metric.label} ${metric.caption}`} /><small>{metric.caption}</small></div>)}</div>
-        <PixelIllustration name="chart" size={52} aria-hidden="true" />
+        <div className="career-insight-row">
+          <span>热门行业</span>
+          <div className="career-insight-chips">{hotIndustries.map((entry) => <b key={entry.industry} title={entry.industry}>{entry.short}</b>)}</div>
+        </div>
+        <div className="career-insight-row">
+          <span>高薪趋势</span>
+          <div className="career-insight-chain">{highestPayingIndustries.flatMap((entry, index) => index === 0
+            ? [<b key={entry.industry} title={entry.industry}>{entry.short}</b>]
+            : [<i key={`${entry.industry}-sep`}>&gt;</i>, <b key={entry.industry} title={entry.industry}>{entry.short}</b>])}</div>
+        </div>
+        <div className="career-insight-row">
+          <span>机会趋势</span>
+          <div className="career-insight-trend">
+            <p>本周新增 <strong>{newThisWeek}</strong> 个岗位</p>
+            <PixelIllustration name="chart" size={22} aria-hidden="true" />
+          </div>
+        </div>
        </div> : <div className="career-insight-empty" role="img" aria-label="市场洞察空态"><PixelIllustration name="chart" size={42} aria-hidden="true" /><strong>本期暂无公开机会</strong><small>市场刷新后，这里会显示机会数量与起薪走势。</small></div> : panel.rows.length ? <ul className="rail-rows compact">{panel.rows.map((row, index) => <li key={`${row.label}-${index}`}><PixelIcon name={panel.icon} size={14} aria-hidden="true" data-support-row-icon={panel.key} /><span>{row.label}</span><small>{row.value}</small></li>)}</ul> : <div className="career-bottom-empty" role="status"><PixelIllustration name={panel.emptyIllustration} size={34} aria-hidden="true" /><strong>{panel.empty}</strong><small>{panel.emptyHint}</small></div>}
       <footer className="inbox-foot"><button onClick={() => panel.target()}><PixelAction label={panel.action} /></button></footer>
     </article>)}

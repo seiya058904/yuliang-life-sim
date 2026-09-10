@@ -1044,6 +1044,40 @@ describe('余量 app flow', () => {
     expect(within(insight).getByLabelText('市场洞察空态')).toBeInTheDocument();
   });
 
+  it('derives the market insight rows from the live vacancy board', () => {
+    const game = appStore.getState().game;
+    appStore.setState({
+      game: {
+        ...game,
+        time: { ...game.time, day: 1 },
+        vacancies: [
+          { vacancyId: 'vacancy.test-xinghe', jobId: 'job.data-entry', companyId: 'company.xinghe', salaryRange: [260, 300], route: 'market', publishedDay: 1, expiresDay: 28 },
+          { vacancyId: 'vacancy.test-yuanwang-a', jobId: 'job.seed-shop-clerk', companyId: 'company.yuanwang', salaryRange: [96, 120], route: 'market', publishedDay: 1, expiresDay: 28 },
+          { vacancyId: 'vacancy.test-yuanwang-b', jobId: 'job.seed-shop-clerk', companyId: 'company.yuanwang', salaryRange: [88, 110], route: 'market', publishedDay: 1, expiresDay: 28 },
+        ],
+      },
+    });
+    render(<App />);
+
+    const insight = screen.getByText('市场洞察').closest('.career-bottom-panel') as HTMLElement;
+    expect(insight).not.toBeNull();
+    expect(within(insight).getByText('热门行业')).toBeInTheDocument();
+    expect(within(insight).getByText('高薪趋势')).toBeInTheDocument();
+    expect(within(insight).getByText('机会趋势')).toBeInTheDocument();
+
+    // Real industries of the companies behind the live vacancies, busiest first.
+    const chips = [...insight.querySelectorAll('.career-insight-chips b')];
+    expect(chips.map((chip) => chip.getAttribute('title'))).toEqual(['零售', '互联网']);
+
+    // The same industries ranked by real average starting pay.
+    const chain = [...insight.querySelectorAll('.career-insight-chain b')];
+    expect(chain.map((part) => part.getAttribute('title'))).toEqual(['互联网', '零售']);
+    expect([...insight.querySelectorAll('.career-insight-chain i')]).toHaveLength(1);
+
+    // Postings published inside the trailing week.
+    expect(insight.querySelector('.career-insight-trend p')?.textContent).toBe('本周新增 3 个岗位');
+  });
+
   it('discovers the expanded daily service and subscription content', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
