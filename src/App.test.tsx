@@ -142,14 +142,17 @@ describe('余量 app flow', () => {
     expect(career.querySelector('.career-toolbar .career-tools-trigger')).toBeNull();
   });
 
-  it('keeps the career match readout on paper and gives the application action its own bar', async () => {
+  it('carries the career match readout inside the inverted application footer', async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: '职业' }));
 
     const detail = screen.getByRole('complementary', { name: '岗位详情' });
-    expect(detail.querySelector('.career-detail-match')).toHaveClass('career-detail-match');
-    expect(detail.querySelector('.career-detail-apply-bar')).not.toBeNull();
+    const applyBar = detail.querySelector('.career-detail-apply-bar');
+    expect(applyBar).not.toBeNull();
+    // The reference closes the rail with one black footer that owns both the
+    // match readout and the application action.
+    expect(applyBar!.querySelector('.career-detail-match')).not.toBeNull();
     expect(detail.querySelectorAll('.career-condition-meter')).toHaveLength(2);
     expect(within(detail).getByRole('meter', { name: '能力当前条件' })).toBeInTheDocument();
     expect(within(detail).getByRole('meter', { name: '声誉当前条件' })).toBeInTheDocument();

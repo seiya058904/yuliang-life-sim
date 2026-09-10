@@ -1641,20 +1641,38 @@ test('keeps a satisfied Career requirement state on the rail paper surface', asy
   await expect(status).toHaveCSS('color', 'rgb(51, 51, 51)');
 });
 
-test('keeps the Career match readout on the rail paper surface', async ({ page }) => {
+test('carries the Career match readout inside the inverted apply footer', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career detail rail anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '职业', exact: true }).click();
 
-  const match = page.locator('.career-section.market-mode .career-detail.inverse .career-detail-match');
+  const match = page.locator('.career-section.market-mode .career-detail.inverse .career-detail-apply-bar .career-detail-match');
   await expect(match).toBeVisible();
-  // The reference keeps the whole rail on paper and inverts only the apply bar.
-  await expect(match).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(match).toHaveCSS('border-bottom-color', 'rgb(153, 153, 153)');
-  await expect(match.locator('> div:first-child strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
+  // The reference closes the rail with one black footer that owns the match
+  // readout and the call to action together, so the readout is inverted too
+  // rather than sitting on paper above the bar.
+  await expect(match.locator('> div:first-child span')).toHaveCSS('font-size', '13px');
+  await expect(match.locator('> div:first-child strong')).toHaveCSS('font-size', '18px');
+  await expect(match.locator('> div:first-child strong')).toHaveCSS('color', 'rgb(240, 240, 240)');
+  await expect(match.locator('p')).toHaveCSS('color', 'rgb(170, 170, 170)');
+  await expect(match.locator('.meter')).toHaveCSS('border-top-color', 'rgb(241, 241, 241)');
 
   const applyBar = page.locator('.career-section.market-mode .career-detail.inverse .career-detail-apply-bar');
   await expect(applyBar).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+
+  const frame = await applyBar.evaluate((element) => {
+    const rail = element.closest('.career-detail');
+    const barRect = element.getBoundingClientRect();
+    const railRect = rail?.getBoundingClientRect();
+    return {
+      height: Math.round(barRect.height),
+      bottomGap: railRect ? Math.round(railRect.bottom - barRect.bottom) : -1,
+    };
+  });
+  // The footer owns the bottom of the rail frame instead of floating above it.
+  expect(frame.height).toBeGreaterThanOrEqual(76);
+  expect(frame.bottomGap).toBeGreaterThanOrEqual(0);
+  expect(frame.bottomGap).toBeLessThanOrEqual(3);
 });
 
 test('gives the Career market insight its readable pixel dashboard weight', async ({ page }) => {

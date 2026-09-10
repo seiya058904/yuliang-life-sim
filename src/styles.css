@@ -3600,42 +3600,67 @@ button, input, select { border-radius: 0; }
   }
 }
 
-/* The reference keeps the whole Career detail rail on one continuous paper
-   surface: the match readout is a separator-delimited paper band, not a dark
-   inset. Only the apply bar is inverted. */
-.career-detail.inverse .career-detail-match {
-  color: #000000;
-  background: transparent;
-  border-block-color: #999;
-  padding: 8px 0;
-}
-.career-detail.inverse .career-detail-match > div:first-child span,
-.career-detail.inverse .career-detail-match p { color: #444; }
-.career-detail.inverse .career-detail-match > div:first-child strong { color: #000000; }
-.career-detail.inverse .career-detail-match .meter { background: #d4d4cf; border-color: #555; }
-.career-detail.inverse .career-detail-match .meter i { background: #000000; }
+/* The reference closes the Career rail with one inverted footer that carries
+   the whole apply decision: the match readout on the left and the apply
+   button on the right. The readout (label, value and meter on one line, the
+   sentence under it) belongs to that black band rather than to a paper
+   section above it, which is why the reference rail's paper stops ~19px
+   higher than ours and its footer runs the full 80px. */
 .career-detail-apply-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin: 0 -10px;
-  padding: 8px 10px;
+  gap: 12px;
+  min-height: 78px;
+  margin: 0 -10px -10px;
+  padding: 14px 10px;
   color: #f1f1f1;
   background: #000000;
   border-top: 1px solid #000000;
 }
-.career-detail-apply-bar > span {
+.career-section.market-mode .career-detail.inverse .career-detail-apply-bar .career-detail-match {
+  display: grid;
+  gap: 16px;
   min-width: 0;
-  overflow: hidden;
-  color: #c7c7c0;
-  font-size: 10px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0;
+  padding: 0;
+  color: #f1f1f1;
+  background: transparent;
+  border: 0;
+}
+.career-section.market-mode .career-detail.inverse .career-detail-apply-bar .career-detail-match > div:first-child {
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.career-section.market-mode .career-detail.inverse .career-detail-apply-bar .career-detail-match > div:first-child span {
+  color: #d9d9d9;
+  font-size: 13px;
+}
+.career-section.market-mode .career-detail.inverse .career-detail-apply-bar .career-detail-match > div:first-child strong {
+  color: #f0f0f0;
+  font-size: 18px;
+}
+.career-section.market-mode .career-detail.inverse .career-detail-apply-bar .career-detail-match .meter {
+  flex: none;
+  width: 96px;
+  height: 12px;
+  margin: 0;
+  background: #000000;
+  border: 1px solid #f1f1f1;
+}
+.career-section.market-mode .career-detail.inverse .career-detail-apply-bar .career-detail-match .meter i {
+  background: #f1f1f1;
+}
+.career-section.market-mode .career-detail.inverse .career-detail-apply-bar .career-detail-match p {
+  margin: 0;
+  color: #aaa;
+  font-size: 12px;
+  line-height: 1.3;
 }
 .career-detail.inverse .career-detail-apply-bar .primary-button {
-  flex: 0 0 150px;
-  min-height: 40px;
+  flex: 0 0 126px;
+  min-height: 42px;
   color: #000000;
   background: #f1f1f1;
   border-color: #f1f1f1;
