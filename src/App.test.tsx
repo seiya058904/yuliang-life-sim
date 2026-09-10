@@ -33,12 +33,16 @@ describe('余量 app flow', () => {
     expect(screen.getByText('已暂停')).toBeInTheDocument();
   });
 
-  it('uses a compact six-cell meter for the persistent status HUD', () => {
+  it('uses the reference five-cell meter and 100-point value tier in the persistent status HUD', () => {
     render(<App />);
 
     const meters = document.querySelectorAll('.persistent-status .segment-meter');
     expect(meters).toHaveLength(5);
-    expect([...meters].every((meter) => meter.querySelectorAll('i').length === 6)).toBe(true);
+    expect([...meters].every((meter) => meter.querySelectorAll('i').length === 5)).toBe(true);
+
+    const values = document.querySelectorAll('.persistent-status .persistent-stat > strong');
+    expect(values).toHaveLength(5);
+    expect([...values].every((value) => /^\d+\/100$/.test(value.textContent ?? ''))).toBe(true);
   });
 
   it('keeps the reference forecast attribute table complete when a value is unchanged', async () => {

@@ -705,20 +705,22 @@ test('keeps the tall Life time column on the reference stepped rhythm', async ({
   expect(geometry.icon.left).toBeLessThan(geometry.column.right - 36);
 });
 
-test('keeps the Life forecast rail on the dark reference surface', async ({ page }) => {
+test('keeps the Life forecast rail on the reference band surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast surface assertion targets the supported desktop landscape surface');
   await page.getByRole('button', { name: '生活', exact: true }).click();
 
   const forecast = page.locator('.view-life .life-hero-grid > .forecast-strip.inverse');
+  const head = forecast.locator('.forecast-head');
   const net = forecast.locator('.forecast-net');
-  await expect(forecast).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-  await expect(forecast).toHaveCSS('color', 'rgb(244, 244, 239)');
-  await expect(forecast.locator('.forecast-row').first()).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-  await expect(forecast.locator('.forecast-attrs')).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-  await expect(net).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-  await expect(net).toHaveCSS('color', 'rgb(244, 244, 239)');
-  await expect(net.locator('span')).toHaveCSS('color', 'rgb(255, 255, 255)');
-  await expect(net.locator('strong')).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await expect(forecast).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(head).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(head.locator('h2')).toHaveCSS('color', 'rgb(255, 255, 255)');
+  await expect(forecast.locator('.forecast-row').first()).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(forecast.locator('.forecast-attrs')).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(net).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(net).toHaveCSS('border-top-style', 'dashed');
+  await expect(net.locator('span')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(net.locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
 });
 
 test('keeps the tall Life forecast rail on the extended reference tier', async ({ page }, testInfo) => {
@@ -1244,6 +1246,26 @@ test('keeps the persistent status bar at the reference HUD text tier', async ({ 
     labelFontSize >= 12 && valueFontSize >= 16 && cellWidth >= 12 && cellHeight >= 10
   )).toBe(true);
   expect(bar.scrollWidth).toBeLessThanOrEqual(bar.clientWidth + 1);
+});
+
+test('frames the persistent attributes as the reference bracketed strip', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'persistent attribute strip is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '生活', exact: true }).click();
+
+  const group = page.locator('.persistent-status .status-attribute-group');
+  await expect(group).toHaveCount(1);
+  await expect(group).toHaveCSS('border-top-style', 'solid');
+  await expect(group.locator('.persistent-stat')).toHaveCount(5);
+
+  const values = await group.locator('.persistent-stat > strong').allTextContents();
+  expect(values).toHaveLength(5);
+  expect(values.every((value) => /^\d+\/100$/.test(value.trim()))).toBe(true);
+
+  const cells = await group.locator('.segment-meter').evaluateAll((meters) =>
+    meters.map((meter) => meter.querySelectorAll('i').length)
+  );
+  expect(cells).toEqual([5, 5, 5, 5, 5]);
 });
 
 test('keeps persistent attributes on the shared semantic pixel icon tier', async ({ page }) => {
@@ -4116,7 +4138,9 @@ test('keeps desktop footer portraits open instead of boxed terminal icons', asyn
     boxWidth: 60,
     boxHeight: 58,
     slotLeft: 24,
-    firstStatLeft: 102,
+    // The reference HUD frames the five attributes as one bracketed strip, so
+    // the first stat sits one border pixel inside the group's left edge.
+    firstStatLeft: 103,
     svgWidth: 60,
     svgHeight: 60,
     svgBottom: expect.any(Number),

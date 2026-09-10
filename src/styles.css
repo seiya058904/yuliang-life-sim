@@ -11985,7 +11985,8 @@ textarea {
     margin: 0;
     padding: 0 14px;
     color: #070707;
-    background: transparent;
+    /* The shared light-row rule already paints this on paper; only the boxed
+       frame is dropped so the row reads as one continuous ledger rule. */
     border: 0;
     border-top: 2px dashed #070707;
   }
@@ -12132,5 +12133,76 @@ textarea {
 @media (min-width: 1181px) and (min-height: 801px) {
   .view-life .life-planning-section > .section-heading {
     padding-right: 322px;
+  }
+}
+
+/* ---- Persistent HUD: reference attribute strip ----
+   The reference HUD frames the five real attributes as one bracketed strip
+   between the avatar and the detail action, keeps a dotted divider between
+   cells, and states each value against its 100 point ceiling. */
+@media (min-width: 1181px) {
+  .persistent-status {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .status-attribute-group {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-items: center;
+    min-width: 0;
+    border: 1px solid #777;
+  }
+
+  .status-attribute-group::before {
+    border-color: #eee;
+  }
+
+  .status-attribute-group .persistent-stat {
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    gap: 7px;
+    padding: 0 12px;
+    border-left: 1px dotted #555;
+  }
+
+  .status-attribute-group .persistent-stat:first-child {
+    border-left: 0;
+  }
+
+  .status-attribute-group .segment-meter {
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 3px;
+    width: 100%;
+  }
+
+  .status-attribute-group .segment-meter i {
+    width: auto;
+    height: 12px;
+    border-color: #777;
+    background: #161616;
+  }
+
+  .status-attribute-group .segment-meter i.filled {
+    background: #fff;
+    border-color: #fff;
+  }
+
+  .status-attribute-group .persistent-stat > strong {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 1px;
+    color: #fff;
+    font-size: 16px;
+  }
+
+  .status-attribute-group .persistent-stat > strong small {
+    color: #9a9a94;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+  }
+
+  .persistent-status > .status-detail {
+    margin-left: 14px;
   }
 }
