@@ -32,6 +32,14 @@ PAGES = {
     "career": "02-career-market.png",
     "settlement": "03-shop-life.png",
     "shop": "04-month-settlement.png",
+    "shop-goods": "04-month-settlement.png",
+    "shop-ent": "04-month-settlement.png",
+}
+
+# The capture script emits the Shop page once per tab, so the bare page name
+# has to resolve to the tab capture it is meant to stand for.
+CUR_NAME = {
+    "shop": "shop-goods",
 }
 
 RAMP = " .:-=+*#%@"
@@ -89,7 +97,7 @@ def main():
         region_box = tuple(int(v) for v in box.split(","))
 
     ref_path = REF_DIR / PAGES[page]
-    cur_path = CUR_DIR / f"{prefix}-{page}-1440x1080.png"
+    cur_path = CUR_DIR / f"{prefix}-{CUR_NAME.get(page, page)}-1440x1080.png"
     for path in (ref_path, cur_path):
         if not path.exists():
             print(f"missing: {path}")

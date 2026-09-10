@@ -12349,3 +12349,120 @@ textarea {
     clip-path: inset(50%);
   }
 }
+
+/* Life weekly planner: converge the table onto the reference anatomy.
+   Measured off the reference (01-life-main) rather than by eye: the plan
+   table is one light surface with 1px dotted grid rules, the current day is
+   a subtle brighter-top band instead of an inverse block, occupied work
+   slots carry no heavy black bar, and the vertical anchors are
+   table top y573 / header 33px / data rows 66px / table bottom y739 /
+   planner bottom y765 / inbox panels y765. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  /* The hero owns 20px more height and sits flush against the plan heading,
+     which puts the planner on the reference's baseline. The forecast rail is
+     taller than the hero in the reference too, so it is left alone. */
+  .view-life .life-hero-grid,
+  .view-life .life-hero-grid .time-console {
+    height: 390px;
+    min-height: 390px;
+    max-height: 390px;
+  }
+  .view-life .life-hero-grid { margin-bottom: 0; }
+
+  .view-life .life-planning-section { margin-bottom: 0; }
+  .view-life .life-planning-section > .section-heading { height: 40px; min-height: 40px; }
+
+  .view-life .life-planning-section .planner-head {
+    height: 33px;
+    min-height: 33px;
+    border-bottom: 1px dotted #555;
+  }
+
+  .view-life .life-planning-section .planner-row,
+  .view-life .life-planning-section .plan-cell {
+    height: 66px;
+    min-height: 66px;
+  }
+
+  .view-life .life-planning-section .planner-row { border-bottom: 1px dotted #555; }
+  .view-life .life-planning-section .planner-row:last-of-type { border-bottom: 0; }
+  .view-life .life-planning-section .plan-cell { border-right: 1px dotted #555; }
+
+  /* Occupied work slots keep their disabled state without the 3px black bar
+     the reference does not draw. */
+  .view-life .life-planning-section .plan-cell.locked { box-shadow: inset 0 1px 0 #c3c3bd; }
+
+  .view-life .life-planning-section .planner-actions {
+    height: 26px;
+    min-height: 26px;
+    padding-block: 3px;
+  }
+
+  /* The planner's bottom edge is the inbox panels' top border in the
+     reference, so it does not draw a second line. */
+  .view-life .life-planning-section .planner { border-bottom: 0; }
+
+  /* The current day reads as a subtle brighter-top band, not an inverse
+     block: the reference header row is one uniform light surface. */
+  .view-life .life-planning-section .planner-head > strong.today {
+    color: #111;
+    background: transparent;
+    box-shadow: inset 0 3px 0 #d2d2cc;
+  }
+  .view-life .life-planning-section .planner-head > strong.today small { color: #555; }
+
+  /* The reference day header is one baseline-aligned line (weekday, then the
+     day index) with a dotted rule between cells. */
+  .view-life .life-planning-section .planner-head > strong {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 12px;
+    border-right: 1px dotted #555;
+  }
+  .view-life .life-planning-section .planner-head > strong:last-of-type { border-right: 0; }
+  .view-life .life-planning-section .planner-head > strong span { font-size: 14px; }
+  .view-life .life-planning-section .planner-head > strong small { font-size: 11px; }
+
+  /* The reference gutter header is empty. The label stays a real grid item
+     (so the seven day columns keep their tracks) but carries no ink. */
+  .view-life .life-planning-section .planner-head > span { color: transparent; }
+
+  .view-life .life-primary-dashboard .inbox-grid { margin-bottom: 7px; }
+
+  /* Reference hero rhythm (01-life-main, console y143-533): the progress band
+     ink sits at y368-374 and the next-action line at y445-470. The console is
+     20px taller than the previous tier, so the two existing reading-band gaps
+     grow with it. */
+  .view-life .life-hero-grid .hero-activity .activity-progress { margin-top: 66px; }
+  .view-life .life-hero-grid .hero-activity .hero-next { margin-top: 50px; }
+
+
+  /* The plan heading bar spans the hero column only: the forecast rail runs
+     beside it in the reference and its lower part stays visible. */
+  .view-life .life-planning-section > .section-heading {
+    margin-right: 316px;
+    padding-right: 10px;
+  }
+
+  /* The reference header is title + dotted leader + legend; the description
+     sentence is kept for the accessibility tree but leaves the visual band. */
+  .view-life .life-planning-section > .section-heading .planner-heading-side p {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+  }
+
+  .view-life .life-planning-section > .section-heading .planner-heading-side::before {
+    content: '';
+    flex: 1 1 auto;
+    align-self: center;
+    height: 0;
+    border-bottom: 1px dotted #555;
+  }
+}
