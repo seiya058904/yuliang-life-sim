@@ -1561,6 +1561,45 @@ test('keeps the Career detail identity marker compact beside the job title', asy
   }
 });
 
+test('gives the Career detail rail the reference dark module header band', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career detail rail anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const band = page.locator('.career-section.market-mode .career-detail.inverse > .job-kind');
+  await expect(band).toBeVisible();
+  await expect(band).toHaveText('岗位详情');
+  // The reference opens the rail with a dark header band and only then drops
+  // onto the paper reading surface.
+  await expect(band).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(band).toHaveCSS('color', 'rgb(244, 244, 239)');
+
+  const anatomy = await page.locator('.career-section.market-mode .career-detail.inverse').evaluate((detail) => {
+    const header = detail.querySelector<HTMLElement>(':scope > .job-kind');
+    const title = detail.querySelector<HTMLElement>('.career-detail-title');
+    const applyBar = detail.querySelector<HTMLElement>('.career-detail-apply-bar');
+    const headerRect = header?.getBoundingClientRect();
+    return {
+      headerHeight: headerRect?.height ?? 0,
+      headerTop: headerRect?.top ?? 0,
+      titleTop: title?.getBoundingClientRect().top ?? 0,
+      applyBarBottom: applyBar?.getBoundingClientRect().bottom ?? 0,
+      railBottom: detail.getBoundingClientRect().bottom,
+      paperColor: getComputedStyle(detail).backgroundColor,
+    };
+  });
+
+  expect(anatomy.headerHeight).toBeGreaterThanOrEqual(36);
+  expect(anatomy.headerHeight).toBeLessThanOrEqual(40);
+  // The paper body starts below the band, and the bands own first child sits
+  // flush with the rail frame instead of leaving the rail padding exposed.
+  expect(anatomy.titleTop).toBeGreaterThan(anatomy.headerTop + anatomy.headerHeight);
+  expect(anatomy.headerTop).toBeLessThanOrEqual(anatomy.titleTop - 36);
+  expect(anatomy.paperColor).toBe('rgb(244, 244, 239)');
+  // Adding the band must not push the real call to action out of the frame.
+  expect(anatomy.applyBarBottom).toBeLessThanOrEqual(anatomy.railBottom);
+});
+
 test('keeps populated Career requirements in a compact reference grid', async ({ page }) => {
   test.skip(test.info().project.name !== 'desktop', 'Career requirement grid targets the primary desktop project');
   await page.setViewportSize({ width: 1440, height: 1080 });

@@ -2392,7 +2392,23 @@ button, input, select { border-radius: 0; }
     overflow: hidden;
     padding: 10px;
   }
-  .career-section.market-mode .career-detail.inverse > .job-kind { font-size: 9px; }
+  /* The reference opens the detail rail with a dark module header band and
+     only then drops onto the paper reading surface. The rail already owns a
+     real 岗位详情 label, so let it title that band instead of sitting as a
+     stray eyebrow on the paper. */
+  .career-section.market-mode .career-detail.inverse > .job-kind {
+    display: flex;
+    align-items: center;
+    flex: none;
+    height: 38px;
+    margin: -10px -10px 6px;
+    padding-inline: 10px;
+    color: var(--pixel-paper);
+    background: #070707;
+    border-bottom: 2px solid #070707;
+    font-size: 16px;
+    letter-spacing: 0;
+  }
   .career-section.market-mode .career-detail.inverse .career-detail-title {
     margin: 6px 0 3px;
     font-size: 24px;
@@ -6899,7 +6915,7 @@ textarea {
   }
 
   .career-section.market-mode .career-detail.inverse > section:first-of-type {
-    min-height: 112px;
+    min-height: 88px;
   }
 
   .career-section.market-mode .career-detail.inverse > section:first-of-type .requirement-line {
@@ -6916,11 +6932,12 @@ textarea {
 
   /* The reference rail never breaks its paper surface with a dark inset. A
      satisfied requirement list stays on paper, marked only by a dotted rule,
-     so the rail reads as one continuous panel. */
+     so the rail reads as one continuous panel. The box is a one-line state,
+     not a list, so it stays short enough to leave the header band room. */
   .career-section.market-mode .career-detail.inverse > section:first-of-type > .requirement-ok {
     display: grid;
     place-items: center;
-    min-height: 76px;
+    min-height: 52px;
     margin: 0;
     padding: 10px;
     color: #333;
@@ -9731,6 +9748,7 @@ textarea {
    white card beside the job facts. */
 @media (min-width: 1181px) {
   .career-section.market-mode .career-detail-visual {
+    top: 48px;
     width: 60px;
     height: 60px;
   }
