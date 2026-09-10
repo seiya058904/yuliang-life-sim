@@ -153,7 +153,7 @@ test('keeps real Shop purchase feedback above the persistent HUD', async ({ page
   });
 
   expect(geometry.railBottom).toBeLessThanOrEqual(geometry.footerTop - 8);
-  expect(geometry.background).toBe('rgb(7, 7, 7)');
+  expect(geometry.background).toBe('rgb(0, 0, 0)');
   expect(geometry.color).toBe('rgb(245, 245, 241)');
   expect(geometry.border).toBe('solid');
 });
@@ -257,21 +257,21 @@ test('keeps the shop utility rail on the stepped header-row-footer surfaces', as
 
   const cart = page.locator('.shop-rail .rail-cart');
   const schedule = page.locator('.shop-rail .rail-schedule');
-  await expect(cart).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-  await expect(cart.locator('header')).toHaveCSS('background-color', 'rgb(7, 7, 7)');
-  await expect(cart.locator('.rail-rows li').first()).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(cart).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expect(cart.locator('header')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expect(cart.locator('.rail-rows li').first()).toHaveCSS('background-color', 'rgb(241, 241, 241)');
   await expect(cart.locator('.rail-rows li .pixel-illustration')).toHaveCount(1);
-  await expect(cart.getByRole('button', { name: '一次购买' })).toHaveCSS('background-color', 'rgb(7, 7, 7)');
-  await expect(schedule).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-  await expect(schedule.locator('header')).toHaveCSS('background-color', 'rgb(7, 7, 7)');
-  await expect(schedule.locator('.rail-rows li').first()).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(cart.getByRole('button', { name: '一次购买' })).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expect(schedule).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expect(schedule.locator('header')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expect(schedule.locator('.rail-rows li').first()).toHaveCSS('background-color', 'rgb(241, 241, 241)');
   await expect(schedule.locator('.rail-rows li .pixel-icon')).toHaveCount(6);
-  await expect(schedule.getByRole('button', { name: '查看完整安排' })).toHaveCSS('background-color', 'rgb(7, 7, 7)');
-  await expect(page.locator('.shop-rail .rail-inventory')).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+  await expect(schedule.getByRole('button', { name: '查看完整安排' })).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expect(page.locator('.shop-rail .rail-inventory')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
 
   for (const moduleSelector of ['.rail-inventory', '.rail-wishlist']) {
     const heading = page.locator(`.shop-rail ${moduleSelector} .section-heading`);
-    await expect(heading).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+    await expect(heading).toHaveCSS('background-color', 'rgb(0, 0, 0)');
     await expect(heading.getByRole('heading')).toHaveCSS('color', 'rgb(255, 255, 255)');
   }
 });
@@ -350,7 +350,7 @@ test('keeps empty Career and Shop support bodies on explicit state lanes', async
 
   expect(careerEmptyStyles).toHaveLength(3);
   expect(careerEmptyStyles.every(({ background, border, color, iconColor }) =>
-    background === 'rgb(244, 244, 239)' && border === 'rgb(153, 153, 153)' && color === 'rgb(7, 7, 7)' && iconColor === 'rgb(7, 7, 7)'
+    background === 'rgb(241, 241, 241)' && border === 'rgb(153, 153, 153)' && color === 'rgb(0, 0, 0)' && iconColor === 'rgb(0, 0, 0)'
   )).toBe(true);
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -359,13 +359,13 @@ test('keeps empty Career and Shop support bodies on explicit state lanes', async
   await expect(emptyStates).toHaveCount(3);
   // Cart and Inventory keep their compact dark status lanes.
   for (const index of [0, 1]) {
-    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(244, 244, 239)');
+    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(241, 241, 241)');
     await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
   }
   // The Wishlist status lane sits on its light reading panel instead.
   await expect(emptyStates.nth(2)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(emptyStates.nth(2).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(emptyStates.nth(2).locator('strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
   await expect(emptyStates.nth(2).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
 });
 
@@ -402,13 +402,13 @@ test('keeps an empty Shop Rail in the tall reference frame', async ({ page }) =>
   await expect(emptyStates).toHaveCount(3);
   // Cart and Inventory keep their compact dark status lanes.
   for (const index of [0, 1]) {
-    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(244, 244, 239)');
+    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(241, 241, 241)');
     await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
   }
   // The Wishlist status lane sits on its light reading panel instead.
   await expect(emptyStates.nth(2)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(emptyStates.nth(2).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(emptyStates.nth(2).locator('strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
   await expect(emptyStates.nth(2).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
 });
 
@@ -497,12 +497,12 @@ test('keeps populated Shop wishlist as light action rows under a dark header', a
   await expect(row).toContainText('实用手机');
   await expect(row.getByRole('button', { name: '买下', exact: true })).toBeVisible();
   await expect(row.getByRole('button', { name: '移除', exact: true })).toBeVisible();
-  await expect(wishlist).toHaveCSS('background-color', 'rgb(9, 9, 9)');
-  await expect(heading).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(wishlist).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expect(heading).toHaveCSS('background-color', 'rgb(0, 0, 0)');
   await expect(heading.getByRole('heading')).toHaveCSS('color', 'rgb(255, 255, 255)');
-  await expect(row).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(row).toHaveCSS('background-color', 'rgb(241, 241, 241)');
   await expect(row.locator('.pixel-icon')).toHaveCount(1);
-  await expect(row.getByRole('button', { name: '买下', exact: true })).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(row.getByRole('button', { name: '买下', exact: true })).toHaveCSS('color', 'rgb(0, 0, 0)');
 });
 
 test('keeps low-height Shop support content in the main scroll context', async ({ page }) => {
@@ -649,7 +649,7 @@ test('keeps the Life forecast header on the reference inverse surface', async ({
     return { height: rect.height, width: rect.width, scrollWidth: element.scrollWidth, clientWidth: element.clientWidth };
   });
 
-  await expect(header).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(header).toHaveCSS('background-color', 'rgb(0, 0, 0)');
   await expect(title).toHaveCSS('color', 'rgb(255, 255, 255)');
   expect(headerGeometry.height).toBeGreaterThanOrEqual(42);
   expect(headerGeometry.height).toBeLessThanOrEqual(58);
@@ -722,15 +722,15 @@ test('keeps the Life forecast rail on the reference band surface', async ({ page
   const forecast = page.locator('.view-life .life-hero-grid > .forecast-strip.inverse');
   const head = forecast.locator('.forecast-head');
   const net = forecast.locator('.forecast-net');
-  await expect(forecast).toHaveCSS('background-color', 'rgb(244, 244, 239)');
-  await expect(head).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(forecast).toHaveCSS('background-color', 'rgb(241, 241, 241)');
+  await expect(head).toHaveCSS('background-color', 'rgb(0, 0, 0)');
   await expect(head.locator('h2')).toHaveCSS('color', 'rgb(255, 255, 255)');
-  await expect(forecast.locator('.forecast-row').first()).toHaveCSS('background-color', 'rgb(244, 244, 239)');
-  await expect(forecast.locator('.forecast-attrs')).toHaveCSS('background-color', 'rgb(244, 244, 239)');
-  await expect(net).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(forecast.locator('.forecast-row').first()).toHaveCSS('background-color', 'rgb(241, 241, 241)');
+  await expect(forecast.locator('.forecast-attrs')).toHaveCSS('background-color', 'rgb(241, 241, 241)');
+  await expect(net).toHaveCSS('background-color', 'rgb(241, 241, 241)');
   await expect(net).toHaveCSS('border-top-style', 'dashed');
-  await expect(net.locator('span')).toHaveCSS('color', 'rgb(7, 7, 7)');
-  await expect(net.locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(net.locator('span')).toHaveCSS('color', 'rgb(0, 0, 0)');
+  await expect(net.locator('strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
 });
 
 test('keeps the tall Life forecast rail on the extended reference tier', async ({ page }, testInfo) => {
@@ -877,7 +877,7 @@ test('keeps the active navigation state on a stepped inverse surface', async ({ 
     };
   });
 
-  expect(active.background).toBe('rgb(244, 244, 239)');
+  expect(active.background).toBe('rgb(241, 241, 241)');
   expect(active.clipPath).not.toBe('none');
   expect(active.height).toBeGreaterThanOrEqual(38);
   expect(active.height).toBeLessThanOrEqual(41);
@@ -1539,7 +1539,7 @@ test('gives the inverse Career detail rail a visible shared pixel-corner frame',
     return { content: style.content, borderColor: style.borderTopColor, clipPath: style.clipPath };
   });
 
-  expect(frame).toEqual({ content: '""', borderColor: 'rgb(7, 7, 7)', clipPath: expect.not.stringMatching(/^none$/) });
+  expect(frame).toEqual({ content: '""', borderColor: 'rgb(0, 0, 0)', clipPath: expect.not.stringMatching(/^none$/) });
 });
 
 test('keeps the Career detail identity marker compact beside the job title', async ({ page }) => {
@@ -1571,8 +1571,8 @@ test('gives the Career detail rail the reference dark module header band', async
   await expect(band).toHaveText('岗位详情');
   // The reference opens the rail with a dark header band and only then drops
   // onto the paper reading surface.
-  await expect(band).toHaveCSS('background-color', 'rgb(7, 7, 7)');
-  await expect(band).toHaveCSS('color', 'rgb(244, 244, 239)');
+  await expect(band).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expect(band).toHaveCSS('color', 'rgb(241, 241, 241)');
 
   const anatomy = await page.locator('.career-section.market-mode .career-detail.inverse').evaluate((detail) => {
     const header = detail.querySelector<HTMLElement>(':scope > .job-kind');
@@ -1595,7 +1595,7 @@ test('gives the Career detail rail the reference dark module header band', async
   // flush with the rail frame instead of leaving the rail padding exposed.
   expect(anatomy.titleTop).toBeGreaterThan(anatomy.headerTop + anatomy.headerHeight);
   expect(anatomy.headerTop).toBeLessThanOrEqual(anatomy.titleTop - 36);
-  expect(anatomy.paperColor).toBe('rgb(244, 244, 239)');
+  expect(anatomy.paperColor).toBe('rgb(241, 241, 241)');
   // Adding the band must not push the real call to action out of the frame.
   expect(anatomy.applyBarBottom).toBeLessThanOrEqual(anatomy.railBottom);
 });
@@ -1651,10 +1651,10 @@ test('keeps the Career match readout on the rail paper surface', async ({ page }
   // The reference keeps the whole rail on paper and inverts only the apply bar.
   await expect(match).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
   await expect(match).toHaveCSS('border-bottom-color', 'rgb(153, 153, 153)');
-  await expect(match.locator('> div:first-child strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(match.locator('> div:first-child strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
 
   const applyBar = page.locator('.career-section.market-mode .career-detail.inverse .career-detail-apply-bar');
-  await expect(applyBar).toHaveCSS('background-color', 'rgb(7, 7, 7)');
+  await expect(applyBar).toHaveCSS('background-color', 'rgb(0, 0, 0)');
 });
 
 test('gives the Career market insight its readable pixel dashboard weight', async ({ page }) => {
@@ -1969,10 +1969,10 @@ test('keeps Career support panels on the reference inverse surface split', async
 
   expect(surfaces).toHaveLength(4);
   expect(surfaces).toEqual([
-    { background: 'rgb(9, 9, 9)', color: 'rgb(244, 244, 239)' },
-    { background: 'rgb(9, 9, 9)', color: 'rgb(244, 244, 239)' },
-    { background: 'rgb(9, 9, 9)', color: 'rgb(244, 244, 239)' },
-    { background: 'rgb(12, 12, 12)', color: 'rgb(244, 244, 239)' },
+    { background: 'rgb(0, 0, 0)', color: 'rgb(241, 241, 241)' },
+    { background: 'rgb(0, 0, 0)', color: 'rgb(241, 241, 241)' },
+    { background: 'rgb(0, 0, 0)', color: 'rgb(241, 241, 241)' },
+    { background: 'rgb(0, 0, 0)', color: 'rgb(241, 241, 241)' },
   ]);
 });
 
@@ -1995,13 +1995,13 @@ test('keeps empty Career support lanes readable inside dark shells', async ({ pa
 
   expect(lanes).toHaveLength(3);
   expect(lanes.every(({ background, color, border, iconColor, strongColor }) =>
-    background === 'rgb(244, 244, 239)' &&
+    background === 'rgb(241, 241, 241)' &&
     color === 'rgb(34, 34, 34)' &&
     border === 'rgb(153, 153, 153)' &&
-    iconColor === 'rgb(7, 7, 7)' &&
-    strongColor === 'rgb(7, 7, 7)'
+    iconColor === 'rgb(0, 0, 0)' &&
+    strongColor === 'rgb(0, 0, 0)'
   )).toBe(true);
-  await expect(page.locator('.career-bottom-insight')).toHaveCSS('background-color', 'rgb(12, 12, 12)');
+  await expect(page.locator('.career-bottom-insight')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
 });
 
 test('keeps empty Career support copy in a compact horizontal status lane', async ({ page }) => {
@@ -2068,10 +2068,10 @@ test('uses light inverse surfaces for populated Career support rows', async ({ p
 
   expect(surfaces).toHaveLength(3);
   expect(surfaces.every(({ background, color, headerBackground, rowBackground }) =>
-    background === 'rgb(9, 9, 9)' &&
-    color === 'rgb(244, 244, 239)' &&
-    headerBackground === 'rgb(9, 9, 9)' &&
-    rowBackground === 'rgb(244, 244, 239)'
+    background === 'rgb(0, 0, 0)' &&
+    color === 'rgb(241, 241, 241)' &&
+    headerBackground === 'rgb(0, 0, 0)' &&
+    rowBackground === 'rgb(241, 241, 241)'
   )).toBe(true);
 
   const rowGeometry = await page.locator('.career-bottom-panel:nth-child(-n+3):has(> .rail-rows)').evaluateAll((elements) => elements.map((element) => {
@@ -2097,7 +2097,7 @@ test('uses light inverse surfaces for populated Career support rows', async ({ p
 
   expect(rowIcons).toHaveLength(3);
   expect(rowIcons.every(({ width, height, color }) =>
-    width >= 12 && width <= 18 && height >= 12 && height <= 18 && color === 'rgb(7, 7, 7)'
+    width >= 12 && width <= 18 && height >= 12 && height <= 18 && color === 'rgb(0, 0, 0)'
   )).toBe(true);
 });
 
@@ -2117,7 +2117,7 @@ test('keeps the selected Career card frame brighter than idle cards', async ({ p
 
   expect(frames.length).toBeGreaterThan(1);
   expect(frames.filter(({ selected }) => selected)).toHaveLength(1);
-  expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(244, 244, 239)');
+  expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(241, 241, 241)');
   expect(frames.filter(({ selected }) => !selected).every(({ borderColor, clipPath }) =>
     borderColor === 'rgb(199, 199, 192)' && clipPath !== 'none'
   )).toBe(true);
@@ -2413,7 +2413,7 @@ test('keeps the selected Shop product frame brighter than idle cards', async ({ 
 
   expect(frames.length).toBeGreaterThan(1);
   expect(frames.filter(({ selected }) => selected)).toHaveLength(1);
-  expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(244, 244, 239)');
+  expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(241, 241, 241)');
   expect(frames.filter(({ selected }) => !selected).every(({ borderColor, clipPath }) =>
     borderColor === 'rgb(199, 199, 192)' && clipPath !== 'none'
   )).toBe(true);
@@ -3184,7 +3184,7 @@ test('keeps settlement totals as outlined readouts on black panels', async ({ pa
 
   expect(totals).toHaveLength(2);
   expect(totals.every(({ background, color, border, borderColor }) =>
-    background === 'rgb(9, 9, 9)' && color === 'rgb(244, 244, 239)' && border === 'solid' && borderColor === 'rgb(244, 244, 239)'
+    background === 'rgb(0, 0, 0)' && color === 'rgb(241, 241, 241)' && border === 'solid' && borderColor === 'rgb(241, 241, 241)'
   )).toBe(true);
 });
 
@@ -3276,7 +3276,7 @@ test('keeps Settlement allocation meters on the readable segment tier', async ({
   expect(cells.length).toBeGreaterThan(0);
   expect(cells.every(({ filled, height, background, border }) =>
     height >= 9 && (filled
-      ? background === 'rgb(244, 244, 239)' && border === 'rgb(244, 244, 239)'
+      ? background === 'rgb(241, 241, 241)' && border === 'rgb(241, 241, 241)'
       : background === 'rgb(68, 68, 64)' && border === 'rgb(153, 153, 144)')
   )).toBe(true);
 });
@@ -3303,7 +3303,7 @@ test('keeps the Settlement allocation illustration visible as a lower-right anch
     const panelRect = panel?.getBoundingClientRect();
     const style = getComputedStyle(element);
     const svgStyle = svg ? getComputedStyle(svg) : null;
-    const whiteCells = [...(svg?.querySelectorAll('rect') ?? [])].filter((cell) => getComputedStyle(cell).fill === 'rgb(244, 244, 239)');
+    const whiteCells = [...(svg?.querySelectorAll('rect') ?? [])].filter((cell) => getComputedStyle(cell).fill === 'rgb(241, 241, 241)');
     return {
       display: style.display,
       opacity: Number.parseFloat(style.opacity),
@@ -3495,7 +3495,7 @@ test('frames the Settlement net-worth Hero with distributed reference rays', asy
   expect(anatomy.art?.height).toBeGreaterThanOrEqual(120);
   expect(anatomy.rayStyles).toHaveLength(16);
   expect(anatomy.rayStyles.every(({ height }) => height >= 2 && height <= 3)).toBe(true);
-  expect(anatomy.rayStyles.every(({ backgroundImage, backgroundColor }) => backgroundImage === 'none' && backgroundColor === 'rgb(244, 244, 239)')).toBe(true);
+  expect(anatomy.rayStyles.every(({ backgroundImage, backgroundColor }) => backgroundImage === 'none' && backgroundColor === 'rgb(241, 241, 241)')).toBe(true);
   expect(new Set(anatomy.rayStyles.map(({ left, top }) => `${left}|${top}`)).size).toBeGreaterThanOrEqual(8);
   expect(Math.min(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(24);
   expect(Math.max(...anatomy.rayStyles.map(({ width }) => width))).toBeGreaterThanOrEqual(50);
@@ -3942,7 +3942,7 @@ test('opens the settlement stage without revealing the underlying page', async (
     };
   });
   expect(backdropStyle).toEqual({
-    backgroundColor: 'rgb(5, 5, 5)',
+    backgroundColor: 'rgb(0, 0, 0)',
     animationName: 'none',
     opacity: '1',
     topbarOpacity: '1',
@@ -4294,20 +4294,20 @@ test('keeps empty Shop rail modules on dark shells with the wishlist reading pan
 
   expect(surfaces).toEqual({
     // Cart and Inventory keep the reference's compact dark insets.
-    cart: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
-    inventory: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    cart: { backgroundColor: 'rgb(0, 0, 0)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(0, 0, 0)' },
+    inventory: { backgroundColor: 'rgb(0, 0, 0)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(0, 0, 0)' },
     // The empty Wishlist shares the populated form's dark shell, but its
     // status lane sits on the light reading panel instead of a dark inset.
-    wishlist: { backgroundColor: 'rgba(0, 0, 0, 0)', color: 'rgb(85, 85, 85)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    wishlist: { backgroundColor: 'rgba(0, 0, 0, 0)', color: 'rgb(85, 85, 85)', shellBackgroundColor: 'rgb(0, 0, 0)' },
   });
 
   // Without rows the module would otherwise read as a second dead dark lane;
   // the reference keeps a real reading surface in this rail slot.
   const wishlistPanel = page.locator('.shop-rail .rail-wishlist > .detail-panel');
-  await expect(wishlistPanel).toHaveCSS('background-color', 'rgb(244, 244, 239)');
-  await expect(wishlistPanel).toHaveCSS('color', 'rgb(7, 7, 7)');
-  await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
-  await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty .pixel-illustration')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(wishlistPanel).toHaveCSS('background-color', 'rgb(241, 241, 241)');
+  await expect(wishlistPanel).toHaveCSS('color', 'rgb(0, 0, 0)');
+  await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
+  await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty .pixel-illustration')).toHaveCSS('color', 'rgb(0, 0, 0)');
 });
 
 test('keeps tall Shop Rail empty-state copy above the micro tier', async ({ page }, testInfo) => {

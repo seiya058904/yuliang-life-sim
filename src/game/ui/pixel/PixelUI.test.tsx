@@ -124,7 +124,7 @@ describe('PixelIllustration', () => {
     expect(hasCell('3', '27', '6', '1')).toBe(true);
     expect(hasCell('27', '28', '3', '1')).toBe(true);
     expect(hasCell('13', '39', '30', '1')).toBe(true);
-    expect(cells.some((rect) => rect.getAttribute('fill') === 'var(--il-knock, #090909)')).toBe(false);
+    expect(cells.some((rect) => rect.getAttribute('fill') === 'var(--il-knock, #000000)')).toBe(false);
     expect(cells.length).toBe(127);
   });
 
@@ -258,8 +258,8 @@ describe('PixelIllustration', () => {
     expect(illustration).toHaveClass('fine-grid');
     expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
     expect(hasCell('6', '3', '12', '1')).toBe(true);
-    expect(hasCell('3', '7', '1', '2', 'var(--il-knock, #090909)')).toBe(true);
-    expect(hasCell('20', '7', '1', '2', 'var(--il-knock, #090909)')).toBe(true);
+    expect(hasCell('3', '7', '1', '2', 'var(--il-knock, #000000)')).toBe(true);
+    expect(hasCell('20', '7', '1', '2', 'var(--il-knock, #000000)')).toBe(true);
     expect(hasCell('7', '11', '7', '1')).toBe(true);
     expect(cells.length).toBeGreaterThanOrEqual(16);
   });
@@ -339,7 +339,7 @@ describe('PixelIllustration', () => {
       rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && rect.getAttribute('fill') === fill
     );
     const hasKnockoutCell = (x: string, y: string, width: string, height: string) => [...illustration.querySelectorAll('rect')].some((rect) =>
-      rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && rect.getAttribute('fill') === 'var(--il-knock, #090909)'
+      rect.getAttribute('x') === x && rect.getAttribute('y') === y && rect.getAttribute('width') === width && rect.getAttribute('height') === height && rect.getAttribute('fill') === 'var(--il-knock, #000000)'
     );
 
     expect(illustration).toHaveAttribute('viewBox', '0 0 24 24');
@@ -354,7 +354,7 @@ describe('PixelIllustration', () => {
       const width = Number(rect.getAttribute('width'));
       const height = Number(rect.getAttribute('height'));
       return [x, y, width, height].every(Number.isInteger) && width > 0 && height > 0 &&
-        ['currentColor', 'var(--il-knock, #090909)'].includes(rect.getAttribute('fill') ?? '');
+        ['currentColor', 'var(--il-knock, #000000)'].includes(rect.getAttribute('fill') ?? '');
     })).toBe(true);
     expect(illustration.querySelectorAll('rect').length).toBeGreaterThanOrEqual(28);
   });

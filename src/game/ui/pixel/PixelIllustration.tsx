@@ -728,7 +728,7 @@ const fineScenes: Partial<Record<PixelIllustrationName, readonly Cell[]>> = {
 export function PixelIllustration({ name, size = 64, className, ...props }: { name: PixelIllustrationName; size?: number } & Omit<SVGProps<SVGSVGElement>, 'name'>) {
   const cells = fineScenes[name] ?? scenes[name] ?? scenes.tag ?? [];
   const cellNodes = cells.map(([x, y, w, h, knock], index) => (
-    <rect key={index} x={x} y={y} width={w} height={h} fill={knock ? 'var(--il-knock, #090909)' : 'currentColor'} />
+    <rect key={index} x={x} y={y} width={w} height={h} fill={knock ? 'var(--il-knock, #000000)' : 'currentColor'} />
   ));
   const viewBox = name === 'brand-wordmark'
     ? '0 0 120 56'
