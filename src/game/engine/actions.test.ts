@@ -3,7 +3,7 @@ import type { GameAction } from '../content/contracts';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createInitialState } from './initialState';
-import { dispatchGameAction } from './actions';
+import { dispatchGameAction, findNextPlanOption } from './actions';
 
 describe('game action dispatcher', () => {
   it('runs a planned day automatically and pays the scheduled job once', () => {
@@ -967,5 +967,78 @@ describe('enterprise control and holding group', () => {
     const exitEntry = exited.state.financialLedger?.entries.at(-1) ?? {};
     expect(exitEntry).toMatchObject({ group: 'asset_liquidation', category: 'business_transfer', amount: 624, cashDelta: 624 });
     expect(exited.state.lifeHistory.at(-1)).toMatchObject({ title: '退出早餐与咖啡档' });
+  });
+});
+
+describe('weekly plan candidate cycling', () => {
+  const free = { kind: 'free' as const };
+  const study60 = { kind: 'study' as const, durationMinutes: 60 as const };
+  const study120 = { kind: 'study' as const, durationMinutes: 120 as const };
+  const study240 = { kind: 'study' as const, durationMinutes: 240 as const };
+  const sideJob = { kind: 'side_job' as const, jobId: 'job.course-teaching-assistant', durationMinutes: 240 as const };
+  const evening = 'evening' as const;
+
+  it('moves to the next candidate and wraps around after the last one', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const plan = state.weeklyPlan;
+    plan.days[1].evening = free;
+    const options = [free, study60, study120] as const;
+
+    const first = findNextPlanOption(state, 1, evening, plan, options, 0, contentRegistry, balanceConfig);
+    expect(first?.activity).toEqual(study60);
+    const second = findNextPlanOption(state, 1, evening, plan, options, first!.index, contentRegistry, balanceConfig);
+    expect(second?.activity).toEqual(study120);
+    const wrapped = findNextPlanOption(state, 1, evening, plan, options, second!.index, contentRegistry, balanceConfig);
+    expect(wrapped?.activity).toEqual(free);
+  });
+
+  it('skips an activity whose requirements are not met and keeps scanning', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const gated = contentRegistry.activities?.find((activity) => activity.options.some((option) => option.requirements));
+    if (!gated) throw new Error('fixture needs a requirement-gated activity');
+    const gatedOption = gated.options.find((option) => option.requirements)!;
+    const plan = state.weeklyPlan;
+    plan.days[1].evening = free;
+    const options = [free, { kind: 'activity' as const, activityId: gated.id, optionId: gatedOption.id }, study60] as const;
+
+    // The fresh save does not satisfy the gated option's requirements.
+    expect(findNextPlanOption(state, 1, evening, plan, options, 0, contentRegistry, balanceConfig)?.activity).toEqual(study60);
+  });
+
+  it('skips an activity still in cooldown instead of wedging the cycle', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const cooling = contentRegistry.activities?.find((activity) => activity.options.some((option) => (option.cooldownDays ?? 0) > 0));
+    if (!cooling) throw new Error('fixture needs a cooldown activity');
+    const coolingOption = cooling.options.find((option) => (option.cooldownDays ?? 0) > 0)!;
+    state.lifeHistory = [...(state.lifeHistory ?? []), { id: 'activity.today', category: 'activity', day: state.time.day, title: cooling.name, sourceId: cooling.id }];
+    const plan = state.weeklyPlan;
+    plan.days[1].evening = free;
+    const options = [free, { kind: 'activity' as const, activityId: cooling.id, optionId: coolingOption.id }, study60] as const;
+
+    const next = findNextPlanOption(state, 1, evening, plan, options, 0, contentRegistry, balanceConfig);
+    expect(next?.activity).toEqual(study60);
+  });
+
+  it('skips a side job the player has not qualified for', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const plan = state.weeklyPlan;
+    plan.days[1].evening = free;
+    const options = [free, sideJob, study60] as const;
+
+    const next = findNextPlanOption(state, 1, evening, plan, options, 0, contentRegistry, balanceConfig);
+    expect(next?.activity).toEqual(study60);
+  });
+
+  it('returns undefined when every other candidate is currently invalid', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const cooling = contentRegistry.activities?.find((activity) => activity.options.some((option) => (option.cooldownDays ?? 0) > 0));
+    if (!cooling) throw new Error('fixture needs a cooldown activity');
+    const coolingOption = cooling.options.find((option) => (option.cooldownDays ?? 0) > 0)!;
+    state.lifeHistory = [...(state.lifeHistory ?? []), { id: 'activity.today', category: 'activity', day: state.time.day, title: cooling.name, sourceId: cooling.id }];
+    const plan = state.weeklyPlan;
+    plan.days[1].evening = free;
+    const options = [sideJob, { kind: 'activity' as const, activityId: cooling.id, optionId: coolingOption.id }] as const;
+
+    expect(findNextPlanOption(state, 1, evening, plan, options, 0, contentRegistry, balanceConfig)).toBeUndefined();
   });
 });

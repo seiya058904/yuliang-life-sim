@@ -8541,11 +8541,15 @@ textarea {
   }
 }
 
-/* Tall desktop pages are already composed to the viewport height. Keep their
-   fitted console surfaces clean; the low-height breakpoint above remains the
-   only desktop mode that exposes a scrollable main region. */
+/* Tall desktop pages are already composed to the viewport height. Life / work /
+   shop keep their fitted console surfaces clean. Wealth / relations / city /
+   profile can exceed one screen, so they own a thin pixel scrollbar inside the
+   fixed shell instead of being clipped. */
 @media (min-width: 1181px) and (min-height: 801px) {
-  .main-nav,
+  .main-nav {
+    overflow: hidden;
+  }
+
   .main-content {
     overflow: hidden;
   }
@@ -8553,6 +8557,26 @@ textarea {
   .main-content:has(.life-secondary-drawer.is-open) {
     overflow-x: hidden;
     overflow-y: auto;
+  }
+
+  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile) .main-content {
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #777 #000000;
+  }
+
+  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile) .main-content::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile) .main-content::-webkit-scrollbar-track {
+    background: #000000;
+  }
+
+  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile) .main-content::-webkit-scrollbar-thumb {
+    background: #777;
+    border: 1px solid #000000;
   }
 }
 

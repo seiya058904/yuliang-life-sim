@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, beforeEach } from 'vitest';
 import App from './App';
@@ -1585,5 +1585,54 @@ describe('余量 app flow', () => {
     const history = screen.getByRole('region', { name: '人生记录' });
     expect(history).toHaveTextContent('获得客户服务经验资格');
     expect(history).not.toHaveTextContent('client_service_experience');
+  });
+
+  it('keeps cycling a plan cell through the whole candidate ring without wedging', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+
+    const cell = screen.getByRole('button', { name: /周一晚间计划/ });
+    const seen: string[] = [];
+    let wrapped = false;
+    for (let i = 0; i < 250 && !wrapped; i += 1) {
+      await user.click(cell);
+      const value = (cell.textContent ?? '').trim();
+      if (i > 0) {
+        // No click may land on the same option as the previous one: an
+        // unplayable candidate must be skipped instead of wedging the cell.
+        expect(value).not.toBe(seen[seen.length - 1]);
+        // Completing the full ring returns to the first post-click value.
+        if (value === seen[0]) wrapped = true;
+      }
+      seen.push(value);
+    }
+
+    // The ring wrapped around instead of stopping at a dead end.
+    expect(wrapped).toBe(true);
+    // The ring genuinely cycles through many distinct options.
+    expect(new Set(seen).size).toBeGreaterThanOrEqual(8);
+  });
+
+  it('keeps workday daytime cells locked against cycling', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+    const locked = screen.getByRole('button', { name: /周一白天计划/ });
+    expect(locked).toBeDisabled();
+    expect(locked.className).toContain('locked');
+  });
+
+  it('disables plan cells while the simulation is running or a reward is pending', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '生活' }));
+    expect(screen.getByRole('button', { name: /周一晚间计划/ })).not.toBeDisabled();
+
+    appStore.setState({ game: { ...appStore.getState().game, simulationMode: 'running' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: /周一晚间计划/ })).toBeDisabled());
+
+    appStore.setState({ game: { ...appStore.getState().game, simulationMode: 'reward' } });
+    await waitFor(() => expect(screen.getByRole('button', { name: /周一晚间计划/ })).toBeDisabled());
   });
 });

@@ -1,5 +1,5 @@
 import type { BalanceConfig } from '../balance/config';
-import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity } from '../content/contracts';
+import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity, PlanSlot, Weekday } from '../content/contracts';
 import { evaluateCondition, explainCondition } from './conditions';
 import { businessValuation, calculateDailyBusinessProfit, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity } from './economy';
 import { applyContentEffects, applyReachedMilestones, cloneGameState, itemCost, refreshUnlocks } from './effects';
@@ -88,6 +88,48 @@ function planRequirementError(state: GameState, plan: GameState['weeklyPlan'], c
       const option = definition && getActivityOption(definition, activity.optionId);
       if (definition && option?.requirements && !evaluateCondition(option.requirements, state, content, balance)) return `${definition.name} · ${option.label}：${explainCondition(option.requirements, state, content, balance)}`;
     }
+  }
+  return undefined;
+}
+
+/**
+ * Single validation source for editing the weekly plan. `set_plan` and the
+ * planner's candidate cycling both go through this, so the UI can never pick
+ * an option the engine would reject (cooldown, unmet requirements, missing
+ * side-job qualification, or weekly-plan constraints).
+ */
+export function planEditError(state: GameState, plan: GameState['weeklyPlan'], content: ContentRegistry, balance: BalanceConfig): string | undefined {
+  const cooldownError = planCooldownError(state, plan, content);
+  if (cooldownError) return cooldownError;
+  const requirementError = planRequirementError(state, plan, content, balance);
+  if (requirementError) return requirementError;
+  const errors = validateWeeklyPlan(plan, state.employment, content);
+  if (errors.length) return errors[0];
+  return undefined;
+}
+
+/**
+ * Find the next legal candidate for one planning slot, scanning forward from
+ * `fromIndex` and wrapping around at most once (options.length steps). Returns
+ * undefined only when every other candidate is currently invalid.
+ */
+export function findNextPlanOption(
+  state: GameState,
+  weekday: Weekday,
+  slot: PlanSlot,
+  plan: GameState['weeklyPlan'],
+  options: readonly PlannedActivity[],
+  fromIndex: number,
+  content: ContentRegistry,
+  balance: BalanceConfig,
+): { index: number; activity: PlannedActivity } | undefined {
+  if (!options.length) return undefined;
+  for (let step = 1; step <= options.length; step += 1) {
+    const index = (fromIndex + step) % options.length;
+    const candidate = options[index];
+    const prospective = structuredClone(plan);
+    prospective.days[weekday][slot] = candidate;
+    if (!planEditError(state, prospective, content, balance)) return { index, activity: candidate };
   }
   return undefined;
 }
@@ -192,12 +234,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (state.simulationMode === 'running' || state.simulationMode === 'event') return fail(input, '运行中不能修改计划');
       const weeklyPlan = cloneGameState(state).weeklyPlan;
       weeklyPlan.days[action.weekday][action.slot] = action.activity;
-      const cooldownError = planCooldownError(state, weeklyPlan, content);
-      if (cooldownError) return fail(input, cooldownError);
-      const requirementError = planRequirementError(state, weeklyPlan, content, balance);
-      if (requirementError) return fail(input, requirementError);
-      const errors = validateWeeklyPlan(weeklyPlan, state.employment, content);
-      if (errors.length) return fail(input, errors[0]);
+      const error = planEditError(state, weeklyPlan, content, balance);
+      if (error) return fail(input, error);
       state.weeklyPlan = weeklyPlan;
       break;
     }

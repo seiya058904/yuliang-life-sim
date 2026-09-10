@@ -6324,3 +6324,58 @@ test('runs a multi-year life in the real browser and keeps annual records consis
   const restored = await page.evaluate(() => (window.__yuliang.store.getState().game.annualHistory ?? []).length);
   expect(restored).toBeGreaterThanOrEqual(2);
 });
+
+test('keeps a plan cell cycling for 30+ clicks without wedging and wraps around', async ({ page }) => {
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const cell = page.getByRole('button', { name: /周一晚间计划/ });
+  const seen: string[] = [];
+  let wrapped = false;
+  for (let i = 0; i < 300 && !wrapped; i += 1) {
+    await cell.click();
+    const value = ((await cell.textContent()) ?? '').trim();
+    if (i > 0 && value === seen[0]) wrapped = true;
+    seen.push(value);
+  }
+  expect(seen.length).toBeGreaterThanOrEqual(30);
+  // every click lands on a different option: no unplayable candidate wedges the cell
+  for (let i = 1; i < seen.length; i += 1) expect(seen[i]).not.toBe(seen[i - 1]);
+  // the ring completed a full lap back to the first post-click value
+  expect(wrapped).toBe(true);
+  expect(new Set(seen).size).toBeGreaterThanOrEqual(8);
+});
+
+test('lets tall desktop long pages scroll to the bottom while life, work, and shop stay one screen', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.waitForTimeout(300);
+
+  const scrollToBottom = () => page.evaluate(() => {
+    const main = document.querySelector('main.main-content') as HTMLElement;
+    main.scrollTop = main.scrollHeight;
+    return {
+      overflowY: getComputedStyle(main).overflowY,
+      overflowX: getComputedStyle(main).overflowX,
+      scrollbarWidth: getComputedStyle(main).scrollbarWidth,
+      clientHeight: main.clientHeight,
+      scrollHeight: main.scrollHeight,
+      scrollTop: main.scrollTop,
+    };
+  });
+
+  for (const label of ['财富', '社交', '城市', '我的'] as const) {
+    await page.getByLabel('主导航').getByRole('button', { name: label, exact: true }).click();
+    await page.waitForTimeout(300);
+    const report = await scrollToBottom();
+    // content overflows the fixed shell and the main region scrolls
+    expect(report.overflowY).toBe('auto');
+    expect(report.overflowX).toBe('hidden');
+    expect(report.scrollHeight).toBeGreaterThan(report.clientHeight);
+    expect(report.scrollTop).toBeGreaterThan(0);
+  }
+
+  for (const label of ['生活', '职业', '商店'] as const) {
+    await page.getByLabel('主导航').getByRole('button', { name: label, exact: true }).click();
+    await page.waitForTimeout(300);
+    const overflowY = await page.evaluate(() => getComputedStyle(document.querySelector('main.main-content') as HTMLElement).overflowY);
+    expect(overflowY).toBe('hidden');
+  }
+});

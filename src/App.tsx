@@ -6,7 +6,7 @@ import { businessValuation, calculateDailyBusinessProfit, calculateLifestyle, ca
 import { activityAtTime, deriveActivityProgress, defaultJobSchedule, getDailyActivities } from './game/engine/schedule';
 import { formatClock, formatDate, absoluteMinute } from './game/engine/time';
 import { calendarForDay, weekdayLabel } from './game/engine/calendar';
-import { getItemCost } from './game/engine/actions';
+import { findNextPlanOption, getItemCost } from './game/engine/actions';
 import { createGameStore } from './game/store/gameStore';
 import { explainCondition, evaluateCondition } from './game/engine/conditions';
 import { getAttribute } from './game/engine/attributes';
@@ -541,7 +541,12 @@ function WeekPlanner({ game, dispatch }: { game: GameState; dispatch: (action: G
     const current = game.weeklyPlan.days[weekday][slot];
     const options: PlannedActivity[] = [{ kind: 'free' }, { kind: 'study', durationMinutes: 60 }, { kind: 'study', durationMinutes: 120 }, { kind: 'study', durationMinutes: 240 }, ...(contentRegistry.courses?.map((course) => ({ kind: 'course' as const, courseId: course.id })) ?? []), ...(contentRegistry.activities?.flatMap((activity) => activity.options.map((option) => ({ kind: 'activity' as const, activityId: activity.id, optionId: option.id }))) ?? []), ...sideJobs.map((job) => ({ kind: 'side_job' as const, jobId: job.id, durationMinutes: Math.min(240, Math.max(60, job.hours * 60)) as 60 | 120 | 240 }))];
     const index = options.findIndex((option) => JSON.stringify(option) === JSON.stringify(current));
-    dispatch({ type: 'set_plan', weekday, slot, activity: options[(index + 1) % options.length] });
+    // Scan forward through the whole candidate ring and skip any option the
+    // engine would reject (cooldown, requirements, side-job qualification,
+    // weekly-plan constraints), so a single unplayable candidate can never
+    // wedge the cell. If nothing else is legal, keep the current value.
+    const next = findNextPlanOption(game, weekday, slot, game.weeklyPlan, options, index, contentRegistry, balanceConfig);
+    if (next) dispatch({ type: 'set_plan', weekday, slot, activity: next.activity });
   };
     const planLabel = (activity: PlannedActivity) => activity.kind === 'free' ? '自由活动' : activity.kind === 'study' ? `学习 ${activity.durationMinutes / 60} 小时` : activity.kind === 'course' ? `课程 · ${displayContentName(activity.courseId, contentRegistry.courses ?? [], '课程')}` : activity.kind === 'side_job' ? `${contentRegistry.jobs.find((job) => job.id === activity.jobId)?.name ?? '兼职'} ${activity.durationMinutes / 60} 小时` : `${contentRegistry.activities?.find((entry) => entry.id === activity.activityId)?.name ?? '活动'} · ${contentRegistry.activities?.find((entry) => entry.id === activity.activityId)?.options.find((option) => option.id === activity.optionId)?.label ?? humanizeContentId(activity.optionId)}`;
     const planIcon = (activity: PlannedActivity, working = false): PixelIconName => {
