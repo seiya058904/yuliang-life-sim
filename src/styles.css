@@ -11391,27 +11391,56 @@ textarea {
   }
 }
 
-/* Shop's empty Rail states belong to the black console plane. Keep the real
-   two-line explanation, but remove the large light web-surface treatment;
-   populated rows keep their own data-led reading surface. */
+/* Shop's compact empty Rail states (Cart, Inventory) belong to the black
+   console plane. Keep the real two-line explanation, but remove the large
+   light web-surface treatment; the Wishlist keeps its own light reading
+   panel below. */
 @media (min-width: 1181px) {
-  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty {
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory) .shop-rail-empty {
     color: #aaa !important;
     background: #090909 !important;
     border-color: #777 !important;
     --il-knock: #090909;
   }
 
-  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty .pixel-illustration {
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory) .shop-rail-empty .pixel-illustration {
     color: #f4f4ef !important;
   }
 
-  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty strong {
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory) .shop-rail-empty strong {
     color: #f4f4ef !important;
   }
 
-  .view-shop .shop-rail :is(.rail-cart, .rail-inventory, .rail-wishlist) .shop-rail-empty small {
+  .view-shop .shop-rail :is(.rail-cart, .rail-inventory) .shop-rail-empty small {
     color: #aaa !important;
+  }
+}
+
+/* An empty Wishlist keeps the dark shell and black section header of its
+   populated form, but its reading panel stays a light surface. Without rows
+   the module would otherwise collapse into a second dead dark lane, while the
+   reference keeps a real reading surface in this rail slot. Cart and
+   inventory keep their compact dark insets above. */
+@media (min-width: 1181px) {
+  .view-shop .shop-rail .rail-wishlist:has(.shop-rail-empty) > .detail-panel {
+    color: #070707 !important;
+    background: #f4f4ef !important;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.shop-rail-empty) > .detail-panel .shop-rail-empty {
+    color: #555 !important;
+    background: transparent !important;
+    border-color: #aaa !important;
+    --il-knock: #f4f4ef;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.shop-rail-empty) > .detail-panel .shop-rail-empty .pixel-illustration,
+  .view-shop .shop-rail .rail-wishlist:has(.shop-rail-empty) > .detail-panel .shop-rail-empty strong {
+    color: #070707 !important;
+  }
+
+  .view-shop .shop-rail .rail-wishlist:has(.shop-rail-empty) > .detail-panel .shop-rail-empty small {
+    color: #555 !important;
   }
 }
 

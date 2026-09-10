@@ -357,11 +357,16 @@ test('keeps empty Career and Shop support bodies on explicit state lanes', async
   const rail = page.locator('.shop-rail');
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);
-  for (let index = 0; index < await emptyStates.count(); index += 1) {
+  // Cart and Inventory keep their compact dark status lanes.
+  for (const index of [0, 1]) {
     await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(9, 9, 9)');
     await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(244, 244, 239)');
     await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
   }
+  // The Wishlist status lane sits on its light reading panel instead.
+  await expect(emptyStates.nth(2)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(emptyStates.nth(2).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(emptyStates.nth(2).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
 });
 
 test('keeps an empty Shop Rail in the tall reference frame', async ({ page }) => {
@@ -395,11 +400,16 @@ test('keeps an empty Shop Rail in the tall reference frame', async ({ page }) =>
 
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);
-  for (let index = 0; index < await emptyStates.count(); index += 1) {
+  // Cart and Inventory keep their compact dark status lanes.
+  for (const index of [0, 1]) {
     await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(9, 9, 9)');
     await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(244, 244, 239)');
     await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
   }
+  // The Wishlist status lane sits on its light reading panel instead.
+  await expect(emptyStates.nth(2)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(emptyStates.nth(2).locator('strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(emptyStates.nth(2).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
 });
 
 test('keeps the tall Shop inventory lane as a compact dark strip', async ({ page }) => {
@@ -4222,7 +4232,7 @@ test('gives low-height desktop content a visible pixel scroll affordance', async
   });
 });
 
-test('keeps empty Shop rail modules on dark shells with light status lanes', async ({ page }, testInfo) => {
+test('keeps empty Shop rail modules on dark shells with the wishlist reading panel light', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name === 'mobile', 'Shop rail surface anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -4244,10 +4254,21 @@ test('keeps empty Shop rail modules on dark shells with light status lanes', asy
   })));
 
   expect(surfaces).toEqual({
+    // Cart and Inventory keep the reference's compact dark insets.
     cart: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
     inventory: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
-    wishlist: { backgroundColor: 'rgb(9, 9, 9)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(9, 9, 9)' },
+    // The empty Wishlist shares the populated form's dark shell, but its
+    // status lane sits on the light reading panel instead of a dark inset.
+    wishlist: { backgroundColor: 'rgba(0, 0, 0, 0)', color: 'rgb(85, 85, 85)', shellBackgroundColor: 'rgb(9, 9, 9)' },
   });
+
+  // Without rows the module would otherwise read as a second dead dark lane;
+  // the reference keeps a real reading surface in this rail slot.
+  const wishlistPanel = page.locator('.shop-rail .rail-wishlist > .detail-panel');
+  await expect(wishlistPanel).toHaveCSS('background-color', 'rgb(244, 244, 239)');
+  await expect(wishlistPanel).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+  await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty .pixel-illustration')).toHaveCSS('color', 'rgb(7, 7, 7)');
 });
 
 test('keeps tall Shop Rail empty-state copy above the micro tier', async ({ page }, testInfo) => {
