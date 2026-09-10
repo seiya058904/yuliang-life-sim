@@ -12613,7 +12613,7 @@ textarea {
 /* Shop rail convergence: the reference rail starts above the tab-bar line and
    keeps the schedule link as a visible bordered action. */
 @media (min-width: 1181px) and (min-height: 801px) {
-  .view-shop .shop-layout > .shop-rail { margin-top: -15px; }
+  .view-shop .shop-layout > .shop-rail { transform: translateY(-15px); height: 822px; }
   .view-shop .shop-rail .rail-cart { min-height: 212px; }
   .view-shop .shop-rail .rail-module:has(.rail-rows) > .rail-link,
   .view-shop .shop-rail .rail-schedule:has(> .rail-rows) > .rail-link {

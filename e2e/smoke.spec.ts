@@ -2569,13 +2569,14 @@ test('keeps Shop product CTAs across the full card frame', async ({ page }) => {
       footerBottom: footerRect?.bottom ?? 0,
       cardTop: cardRect.top,
       cardBottom: cardRect.bottom,
-      gridColumn: style?.gridColumn ?? '',
+      gridArea: style?.gridArea ?? '',
     };
   }));
 
   expect(ctas.length).toBeGreaterThan(0);
-  expect(ctas.every(({ cardWidth, footerWidth, leftInset, rightInset, footerTop, footerBottom, cardTop, cardBottom, gridColumn }) =>
-    gridColumn === '1 / -1' && footerWidth >= cardWidth - 22 && leftInset <= 11 && rightInset <= 11 &&
+  expect(ctas.every(({ cardWidth, footerWidth, leftInset, rightInset, footerTop, footerBottom, cardTop, cardBottom, gridArea }) =>
+    // Anatomy areas: the CTA owns the full-width 'foot' grid area.
+    gridArea === 'foot' && footerWidth >= cardWidth - 22 && leftInset <= 11 && rightInset <= 11 &&
     footerTop > cardTop + (cardBottom - cardTop) / 2 && footerBottom <= cardBottom + 0.5
   )).toBe(true);
 });
@@ -2802,8 +2803,10 @@ test('keeps Shop catalog art on the open 1-bit illustration tier', async ({ page
   }));
 
   expect(art.length).toBeGreaterThan(0);
+  // Reference anatomy: the illustration sits frameless in the body-left area;
+  // the dotted rule lives on the fact table's left edge instead.
   expect(art.every(({ background, topBorder, rightBorder, illustrationSize }) =>
-    background === 'rgba(0, 0, 0, 0)' && topBorder === 'none' && rightBorder === 'dotted' && illustrationSize >= 52
+    background === 'rgba(0, 0, 0, 0)' && topBorder === 'none' && rightBorder === 'none' && illustrationSize >= 52
   )).toBe(true);
 });
 
