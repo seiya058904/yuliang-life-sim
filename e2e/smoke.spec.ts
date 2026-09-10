@@ -1842,8 +1842,10 @@ test('keeps Career card identity beside a frameless semantic icon', async ({ pag
   expect(identity.every(({ frame, icon, kind, title, company, frameBorder, frameBackground }) =>
     frame?.width === 40 && frame.height === 40 &&
     icon && icon.width >= 36 && icon.width <= 38 && icon.height >= 36 && icon.height <= 38 &&
-    kind && title && company &&
-    Math.abs(kind.top - title.top) <= 5 &&
+    // The reference card leads with the name; the placeholder kind row is
+    // removed from the layout (its data stays in the detail rail).
+    kind && kind.height === 0 && kind.width === 0 &&
+    title && company &&
     company.top >= title.bottom - 0.5 &&
     frameBorder === 'none' &&
     frameBackground === 'rgba(0, 0, 0, 0)'
@@ -2187,10 +2189,13 @@ test('keeps tall Career support panels above the persistent footer', async ({ pa
     };
   });
 
-  expect(geometry.supportGap).toBeGreaterThanOrEqual(16);
-  expect(geometry.supportGap).toBeLessThanOrEqual(18);
-  expect(geometry.panelHeight).toBeGreaterThanOrEqual(160);
-  expect(geometry.panelHeight).toBeLessThanOrEqual(170);
+  // Reference rhythm (02-career-market): cards end at y758, the pager strip
+  // owns y758-792, and the 180px support panels start at y810 (a 6px gap
+  // after the results shell's own 12px bottom padding).
+  expect(geometry.supportGap).toBeGreaterThanOrEqual(5);
+  expect(geometry.supportGap).toBeLessThanOrEqual(8);
+  expect(geometry.panelHeight).toBeGreaterThanOrEqual(178);
+  expect(geometry.panelHeight).toBeLessThanOrEqual(182);
   expect(geometry.panelBottom).toBeLessThanOrEqual(geometry.footerTop - 4);
 });
 

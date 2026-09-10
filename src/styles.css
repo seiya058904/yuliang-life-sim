@@ -12466,3 +12466,61 @@ textarea {
     border-bottom: 1px dotted #555;
   }
 }
+
+/* Tall-desktop Career vacancy cards converge on the reference anatomy
+   (02-career-market, card 1: frame y236-507, name band y253-289, fact rows
+   y308/335/362 = 27px pitch, description y391-419, single-line status footer
+   y447-477). The corner-tick frames already exist; what changes is the
+   selected card's extra outline, the placeholder kind row, the fact rhythm,
+   and the duplicated footer note. All data and semantics stay in the tree. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .career-results .job-card {
+    height: 254px;
+    min-height: 254px;
+    padding: 14px 10px 8px;
+  }
+
+  /* The reference draws no heavier frame on the opened vacancy; the brighter
+     clipped-corner line alone keeps the selection visible. */
+  .career-results .job-card.selected { outline: none; }
+
+  /* The kind row is a placeholder ("岗位" for almost every vacancy) and the
+     reference card leads with the name. */
+  .career-results .job-card .job-card-head { display: none; }
+
+  .career-results .job-card .job-facts {
+    gap: 3px;
+    margin-top: 0;
+    padding: 0;
+    border-block: 0;
+  }
+  .career-results .job-grid { margin-top: 10px; }
+  .career-section.market-mode .career-results .job-card > .job-facts .job-fact {
+    min-height: 24px;
+    font-size: 13px;
+  }
+  .career-results .job-card .job-fact .pixel-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Reference footer carries one status line; the note stays for assistive
+     tech but stops competing for ink. */
+  .career-section.market-mode .career-results .job-card .job-card-status strong { font-size: 12px; }
+  .career-section.market-mode .career-results .job-card .job-card-status small { color: transparent; }
+
+  /* Reference rhythm: cards end at y758, the pager strip owns y758-792, and
+     the support panels start at y810. */
+  .career-section.market-mode .career-bottom-panels { margin-top: 6px; }
+
+  /* Panels run to y990 and the light shells carry a taller header band whose
+     title sits near its bottom edge (white list box starts at y869). The dark
+     market-insight dashboard keeps its own compact header. */
+  .career-section.market-mode .career-bottom-panel {
+    height: 180px;
+    min-height: 180px;
+  }
+  .career-section.market-mode .career-bottom-panel:nth-child(-n+3) {
+    padding-top: 14px;
+  }
+}
