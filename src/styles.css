@@ -4962,22 +4962,21 @@ textarea {
 }
 
 /* Career filter rows are navigation data, not a second stack of form fields.
-   Keep the real counts visible, give each row a semantic pixel marker, and
-   let the selected row carry the inverse state without a full rectangle. */
+   Keep the real counts visible and let the selected row carry the inverse
+   state with the reference's clipped corners instead of a rule on every row. */
 .career-section.market-mode .career-filters > .career-filter-option {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 5px;
+  gap: 7px;
   width: 100%;
-  min-height: 24px;
-  height: 24px;
-  padding: 3px 5px;
+  min-height: 27px;
+  height: 27px;
+  padding: 0 9px;
   color: #c7c7c0;
   background: transparent;
   border: 0;
-  border-bottom: 1px dotted #444;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   line-height: 1;
   text-align: left;
@@ -4987,24 +4986,32 @@ textarea {
 .career-section.market-mode .career-filter-option:focus-visible {
   color: #fff;
   background: #1b1b1b;
-  border-bottom-color: #aaa;
 }
 
 .career-section.market-mode .career-filter-option.selected {
   color: #000000;
   background: #f1f1f1;
-  border-bottom-color: #f1f1f1;
+  clip-path: polygon(
+    3px 0,
+    calc(100% - 3px) 0,
+    100% 3px,
+    100% calc(100% - 3px),
+    calc(100% - 3px) 100%,
+    3px 100%,
+    0 calc(100% - 3px),
+    0 3px
+  );
 }
 
 .career-filter-option .pixel-icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 .career-filter-count {
   min-width: 2ch;
   color: inherit;
-  font-size: 10px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
@@ -12277,5 +12284,112 @@ textarea {
 
   .persistent-status > .status-detail {
     margin-left: 14px;
+  }
+}
+
+/* The reference filter rail is a quiet navigation list: each group is marked
+   by a small pointer, the rows breathe at a readable pixel tier, and the
+   market identity is copy only. The real planning and page-switch utilities
+   stay reachable, but they read as muted lanes instead of competing fields. */
+@media (min-width: 1181px) {
+  .career-section.market-mode .career-filters {
+    align-content: start;
+  }
+
+  .career-section.market-mode .career-filters > strong {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-block: 8px 9px;
+    font-size: 12px;
+    letter-spacing: .04em;
+  }
+
+  .career-section.market-mode .career-filters > strong::before {
+    content: '\203A';
+    color: #777772;
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .career-section.market-mode .career-market-identity {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    padding: 2px 0 6px;
+    margin-bottom: 0;
+    border-bottom: 0;
+  }
+
+  .career-section.market-mode .career-market-identity-mark {
+    align-self: start;
+    margin-top: 5px;
+  }
+
+  .career-section.market-mode .career-search-control input {
+    padding-left: 10px;
+    font-size: 12px;
+  }
+
+  /* The page switch is navigation, not a second title. It shares the
+     identity's single content cell so it rests on the quiet subtitle line
+     instead of cutting into the market title band. */
+  .career-section.market-mode .career-market-identity-main {
+    grid-area: 1 / 1;
+  }
+
+  .career-section.market-mode .career-market-navigation {
+    position: static;
+    top: auto;
+    right: auto;
+    grid-area: 1 / 1;
+    align-self: end;
+    justify-self: end;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .career-section.market-mode .career-page-menu-trigger {
+    display: block;
+    width: auto;
+    min-height: 0;
+    padding: 3px 0 3px 7px;
+    color: #aaa9a4;
+    background: transparent;
+    border: 0;
+    border-left: 1px dotted #777772;
+    font-size: 10px;
+    font-weight: 700;
+    text-align: left;
+  }
+
+  .career-section.market-mode .career-page-menu-trigger:hover,
+  .career-section.market-mode .career-page-menu-trigger:focus-visible,
+  .career-section.market-mode .career-page-menu-trigger[aria-expanded='true'] {
+    color: #f1f1f1;
+    background: transparent;
+    border-color: #f1f1f1;
+  }
+
+  /* The reference identity block is copy only: mark, title, subtitle. The
+     "职业" eyebrow repeats the always-visible primary tab and used to push
+     the market title a full line below the reference's title band, so it is
+     kept in the document and the accessibility tree but moved out of the
+     visual band. */
+  .career-section.market-mode .career-market-identity-copy {
+    padding-top: 5px;
+  }
+
+  .career-section.market-mode .career-market-identity-copy > .eyebrow {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
   }
 }
