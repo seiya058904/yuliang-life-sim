@@ -11921,83 +11921,216 @@ textarea {
   }
 }
 
-/* Life's primary Forecast is a dark reading rail in the reference frame.
-   Keep the shared inverse component available to the secondary Career tools,
-   while the actual Life hero carries the high-contrast black-and-white tier. */
+
+/* ---- Life hero Forecast: reference band anatomy ----
+   The reference frame uses a black identity band on top of a light paper
+   reading body: income/expense rows, one dashed rule, the net-cash row, the
+   five attribute meters, then a black primary action. The band bleeds to the
+   panel edges, so the panel itself carries no padding and each row owns its
+   own inline inset. */
 @media (min-width: 1181px) {
   .view-life .life-hero-grid > .forecast-strip.inverse {
-    color: #f4f4ef;
-    background: #090909;
-    border-color: #f4f4ef;
-    outline-color: #f4f4ef;
-    box-shadow: inset 0 0 0 1px #f4f4ef;
-    --il-knock: #090909;
+    padding: 0;
+    color: #070707;
+    background: var(--pixel-paper);
+    border: 2px solid #070707;
+    outline: 1px solid var(--pixel-paper);
+    box-shadow: none;
+    --il-knock: var(--pixel-paper);
   }
 
-  .view-life .life-hero-grid > .forecast-strip.inverse::before {
-    border-color: #f4f4ef;
+  .view-life .life-hero-grid > .forecast-strip.inverse > * {
+    color: #070707;
+    background: var(--pixel-paper);
   }
 
   .view-life .life-hero-grid > .forecast-strip.inverse .forecast-head {
-    border-bottom-color: #f4f4ef;
+    align-items: center;
+    padding: 0 14px;
+    color: var(--pixel-white);
+    background: #070707;
+    border-bottom: 0;
   }
 
-  .view-life .life-hero-grid > .forecast-strip.inverse .eyebrow,
-  .view-life .life-hero-grid > .forecast-strip.inverse h2 {
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-head h2 {
     color: #fff;
+    font-size: 21px;
+    text-shadow: none;
   }
 
-  .view-life .life-hero-grid > .forecast-strip.inverse small {
-    color: #aaa;
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-head::after {
+    right: 14px;
+    left: 130px;
+    border-top: 1px dotted #9b9b95;
   }
 
   .view-life .life-hero-grid > .forecast-strip.inverse .forecast-row {
-    color: #ddd;
-    background: #090909;
-    border-bottom-color: #555;
+    align-items: center;
+    padding: 0 14px;
+    border-bottom: 0;
   }
 
-  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-row span,
-  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr {
-    color: #ddd;
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-row span {
+    color: #3a3a38;
+    font-size: 13px;
   }
 
-  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-row strong,
-  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr b {
-    color: #fff;
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-row strong {
+    color: #070707;
+    font-size: 22px;
   }
 
   .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net {
-    color: #f4f4ef !important;
-    background: #090909 !important;
-    border-color: #f4f4ef !important;
+    align-items: center;
+    margin: 0;
+    padding: 0 14px;
+    color: #070707;
+    background: transparent;
+    border: 0;
+    border-top: 2px dashed #070707;
   }
 
-  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net span,
-  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net strong,
-  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attrs .forecast-sub {
-    color: #fff !important;
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net span {
+    color: #3a3a38;
+    font-size: 13px;
+    font-weight: 700;
   }
 
-  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr {
-    border-bottom-color: #555;
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-net strong {
+    color: #070707;
+    font-size: 23px;
   }
 
   .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attrs {
-    background: #090909;
+    align-content: space-between;
+    gap: 0;
+    padding: 6px 14px 4px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-sub {
+    margin-bottom: 3px;
+    color: #070707;
+    font-size: 13px;
+    letter-spacing: 0;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr {
+    grid-template-columns: 15px 42px minmax(0, 1fr) 28px;
+    gap: 7px;
+    min-height: 26px;
+    padding: 1px 0;
+    color: #070707;
+    font-size: 13px;
+    border-bottom: 0;
   }
 
   .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr .pixel-icon {
-    color: #f4f4ef;
+    width: 15px;
+    height: 15px;
+    color: #070707;
   }
 
-  .view-life .life-hero-grid > .forecast-strip.inverse .segment-meter i {
-    border-color: #777;
-    background: #333;
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr b {
+    color: #070707;
+    font-size: 13px;
   }
 
-  .view-life .life-hero-grid > .forecast-strip.inverse .segment-meter i.filled {
-    background: #f4f4ef;
-    border-color: #f4f4ef;
+  /* The shared `.forecast-strip span` rule forces every span to block/muted,
+     which would break the metered attribute label and the action's glyph row. */
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr > span:not(.segment-meter) {
+    color: #070707;
+    font-size: 13px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-more .pixel-action {
+    display: inline-flex;
+    color: inherit;
+    font-size: 13px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-more .pixel-action .pixel-icon {
+    width: 10px;
+    height: 10px;
+    color: inherit;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr .segment-meter i {
+    width: auto;
+    height: 9px;
+    border-color: #8d8d88;
+    background: #d8d8d2;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr .segment-meter i.filled {
+    background: #070707;
+    border-color: #070707;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-more {
+    align-self: center;
+    width: calc(100% - 28px);
+    margin: 0 14px;
+    padding: 8px 10px;
+    color: var(--pixel-white);
+    background: #070707;
+    border: 1px solid #070707;
+    font-size: 13px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-more:hover {
+    color: #070707;
+    background: var(--pixel-paper);
+  }
+}
+
+/* Tall desktop keeps the full reference rhythm; compact desktop reuses the
+   same band anatomy on a shorter grid so the persistent HUD stays clear. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-life .life-hero-grid > .forecast-strip.inverse {
+    grid-template-rows: 44px 36px 36px 42px minmax(0, 1fr) 42px;
+  }
+}
+
+@media (min-width: 1181px) and (max-height: 800px) {
+  .view-life .life-hero-grid > .forecast-strip.inverse {
+    padding: 0;
+    grid-template-rows: 42px 33px 33px 38px minmax(0, 1fr) 38px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attrs {
+    padding-block: 4px 2px;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-attr {
+    min-height: 20px;
+    padding-block: 0;
+  }
+
+  .view-life .life-hero-grid > .forecast-strip.inverse .forecast-more {
+    margin-bottom: 8px;
+  }
+}
+
+/* Shared compact pixel-corner bracket for the Inverse Forecast action. */
+.forecast-more {
+  position: relative;
+}
+
+.forecast-more::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  pointer-events: none;
+  border: 2px solid currentColor;
+  opacity: .8;
+  clip-path: polygon(0 0, 6px 0, 6px 2px, calc(100% - 6px) 2px, calc(100% - 6px) 0, 100% 0, 100% 6px, calc(100% - 2px) 6px, calc(100% - 2px) calc(100% - 6px), 100% calc(100% - 6px), 100% 100%, calc(100% - 6px) 100%, calc(100% - 6px) calc(100% - 2px), 6px calc(100% - 2px), 6px 100%, 0 100%, 0 calc(100% - 6px), 2px calc(100% - 6px), 2px 6px, 0 6px);
+}
+
+/* The tall desktop Forecast rail hangs into the plan heading band, exactly as
+   in the reference. Reserve that column so the real legend and its real
+   counts/labels stay fully readable instead of sliding under the rail. */
+@media (min-width: 1181px) and (min-height: 801px) {
+  .view-life .life-planning-section > .section-heading {
+    padding-right: 322px;
   }
 }
