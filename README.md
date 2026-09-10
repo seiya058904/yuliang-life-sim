@@ -1,5 +1,7 @@
 # 《余量》 · Yuliang Life Sim
 
+**在线游玩：<https://seiya058904.github.io/yuliang-life-sim/>**
+
 React + TypeScript + Vite + Zustand 的**人生模拟游戏**（desktop-first，横屏优先，黑白像素控制台风格）。
 
 玩家负责规划人生，模拟系统负责让世界持续运行：安排一周、观察世界自动推进，并在职业、消费、财富、关系与城市生活之间做出可逆的选择。界面像一台可信赖的黑白像素人生控制台——信息紧凑但不拥挤，反馈直接但不评判，不给任何人生路线打分。
