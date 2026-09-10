@@ -23,6 +23,9 @@ output/
 .workbuddy/
 .superpowers/
 
+# Forensic backup of the corrupted pre-recovery git metadata (kept inside the repo, not tracked)
+/.git-broken-20260910/
+
 # Environment files
 .env
 .env.*
