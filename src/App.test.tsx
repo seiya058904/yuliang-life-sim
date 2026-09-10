@@ -142,7 +142,7 @@ describe('余量 app flow', () => {
     expect(career.querySelector('.career-toolbar .career-tools-trigger')).toBeNull();
   });
 
-  it('gives the career detail a dark match band and a distinct application action bar', async () => {
+  it('keeps the career match readout on paper and gives the application action its own bar', async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: '职业' }));

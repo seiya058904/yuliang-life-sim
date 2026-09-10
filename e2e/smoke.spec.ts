@@ -1577,7 +1577,7 @@ test('keeps populated Career requirements in a compact reference grid', async ({
   expect(layout.requirementBottom).toBeLessThanOrEqual(layout.currentTop + 0.5);
 });
 
-test('anchors a satisfied Career requirement state inside the inverse detail rail', async ({ page }) => {
+test('keeps a satisfied Career requirement state on the rail paper surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career detail empty-state treatment is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '职业', exact: true }).click();
@@ -1585,7 +1585,27 @@ test('anchors a satisfied Career requirement state inside the inverse detail rai
   const status = page.locator('.career-section.market-mode .career-detail.inverse > section:first-of-type > .requirement-ok');
   await expect(status).toBeVisible();
   await expect(status).toHaveText('当前条件已满足');
-  await expect(status).toHaveCSS('background-color', 'rgb(9, 9, 9)');
+  // The reference rail is one continuous paper surface; the empty state is a
+  // dotted rule on that paper, not a dark inset that breaks the panel.
+  await expect(status).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(status).toHaveCSS('border-top-style', 'dotted');
+  await expect(status).toHaveCSS('color', 'rgb(51, 51, 51)');
+});
+
+test('keeps the Career match readout on the rail paper surface', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career detail rail anatomy is desktop-only');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByRole('button', { name: '职业', exact: true }).click();
+
+  const match = page.locator('.career-section.market-mode .career-detail.inverse .career-detail-match');
+  await expect(match).toBeVisible();
+  // The reference keeps the whole rail on paper and inverts only the apply bar.
+  await expect(match).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(match).toHaveCSS('border-bottom-color', 'rgb(153, 153, 153)');
+  await expect(match.locator('> div:first-child strong')).toHaveCSS('color', 'rgb(7, 7, 7)');
+
+  const applyBar = page.locator('.career-section.market-mode .career-detail.inverse .career-detail-apply-bar');
+  await expect(applyBar).toHaveCSS('background-color', 'rgb(7, 7, 7)');
 });
 
 test('gives the Career market insight its readable pixel dashboard weight', async ({ page }) => {

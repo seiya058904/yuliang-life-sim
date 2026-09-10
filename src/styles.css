@@ -3584,19 +3584,20 @@ button, input, select { border-radius: 0; }
   }
 }
 
-/* Career contrast pass: make the match signal read as a decisive HUD band,
-   then give the actual application action the reference's inverse treatment. */
+/* The reference keeps the whole Career detail rail on one continuous paper
+   surface: the match readout is a separator-delimited paper band, not a dark
+   inset. Only the apply bar is inverted. */
 .career-detail.inverse .career-detail-match {
-  color: #f4f4ef;
-  background: #070707;
-  border-block-color: #070707;
-  padding: 8px 10px;
+  color: #070707;
+  background: transparent;
+  border-block-color: #999;
+  padding: 8px 0;
 }
 .career-detail.inverse .career-detail-match > div:first-child span,
-.career-detail.inverse .career-detail-match p { color: #c7c7c0; }
-.career-detail.inverse .career-detail-match > div:first-child strong { color: #fff; }
-.career-detail.inverse .career-detail-match .meter { background: #333; border-color: #aaa; }
-.career-detail.inverse .career-detail-match .meter i { background: #f4f4ef; }
+.career-detail.inverse .career-detail-match p { color: #444; }
+.career-detail.inverse .career-detail-match > div:first-child strong { color: #070707; }
+.career-detail.inverse .career-detail-match .meter { background: #d4d4cf; border-color: #555; }
+.career-detail.inverse .career-detail-match .meter i { background: #070707; }
 .career-detail-apply-bar {
   display: flex;
   align-items: center;
@@ -6913,18 +6914,18 @@ textarea {
     padding-block: 7px;
   }
 
-  /* A satisfied requirement list has no authored rows to display. Use the
-     same dark inset as other truthful empty states so the inverse rail keeps
-     an intentional block instead of a large unowned white area. */
+  /* The reference rail never breaks its paper surface with a dark inset. A
+     satisfied requirement list stays on paper, marked only by a dotted rule,
+     so the rail reads as one continuous panel. */
   .career-section.market-mode .career-detail.inverse > section:first-of-type > .requirement-ok {
     display: grid;
     place-items: center;
     min-height: 76px;
     margin: 0;
     padding: 10px;
-    color: #f4f4ef;
-    background: #090909;
-    border: 1px dotted #777;
+    color: #333;
+    background: transparent;
+    border: 1px dotted #999;
     font-size: 12px;
     line-height: 1.3;
     text-align: center;
