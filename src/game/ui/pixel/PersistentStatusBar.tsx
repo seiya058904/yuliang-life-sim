@@ -1,0 +1,22 @@
+import type { GameState, ViewId } from '../../content/contracts';
+import { getAttribute } from '../../engine/attributes';
+import { PixelIcon, type PixelIconName } from './PixelIcon';
+import { PixelIllustration } from './PixelIllustration';
+import { PixelAction, SegmentMeter } from './PixelUI';
+
+export function PersistentStatusBar({ game, onNavigate }: { game: GameState; onNavigate?: (view: ViewId) => void }) {
+  const entries = [
+    ['体能', 'bolt', getAttribute(game, 'fitness')],
+    ['心情', 'smile', getAttribute(game, 'mood')],
+    ['专业', 'career', getAttribute(game, 'professional')],
+    ['知识', 'book', getAttribute(game, 'knowledge')],
+    ['人脉', 'users', getAttribute(game, 'network')],
+  ] as const;
+  return <aside className="persistent-status" role="region" aria-label="角色状态">
+    <span className="pixel-avatar"><PixelIllustration name="mascot" size={56} /></span>
+    <div className="status-attribute-group pixel-corners">
+      {entries.map(([label, icon, value]) => <div className="persistent-stat" key={label}><PixelIcon name={icon as PixelIconName} size={16} data-attribute-icon={label} /><span>{label}</span><SegmentMeter value={value} max={100} segments={5} label={`${label} ${Math.round(value)}/100`} /><strong>{Math.round(value)}<small>/100</small></strong></div>)}
+    </div>
+    <button className="status-detail" onClick={() => onNavigate?.('profile')}><PixelAction label="属性详情" /></button>
+  </aside>;
+}

@@ -1,0 +1,25 @@
+import type { ContentRegistry } from './contracts';
+import { vocabulary } from './vocabulary';
+import { officialJobs } from './official/jobs';
+import { officialItems } from './official/items';
+import { officialHousing } from './official/housing';
+import { officialBusinesses } from './official/businesses';
+import { officialAssets } from './official/assets';
+import { officialCharacters } from './official/characters';
+import { officialEvents } from './official/events';
+import { officialEventChains } from './official/eventChains';
+import { officialMilestones } from './official/milestones';
+import { officialCompanies } from './official/companies';
+import { officialVacancyTemplates } from './official/vacancies';
+import { officialLocations } from './official/locations';
+import { officialStorylines } from './official/storylines';
+import { officialActivities } from './official/activities';
+import { officialRelationshipInteractions } from './official/relationshipInteractions';
+import { officialInvestments } from './official/investments';
+import { officialServices, officialSubscriptions } from './official/services';
+import { officialVehicles } from './official/vehicles';
+import { officialCourses } from './official/courses';
+import { officialDialogues } from './official/dialogues';
+import { officialVenues } from './official/venues';
+
+export const officialContent: ContentRegistry = { jobs: officialJobs, items: officialItems, housing: officialHousing, businesses: officialBusinesses, assets: [...officialAssets, ...officialVehicles], characters: officialCharacters, events: officialEvents, eventChains: officialEventChains, milestones: officialMilestones, activities: officialActivities, courses: officialCourses, relationshipInteractions: officialRelationshipInteractions, investments: officialInvestments, services: officialServices, subscriptions: officialSubscriptions, companies: officialCompanies, locations: officialLocations, venues: officialVenues, dialogues: officialDialogues, storylines: officialStorylines, vacancyTemplates: officialVacancyTemplates, vocabulary };

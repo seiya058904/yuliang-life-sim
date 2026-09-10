@@ -1,0 +1,23 @@
+node_modules/
+dist/
+test-results/
+.playwright-cli/
+artifacts/
+coverage/
+.impeccable/
+.codebase-memory/
+.env
+.env.*
+!.env.example
+
+# Local visual-convergence capture output (screenshots, diffs, crops).
+output/
+
+# Ad-hoc Playwright output directories used to avoid rewriting test-results/.
+.e2e-out*/
+
+# Forensic backup of the corrupted pre-recovery git metadata
+/.git-broken-20260910/
+
+# Workspace agent memory (kept out of feature commits)
+/.workbuddy/
