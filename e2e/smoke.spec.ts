@@ -6344,7 +6344,7 @@ test('keeps a plan cell cycling for 30+ clicks without wedging and wraps around'
   expect(new Set(seen).size).toBeGreaterThanOrEqual(8);
 });
 
-test('lets tall desktop long pages scroll to the bottom while life, work, and shop stay one screen', async ({ page }) => {
+test('lets tall desktop long pages scroll to the bottom while life and work stay one screen', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.waitForTimeout(300);
 
@@ -6361,9 +6361,14 @@ test('lets tall desktop long pages scroll to the bottom while life, work, and sh
     };
   });
 
-  for (const label of ['财富', '社交', '城市', '我的'] as const) {
+  for (const label of ['财富', '社交', '城市', '我的', '商店'] as const) {
     await page.getByLabel('主导航').getByRole('button', { name: label, exact: true }).click();
     await page.waitForTimeout(300);
+    if (label === '商店') {
+      // the default goods tab fits one screen; switch to a taller catalog tab
+      await page.getByRole('tab', { name: '学习', exact: true }).click();
+      await page.waitForTimeout(300);
+    }
     const report = await scrollToBottom();
     // content overflows the fixed shell and the main region scrolls
     expect(report.overflowY).toBe('auto');
@@ -6372,7 +6377,7 @@ test('lets tall desktop long pages scroll to the bottom while life, work, and sh
     expect(report.scrollTop).toBeGreaterThan(0);
   }
 
-  for (const label of ['生活', '职业', '商店'] as const) {
+  for (const label of ['生活', '职业'] as const) {
     await page.getByLabel('主导航').getByRole('button', { name: label, exact: true }).click();
     await page.waitForTimeout(300);
     const overflowY = await page.evaluate(() => getComputedStyle(document.querySelector('main.main-content') as HTMLElement).overflowY);

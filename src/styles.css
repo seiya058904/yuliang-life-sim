@@ -8541,10 +8541,10 @@ textarea {
   }
 }
 
-/* Tall desktop pages are already composed to the viewport height. Life / work /
-   shop keep their fitted console surfaces clean. Wealth / relations / city /
-   profile can exceed one screen, so they own a thin pixel scrollbar inside the
-   fixed shell instead of being clipped. */
+/* Tall desktop pages are already composed to the viewport height. Life and
+   work keep their fitted console surfaces clean. Wealth / relations / city /
+   profile / shop can exceed one screen (e.g. many catalog rows), so they own
+   a thin pixel scrollbar inside the fixed shell instead of being clipped. */
 @media (min-width: 1181px) and (min-height: 801px) {
   .main-nav {
     overflow: hidden;
@@ -8559,22 +8559,22 @@ textarea {
     overflow-y: auto;
   }
 
-  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile) .main-content {
+  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile, .view-shop) .main-content {
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: #777 #000000;
   }
 
-  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile) .main-content::-webkit-scrollbar {
+  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile, .view-shop) .main-content::-webkit-scrollbar {
     width: 6px;
   }
 
-  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile) .main-content::-webkit-scrollbar-track {
+  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile, .view-shop) .main-content::-webkit-scrollbar-track {
     background: #000000;
   }
 
-  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile) .main-content::-webkit-scrollbar-thumb {
+  .app-shell:is(.view-wealth, .view-relations, .view-city, .view-profile, .view-shop) .main-content::-webkit-scrollbar-thumb {
     background: #777;
     border: 1px solid #000000;
   }
