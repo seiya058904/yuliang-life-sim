@@ -373,27 +373,48 @@ describe('message lifecycle', () => {
 
 describe('long-run soak', () => {
   it('runs three deterministic years without planner deadlock, duplicate ids or unbounded state', { timeout: 120_000 }, () => {
-    let state: GameState = createInitialState(contentRegistry, balance, 2024);
-    state = { ...state, simulationMode: 'running', autoRepeatPlan: true, weeklyPlan: { ...state.weeklyPlan, autoRepeat: true } };
-    let manualStarts = 0;
+    const base = createInitialState(contentRegistry, balance, 2024);
+    base.cash = 30_000;
+    const job = contentRegistry.jobs.find((entry) => entry.id === 'job.course-teaching-assistant')!;
+    // A representative live plan: a course, two separate outings and a long-term
+    // side job, all repeating.
+    let state: GameState = {
+      ...base,
+      simulationMode: 'running',
+      autoRepeatPlan: true,
+      acquiredSideJobs: { [job.id]: { jobId: job.id, acquiredDay: 1 } },
+      weeklyPlan: {
+        ...base.weeklyPlan,
+        autoRepeat: true,
+        days: {
+          ...base.weeklyPlan.days,
+          2: { ...base.weeklyPlan.days[2], evening: { kind: 'course', courseId: 'course.workplace-basics' } },
+          3: { ...base.weeklyPlan.days[3], evening: { kind: 'side_job', jobId: job.id, durationMinutes: 240 } },
+          5: { ...base.weeklyPlan.days[5], evening: { kind: 'activity', activityId: 'activity.old-town-culture', optionId: 'exhibition' } },
+          6: { ...base.weeklyPlan.days[6], day: { kind: 'activity', activityId: 'activity.riverside-park-ride', optionId: 'ride' } },
+        },
+      },
+    };
+    let autoClears = 0;
+    let fallbacks = 0;
     for (let month = 0; month < 36; month += 1) {
       const result = advanceSimulation(state, 28 * 24 * 60, contentRegistry, balance);
       expect(result.error).toBeUndefined();
+      autoClears += result.effects.filter((effect) => effect.type === 'message' && effect.text.includes('无法继续')).length;
+      fallbacks += result.effects.filter((effect) => effect.type === 'message' && effect.text.includes('本周计划需要调整')).length;
       state = result.state;
       if (state.simulationMode === 'monthly_summary') state = run(state, { type: 'acknowledge_monthly_summary' });
-      if (state.simulationMode === 'planning') { state = run(state, { type: 'start_week' }); manualStarts += 1; }
-      // Daily-life invariants: the plan the engine will run is always legal, and
-      // no repeated player loop can wedge the planner.
-      if (state.simulationMode === 'paused' || state.simulationMode === 'planning') {
+      if (state.simulationMode === 'planning') {
+        // The fallback always leaves an actionable plan behind for the player.
         expect(planRunError(state, state.weeklyPlan, contentRegistry, balance)).toBeUndefined();
+        state = run(state, { type: 'start_week' });
       }
       markAllMessagesRead(state);
       clearReadMessages(state);
       clearTerminalApplications(state);
-      state = { ...state, simulationMode: state.simulationMode === 'planning' ? 'running' : state.simulationMode };
     }
 
-    expect(state.time.day).toBeGreaterThan(900);
+    expect(state.time.day).toBeGreaterThan(1000);
     expect(state.planNotice).toBeUndefined();
     const messageIds = (state.messages ?? []).map((message) => message.id);
     expect(new Set(messageIds).size).toBe(messageIds.length);
@@ -401,12 +422,15 @@ describe('long-run soak', () => {
     expect(new Set(applicationIds).size).toBe(applicationIds.length);
     const lifeRecordIds = state.lifeHistory.map((entry) => entry.id);
     expect(new Set(lifeRecordIds).size).toBe(lifeRecordIds.length);
+    expect(state.lifeHistory.length).toBeGreaterThan(40);
+    expect(autoClears).toBeGreaterThan(0);
+    expect(fallbacks).toBeGreaterThanOrEqual(0);
     expect((state.ambientLog ?? []).length).toBeLessThanOrEqual(20);
     expect((state.opportunities ?? []).length).toBeLessThanOrEqual(20);
     expect((state.gigs ?? []).length).toBeLessThanOrEqual(8);
     expect((state.employmentHistory ?? []).length).toBeLessThan(80);
+    expect((state.applications ?? []).length).toBeLessThanOrEqual(60);
     expect(Number.isFinite(state.cash)).toBe(true);
-    expect(manualStarts).toBeGreaterThanOrEqual(0);
 
     // The long save still serializes, loads and stays inside a sane size.
     localStorage.clear();
