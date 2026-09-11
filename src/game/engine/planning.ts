@@ -567,46 +567,45 @@ export function reconcileStateWithEmployment(state: GameState): void {
  * removed) has to be dropped instead of freezing the whole week behind a
  * validator error the player never asked for.
  */
+/**
+ * Codes that describe an entry which can never run: dropping the entry resolves
+ * them, so a repeating week must not be frozen behind one of them.
+ */
+const CLEARABLE_ISSUE_CODES: readonly PlanIssueCode[] = [
+  'UNKNOWN_ACTIVITY', 'UNKNOWN_ACTIVITY_OPTION', 'ACTIVITY_REQUIREMENTS', 'ACTIVITY_COOLDOWN', 'ACTIVITY_TOO_LONG',
+  'UNKNOWN_COURSE', 'COURSE_REQUIREMENTS', 'COURSE_MAX_COMPLETIONS', 'COURSE_COOLDOWN',
+  'UNKNOWN_JOB', 'NOT_SIDE_JOB', 'SIDE_JOB_NOT_ACQUIRED', 'REGULAR_JOB_IN_PLAN', 'INVALID_DURATION',
+];
+
+/**
+ * A week may keep repeating, but an entry that can never run (completed course,
+ * cooldown still open, qualification lost, removed content) has to be dropped
+ * instead of freezing the whole week behind a validator error. Structural
+ * conflicts such as a multi-day overrun are left to the player, so the fallback
+ * path still exists and still explains itself.
+ */
 export function reconcilePlanWithContent(state: GameState, plan: WeeklyPlan, content: ContentRegistry, balance: BalanceConfig): { plan: WeeklyPlan; cleared: string[] } {
   let working = plan;
   const cleared: string[] = [];
+  const context: PlanIssueContext = { content, balance, employment: state.employment, from: WEEK_START_FROM };
   for (const weekday of WEEKDAYS) {
     for (const slot of PLAN_SLOTS) {
       const activity = working.days[weekday]?.[slot];
       if (!activity || activity.kind === 'free' || activity.kind === 'study') continue;
-      if (!singleEntryIsUnavailable(working, weekday, slot, state, content, balance)) continue;
+      const issues = collectPlanIssues(working, state, context).filter((issue) => issue.weekday === weekday && issue.slot === slot);
+      if (!issues.length || !issues.every((issue) => CLEARABLE_ISSUE_CODES.includes(issue.code))) continue;
       const prospective: WeeklyPlan = {
         ...working,
         days: { ...working.days, [weekday]: { ...working.days[weekday], [slot]: { kind: 'free' } } },
       };
-      if (collectPlanIssues(prospective, state, { content, balance, employment: state.employment, from: WEEK_START_FROM }).length
-        >= collectPlanIssues(working, state, { content, balance, employment: state.employment, from: WEEK_START_FROM }).length) continue;
+      const remaining = collectPlanIssues(prospective, state, context);
+      const resolved = issues.every((issue) => !remaining.some((candidate) => candidate.code === issue.code && candidate.weekday === issue.weekday && candidate.slot === issue.slot));
+      if (!resolved) continue;
       working = prospective;
-      cleared.push(`${weekdayLabel(weekday)}${slotLabel(slot)}${describePlannedActivity(activity)}`);
+      cleared.push(`${weekdayLabel(weekday)}${slotLabel(slot)} · ${issues[0].message}`);
     }
   }
   return { plan: working, cleared };
-}
-
-function singleEntryIsUnavailable(plan: WeeklyPlan, weekday: Weekday, slot: PlanSlot, state: GameState, content: ContentRegistry, balance: BalanceConfig): boolean {
-  const activity = plan.days[weekday][slot];
-  const issues = collectPlanIssues(plan, state, { content, balance, employment: state.employment, from: WEEK_START_FROM })
-    .filter((issue) => issue.weekday === weekday && issue.slot === slot);
-  if (activity.kind === 'course') {
-    const course = (content.courses ?? []).find((entry) => entry.id === activity.courseId);
-    return !course || issues.some((issue) => issue.code === 'UNKNOWN_COURSE' || issue.code === 'COURSE_REQUIREMENTS');
-  }
-  if (activity.kind === 'side_job') {
-    return issues.some((issue) => issue.code === 'UNKNOWN_JOB' || issue.code === 'SIDE_JOB_NOT_ACQUIRED' || issue.code === 'REGULAR_JOB_IN_PLAN');
-  }
-  return issues.some((issue) => issue.code === 'UNKNOWN_ACTIVITY' || issue.code === 'UNKNOWN_ACTIVITY_OPTION' || issue.code === 'ACTIVITY_REQUIREMENTS');
-}
-
-function describePlannedActivity(activity: PlannedActivity): string {
-  if (activity.kind === 'course') return ` · ${activity.courseId}`;
-  if (activity.kind === 'side_job') return ` · ${activity.jobId}`;
-  if (activity.kind === 'activity') return ` · ${activity.activityId}`;
-  return '';
 }
 
 export interface WorkWindow { startMinute: number; endMinute: number; durationMinutes: number }

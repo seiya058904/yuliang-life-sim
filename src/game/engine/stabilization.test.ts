@@ -134,32 +134,42 @@ describe('planning domain consistency', () => {
     expect(outcome.reason).toBe(NO_SLOT_REASON);
   });
 
-  it('revalidates an auto-repeating plan when a new week begins and falls back to planning', () => {
-    // A plan whose cooldown breaks it: every entry is individually valid, so
-    // nothing may be auto-cleared and the player has to be told to adjust it.
+  it('auto-clears impossible repeats and falls back to planning when a conflict cannot be cleared', () => {
     const base = createInitialState(contentRegistry, balance, 1);
     const trip = { kind: 'activity' as const, activityId: 'activity.riverside-park-ride', optionId: 'ride' };
-    const state: GameState = {
+    const withEvening = (weekdays: readonly Weekday[], activity: PlannedActivity): GameState['weeklyPlan']['days'] =>
+      weekdays.reduce<GameState['weeklyPlan']['days']>((days, weekday) => ({ ...days, [weekday]: { day: base.weeklyPlan.days[weekday].day, evening: activity } }), { ...base.weeklyPlan.days });
+    const withDay = (weekday: Weekday, activity: PlannedActivity): GameState['weeklyPlan']['days'] =>
+      ({ ...base.weeklyPlan.days, [weekday]: { ...base.weeklyPlan.days[weekday], day: activity } });
+
+    // A repeat entry that can never run is dropped, so the week runs on.
+    const cleared = advanceSimulation({
       ...base,
       simulationMode: 'running',
       autoRepeatPlan: true,
       lifeHistory: [{ id: 'x', day: 1, category: 'activity', title: 'x', sourceId: 'activity.riverside-park-ride' }],
-      weeklyPlan: {
-        ...base.weeklyPlan,
-        autoRepeat: true,
-        days: {
-          ...base.weeklyPlan.days,
-          1: { day: base.weeklyPlan.days[1].day, evening: trip },
-          3: { day: base.weeklyPlan.days[3].day, evening: trip },
-        },
-      },
-    };
-    const result = advanceSimulation(state, 7 * 24 * 60, contentRegistry, balance);
+      weeklyPlan: { ...base.weeklyPlan, autoRepeat: true, days: withEvening([1, 3], trip) },
+    }, 7 * 24 * 60, contentRegistry, balance);
+    expect(cleared.state.simulationMode).not.toBe('planning');
+    expect(cleared.state.weeklyPlan.days[3].evening).toEqual({ kind: 'free' });
+    expect(cleared.effects.some((effect) => effect.type === 'message' && effect.text.includes('无法继续'))).toBe(true);
 
-    expect(result.state.simulationMode).toBe('planning');
-    expect(result.state.planNotice).toBe('本周计划需要调整');
-    expect(result.state.planIssues?.length).toBeGreaterThan(0);
-    expect(result.effects.some((effect) => effect.type === 'message' && effect.text.includes('本周计划需要调整'))).toBe(true);
+    // A structural conflict (a two-day trip running into a workday) cannot be
+    // cleared by dropping an entry, so the repeat must stop and explain itself.
+    const premium = { kind: 'activity' as const, activityId: 'activity.premium-weekend', optionId: 'premium-stay' };
+    const blocked = advanceSimulation({
+      ...base,
+      time: { day: 8, hour: 0, minute: 0 },
+      calendar: calendarForDay(8),
+      cash: 50_000,
+      simulationMode: 'running',
+      autoRepeatPlan: true,
+      weeklyPlan: { ...base.weeklyPlan, autoRepeat: true, days: withDay(7, premium) },
+    }, 7 * 24 * 60, contentRegistry, balance);
+    expect(blocked.state.simulationMode).toBe('planning');
+    expect(blocked.state.planNotice).toBe('本周计划需要调整');
+    expect(blocked.state.planIssues?.length).toBeGreaterThan(0);
+    expect(blocked.effects.some((effect) => effect.type === 'message' && effect.text.includes('本周计划需要调整'))).toBe(true);
   });
 
   it('prevents staging the same cooldown activity twice in one week', () => {
@@ -403,7 +413,10 @@ describe('long-run soak', () => {
     const outcome = saveGameState(state);
     expect(outcome.ok).toBe(true);
     const serialized = localStorage.getItem('yuliang-save-v1')!;
-    expect(serialized.length).toBeLessThan(3_000_000);
+    const report = { days: state.time.day, bytes: serialized.length, lifeRecords: state.lifeHistory.length, financialEntries: state.financialLedger?.entries.length ?? 0 };
+    console.log('SOAK_SAVE_SIZE', JSON.stringify(report));
+    expect(report.bytes).toBeGreaterThan(0);
+    expect(report.bytes).toBeLessThan(3_000_000);
     const reloaded = loadGameStateWithReport(contentRegistry, balance);
     expect(reloaded.problem).toBeUndefined();
     expect(reloaded.state.time.day).toBe(state.time.day);
