@@ -47,6 +47,16 @@ describe('career market', () => {
     expect(requirementHints(job, state, contentRegistry, balanceConfig).map((hint) => hint.label)).toEqual(expect.arrayContaining(['提升知识', '提升沟通']));
   });
 
+  it('blocks a public application for the job the player currently holds', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const vacancy = state.vacancies!.find((entry) => entry.jobId === state.currentJobId)!;
+
+    const result = dispatchGameAction(state, { type: 'submit_application', vacancyId: vacancy.vacancyId } as never, contentRegistry, balanceConfig);
+
+    expect(result.error).toBe('你已经在这份工作中');
+    expect(result.state.applications).toEqual([]);
+  });
+
   it('connects the education course qualification to the long-term teaching assistant route', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 24);
     state.calendar = { ...state.calendar, month: 2 };

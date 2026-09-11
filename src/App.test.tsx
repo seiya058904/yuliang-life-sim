@@ -160,6 +160,17 @@ describe('余量 app flow', () => {
     expect(within(detail).getByRole('button', { name: '申请岗位' })).toHaveClass('primary-button');
   });
 
+  it('labels omitted career requirements as no requirement', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+
+    const detail = screen.getByRole('complementary', { name: '岗位详情' });
+    expect(within(detail).getAllByText('无要求')).toHaveLength(2);
+    expect(detail).not.toHaveTextContent('10/0');
+    expect(detail).not.toHaveTextContent('0/0');
+  });
+
   it('gives visible career cards a three-row semantic fact strip', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -579,17 +590,28 @@ describe('余量 app flow', () => {
     expect(screen.getAllByRole('status').some((node) => /已安排：/.test(node.textContent ?? ''))).toBe(true);
   });
 
-  it('submits a public-market application without reopening the legacy recruitment dialog', async () => {
+  it('submits a different public-market application without reopening the legacy recruitment dialog', async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: '职业' }));
-    await user.click(screen.getByRole('button', { name: '查看岗位详情：便利店店员' }));
+    await user.click(screen.getByRole('button', { name: '查看岗位详情：仓库理货员' }));
     await user.click(screen.getByRole('button', { name: '申请岗位' }));
     expect(screen.getByRole('button', { name: '申请状态：已提交' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '职业页面' }));
     await user.click(screen.getByRole('button', { name: '我的申请' }));
     expect(screen.getByText(/当前竞争力：/)).toBeInTheDocument();
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('blocks the current job from creating a redundant public-market application', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '职业' }));
+    await user.click(screen.getByRole('button', { name: '查看岗位详情：便利店店员' }));
+    await user.click(screen.getByRole('button', { name: '申请岗位' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('你已经在这份工作中');
+    expect(appStore.getState().game.applications).toEqual([]);
   });
 
   it('browses the official shop without time passing and checks out multiple items once', async () => {
@@ -602,6 +624,20 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '一次购买' }));
     expect(screen.getByTestId('date-value')).toHaveTextContent('08:00');
     expect(screen.getByTestId('cash-value')).toHaveTextContent('¥62');
+  });
+
+  it('keeps the shopping bag after an insufficient-cash purchase fails', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, cash: 0 } });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('button', { name: '加入购物袋：实用手机' }));
+    await user.click(screen.getByRole('button', { name: '一次购买' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('请先预留下一次住房费用');
+    expect(screen.getByText('购物袋（1）')).toBeInTheDocument();
+    expect(appStore.getState().game.inventory['item.seed-phone'] ?? 0).toBe(0);
   });
 
   it('exposes real shop sort and filter controls without changing the catalog contract', async () => {
@@ -1359,6 +1395,17 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '周末逛书店 · 和周妍一起逛' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeInTheDocument();
+  });
+
+  it('discovers the vinyl venue and its music activity', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '城市' }));
+    const venue = screen.getByRole('heading', { name: '旧城黑胶小馆' }).closest('article') as HTMLElement;
+    expect(venue).toHaveTextContent('演唱会');
+    expect(venue).not.toHaveTextContent('周末逛书店');
+    await user.click(within(venue).getByRole('button', { name: '去安排活动' }));
+    expect(screen.getByRole('heading', { name: '演唱会 · 去现场' })).toBeInTheDocument();
   });
 
   it('discovers and schedules the official short trip activity', async () => {

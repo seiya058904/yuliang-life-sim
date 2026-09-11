@@ -768,7 +768,7 @@ function itemCatalogDetailFacts(item: (typeof contentRegistry.items)[number], ga
   ];
 }
 
-function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate: (view: ViewId) => void; initialTab: string }) {
+function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState; dispatch: (action: GameAction) => boolean; onNavigate: (view: ViewId) => void; initialTab: string }) {
   const [cart, setCart] = useState<Record<ContentId, number>>({});
   const [itemCategory, setItemCategory] = useState<string>('all');
   const [itemSort, setItemSort] = useState<'default' | 'price-asc' | 'price-desc'>('default');
@@ -940,7 +940,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
           {cartCount === 0 ? <ShopRailEmptyState illustration="bag" title="购物袋是空的" hint="选择商品后，会在这里结算。" /> : <>
             <ul className="rail-rows">{Object.entries(cart).map(([itemId, quantity]) => { const item = contentRegistry.items.find((entry) => entry.id === itemId); return <li key={itemId}><PixelIllustration name={item ? itemIllustrationFor(item) : 'bag'} size={18} className="rail-row-art" aria-hidden="true" /><span>{item?.name}</span><b>×{quantity}</b></li>; })}</ul>
             <div className="total-row"><span>消费合计</span><strong>{money(total)}</strong></div>
-            <button className="primary-button full" onClick={() => { dispatch({ type: 'purchase_items', items: cart }); setCart({}); }} aria-label="一次购买">一次购买</button>
+            <button className="primary-button full" onClick={() => { if (dispatch({ type: 'purchase_items', items: cart })) setCart({}); }} aria-label="一次购买">一次购买</button>
           </>}
         </section>
         <section className="rail-module rail-schedule" aria-label="本周安排"><header><PixelIcon name="calendar" size={16} /><h3>本周安排</h3></header><ul className="rail-rows compact">{weekRows.slice(0, 6).map((row) => <li key={row.key}><small>{row.day}</small><span>{row.text}</span><PixelIcon name={row.icon} size={14} aria-hidden="true" data-schedule-row-icon={row.icon} /></li>)}</ul><button className="text-button rail-link" onClick={() => onNavigate('life')}><PixelAction label="查看完整安排" /></button></section>

@@ -5,7 +5,7 @@ import type { BalanceConfig } from '../balance/config';
 import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity, PlanSlot, Weekday } from '../content/contracts';
 import { evaluateCondition, explainCondition } from './conditions';
 import { businessValuation, calculateDailyBusinessProfit, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity } from './economy';
-import { applyContentEffects, applyReachedMilestones, cloneGameState, itemCost, refreshUnlocks } from './effects';
+import { applyContentEffects, applyReachedMilestones, cashEffectAmount, cloneGameState, itemCost, refreshUnlocks } from './effects';
 import { advanceSimulation } from './simulation';
 import { activityAtTime, defaultJobSchedule } from './schedule';
 import { activityCashCost, getActivityDefinition, getActivityOption } from './activities';
@@ -35,6 +35,8 @@ function hasRequirements(state: GameState, condition: Parameters<typeof evaluate
 }
 
 function canAcceptJob(state: GameState, job: JobDefinition, content: ContentRegistry, balance: BalanceConfig): string | undefined {
+  const currentJobError = currentJobConflict(state, job);
+  if (currentJobError) return currentJobError;
   if (!state.unlockedJobIds.includes(job.id)) return '这份工作还没有对你开放';
   if (job.abilityRequired !== undefined && state.ability < job.abilityRequired) return `需要能力 ${job.abilityRequired}`;
   if (job.reputationRequired !== undefined && state.reputation < job.reputationRequired) return `需要声誉 ${job.reputationRequired}`;
@@ -42,6 +44,12 @@ function canAcceptJob(state: GameState, job: JobDefinition, content: ContentRegi
   if (!careerRequirementsSatisfied(job, state)) return '岗位经验或资格还不满足';
   if (job.requiredItems?.some((itemId) => (state.inventory[itemId] ?? 0) < 1)) return '缺少必要商品';
   if (job.requiredCapabilities?.some((capability) => !state.unlockedCapabilities.includes(capability))) return '缺少必要能力';
+  return undefined;
+}
+
+function currentJobConflict(state: GameState, job: JobDefinition): string | undefined {
+  if (state.currentJobId === job.id || state.employment?.jobId === job.id) return '你已经在这份工作中';
+  if (state.employment?.pendingJobId === job.id) return '你已经准备加入这份工作';
   return undefined;
 }
 
@@ -230,6 +238,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const source = vacancy ?? opportunity!;
       const job = find(content.jobs, source.jobId);
       if (!job) return fail(input, '岗位内容已失效');
+      const currentJobError = currentJobConflict(state, job);
+      if (currentJobError) return fail(input, currentJobError);
       if (job.abilityRequired !== undefined && state.ability < job.abilityRequired) return fail(input, '需要能力 ' + job.abilityRequired);
       if (job.reputationRequired !== undefined && state.reputation < job.reputationRequired) return fail(input, '需要声誉 ' + job.reputationRequired);
       if (!hasRequirements(state, job.requirements, content, balance)) return fail(input, '当前条件还不满足');
@@ -308,6 +318,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       }
       const job = find(content.jobs, application.jobId);
       if (!job) return fail(input, '岗位内容已失效');
+      const currentJobError = currentJobConflict(state, job);
+      if (currentJobError) return fail(input, currentJobError);
       if (employmentKind(job) === 'repeatable_side_job') {
         state.acquiredSideJobs ??= {};
         if (state.acquiredSideJobs[job.id]) return fail(input, '你已经获得这项兼职资格');
@@ -480,7 +492,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       addLifeRecord(state, { category: 'event', title: event.title, detail: choice.text, sourceId: event.id });
       state.pendingReward = {
         eventId: event.id,
-        lines: choice.effects.map((effect) => describeRewardEffect(effect, content)),
+        lines: choice.effects.map((effect) => describeRewardEffect(effect, content, balance)),
       };
       state.simulationMode = state.pendingEventId ? 'event' : 'reward';
       break;
@@ -1223,10 +1235,10 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
   return { state, effects };
 }
 
-function describeRewardEffect(effect: EffectDefinition, content: ContentRegistry): string {
+function describeRewardEffect(effect: EffectDefinition, content: ContentRegistry, balance: BalanceConfig): string {
   const signed = (amount: number) => `${amount >= 0 ? '+' : ''}${amount}`;
   const attributeNames: Record<string, string> = { professional: '专业', knowledge: '知识', communication: '沟通', fitness: '体能', appearance: '形象', network: '人脉', mood: '心情' };
-  if (effect.type === 'cash') return `${signed(Math.round(effect.amount))}¥ 现金`;
+  if (effect.type === 'cash') return `${signed(cashEffectAmount(effect, balance))}¥ 现金`;
   if (effect.type === 'stat') return `${effect.stat === 'ability' ? '能力' : effect.stat === 'reputation' ? '声誉' : '生活水平'} ${signed(effect.amount)}`;
   if (effect.type === 'attribute') return `${attributeNames[effect.attribute] ?? effect.attribute} ${signed(effect.amount)}`;
   if (effect.type === 'relation') {

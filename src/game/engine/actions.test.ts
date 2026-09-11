@@ -532,6 +532,16 @@ describe('game action dispatcher', () => {
     expect(resumed.state.simulationMode).toBe('running');
   });
 
+  it('shows the effective cash amount for tiered event rewards', () => {
+    const state = { ...createInitialState(contentRegistry, balanceConfig, 1), pendingEventId: 'event.seed-bonus', simulationMode: 'event' as const };
+    const chosen = dispatchGameAction(state, { type: 'choose_event', eventId: 'event.seed-bonus', choiceId: 'share' }, contentRegistry, balanceConfig);
+
+    expect(chosen.error).toBeUndefined();
+    expect(chosen.state.cash).toBe(state.cash + 19);
+    expect(chosen.state.pendingReward?.lines).toContain('+19¥ 现金');
+    expect(chosen.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'bonus', amount: 19 });
+  });
+
   it('turns an event choice into a persisted headhunter opportunity instead of an automatic offer', () => {
     const event = {
       id: 'event.test-headhunter', contentStatus: 'seed' as const, name: '猎头联系', description: '测试猎头联系。',

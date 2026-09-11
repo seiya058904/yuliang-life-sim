@@ -54,6 +54,12 @@ describe('seed content registry', () => {
     ]));
   });
 
+  it('maps the old-town vinyl venue to the music activity it advertises', () => {
+    const venue = contentRegistry.venues?.find((entry) => entry.id === 'venue.oldtown-vinyl-bar');
+    expect(venue).toMatchObject({ locationId: 'location.old-town', activityIds: ['activity.concert'] });
+    expect(contentRegistry.activities?.find((entry) => entry.id === venue?.activityIds[0])?.name).toBe('演唱会');
+  });
+
   it('exposes the smart-home set as the lifestyle technology anchor item', () => {
     expect(contentRegistry.items.find((item) => item.id === 'item.smart-home-set')).toMatchObject({
       contentStatus: 'official',

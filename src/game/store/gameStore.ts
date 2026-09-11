@@ -33,7 +33,7 @@ export interface GameStore {
   recovery?: RecoverySession;
   showRecovery: () => void;
   acceptRecovery: () => void;
-  dispatch: (action: GameAction) => void;
+  dispatch: (action: GameAction) => boolean;
   consumeEffects: () => void;
   setView: (view: ViewId) => void;
   reset: (seed?: number) => void;
@@ -593,11 +593,12 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
   return create<GameStore>((set, get) => ({
     game: loaded.state, effects: [], activeView: 'life', recovery,
     loadProblem: loaded.problem,
-    dispatch: (action) => {
+    dispatch: (action): boolean => {
       const result = dispatchGameAction(get().game, action, content, balance);
-      if (result.error) { set({ lastError: result.error, effects: [] }); return; }
+      if (result.error) { set({ lastError: result.error, effects: [] }); return false; }
       const outcome = get().recovery?.writeProtected ? undefined : saveGameState(result.state);
       set({ game: result.state, effects: result.effects, lastError: undefined, saveError: outcome?.error });
+      return true;
     },
     consumeEffects: () => set({ effects: [] }),
     setView: (activeView) => set({ activeView }),

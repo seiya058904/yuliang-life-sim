@@ -352,7 +352,7 @@ describe('application lifecycle', () => {
 
   it('surfaces an open Offer on the life page so a dated offer cannot be missed', () => {
     const state = createInitialState(contentRegistry, balance, 1);
-    const basic = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-shop-clerk')!;
+    const basic = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-warehouse')!;
     const vacancy = (state.vacancies ?? []).find((entry) => entry.jobId === basic.id)!;
     const applied = run(state, { type: 'submit_application', vacancyId: vacancy.vacancyId });
     // Recruitment answers on a later day; the resolved offer is what the life

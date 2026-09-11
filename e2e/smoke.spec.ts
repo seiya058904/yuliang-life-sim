@@ -63,6 +63,15 @@ test('discovers the bookstore venue and reaches its knowledge activity', async (
   await expect(page.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeVisible();
 });
 
+test('discovers the vinyl venue and reaches its music activity', async ({ page }) => {
+  await page.getByRole('button', { name: '城市', exact: true }).click();
+  const venue = page.getByRole('heading', { name: '旧城黑胶小馆' }).locator('..');
+  await expect(venue).toContainText('演唱会');
+  await expect(venue).not.toContainText('周末逛书店');
+  await venue.getByRole('button', { name: '去安排活动' }).click();
+  await expect(page.getByRole('heading', { name: '演唱会 · 去现场' })).toBeVisible();
+});
+
 test('discovers the riverside night market venue and reaches its activity entry', async ({ page }) => {
   await page.getByRole('button', { name: '城市', exact: true }).click();
   const venue = page.getByRole('heading', { name: '临江夜市' }).locator('..');
@@ -83,7 +92,8 @@ test('uses the public market, plans a week, pauses for shopping, and restores th
   await expect(page.getByText('环流物流').first()).toBeVisible();
   await expect(page.getByRole('heading', { name: '环流物流协调员' })).toBeVisible();
   await page.getByLabel('搜索岗位或公司').fill('');
-  await page.getByRole('button', { name: '申请职位' }).first().click();
+  const warehouse = page.getByRole('heading', { name: '仓库理货员' }).locator('xpath=ancestor::article[1]');
+  await warehouse.getByRole('button', { name: '申请职位' }).click();
   await openCareerPage(page, '我的申请');
   await expect(page.getByText(/当前竞争力：/)).toBeVisible();
   await openCareerPage(page, '工作机会');

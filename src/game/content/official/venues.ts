@@ -9,6 +9,6 @@ export const officialVenues = [
   { id: 'venue.riverside-night-market', contentStatus: 'official', name: '临江夜市', description: '沿河展开的夜间市集，适合在一天结束后慢慢走一圈。', locationId: 'location.riverside', activityIds: ['activity.riverside-night-market'], priceRange: '¥96' },
   { id: 'venue.south-riverside-deck', contentStatus: 'official', name: '南岸江堤健身角', description: '江堤边的开放健身角，清晨有拉伸的人群和推婴儿车的邻居。', locationId: 'location.south-residential', activityIds: ['activity.riverside-stretch', 'activity.city-run'], priceRange: '免费' },
   { id: 'venue.techpark-lecture-hall', contentStatus: 'official', name: '科技园路演厅', description: '园区开放日向所有路人敞开的路演与公开课空间。', locationId: 'location.tech-park', activityIds: ['activity.park-open-class'], priceRange: '¥25' },
-  { id: 'venue.oldtown-vinyl-bar', contentStatus: 'official', name: '旧城黑胶小馆', description: '午后放黑胶的小馆子，偶尔有人即兴弹一段。', locationId: 'location.old-town', activityIds: ['activity.browse-bookstore'], priceRange: '¥40 起' },
+  { id: 'venue.oldtown-vinyl-bar', contentStatus: 'official', name: '旧城黑胶小馆', description: '午后放黑胶的小馆子，偶尔有人即兴弹一段。', locationId: 'location.old-town', activityIds: ['activity.concert'], priceRange: '¥40 起' },
   { id: 'venue.huanliu-freight-cafe', contentStatus: 'official', name: '北部货运咖啡', description: '物流园边上唯一像样的咖啡馆，司机与调度在这里交接班。', locationId: 'location.industrial', activityIds: ['activity.cafe-break'], priceRange: '¥35 起' }
 ] satisfies readonly VenueDefinition[];

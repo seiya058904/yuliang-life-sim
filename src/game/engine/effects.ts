@@ -62,6 +62,10 @@ export function itemCost(state: GameState, item: ItemDefinition): number {
   return Math.max(0, Math.round(item.price * (1 - getDiscount(state, item) / 100)));
 }
 
+export function cashEffectAmount(effect: Extract<EffectDefinition, { type: 'cash' }>, balance: BalanceConfig): number {
+  return Math.round(effect.amount * (effect.rewardTier ? balance.rewardTiers[effect.rewardTier] : 1));
+}
+
 export function refreshUnlocks(state: GameState, content: ContentRegistry): void {
   for (const job of content.jobs) {
     if (job.requiredCapabilities?.every((capability) => state.unlockedCapabilities.includes(capability))) {
@@ -81,7 +85,7 @@ export function applyContentEffects(
   for (const effect of effects) {
     switch (effect.type) {
       case 'cash': {
-        const amount = Math.round(effect.amount * (effect.rewardTier ? balance.rewardTiers[effect.rewardTier] : 1));
+        const amount = cashEffectAmount(effect, balance);
         state.cash += amount;
         if (amount > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'bonus', amount, label: '内容奖励', sourceType: 'effect' });
         if (amount < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'other_expense', amount: -amount, label: '内容支出', sourceType: 'effect' });
