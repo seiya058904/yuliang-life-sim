@@ -5,8 +5,9 @@ import { calendarForDay } from './calendar';
 import { closeMonth } from './monthlySettlement';
 import { applyCareerExperience, careerRequirementsSatisfied } from './careerProgression';
 import { commuteCostMultiplier, housingRentPerDay, recordLocationVisit } from './locations';
-import { applyContentEffects, applyReachedMilestones, chooseAmbientEvent, chooseWeightedEvent, cloneGameState, modifierValue } from './effects';
+import { applyContentEffects, applyReachedMilestones, chooseAmbientEvent, chooseWeightedEvent, cloneGameState, modifierValue, studyGain } from './effects';
 import { activityAtTime, defaultJobSchedule } from './schedule';
+import { collectPlanIssues, planRunError, reconcilePlanWithContent, reconcileStateWithEmployment } from './planning';
 import { advanceMinutes, absoluteMinute } from './time';
 import { evaluateCondition } from './conditions';
 import { applyAttributeDelta } from './attributes';
@@ -31,11 +32,11 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
 
   while (remaining > 0 && state.simulationMode === 'running') {
     const beforeTime = state.time;
-    const beforeActivity = activityAtTime(beforeTime, state.weeklyPlan, state.employment, content);
+    const beforeActivity = activityAtTime(beforeTime, state.weeklyPlan, state.employment, content, state);
     const next = advanceMinutes(beforeTime, 1).time;
     state.time = next;
     state.calendar = calendarForDay(next.day);
-    state.currentActivity = activityAtTime(next, state.weeklyPlan, state.employment, content);
+    state.currentActivity = activityAtTime(next, state.weeklyPlan, state.employment, content, state);
 
     if (absoluteMinute(next) >= absoluteMinute(beforeActivity.end)) settleActivity(state, beforeActivity, content, balance, effects);
 
@@ -93,14 +94,32 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
             effects.push({ type: 'message', text: `${nextJob.name}已于本周入职` });
           }
         }
+        // The new week inherits the plan, but entries that can no longer execute
+        // at all are dropped first, and whatever remains is revalidated rather
+        // than silently running a plan that cannot execute.
+        reconcileStateWithEmployment(state);
+        const reconciled = reconcilePlanWithContent(state, state.weeklyPlan, content, balance);
+        if (reconciled.cleared.length) {
+          state.weeklyPlan = reconciled.plan;
+          effects.push({ type: 'message', text: `本周有 ${reconciled.cleared.length} 项安排无法继续，已自动空出：${reconciled.cleared.join('、')}` });
+        }
         state.previousWeeklyPlan = structuredClone(state.weeklyPlan);
-        if (state.autoRepeatPlan || state.weeklyPlan.autoRepeat) {
+        const runError = planRunError(state, state.weeklyPlan, content, balance);
+        if (!runError && (state.autoRepeatPlan || state.weeklyPlan.autoRepeat)) {
           state.weeklyPlan = { ...state.weeklyPlan, days: structuredClone(state.weeklyPlan.days) };
         } else {
-          state.simulationMode = 'planning';
-          effects.push({ type: 'message', text: `第 ${state.calendar.week - 1} 周结束，可以安排下一周了` });
+          if (runError) {
+            const issues = collectPlanIssues(state.weeklyPlan, state, { content, balance, employment: state.employment, from: { day: state.time.day, hour: 0, minute: 0 } });
+            state.simulationMode = 'planning';
+            state.planIssues = issues.map((issue) => ({ code: issue.code, weekday: issue.weekday, slot: issue.slot, message: issue.message }));
+            state.planNotice = '本周计划需要调整';
+            effects.push({ type: 'message', text: `本周计划需要调整：${runError}` });
+          } else {
+            state.simulationMode = 'planning';
+            effects.push({ type: 'message', text: `第 ${state.calendar.week - 1} 周结束，可以安排下一周了` });
+          }
         }
-        state.currentActivity = activityAtTime(state.time, state.weeklyPlan, state.employment, content);
+        state.currentActivity = activityAtTime(state.time, state.weeklyPlan, state.employment, content, state);
       }
     }
 
@@ -182,7 +201,7 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     return;
   }
   if (activity.kind === 'study') {
-    const amount = Math.max(1, Math.floor((absoluteMinute(activity.end) - absoluteMinute(activity.start)) / 120));
+    const amount = studyGain(state, Math.max(1, Math.floor((absoluteMinute(activity.end) - absoluteMinute(activity.start)) / 120)));
     applyAttributeDelta(state, 'knowledge', amount);
     applyAttributeDelta(state, 'professional', Math.max(0, Math.floor(amount / 2)));
     output.push({ type: 'stat', stat: 'ability', amount });

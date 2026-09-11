@@ -1,13 +1,16 @@
 import { useMemo, useState } from 'react';
 import { PixelIcon, type PixelIconName } from './pixel/PixelIcon';
 
-import type { GameAction, GameState, JobDefinition, ViewId, Weekday } from '../content/contracts';
+import type { GameAction, GameState, JobApplicationState, JobDefinition, ViewId } from '../content/contracts';
 import { employmentKind, requirementHints } from '../engine/careers';
 import { contentRegistry } from '../content/registry';
 import { balanceConfig } from '../balance/config';
 import { evaluateCondition } from '../engine/conditions';
 import { careerExperienceLabel, careerExperienceStage, careerRequirementsSatisfied } from '../engine/careerProgression';
 import { buildMobilityEntries } from '../engine/mobility';
+import { CANONICAL_DURATIONS, NO_SLOT_REASON, findNextSchedulableSlot } from '../engine/planning';
+import { activeApplications, applicationCooldownRemaining, terminalApplications } from '../engine/lifecycle';
+import { useWeekScheduler } from './weekScheduler';
 import { PixelIllustration, type PixelIllustrationName } from './pixel/PixelIllustration';
 import { PixelAction, SegmentMeter } from './pixel/PixelUI';
 import { displayContentName, displayMappedLabel, humanizeContentId } from './pixel/displayNames';
@@ -137,7 +140,7 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }:
       const application = game.applications?.find((entry) => entry.vacancyId === vacancy.vacancyId);
       const eligible = isJobEligible(job!, game);
       const close = !eligible && (job!.abilityRequired ?? 0) - game.ability <= 5 && (job!.reputationRequired ?? 0) - game.reputation <= 5;
-      const cooldown = game.applications?.some((entry) => entry.jobId === job!.id && entry.companyId === vacancy.companyId && (entry.nextEligibleDay ?? 0) > game.time.day);
+      const cooldown = applicationCooldownRemaining(game, job!.id, vacancy.companyId) > 0;
       const categoryMatches = (entry: (typeof categories)[number]) => entry === '全部' || (entry === '兼职' ? employmentKind(job!) !== 'full_time' : job!.category === categoryMap[entry]);
       if (categoryMatches('全部')) category['全部'] += 1;
       for (const entry of categories.slice(1)) if (categoryMatches(entry)) category[entry] += 1;
@@ -154,7 +157,7 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }:
     const application = game.applications?.find((entry) => entry.vacancyId === row.vacancy.vacancyId);
     const eligible = isJobEligible(job, game);
     const close = !eligible && (job.abilityRequired ?? 0) - game.ability <= 5 && (job.reputationRequired ?? 0) - game.reputation <= 5;
-    const cooldown = game.applications?.some((entry) => entry.jobId === job.id && entry.companyId === row.vacancy.companyId && (entry.nextEligibleDay ?? 0) > game.time.day);
+    const cooldown = applicationCooldownRemaining(game, job.id, row.vacancy.companyId) > 0;
     const categoryMatches = category === '全部' || (category === '兼职' ? employmentKind(job) !== 'full_time' : job.category === categoryMap[category]);
     const stateMatches = state === '全部' || (state === '符合条件' && eligible) || (state === '接近条件' && close) || (state === '已申请' && Boolean(application)) || (state === '冷却中' && Boolean(cooldown));
     const company = contentRegistry.companies?.find((entry) => entry.id === row.vacancy.companyId);
@@ -216,13 +219,20 @@ function VacancyCard({ game, vacancy, job, dispatch, selected, onSelect }: { gam
   const application = game.applications?.find((entry) => entry.vacancyId === vacancy.vacancyId);
   const acquired = game.acquiredSideJobs?.[job.id];
   const eligible = isJobEligible(job, game);
+  const { schedule, notice } = useWeekScheduler(game, dispatch);
+  const durationMinutes = sideJobDurationMinutes(job);
+  const schedulable = Boolean(acquired)
+    && game.simulationMode !== 'running'
+    && game.simulationMode !== 'event'
+    && game.simulationMode !== 'reward'
+    && findNextSchedulableSlot({ weekday: game.calendar.weekday, slot: 'evening', activity: { kind: 'side_job', jobId: job.id, durationMinutes } }, game, contentRegistry, balanceConfig, { from: 'current' }).found;
   const company = contentRegistry.companies?.find((entry) => entry.id === vacancy.companyId);
   const location = company?.locationId ? displayContentName(company.locationId, contentRegistry.locations ?? [], '工作地点') : '地点未注明';
   const employmentLabel = employmentKind(job) === 'full_time' ? '正式岗位' : employmentKind(job) === 'gig' ? 'Gig' : '长期兼职';
   const missingRequirementSummary = !eligible ? requirementHints(job, game, contentRegistry, balanceConfig).map((hint) => hint.label).join(' · ') : '';
   const statusLabel = acquired ? '已获得' : application ? displayMappedLabel(application.status, applicationStatusLabels) : eligible ? '符合条件' : '还需准备';
   const statusNote = acquired ? '可安排到本周' : application ? '申请已进入流程' : eligible ? '可以申请这份工作' : '查看详情了解准备项';
-  return <article className={selected ? 'job-card selected' : 'job-card'} data-catalog-card><button className="card-select" onClick={onSelect} aria-label={`查看岗位详情：${job.name}`}><div className="career-card-art"><PixelIllustration name={jobArtFor(job)} size={76} /></div><div className="job-card-identity"><div className="job-card-head"><span className="job-kind">{job.category ?? '岗位'}</span></div><h2>{job.name}</h2><span className="job-company">{companyName(vacancy.companyId)}</span></div></button><div className="job-facts" aria-label="岗位关键信息"><span className="job-fact" data-fact="salary"><PixelIcon name="cash" size={13} /><span>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])} / 班</span></span><span className="job-fact" data-fact="type"><PixelIcon name="career" size={13} /><span>{employmentLabel}</span></span><span className="job-fact" data-fact="location"><PixelIcon name="city" size={13} /><span>{location}</span></span></div><p className="job-card-description">{job.description}</p><div className="job-actions"><span className="job-card-status" aria-label="岗位状态"><strong className={eligible || acquired ? 'requirement-ok' : 'requirement-missing'}>{statusLabel}</strong><small>{statusNote}</small></span>{acquired ? <button className="secondary-button" disabled>安排到本周</button> : <button className="primary-button" disabled={!eligible || Boolean(application)} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{application ? '已申请' : '申请职位'}</button>}</div>{missingRequirementSummary && <span className="sr-only" aria-label="岗位准备项">{missingRequirementSummary}</span>}</article>;
+  return <article className={selected ? 'job-card selected' : 'job-card'} data-catalog-card><button className="card-select" onClick={onSelect} aria-label={`查看岗位详情：${job.name}`}><div className="career-card-art"><PixelIllustration name={jobArtFor(job)} size={76} /></div><div className="job-card-identity"><div className="job-card-head"><span className="job-kind">{job.category ?? '岗位'}</span></div><h2>{job.name}</h2><span className="job-company">{companyName(vacancy.companyId)}</span></div></button><div className="job-facts" aria-label="岗位关键信息"><span className="job-fact" data-fact="salary"><PixelIcon name="cash" size={13} /><span>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])} / 班</span></span><span className="job-fact" data-fact="type"><PixelIcon name="career" size={13} /><span>{employmentLabel}</span></span><span className="job-fact" data-fact="location"><PixelIcon name="city" size={13} /><span>{location}</span></span></div><p className="job-card-description">{job.description}</p>{notice && <p className="planner-notice" role="status">{notice}</p>}<div className="job-actions"><span className="job-card-status" aria-label="岗位状态"><strong className={eligible || acquired ? 'requirement-ok' : 'requirement-missing'}>{statusLabel}</strong><small>{statusNote}</small></span>{acquired ? <button className="secondary-button" disabled={!schedulable} onClick={() => schedule({ kind: 'side_job', jobId: job.id, durationMinutes }, { label: job.name })}>安排到本周</button> : <button className="primary-button" disabled={!eligible || Boolean(application)} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{application ? '已申请' : '申请职位'}</button>}</div>{missingRequirementSummary && <span className="sr-only" aria-label="岗位准备项">{missingRequirementSummary}</span>}</article>;
 }
 
 function VacancyDetail({ game, vacancy, job, dispatch }: { game: GameState; vacancy: any; job: JobDefinition; dispatch: (action: GameAction) => void }) {
@@ -247,31 +257,46 @@ function OpportunityList({ game, jobs, dispatch }: { game: GameState; jobs: read
   return <div className="job-grid">{gigs.map((gig) => { const job = jobs.find((entry) => entry.id === gig.jobId); return <article className="job-card" key={gig.id}><span className="job-kind">一次性 Gig · {gig.source}</span><h2>{job?.name ?? humanizeContentId(gig.jobId)}</h2><p>执行期限：第 {gig.validFromDay}–{gig.expiresDay} 天 · 结算 {money(gig.pay)}</p><button className="primary-button" onClick={() => dispatch({ type: 'execute_gig', gigId: gig.id })}>执行一次</button></article>; })}{opportunities.map((opportunity) => { const job = jobs.find((entry) => entry.id === opportunity.jobId); return <article className="job-card" key={opportunity.id}><span className="job-kind">{opportunity.source}</span><h2>{job?.name ?? humanizeContentId(opportunity.jobId)}</h2><p>限时至第 {opportunity.expiresDay} 天</p><button className="primary-button" onClick={() => dispatch({ type: 'submit_application', opportunityId: opportunity.id })}>申请机会</button></article>; })}</div>;
 }
 
+/**
+ * "我的申请" shows actionable applications first; finished ones move into a
+ * separate history block that can be cleared. Clearing is display-only — the
+ * re-application cooldown lives in `applicationCooldowns`, not in these rows.
+ */
 function ApplicationList({ game, jobs, dispatch, onNavigate }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void; onNavigate?: (view: ViewId) => void }) {
-  if (!(game.applications ?? []).length) return <p className="muted">还没有已提交的申请。</p>;
-  return <div className="item-list">{game.applications!.map((application) => {
+  const [historyOpen, setHistoryOpen] = useState(true);
+  const active = activeApplications(game);
+  const terminal = [...terminalApplications(game)].reverse();
+  return <><div className="item-list">{active.length ? active.map((application) => {
     const job = jobs.find((entry) => entry.id === application.jobId);
-    return <div className="item-row" key={application.applicationId}><div><h2>{job?.name ?? humanizeContentId(application.jobId)}</h2><p>当前竞争力：{application.competitivenessTier} · {application.feedback.join('；') || '等待反馈'}</p><span className="muted">状态：{displayMappedLabel(application.status, applicationStatusLabels)}{application.nextEligibleDay ? ' · 第 ' + application.nextEligibleDay + ' 天后可重投' : ''}</span>{application.status === 'rejected' && job && <div className="requirement-box"><strong>下一步</strong>{requirementHints(job, game, contentRegistry, balanceConfig).map((hint) => <button className="text-button" key={hint.requirementId} onClick={() => onNavigate?.(hint.destinationView)}>{hint.actionLabel} · {hint.label}{hint.currentValue !== undefined && hint.requiredValue !== undefined ? `（${hint.currentValue}/${hint.requiredValue}）` : ''}</button>)}</div>}</div><div className="button-pair">{application.status === 'offer' && <><button className="primary-button" onClick={() => dispatch({ type: 'accept_application_offer', applicationId: application.applicationId })}>接受 Offer</button><button className="secondary-button" onClick={() => dispatch({ type: 'decline_application_offer', applicationId: application.applicationId })}>拒绝</button></>}{['submitted', 'screening', 'interview', 'waiting'].includes(application.status) && <button className="secondary-button" onClick={() => dispatch({ type: 'withdraw_application', applicationId: application.applicationId })}>撤回</button>}</div></div>;
-  })}</div>;
+    const offerExpires = application.status === 'offer' && application.offerExpiresDay !== undefined ? ` · 第 ${application.offerExpiresDay} 天前回复` : '';
+    return <div className="item-row" key={application.applicationId}><div><h2>{job?.name ?? humanizeContentId(application.jobId)}</h2><p>当前竞争力：{application.competitivenessTier} · {application.feedback.join('；') || '等待反馈'}</p><span className="muted">状态：{displayMappedLabel(application.status, applicationStatusLabels)}{offerExpires}</span>{application.status === 'rejected' && job && <div className="requirement-box"><strong>下一步</strong>{requirementHints(job, game, contentRegistry, balanceConfig).map((hint) => <button className="text-button" key={hint.requirementId} onClick={() => onNavigate?.(hint.destinationView)}>{hint.actionLabel} · {hint.label}{hint.currentValue !== undefined && hint.requiredValue !== undefined ? `（${hint.currentValue}/${hint.requiredValue}）` : ''}</button>)}</div>}</div><div className="button-pair">{application.status === 'offer' && <><button className="primary-button" onClick={() => dispatch({ type: 'accept_application_offer', applicationId: application.applicationId })}>接受 Offer</button><button className="secondary-button" onClick={() => dispatch({ type: 'decline_application_offer', applicationId: application.applicationId })}>拒绝</button></>}{['submitted', 'screening', 'interview', 'waiting'].includes(application.status) && <button className="secondary-button" onClick={() => dispatch({ type: 'withdraw_application', applicationId: application.applicationId })}>撤回</button>}</div></div>;
+  }) : <p className="muted">当前没有进行中的申请。</p>}</div>
+    {terminal.length > 0 && <section className="detail-panel" aria-label="已结束申请">
+      <div className="section-heading compact"><div><span className="eyebrow">历史记录</span><h3>已结束申请（{terminal.length}）</h3></div><div className="button-pair"><button className="text-button" onClick={() => setHistoryOpen((open) => !open)}>{historyOpen ? '收起' : '展开'}</button><button className="text-button" onClick={() => dispatch({ type: 'clear_terminal_applications' })}>清除全部结束申请</button></div></div>
+      {historyOpen && <div className="item-list">{terminal.map((application) => <TerminalApplicationRow key={application.applicationId} game={game} application={application} jobs={jobs} dispatch={dispatch} onNavigate={onNavigate} />)}</div>}
+      <p className="muted">清除历史不会影响再次申请的等待时间。</p>
+    </section>}
+  </>;
+}
+
+function TerminalApplicationRow({ game, application, jobs, dispatch, onNavigate }: { game: GameState; application: JobApplicationState; jobs: readonly any[]; dispatch: (action: GameAction) => void; onNavigate?: (view: ViewId) => void }) {
+  const job = jobs.find((entry) => entry.id === application.jobId);
+  // A rejection keeps its "what to fix next" hints even after it moves to history.
+  const hints = application.status === 'rejected' && job ? requirementHints(job, game, contentRegistry, balanceConfig) : [];
+  return <div className="item-row"><div><h2>{job?.name ?? humanizeContentId(application.jobId)}</h2><span className="muted">状态：{displayMappedLabel(application.status, applicationStatusLabels)} · 第 {application.submittedDay} 天提交</span>{hints.length > 0 && <div className="requirement-box"><strong>下一步</strong>{hints.map((hint) => <button className="text-button" key={hint.requirementId} onClick={() => onNavigate?.(hint.destinationView)}>{hint.actionLabel} · {hint.label}{hint.currentValue !== undefined && hint.requiredValue !== undefined ? `（${hint.currentValue}/${hint.requiredValue}）` : ''}</button>)}</div>}</div><button className="text-button" onClick={() => dispatch({ type: 'dismiss_terminal_application', applicationId: application.applicationId })}>清除记录</button></div>;
 }
 
 function SideJobList({ game, jobs, dispatch }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void }) {
   const entries = Object.values(game.acquiredSideJobs ?? {});
-  const scheduleSideJob = (job: any) => {
-    const durationMinutes = Math.min(240, Math.max(60, job.hours * 60)) as 60 | 120 | 240;
-    for (const weekday of [1, 2, 3, 4, 5, 6, 7] as Weekday[]) {
-      if (weekday < game.calendar.weekday) continue;
-      if (!game.employment?.schedule.workDays.includes(weekday) && game.weeklyPlan.days[weekday].day.kind === 'free') {
-        dispatch({ type: 'set_plan', weekday, slot: 'day', activity: { kind: 'side_job', jobId: job.id, durationMinutes } });
-        return;
-      }
-      if (game.weeklyPlan.days[weekday].evening.kind === 'free') {
-        dispatch({ type: 'set_plan', weekday, slot: 'evening', activity: { kind: 'side_job', jobId: job.id, durationMinutes } });
-        return;
-      }
-    }
-  };
-  return entries.length ? <div className="item-list">{entries.map((entry) => { const job = jobs.find((candidate) => candidate.id === entry.jobId); if (!job) return null; return <div className="item-row" key={entry.jobId}><div><h2>{job.name}</h2><p>已获得长期兼职资格；安排后会在周计划自动执行，并计入兼职收入、经验和职业记录。</p></div><div className="button-pair"><span className="current-label">已获得</span><button className="secondary-button" disabled={game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleSideJob(job)}>安排到本周</button></div></div>; })}</div> : <p className="muted">通过招聘市场获得的长期兼职会在这里出现。</p>;
+  const { schedule, notice } = useWeekScheduler(game, dispatch);
+  const busy = game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward';
+  return entries.length ? <>{notice && <p className="planner-notice" role="status">{notice}</p>}<div className="item-list">{entries.map((entry) => { const job = jobs.find((candidate) => candidate.id === entry.jobId); if (!job) return null; const durationMinutes = sideJobDurationMinutes(job); const schedulable = !busy && findNextSchedulableSlot({ weekday: game.calendar.weekday, slot: 'evening', activity: { kind: 'side_job', jobId: job.id, durationMinutes } }, game, contentRegistry, balanceConfig, { from: 'current' }).found; return <div className="item-row" key={entry.jobId}><div><h2>{job.name}</h2><p>已获得长期兼职资格；安排后会在周计划自动执行，并计入兼职收入、经验和职业记录。</p></div><div className="button-pair"><span className="current-label">已获得</span><button className="secondary-button" disabled={!schedulable} onClick={() => schedule({ kind: 'side_job', jobId: job.id, durationMinutes }, { label: job.name })}>安排到本周</button></div></div>; })}</div></> : <p className="muted">通过招聘市场获得的长期兼职会在这里出现。</p>;
+}
+
+/** Long-term side jobs use the same duration normalisation as the planner. */
+function sideJobDurationMinutes(job: { hours?: number }): 60 | 120 | 180 | 240 {
+  const minutes = Math.max(60, (job.hours ?? 2) * 60);
+  return (CANONICAL_DURATIONS.filter((duration) => duration <= 240 && duration >= minutes)[0] ?? 240) as 60 | 120 | 180 | 240;
 }
 
 function HistoryList({ game, jobs }: { game: GameState; jobs: readonly any[] }) {
@@ -282,8 +307,8 @@ const offerStatusLabels: Record<string, string> = { submitted: '已提交', scre
 
 function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: readonly any[]; onOpenTab: (tab: 'applications' | 'history' | 'mobility') => void }) {
   const moneyFmt = (amount: number) => '¥' + Math.round(amount).toLocaleString('zh-CN');
-  const applications = [...(game.applications ?? [])].reverse().slice(0, 3);
-  const offers = (game.applications ?? []).filter((application) => application.status === 'offer').slice(0, 3);
+  const applications = activeApplications(game).slice(-3).reverse();
+  const offers = activeApplications(game).filter((application) => application.status === 'offer').slice(0, 3);
   const history = [...(game.employmentHistory ?? [])].reverse().slice(0, 2);
   const vacancies = game.vacancies ?? [];
   // Market insight reads the live vacancy board: which industries are hiring,
@@ -317,7 +342,7 @@ function CareerBottomPanels({ game, jobs, onOpenTab }: { game: GameState; jobs: 
   const newThisWeek = vacancies.filter((vacancy) => vacancy.publishedDay > game.time.day - 7).length;
   const panels = [
     {
-      key: 'applications', icon: 'mail' as const, title: '我的申请', count: (game.applications ?? []).length,
+      key: 'applications', icon: 'mail' as const, title: '我的申请', count: activeApplications(game).length,
       rows: applications.map((application) => ({ label: jobs.find((job) => job.id === application.jobId)?.name ?? humanizeContentId(application.jobId), value: displayMappedLabel(application.status, offerStatusLabels) })),
       empty: '还没有提交任何申请。',
       emptyIllustration: 'mail' as const,

@@ -4,8 +4,14 @@ import { evaluateCondition, explainCondition } from './conditions';
 import { businessValuation, calculateDailyBusinessProfit, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity } from './economy';
 import { applyContentEffects, applyReachedMilestones, cloneGameState, itemCost, refreshUnlocks } from './effects';
 import { advanceSimulation } from './simulation';
-import { activityAtTime, defaultJobSchedule, validateWeeklyPlan } from './schedule';
-import { activityCooldownRemaining, getActivityDefinition, getActivityOption } from './activities';
+import { activityAtTime, defaultJobSchedule } from './schedule';
+import { activityCashCost, getActivityDefinition, getActivityOption } from './activities';
+import {
+  CURRENT_TIME_FROM, collectPlanIssues, courseAvailability, findNextSchedulableSlot, formatPlanIssues, planEditError, planRunError, reconcilePlanWithContent, reconcilePlanWithEmployment, reconcileStateWithEmployment, slotWithin, weekdayLabel,
+} from './planning';
+import {
+  appendMessage, applicationCooldownKey, applicationCooldownRemaining, clearReadMessages, clearTerminalApplications, createApplicationId, dismissMessage, dismissTerminalApplication, markAllMessagesRead, markMessageRead, pruneApplicationHistory, pruneExpiredState, recordApplicationCooldown, visibleMessages,
+} from './lifecycle';
 import { groupForCategory, recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
 import { investmentUnitValue } from './investments';
 import { applyAttributeDelta } from './attributes';
@@ -62,51 +68,11 @@ function addLifeRecord(state: GameState, record: Omit<LifeRecordEntry, 'id' | 'd
   state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], nextRecord);
 }
 
-function planCooldownError(state: GameState, plan: GameState['weeklyPlan'], content: ContentRegistry): string | undefined {
-  for (const day of Object.values(plan.days)) {
-    for (const activity of [day.day, day.evening]) {
-      if (activity.kind !== 'activity') continue;
-      const definition = getActivityDefinition(content, activity.activityId);
-      const option = definition && getActivityOption(definition, activity.optionId);
-      const remaining = definition && option ? activityCooldownRemaining(state, definition, option) : 0;
-      if (definition && remaining > 0) return `${definition.name}仍在冷却中，还需要 ${remaining} 天`;
-    }
-  }
-  return undefined;
-}
-
-function planRequirementError(state: GameState, plan: GameState['weeklyPlan'], content: ContentRegistry, balance: BalanceConfig): string | undefined {
-  for (const day of Object.values(plan.days)) {
-    for (const activity of [day.day, day.evening]) {
-      if (activity.kind === 'side_job') {
-        const job = content.jobs.find((entry) => entry.id === activity.jobId);
-        if (!job || employmentKind(job) !== 'repeatable_side_job') return '计划中的兼职不存在或不是长期兼职';
-        if (!state.acquiredSideJobs?.[job.id]) return `需要先获得${job.name}兼职资格`;
-      }
-      if (activity.kind !== 'activity') continue;
-      const definition = getActivityDefinition(content, activity.activityId);
-      const option = definition && getActivityOption(definition, activity.optionId);
-      if (definition && option?.requirements && !evaluateCondition(option.requirements, state, content, balance)) return `${definition.name} · ${option.label}：${explainCondition(option.requirements, state, content, balance)}`;
-    }
-  }
-  return undefined;
-}
-
 /**
- * Single validation source for editing the weekly plan. `set_plan` and the
- * planner's candidate cycling both go through this, so the UI can never pick
- * an option the engine would reject (cooldown, unmet requirements, missing
- * side-job qualification, or weekly-plan constraints).
+ * Backwards-compatible facade over the planning domain. `planEditError` lives
+ * in `planning.ts` so a single broken cell can never block repairing another.
  */
-export function planEditError(state: GameState, plan: GameState['weeklyPlan'], content: ContentRegistry, balance: BalanceConfig): string | undefined {
-  const cooldownError = planCooldownError(state, plan, content);
-  if (cooldownError) return cooldownError;
-  const requirementError = planRequirementError(state, plan, content, balance);
-  if (requirementError) return requirementError;
-  const errors = validateWeeklyPlan(plan, state.employment, content);
-  if (errors.length) return errors[0];
-  return undefined;
-}
+export { planEditError };
 
 /**
  * Find the next legal candidate for one planning slot, scanning forward from
@@ -129,7 +95,7 @@ export function findNextPlanOption(
     const candidate = options[index];
     const prospective = structuredClone(plan);
     prospective.days[weekday][slot] = candidate;
-    if (!planEditError(state, prospective, content, balance)) return { index, activity: candidate };
+    if (!planEditError(state, prospective, content, balance, [{ weekday, position: slot }])) return { index, activity: candidate };
   }
   return undefined;
 }
@@ -182,6 +148,10 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
   const state = cloneGameState(input);
   const effects: GameEffect[] = [];
   if (!state.financialLedger) state.financialLedger = { month: state.calendar.month, nextSequence: 1, entries: [], cashStart: state.cash, netWorthStart: calculateNetWorth(state, content, balance) };
+  // A formal job only ever lives in the employment schedule. Normalising the
+  // underlying plan on every action means an accepted / pending / switched job
+  // can never leave a stale day-slot activity behind.
+  reconcileStateWithEmployment(state);
 
   switch (action.type) {
     case 'acknowledge_monthly_summary':
@@ -191,12 +161,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       break;
     case 'start_week': {
       if (!['planning', 'paused', 'week_complete'].includes(state.simulationMode)) return fail(input, '当前不能开始新一周');
-      const cooldownError = planCooldownError(state, state.weeklyPlan, content);
-      if (cooldownError) return fail(input, cooldownError);
-      const requirementError = planRequirementError(state, state.weeklyPlan, content, balance);
-      if (requirementError) return fail(input, requirementError);
-      const errors = validateWeeklyPlan(state.weeklyPlan, state.employment, content);
-      if (errors.length) return fail(input, errors[0]);
+      // The prospective employment change applies before the week is validated,
+      // so a job that starts this week can never be a hidden conflict.
       if (state.employment?.pendingJobId) {
         const nextJob = find(content.jobs, state.employment.pendingJobId);
         if (nextJob) {
@@ -205,6 +171,9 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
           state.employment = { jobId: nextJob.id, startedDay: state.time.day, companyId: state.employment.pendingCompanyId, basePay: state.employment.pendingBasePay ?? nextJob.basePay, salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(nextJob), effectiveWeek: state.calendar.week };
         }
       }
+      reconcileStateWithEmployment(state);
+      const runError = planRunError(state, state.weeklyPlan, content, balance);
+      if (runError) return fail(input, runError);
       state.simulationMode = 'running';
       state.currentActivity = activityAtTime(state.time, state.weeklyPlan, state.employment, content);
       effects.push({ type: 'message', text: `第 ${state.calendar.week} 周开始运行` });
@@ -232,9 +201,10 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       break;
     case 'set_plan': {
       if (state.simulationMode === 'running' || state.simulationMode === 'event') return fail(input, '运行中不能修改计划');
+      if (!slotWithin(action.weekday, action.slot, CURRENT_TIME_FROM, state.time)) return fail(input, `周${weekdayLabel(action.weekday)}${action.slot === 'day' ? '白天' : '晚间'}已经过去，需要等到下一周`);
       const weeklyPlan = cloneGameState(state).weeklyPlan;
       weeklyPlan.days[action.weekday][action.slot] = action.activity;
-      const error = planEditError(state, weeklyPlan, content, balance);
+      const error = planEditError(state, weeklyPlan, content, balance, [{ weekday: action.weekday, position: action.slot }]);
       if (error) return fail(input, error);
       state.weeklyPlan = weeklyPlan;
       break;
@@ -242,16 +212,14 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
     case 'copy_previous_plan': {
       if (state.simulationMode === 'running' || state.simulationMode === 'event') return fail(input, '运行中不能修改计划');
       if (!state.previousWeeklyPlan) return fail(input, '暂时没有可沿用的上周计划');
-      const weeklyPlan = structuredClone(state.previousWeeklyPlan);
+      // Copying a stale week must not deadlock: entries that can no longer run
+      // are vacated, and the planner marks whatever still needs the player.
+      const weeklyPlan = reconcilePlanWithEmployment(structuredClone(state.previousWeeklyPlan), state.employment);
       weeklyPlan.autoRepeat = state.autoRepeatPlan;
-      const cooldownError = planCooldownError(state, weeklyPlan, content);
-      if (cooldownError) return fail(input, cooldownError);
-      const requirementError = planRequirementError(state, weeklyPlan, content, balance);
-      if (requirementError) return fail(input, requirementError);
-      const errors = validateWeeklyPlan(weeklyPlan, state.employment, content);
-      if (errors.length) return fail(input, errors[0]);
-      state.weeklyPlan = weeklyPlan;
-      effects.push({ type: 'message', text: '已沿用上周计划' });
+      const reconciled = reconcilePlanWithContent(state, weeklyPlan, content, balance);
+      state.weeklyPlan = reconciled.plan;
+      const issues = collectPlanIssues(state.weeklyPlan, state, { content, balance, employment: state.employment, from: CURRENT_TIME_FROM });
+      effects.push({ type: 'message', text: issues.length ? `已沿用上周计划，有 ${issues.length} 处需要调整` : '已沿用上周计划' });
       break;
     }
     case 'set_auto_repeat_plan':
@@ -274,8 +242,10 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const applications = state.applications ?? [];
       if (vacancy && applications.some((entry) => entry.vacancyId === vacancy.vacancyId)) return fail(input, '已经申请过这个职位');
       if (applications.some((entry) => entry.jobId === job.id && entry.companyId === source.companyId && !['rejected', 'withdrawn', 'expired'].includes(entry.status))) return fail(input, '该公司正在处理你的申请');
-      const cooldown = applications.find((entry) => entry.jobId === job.id && entry.companyId === source.companyId && (entry.nextEligibleDay ?? 0) > state.time.day);
-      if (cooldown) return fail(input, `可在第 ${cooldown.nextEligibleDay} 天后再次申请`);
+      // The cooldown lives outside the application records, so clearing history
+      // can never be used to apply again early.
+      const cooldownRemaining = applicationCooldownRemaining(state, job.id, source.companyId);
+      if (cooldownRemaining > 0) return fail(input, `该公司这个岗位还需等待 ${cooldownRemaining} 天才能再次申请`);
       if (employmentKind(job) === 'full_time') {
         const active = applications.filter((entry) => entry.status === 'submitted' || entry.status === 'screening' || entry.status === 'interview' || entry.status === 'waiting').filter((entry) => employmentKind(find(content.jobs, entry.jobId)!) === 'full_time');
         if (active.length >= balance.applicationMaxActiveFullTime) return fail(input, '同时进行的正式岗位申请已达到上限');
@@ -283,7 +253,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       }
       const route = source.route;
       const competitiveness = evaluateApplicationCompetitiveness(job, state, content, balance, route);
-      const applicationId = `application.${state.time.day}.${applications.length + 1}`;
+      const applicationId = createApplicationId(state);
       const immediate = employmentKind(job) !== 'full_time' || job.category === 'basic';
       const resultDay = state.time.day + (immediate ? 0 : 2 + ((state.rng.seed + applications.length) % 4));
       const willReceiveOffer = deterministicApplicationDecision(state.rng.seed, applicationId, competitiveness.probabilityBand);
@@ -293,8 +263,16 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         competitivenessTier: competitiveness.tier, probabilityBand: competitiveness.probabilityBand, willReceiveOffer,
         feedback: competitiveness.weaknesses.length ? competitiveness.weaknesses : ['条件符合岗位期待'],
         ...(immediate && willReceiveOffer ? { offerExpiresDay: resultDay + balance.applicationOfferDurationRange[0] } : {}),
-        ...(!willReceiveOffer && immediate ? { nextEligibleDay: resultDay + balance.applicationCooldownDays } : {}),
       }];
+      // A special opportunity is consumed on submission: the application itself
+      // carries job / company / salary / route, so the opportunity object is no
+      // longer needed and must not pin anything after it expires.
+      if (opportunity) {
+        state.consumedOpportunityIds = [...new Set([...(state.consumedOpportunityIds ?? []), opportunity.id])];
+        state.opportunities = (state.opportunities ?? []).filter((entry) => entry.id !== opportunity.id);
+      }
+      if (!willReceiveOffer && immediate) recordApplicationCooldown(state, job.id, source.companyId, resultDay + balance.applicationCooldownDays);
+      pruneApplicationHistory(state);
       effects.push({ type: 'message', text: immediate ? (willReceiveOffer ? '你收到了工作 Offer' : '本次申请未通过') : '申请已提交，等待招聘方反馈' });
       break;
     }
@@ -304,16 +282,32 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       application.status = 'withdrawn';
       break;
     }
+    case 'dismiss_terminal_application':
+      if (!dismissTerminalApplication(state, action.applicationId)) return fail(input, '只有已结束的申请可以清除');
+      break;
+    case 'clear_terminal_applications': {
+      const cleared = clearTerminalApplications(state);
+      if (!cleared) return fail(input, '当前没有已结束的申请');
+      effects.push({ type: 'message', text: `已清除 ${cleared} 条结束申请记录` });
+      break;
+    }
     case 'decline_application_offer': {
       const application = state.applications?.find((entry) => entry.applicationId === action.applicationId);
       if (!application || application.status !== 'offer') return fail(input, '当前没有可拒绝的 Offer');
       application.status = 'withdrawn';
+      application.nextEligibleDay = state.time.day + balance.applicationCooldownDays;
+      recordApplicationCooldown(state, application.jobId, application.companyId, application.nextEligibleDay);
       break;
     }
     case 'accept_application_offer': {
       const application = state.applications?.find((entry) => entry.applicationId === action.applicationId);
       if (!application || application.status !== 'offer') return fail(input, '当前没有可接受的 Offer');
-      if ((application.offerExpiresDay ?? Number.MAX_SAFE_INTEGER) < state.time.day) { application.status = 'expired'; return fail(input, '这份 Offer 已过期'); }
+      if ((application.offerExpiresDay ?? Number.MAX_SAFE_INTEGER) < state.time.day) {
+        application.status = 'expired';
+        application.nextEligibleDay = state.time.day + balance.applicationCooldownDays;
+        recordApplicationCooldown(state, application.jobId, application.companyId, application.nextEligibleDay);
+        return fail(input, '这份 Offer 已过期');
+      }
       const job = find(content.jobs, application.jobId);
       if (!job) return fail(input, '岗位内容已失效');
       if (employmentKind(job) === 'repeatable_side_job') {
@@ -347,6 +341,9 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         state.currentJobId = job.id;
         state.employment = { jobId: job.id, startedDay: state.time.day, companyId: application.companyId, basePay: application.salaryRange[0], salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
       }
+      // The job takes over the workdays at the employment-schedule level; the
+      // weekly plan must not keep an activity underneath those day slots.
+      reconcileStateWithEmployment(state);
       state.monthlyHighlights = [...(state.monthlyHighlights ?? []), { id: `job.${application.applicationId}`, kind: 'new_job', day: state.time.day, label: job.name, sourceId: job.id }];
       addLifeRecord(state, { category: 'career', title: `接受${job.name} Offer`, detail: `${application.companyId} · ${application.route}`, sourceId: job.id, amount: application.salaryRange[0] });
       break;
@@ -383,6 +380,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
           state.currentJobId = job.id;
           state.employment = { jobId: job.id, startedDay: state.time.day, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
         }
+        reconcileStateWithEmployment(state);
       }
       if (!state.unlockedJobIds.includes(job.id)) state.unlockedJobIds.push(job.id);
       state.activeRecruitment = undefined;
@@ -1091,7 +1089,12 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const interactionEffects = (preferred ? (option.effects ?? []).map((effect) => effect.type === 'relation' ? { ...effect, amount: effect.amount + 2 } : effect) : option.effects ?? []).map((effect) => effect.type === 'relation' ? { ...effect, amount: Math.max(1, Math.round(effect.amount * relationshipMultiplier)) } : effect);
       applyContentEffects(state, interactionEffects, content, balance, effects);
       addLifeRecord(state, { category: 'relationship', title: `${interaction.name} · ${option.label}`, detail: `${preferred ? '符合对方偏好，关系进展更顺利' : '关系留下了新的进展'}${recentRepeats > 0 ? '；近期重复互动收益递减' : ''}`, sourceId: interaction.id, amount: option.cashCost ? -option.cashCost : undefined });
-      state.messages = [...(state.messages ?? []), { id: `message.${interaction.id}.${state.time.day}.${(state.messages ?? []).length + 1}`, day: state.time.day, characterId: interaction.characterId, title: `${character?.name ?? '联系人'}发来新消息`, body: `${option.label}之后，对方想继续和你保持联系。`, sourceId: interaction.id, read: false }].slice(-30);
+      appendMessage(state, {
+        characterId: interaction.characterId,
+        title: `${character?.name ?? '联系人'}发来新消息`,
+        body: `${option.label}之后，对方想继续和你保持联系。`,
+        sourceId: interaction.id,
+      });
       effects.push({ type: 'message', text: `${interaction.name}完成，${preferred ? '符合对方偏好，' : ''}关系留下了新的进展` });
       break;
     }
@@ -1106,24 +1109,33 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const relationshipGain = Math.max(1, (liked ? 3 : 1) - recentGifts);
       applyContentEffects(state, [{ type: 'relation', characterId: character.id, amount: relationshipGain }], content, balance, effects);
       addLifeRecord(state, { category: 'relationship', title: `送给${character.name}：${item.name}`, detail: `${character.name}收到礼物${liked ? '，符合对方偏好' : ''}；关系 +${relationshipGain}`, sourceId: item.id });
-      state.messages = [...(state.messages ?? []), { id: `message.gift.${item.id}.${character.id}.${state.time.day}.${(state.messages ?? []).length + 1}`, day: state.time.day, characterId: character.id, title: `${character.name}收到礼物`, body: liked ? `这份${item.name}很合心意。` : `谢谢你的${item.name}。`, sourceId: item.id, read: false }].slice(-30);
+      appendMessage(state, {
+        characterId: character.id,
+        title: `${character.name}收到礼物`,
+        body: liked ? `这份${item.name}很合心意。` : `谢谢你的${item.name}。`,
+        sourceId: item.id,
+      });
       effects.push({ type: 'message', text: `已送给${character.name}，关系 +${relationshipGain}` });
       break;
     }
     case 'read_message': {
-      const message = state.messages?.find((entry) => entry.id === action.messageId);
-      if (!message) return fail(input, '找不到这条消息');
-      if (!message.read) {
-        message.read = true;
-        addLifeRecord(state, { category: 'relationship', title: `查看消息：${message.title}`, detail: message.body, sourceId: message.sourceId ?? message.characterId });
-      }
+      // Reading is UI inbox state. The underlying social event already wrote its
+      // own canonical life record, so this must not create a second one.
+      if (!markMessageRead(state, action.messageId)) return fail(input, '找不到这条消息');
       break;
     }
-    case 'read_all_messages': {
-      // Bulk read: clear every unread flag without flooding the life record.
-      if (state.messages) for (const message of state.messages) message.read = true;
+    case 'read_all_messages':
+      markAllMessagesRead(state);
+      break;
+    case 'clear_read_messages': {
+      const cleared = clearReadMessages(state);
+      if (!cleared) return fail(input, '当前没有已读消息可以清除');
+      effects.push({ type: 'message', text: `已清除 ${cleared} 条已读消息` });
       break;
     }
+    case 'dismiss_message':
+      if (!dismissMessage(state, action.messageId)) return fail(input, '找不到这条消息');
+      break;
     case 'start_storyline': {
       const storyline = getStoryline(content, action.storylineId);
       if (!storyline) return fail(input, '找不到这段故事');
@@ -1199,6 +1211,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
   }
   applyReachedMilestones(state, content, balance, effects);
   syncLegacyMonthlyLedger(state, content, balance);
+  pruneExpiredState(state);
   return { state, effects };
 }
 

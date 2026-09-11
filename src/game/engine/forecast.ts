@@ -1,9 +1,11 @@
 import type { BalanceConfig } from '../balance/config';
-import type { ContentRegistry, GameState, PlannedActivity, WeeklyPlan } from '../content/contracts';
+import type { ContentRegistry, GameState, PlannedActivity, Weekday, WeeklyPlan } from '../content/contracts';
 import { calculateLifestyle } from './economy';
+import { employmentWorkWindow, modifierValue } from './effects';
 import { employmentKind } from './careers';
 import { activityCashCost } from './activities';
 import { housingRentPerDay } from './locations';
+import { collectPlanIssues, weekdayLabel } from './planning';
 
 export interface WeeklyPlanForecast {
   income: number;
@@ -13,24 +15,48 @@ export interface WeeklyPlanForecast {
   attributes: Record<string, number>;
   relationships: Record<string, number>;
   notes: string[];
+  /** Plan slots the engine would refuse to run, keyed by weekday. */
+  warnings: string[];
+  blockedWeekdays: Weekday[];
 }
 
+/** The forecast window covers the days the next run settles, including the monthly boundary. */
+function includesMonthlyCommunication(state: GameState): boolean {
+  for (let offset = 0; offset <= 6; offset += 1) {
+    if ((state.time.day + offset - 1) % 28 === 0) return true;
+  }
+  return false;
+}
+
+/**
+ * The forecast reads the planning domain, so it never counts income or effects
+ * from a slot the simulation would actually skip, and it tells the player which
+ * cells are the reason.
+ */
 export function forecastWeeklyPlan(state: GameState, plan: WeeklyPlan, content: ContentRegistry, balance: BalanceConfig): WeeklyPlanForecast {
   const result: WeeklyPlanForecast = {
     income: 0, expense: fixedWeeklyExpense(state, content, balance), netCash: 0,
     hours: { work: 0, sideJob: 0, study: 0, leisure: 0 }, attributes: {}, relationships: {},
     notes: ['不包含随机事件、市场价格变化、未确定招聘结果'],
+    warnings: [], blockedWeekdays: [],
   };
+  const issues = collectPlanIssues(plan, state, { content, balance, employment: state.employment });
+  const blocked = new Set<Weekday>(issues.map((issue) => issue.weekday));
+  result.blockedWeekdays = [...blocked].sort((left, right) => left - right);
+  result.warnings = issues.map((issue) => `周${weekdayLabel(issue.weekday)}：${issue.message}`);
+  if (issues.length) result.notes.push(`有 ${issues.length} 处计划当前无法执行，未计入预测`);
   const currentJob = state.employment ? content.jobs.find((job) => job.id === state.employment?.jobId) : undefined;
   if (currentJob && state.employment) {
     const shifts = state.employment.schedule.workDays.length;
     const pay = (state.employment.basePay ?? currentJob.basePay) + (state.employment.salaryAdjustment ?? 0);
-    result.income += pay * shifts;
-    result.hours.work += (state.employment.schedule.endMinute - state.employment.schedule.startMinute) / 60 * shifts;
+    const perShift = modifierValue(state, 'work_pay', pay, currentJob.tags);
+    result.income += Math.round(perShift * shifts);
+    result.hours.work += employmentWorkWindow(state, state.employment.schedule).durationMinutes / 60 * shifts;
   }
-  for (const day of Object.values(plan.days)) {
-    applyPlanned(day.day, state, content, result);
-    applyPlanned(day.evening, state, content, result);
+  for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) {
+    if (blocked.has(weekday)) continue;
+    applyPlanned(plan.days[weekday].day, state, content, result);
+    applyPlanned(plan.days[weekday].evening, state, content, result);
   }
   result.netCash = result.income - result.expense;
   return result;
@@ -44,7 +70,9 @@ function fixedWeeklyExpense(state: GameState, content: ContentRegistry, balance:
     + Math.round(balance.dailyLivingCost * (1 + factor))
     + Math.round(balance.dailyTransportCost * (1 + factor / 2))
     + Math.round((home?.fixedMonthlyCost ?? 0) / 28);
-  return daily * 7;
+  // The weekly forecast must match the settlement exactly, including the monthly
+  // communication charge when the coming seven days cross the month boundary.
+  return daily * 7 + (includesMonthlyCommunication(state) ? balance.monthlyCommunicationCost : 0);
 }
 
 function applyPlanned(activity: PlannedActivity, state: GameState, content: ContentRegistry, result: WeeklyPlanForecast): void {

@@ -3,6 +3,7 @@ import type { AcquisitionHint, ApplicationRoute, ConditionDefinition, ContentId,
 import { getAttribute } from './attributes';
 import { currentMonthlySalary, evaluateCondition, getPlayerStage } from './conditions';
 import { requirementForJob } from './careerProgression';
+import { pruneApplicationHistory, recordApplicationCooldown } from './lifecycle';
 
 export interface CompetitivenessResult {
   tier: 'minimum' | 'competitive' | 'strong' | 'exceptional';
@@ -428,6 +429,8 @@ export function advanceCareerLifecycle(state: GameState, day: number, _content: 
   for (const application of state.applications ?? []) {
     if (application.status === 'offer' && application.offerExpiresDay !== undefined && day > application.offerExpiresDay) {
       application.status = 'expired';
+      application.nextEligibleDay = day + balance.applicationCooldownDays;
+      recordApplicationCooldown(state, application.jobId, application.companyId, application.nextEligibleDay);
       continue;
     }
     if (['rejected', 'accepted', 'withdrawn', 'expired', 'offer'].includes(application.status)) continue;
@@ -438,12 +441,17 @@ export function advanceCareerLifecycle(state: GameState, day: number, _content: 
       } else {
         application.status = 'rejected';
         application.nextEligibleDay = day + balance.applicationCooldownDays;
+        recordApplicationCooldown(state, application.jobId, application.companyId, application.nextEligibleDay);
       }
     } else if (day >= application.resultDay - 1) application.status = 'interview';
     else if (day > application.submittedDay) application.status = 'screening';
   }
-  state.opportunities = (state.opportunities ?? []).filter((opportunity) => opportunity.expiresDay >= day || state.applications?.some((application) => application.opportunityId === opportunity.id));
+  // Expired opportunities are pruned regardless of what the player did with them:
+  // a submitted application already carries job/company/salary/route, so a
+  // terminal application must never pin an expired opportunity in runtime state.
+  state.opportunities = (state.opportunities ?? []).filter((opportunity) => opportunity.expiresDay >= day);
   state.gigs = (state.gigs ?? []).filter((gig) => gig.expiresDay >= day);
+  pruneApplicationHistory(state);
   if (!(state.gigs ?? []).length) {
     const gigJob = _content.jobs.find((job) => employmentKind(job) === 'gig'
       && (job.abilityRequired ?? 0) <= state.ability

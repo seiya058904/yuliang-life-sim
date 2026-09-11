@@ -144,6 +144,20 @@ export interface VacancyState {
 }
 
 export type ApplicationStatus = 'submitted' | 'screening' | 'interview' | 'waiting' | 'rejected' | 'offer' | 'accepted' | 'withdrawn' | 'expired';
+
+/** Statuses that still need the player (or the recruiter) to act. */
+export const ACTIVE_APPLICATION_STATUSES: readonly ApplicationStatus[] = ['submitted', 'screening', 'interview', 'waiting', 'offer'];
+/** Statuses that are finished: safe to archive, never actionable again. */
+export const TERMINAL_APPLICATION_STATUSES: readonly ApplicationStatus[] = ['rejected', 'accepted', 'withdrawn', 'expired'];
+
+export function isActiveApplicationStatus(status: ApplicationStatus): boolean {
+  return ACTIVE_APPLICATION_STATUSES.includes(status);
+}
+
+export function isTerminalApplicationStatus(status: ApplicationStatus): boolean {
+  return TERMINAL_APPLICATION_STATUSES.includes(status);
+}
+
 export interface JobApplicationState {
   applicationId: string;
   vacancyId?: string;
@@ -161,6 +175,17 @@ export interface JobApplicationState {
   willReceiveOffer: boolean;
   feedback: readonly string[];
   nextEligibleDay?: number;
+}
+
+/**
+ * Re-application cooldown, keyed by `job + company` and stored independently of
+ * the application records so clearing finished applications can never be used to
+ * sidestep the waiting period.
+ */
+export interface ApplicationCooldownState {
+  jobId: ContentId;
+  companyId: ContentId;
+  nextEligibleDay: number;
 }
 
 export interface JobOpportunityState {
@@ -192,7 +217,7 @@ export interface AcquiredSideJobState { jobId: ContentId; acquiredDay: number; s
 export interface GigOpportunityState { id: ContentId; jobId: ContentId; validFromDay: number; expiresDay: number; executableDay: number; startMinute: number; endMinute: number; pay: number; source: string; }
 export interface EmploymentHistoryEntry { jobId: ContentId; companyId?: ContentId; startedDay?: number; endedDay?: number; finalPay: number; reason?: string; migrated?: boolean; }
 export interface MonthlyHighlight { id: string; kind: 'new_job' | 'new_contact' | 'side_job_acquired' | 'gig_completed' | 'major_purchase' | 'new_asset' | 'attribute_milestone' | 'storyline_completed'; day: number; label: string; sourceId?: ContentId; }
-export interface MessageState { id: string; day: number; characterId?: ContentId; title: string; body: string; sourceId?: ContentId; read: boolean; }
+export interface MessageState { id: string; day: number; characterId?: ContentId; title: string; body: string; sourceId?: ContentId; /** Player has handled it; it stays visible in recent messages. */ read: boolean; /** Player cleared it; it no longer appears in the main inbox. */ dismissed?: boolean; }
 
 export type LifeRecordCategory = 'career' | 'purchase' | 'service' | 'activity' | 'housing' | 'relationship' | 'event' | 'business' | 'asset' | 'investment';
 
@@ -851,6 +876,18 @@ export interface GameState {
   interestFamiliarity?: Record<string, number>;
   relationships: Record<ContentId, number>;
   messages?: MessageState[];
+  /** Monotonic counter behind every message id; never derived from array length. */
+  nextMessageSequence?: number;
+  /** Monotonic counter behind application ids, independent of pruning. */
+  nextApplicationSequence?: number;
+  /** Re-application cooldowns, decoupled from the application history. */
+  applicationCooldowns?: Record<string, ApplicationCooldownState>;
+  /** Special opportunities already applied to; consumed on submission. */
+  consumedOpportunityIds?: ContentId[];
+  /** Blocking problems found when a week rolled over, shown by the planner. */
+  planIssues?: Array<{ code: string; weekday: Weekday; slot: 'day' | 'evening' | 'next'; message: string }>;
+  /** Player-facing banner such as "本周计划需要调整". */
+  planNotice?: string;
   businesses: Record<ContentId, BusinessHolding>;
   publicBusinessEquities?: Record<ContentId, BusinessPublicEquityHolding>;
   completedBusinessProjects?: ContentId[];
@@ -913,6 +950,10 @@ export type GameAction =
   | { type: 'interact_character'; interactionId: ContentId; optionId: string }
   | { type: 'read_message'; messageId: string }
   | { type: 'read_all_messages' }
+  | { type: 'clear_read_messages' }
+  | { type: 'dismiss_message'; messageId: string }
+  | { type: 'dismiss_terminal_application'; applicationId: string }
+  | { type: 'clear_terminal_applications' }
   | { type: 'start_storyline'; storylineId: ContentId }
   | { type: 'choose_storyline_branch'; storylineId: ContentId; branchId: string }
   | { type: 'continue_after_event' }

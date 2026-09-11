@@ -27,6 +27,9 @@ import { characterCareerAt, makeWorldBranchEvaluator } from './game/engine/world
 import { getDialogue } from './game/engine/dialogue';
 import { activityCashCost, activityCooldownRemaining, activityDiscountLabel, interestFamiliarityLabel, interestFamiliarityStage } from './game/engine/activities';
 import { serviceCooldownRemaining } from './game/engine/services';
+import { useWeekScheduler } from './game/ui/weekScheduler';
+import { CURRENT_TIME_FROM, CANONICAL_DURATIONS, collectPlanIssues, courseAvailability, slotWithin } from './game/engine/planning';
+import { applicationCooldownRemaining, activeApplications, openOfferApplications, terminalApplications, unreadMessageCount, visibleMessages } from './game/engine/lifecycle';
 import './styles.css';
 
 export const appStore = createGameStore(contentRegistry, balanceConfig);
@@ -126,7 +129,11 @@ function App() {
   const setView = gameStore((store) => store.setView);
   const consumeEffects = gameStore((store) => store.consumeEffects);
   const reset = gameStore((store) => store.reset);
+  const saveError = gameStore((store) => store.saveError);
+  const loadProblem = gameStore((store) => store.loadProblem);
+  const dismissLoadProblem = gameStore((store) => store.dismissLoadProblem);
   const [resetOpen, setResetOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [shopTab, setShopTab] = useState('goods');
 
   const navigateToView = (view: ViewId) => {
@@ -186,7 +193,7 @@ function App() {
           <span className="status-clock"><PixelIcon name="clock" /><span className="status-clock-copy"><PixelClock className="status-clock-value" size="compact" data-testid={activeView === 'life' ? undefined : 'clock-value'} value={formatClock(game.time.hour, game.time.minute)} /><small>{game.pendingMonthlySummary ? modeText(shellMode) : activeView === 'life' ? '主循环' : modeText(shellMode)}</small></span></span>
           <span><PixelIcon name="cash" /><b data-testid="cash-value">现金 {money(game.cash)}</b></span>
           <span><PixelIcon name="wealth" /><span><small>净资产</small><b>{money(netWorth)}</b></span></span>
-          <button type="button" className="settings-button" aria-label="设置" title="设置"><PixelIcon name="settings" size={32} /></button>
+          <button type="button" className="settings-button" aria-label="设置" title="设置" aria-expanded={settingsOpen} aria-haspopup="dialog" onClick={() => setSettingsOpen((open) => !open)}><PixelIcon name="settings" size={32} /></button>
         </div>
       </header>
 
@@ -202,6 +209,8 @@ function App() {
           <Metric label="生活水平" value={lifestyle} /><Metric label="能力" value={game.ability} /><Metric label="声誉" value={game.reputation} /><Metric label="关系" value={Object.values(game.relationships).reduce((sum, value) => sum + value, 0)} />
         </section>
         {lastError && <div className="notice error" role="alert">{lastError}</div>}
+        {saveError && <div className="notice error" role="alert">{saveError}</div>}
+        {loadProblem && <div className="notice error" role="alert"><span>上次存档无法读取（{loadProblem.reason}）。原始数据已保留，未被覆盖。</span><div className="button-pair"><button className="text-button" onClick={dismissLoadProblem}>继续使用新存档</button><button className="text-button" onClick={() => { reset(); dismissLoadProblem(); }}>确认重置存档</button></div></div>}
         {activeView === 'life' && <LifeView game={game} dispatch={dispatch} onNavigate={navigateToView} />}
         {activeView === 'work' && <CareerWorkspace game={game} dispatch={dispatch} onNavigate={navigateToView} />}
         {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} onNavigate={navigateToView} initialTab={shopTab} /><div className="shop-support-panels"><AcquisitionRequirementsPanel game={game} onNavigate={navigateToView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /></div></>}
@@ -220,6 +229,7 @@ function App() {
       {game.pendingMonthlySummary && <MonthlySummaryModal game={game} dispatch={dispatch} />}
       {effects.length > 0 && <EffectRail effects={effects} />}
       {resetOpen && <ConfirmReset onCancel={() => setResetOpen(false)} onConfirm={() => { reset(); setResetOpen(false); }} />}
+      {settingsOpen && <SettingsPanel game={game} saveError={saveError} onClose={() => setSettingsOpen(false)} onReset={() => { setSettingsOpen(false); setResetOpen(true); }} />}
     </div>
   );
 }
@@ -312,6 +322,7 @@ function ForecastPanel({ game, scrollTarget = '.life-planning-section' }: { game
   const attributes = forecastAttributeOrder.map((key) => [key, forecast.attributes[key] ?? 0] as const);
   return <section className="forecast-strip inverse">
     <header className="forecast-head"><h2>本周预测</h2><small>确定性计划变化 · 不包含随机事件、市场价格变化、未确定招聘结果</small></header>
+    {forecast.warnings.length > 0 && <ul className="forecast-warnings" aria-label="无法执行的计划格">{forecast.warnings.slice(0, 4).map((warning) => <li key={warning}>{warning}</li>)}</ul>}
     <div className="forecast-row"><span>预计收入</span><strong>+{money(forecast.income)}</strong></div>
     <div className="forecast-row"><span>预计支出</span><strong>-{money(forecast.expense)}</strong></div>
     <div className="forecast-net"><span>现金净变化</span><strong>{forecast.netCash >= 0 ? '+' : '-'}{money(Math.abs(forecast.netCash))}</strong></div>
@@ -483,11 +494,18 @@ function InboxGrid({ game, onNavigate }: { game: GameState; onNavigate?: (view: 
     pending.push({ icon: 'users', title: contentRegistry.jobs.find((job) => job.id === game.activeRecruitment!.jobId)?.name ?? '招聘流程', meta: stageLabel });
   }
   if (game.activeResignation) pending.push({ icon: 'career', title: '离职流程', meta: '等待结算确认' });
-  if (game.simulationMode === 'planning') pending.push({ icon: 'calendar', title: '本周计划待开始', meta: `第 ${game.calendar.week} 周 · 周${weekdayLabel(game.calendar.weekday)}` });
-  const unreadCount = (game.messages ?? []).filter((message) => !message.read).length;
+  // A dated Offer is actionable: it must reach the life page even if the player
+  // never opens the career page, otherwise it silently expires.
+  const openOffers = openOfferApplications(game);
+  for (const application of openOffers.slice(0, 3)) {
+    const jobName = displayContentName(application.jobId, contentRegistry.jobs, '工作机会');
+    pending.push({ icon: 'tag', title: `Offer 待回复：${jobName}`, meta: application.offerExpiresDay !== undefined ? `第 ${application.offerExpiresDay} 天前有效` : '尽快回复' });
+  }
+  if (game.simulationMode === 'planning') pending.push({ icon: 'calendar', title: game.planNotice ?? '本周计划待开始', meta: game.planNotice ? `第 ${game.calendar.week} 周 · 部分计划格需要调整` : `第 ${game.calendar.week} 周 · 周${weekdayLabel(game.calendar.weekday)}` });
+  const unreadCount = unreadMessageCount(game.messages);
   if (unreadCount) pending.push({ icon: 'mail', title: `${unreadCount} 条未读消息`, meta: '收件箱里有新的对话' });
 
-  const allMessages = [...(game.messages ?? [])].reverse();
+  const allMessages = [...visibleMessages(game.messages)].reverse();
   const messageRowSource = [...allMessages.filter((m) => !m.read), ...allMessages.filter((m) => m.read)];
   const messageRows = messageRowSource.slice(0, 4).map((message): InboxItem => ({ icon: 'mail', title: message.title, meta: `第 ${message.day} 天`, unread: !message.read }));
 
@@ -498,11 +516,15 @@ function InboxGrid({ game, onNavigate }: { game: GameState; onNavigate?: (view: 
 
   const opportunities = game.opportunities ?? [];
   const gigs = game.gigs ?? [];
-  const offerRows: InboxItem[] = opportunities.slice(0, 2).map((opportunity): InboxItem => ({
+  const offerRows: InboxItem[] = openOffers.slice(0, 2).map((application): InboxItem => ({
+    icon: 'tag',
+    title: `Offer 待回复：${displayContentName(application.jobId, contentRegistry.jobs, '工作机会')}`,
+    meta: application.offerExpiresDay !== undefined ? `第 ${application.offerExpiresDay} 天前回复 · 去职业页处理` : '去职业页处理',
+  })).concat(opportunities.slice(0, 2).map((opportunity): InboxItem => ({
     icon: 'tag',
     title: displayContentName(opportunity.jobId, contentRegistry.jobs, '职业机会'),
     meta: `${opportunity.source} · 第 ${opportunity.expiresDay} 天前`,
-  })).concat(gigs.slice(0, 1).map((gig): InboxItem => ({
+  }))).concat(gigs.slice(0, 1).map((gig): InboxItem => ({
     icon: 'cash',
     title: displayContentName(gig.jobId, contentRegistry.jobs, '一次性机会'),
     meta: `一次性 Gig · 结算 ${money(gig.pay)}`,
@@ -517,9 +539,9 @@ function InboxGrid({ game, onNavigate }: { game: GameState; onNavigate?: (view: 
 
   const panels = [
     { key: 'pending', icon: 'alert' as PixelIconName, title: '待处理事项', count: pending.length, empty: '世界会按计划继续运转。', emptyHint: '安排下一周后，新的节点会在这里出现。', emptyIllustration: 'flag' as PixelIllustrationName, rows: pending, hasMore: pending.length > 4, action: '我的档案', target: 'profile' as ViewId },
-    { key: 'messages', icon: 'mail' as PixelIconName, title: '消息', count: (game.messages ?? []).length, empty: '收件箱暂时是空的。', emptyHint: '新的对话会在关系变化后出现。', emptyIllustration: 'mail' as PixelIllustrationName, rows: messageRows, hasMore: messageRowSource.length > messageRows.length, action: '前往社交', target: 'relations' as ViewId },
+    { key: 'messages', icon: 'mail' as PixelIconName, title: '消息', count: unreadCount, empty: '收件箱暂时是空的。', emptyHint: '新的对话会在关系变化后出现。', emptyIllustration: 'mail' as PixelIllustrationName, rows: messageRows, hasMore: messageRowSource.length > messageRows.length, action: '前往社交', target: 'relations' as ViewId },
     { key: 'events', icon: 'spark' as PixelIconName, title: '事件', count: game.eventsToday || eventRows.length, empty: '这一周风平浪静。', emptyHint: '城市开始运行后，见闻会被记录在这里。', emptyIllustration: 'spark' as PixelIllustrationName, rows: eventRows, hasMore: ambientEntries.length > 3, action: '打开城市', target: 'city' as ViewId },
-    { key: 'offers', icon: 'tag' as PixelIconName, title: 'Offer 与机会', count: (game.opportunities?.length ?? 0) + (game.gigs?.length ?? 0), empty: '', emptyIllustration: 'tag' as PixelIllustrationName, rows: offerRows, hasMore: opportunities.length > 2 || gigs.length > 1, action: '进入招聘市场', target: 'work' as ViewId },
+    { key: 'offers', icon: 'tag' as PixelIconName, title: 'Offer 与机会', count: openOffers.length + opportunities.length + gigs.length, empty: '', emptyIllustration: 'tag' as PixelIllustrationName, rows: offerRows, hasMore: openOffers.length + opportunities.length > 2 || gigs.length > 1, action: openOffers.length ? '处理 Offer' : '进入招聘市场', target: 'work' as ViewId },
   ];
   return <section className="inbox-grid" aria-label="生活信息四宫格">
     {panels.map((panel) => <article className={`pixel-panel secondary inbox-panel inbox-${panel.key} pixel-corners`} key={panel.key}>
@@ -566,7 +588,22 @@ function WeekPlanner({ game, dispatch }: { game: GameState; dispatch: (action: G
     };
     const planContent = (activity: PlannedActivity, slot: PlanSlot, working = false) => <><PixelIcon name={planIcon(activity, working)} size={14} /><strong>{working ? '工作' : planLabel(activity)}</strong><small>{planTimeLabel(activity, slot, working)}</small></>;
     const plannedCost = ([1, 2, 3, 4, 5, 6, 7] as const).flatMap((weekday) => [game.weeklyPlan.days[weekday].day, game.weeklyPlan.days[weekday].evening]).reduce((sum, activity) => { if (activity.kind !== 'activity') return sum + (activity.kind === 'course' ? contentRegistry.courses?.find((course) => course.id === activity.courseId)?.cashCost ?? 0 : 0); const definition = contentRegistry.activities?.find((entry) => entry.id === activity.activityId); const option = definition?.options.find((entry) => entry.id === activity.optionId); return sum + (definition && option ? activityCashCost(game, definition, option, contentRegistry) : 0); }, 0);
-  return <div className="planner pixel-corners"><div className="planner-head"><span>计划格</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday, index) => <strong key={weekday} className={weekday === game.calendar.weekday ? 'today' : ''}><span>周{weekdayLabel(weekday)}</span><small>第 {weekStartDay + index} 天</small></strong>)}</div><div className="planner-row"><span>白天</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => { const working = game.employment?.schedule.workDays.includes(weekday); const plan = game.weeklyPlan.days[weekday].day; return <button key={weekday} className={working ? 'plan-cell locked' : 'plan-cell'} disabled={working || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => cycle(weekday, 'day')} aria-label={`周${weekdayLabel(weekday)}白天计划`}>{planContent(plan, 'day', working)}</button>; })}</div><div className="planner-row"><span>晚间</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => { const plan = game.weeklyPlan.days[weekday].evening; return <button key={weekday} className="plan-cell" disabled={game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => cycle(weekday, 'evening')} aria-label={`周${weekdayLabel(weekday)}晚间计划`}>{planContent(plan, 'evening')}</button>; })}</div><div className="planner-actions"><button className="secondary-button" onClick={() => dispatch({ type: 'copy_previous_plan' })}>使用上周计划</button><label className="repeat-toggle"><input type="checkbox" checked={game.autoRepeatPlan} onChange={(event) => dispatch({ type: 'set_auto_repeat_plan', enabled: event.target.checked })} /> 自动重复计划</label><span className="plan-cost">本周课程与活动预计 {money(plannedCost)}</span></div></div>;
+  // Planning domain drives the cell states: a started slot is history, and a
+  // slot the engine currently refuses is marked so the player can fix it.
+  const planIssues = collectPlanIssues(game.weeklyPlan, game, { content: contentRegistry, balance: balanceConfig, employment: game.employment });
+  const issueFor = (weekday: Weekday, slot: PlanSlot | 'next') => planIssues.find((issue) => issue.weekday === weekday && issue.slot === slot);
+  const blocked = new Set(planIssues.map((issue) => `${issue.weekday}:${issue.slot}`));
+  const frozen = (weekday: Weekday, slot: PlanSlot) => !slotWithin(weekday, slot, CURRENT_TIME_FROM, game.time);
+  const locked = game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward';
+  const cell = (weekday: Weekday, slot: PlanSlot, label: string, extraClass: string, disabled: boolean, content: React.ReactNode) => {
+    const issue = issueFor(weekday, slot) ?? (slot === 'day' ? issueFor(weekday, 'next') : undefined);
+    const isFrozen = frozen(weekday, slot);
+    const classes = ['plan-cell', extraClass, isFrozen ? 'past' : '', issue ? 'has-issue' : ''].filter(Boolean).join(' ');
+    const title = isFrozen ? '这一格已经过去，不能再修改' : issue ? issue.message : undefined;
+    return <button key={weekday} className={classes} title={title} disabled={disabled} onClick={() => cycle(weekday, slot)} aria-label={`${label}${isFrozen ? '（已过去）' : ''}${issue ? `（需要调整：${issue.message}）` : ''}`}>{content}{isFrozen && <span className="plan-cell-flag">已完成</span>}{issue && !isFrozen && <span className="plan-cell-warn" aria-hidden="true">!</span>}</button>;
+  };
+  const notice = game.planNotice ?? [...new Set(planIssues.map((issue) => issue.message))].slice(0, 2).join('；');
+  return <div className="planner pixel-corners">{notice && <p className={game.planNotice ? 'planner-notice alert' : 'planner-notice'} role="status">{game.planNotice ? `${game.planNotice}：` : ''}{notice}</p>}<div className="planner-head"><span>计划格</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday, index) => <strong key={weekday} className={weekday === game.calendar.weekday ? 'today' : ''}><span>周{weekdayLabel(weekday)}</span><small>第 {weekStartDay + index} 天</small></strong>)}</div><div className="planner-row"><span>白天</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => { const working = game.employment?.schedule.workDays.includes(weekday); const plan = game.weeklyPlan.days[weekday].day; return cell(weekday, 'day', `周${weekdayLabel(weekday)}白天计划`, working ? 'locked' : '', working || frozen(weekday, 'day') || locked, planContent(plan, 'day', working)); })}</div><div className="planner-row"><span>晚间</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => { const plan = game.weeklyPlan.days[weekday].evening; return cell(weekday, 'evening', `周${weekdayLabel(weekday)}晚间计划`, '', frozen(weekday, 'evening') || locked, planContent(plan, 'evening')); })}</div><div className="planner-actions"><button className="secondary-button" onClick={() => dispatch({ type: 'copy_previous_plan' })}>使用上周计划</button><label className="repeat-toggle"><input type="checkbox" checked={game.autoRepeatPlan} onChange={(event) => dispatch({ type: 'set_auto_repeat_plan', enabled: event.target.checked })} /> 自动重复计划</label><span className="plan-cost">本周课程与活动预计 {money(plannedCost)}</span></div></div>;
 }
 
 function InventoryPanel({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
@@ -739,21 +776,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
     const first = items.find((item) => entry === 'all' || (categoryLabels[item.category] ?? item.category) === entry);
     setSelectedKey(first ? `item:${first.id}` : null);
   };
-  const scheduleActivity = (activityId: ContentId, optionId: string) => {
-    const activityOption = contentRegistry.activities?.find((entry) => entry.id === activityId)?.options.find((entry) => entry.id === optionId);
-    const isMultiDayActivity = (activityOption?.durationMinutes ?? 0) >= 2880;
-    for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) {
-      if (weekday < game.calendar.weekday) continue;
-      for (const slot of ['day', 'evening'] as const) {
-        if (slot === 'day' && game.employment?.schedule.workDays.includes(weekday)) continue;
-        if (game.weeklyPlan.days[weekday][slot].kind !== 'free') continue;
-        const coveredFollowingDays = isMultiDayActivity ? Math.floor(((activityOption?.durationMinutes ?? 0) - (24 * 60 - 9 * 60)) / (24 * 60)) : 0;
-        if (isMultiDayActivity && (slot !== 'day' || Array.from({ length: coveredFollowingDays }, (_, index) => (weekday - 1 + index + 1) % 7 + 1 as Weekday).some((nextWeekday) => game.weeklyPlan.days[nextWeekday].day.kind !== 'free' || game.weeklyPlan.days[nextWeekday].evening.kind !== 'free' || game.employment?.schedule.workDays.includes(nextWeekday)))) continue;
-        dispatch({ type: 'set_plan', weekday, slot, activity: { kind: 'activity', activityId, optionId } });
-        return;
-      }
-    }
-  };
+  const { schedule, notice: scheduleNotice, clearNotice } = useWeekScheduler(game, dispatch);
   const owned = (itemId: ContentId) => (game.inventory[itemId] ?? 0) > 0;
   const activeCategories = shopTabCategories[tab];
   const activities = (contentRegistry.activities ?? []).filter((activity) => activeCategories?.includes(activity.category));
@@ -804,7 +827,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
         desc: definition.description,
         facts: [['时间', durationLabel], ['费用', money(cost)], ['效果', effectTexts(option.effects).join(' · ') || '给生活留一点空间'], ['状态', cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '本周可安排']],
         ctaLabel: cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '安排到本周自由时间',
-        onCta: () => scheduleActivity(definition.id, option.id),
+        onCta: () => { clearNotice(); schedule({ kind: 'activity', activityId: definition.id, optionId: option.id }, { label: `${definition.name} · ${option.label}` }); },
         disabled: cooldown > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward',
       };
     }
@@ -849,6 +872,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
   };
   return <section className="shop-page" aria-label="商品目录布局">
     <div className="section-heading compact"><div><span className="eyebrow">商店 · 生活内容</span><h1>商品</h1></div><p>浏览不消耗时间；购买与安排都会进入真实账本、周计划和人生记录。</p></div>
+    {scheduleNotice && <p className="planner-notice" role="status">{scheduleNotice}</p>}
     <div className="shop-layout">
       <div className={`shop-main shop-main-tab-${tab}`}>
         <div className="shop-tab-bar">
@@ -883,7 +907,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab }: { game: GameState;
                   <p>{activity.description}</p>
                   <CatalogFacts facts={[['时间', durationLabel], ['效果', effectLabel], ['前提', option.requirements ? explainCondition(option.requirements, game, contentRegistry, balanceConfig) : project ? '对应企业' : '无'], ['类型', `${activityCategoryLabels[activity.category] ?? activity.category}活动`]]} ariaLabel={`${activity.name} ${option.label} 活动信息`} />
                   {cooldownRemaining > 0 && <span className="requirement-missing">冷却中 · 还需 {cooldownRemaining} 天</span>}
-                  <button className="secondary-button" disabled={!projectReady || projectDone || cooldownRemaining > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleActivity(activity.id, option.id)}>{projectDone ? '项目已完成' : cooldownRemaining > 0 ? `冷却中 · 还需 ${cooldownRemaining} 天` : '安排到本周自由时间'}</button>
+                  <button className="secondary-button" disabled={!projectReady || projectDone || cooldownRemaining > 0 || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => { clearNotice(); schedule({ kind: 'activity', activityId: activity.id, optionId: option.id }, { label: `${activity.name} · ${option.label}` }); }}>{projectDone ? '项目已完成' : cooldownRemaining > 0 ? `冷却中 · 还需 ${cooldownRemaining} 天` : '安排到本周自由时间'}</button>
                 </div>
               </article>;
             })}
@@ -918,18 +942,11 @@ function HousingView({ game, dispatch }: { game: GameState; dispatch: (action: G
 
 function CourseMarket({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
   const courses = contentRegistry.courses ?? [];
-  const scheduleCourse = (courseId: ContentId) => {
-    for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) {
-      for (const slot of ['day', 'evening'] as const) {
-        if (slot === 'day' && game.employment?.schedule.workDays.includes(weekday)) continue;
-        if (game.weeklyPlan.days[weekday][slot].kind !== 'free') continue;
-        dispatch({ type: 'set_plan', weekday, slot, activity: { kind: 'course', courseId } });
-        return;
-      }
-    }
-  };
+  // Course eligibility comes from the shared planning domain, so the market can
+  // never offer a course the planner or the executor would refuse.
+  const { schedule, notice, clearNotice } = useWeekScheduler(game, dispatch);
   if (!courses.length) return null;
-  return <section className="market-section"><div className="section-heading compact"><div><span className="eyebrow">成长路径 · 可执行</span><h2>课程与资格</h2></div><p>查看费用和要求，把课程安排进本周空闲时间；完成后会写入资格、职业经验和历史。</p></div><div className="item-list">{courses.map((course) => { const completed = game.courseProgress?.[course.id] ?? 0; const requirementMet = !course.requirements || evaluateCondition(course.requirements, game, contentRegistry, balanceConfig); const finished = course.maxCompletions !== undefined && completed >= course.maxCompletions; return <div className="item-row" key={course.id}><div><span className="job-kind">{finished ? '已完成' : '课程'}</span><h3>{course.name}</h3><p>{course.description}</p><span className="muted">{course.durationMinutes / 60} 小时 · {money(course.cashCost)} · {course.qualificationId ? `资格：${displayMappedLabel(course.qualificationId, qualificationLabels)}` : '提升职业经验'}</span>{!requirementMet && <span className="requirement-missing">当前条件未满足</span>}</div><div className="row-meta"><span className="muted">完成 {completed} 次</span><button className="text-button" disabled={finished || !requirementMet || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => scheduleCourse(course.id)}>安排课程</button></div></div>; })}</div></section>;
+  return <section className="market-section"><div className="section-heading compact"><div><span className="eyebrow">成长路径 · 可执行</span><h2>课程与资格</h2></div><p>查看费用和要求，把课程安排进本周空闲时间；完成后会写入资格、职业经验和历史。</p></div>{notice && <p className="planner-notice" role="status">{notice}</p>}<div className="item-list">{courses.map((course) => { const availability = courseAvailability(game, course, contentRegistry, balanceConfig); const finished = course.maxCompletions !== undefined && availability.completed >= course.maxCompletions; const blocked = Boolean(availability.reason); return <div className="item-row" key={course.id}><div><span className="job-kind">{finished ? '已完成' : availability.cooldownRemaining > 0 ? '冷却中' : '课程'}</span><h3>{course.name}</h3><p>{course.description}</p><span className="muted">{course.durationMinutes / 60} 小时 · {money(course.cashCost)} · {course.qualificationId ? `资格：${displayMappedLabel(course.qualificationId, qualificationLabels)}` : '提升职业经验'}</span>{availability.reason && <span className="requirement-missing">{availability.reason}</span>}{availability.cash === 'hard' && !blocked && <span className="muted">现金不足时执行会被跳过</span>}</div><div className="row-meta"><span className="muted">完成 {availability.completed} 次</span><button className="text-button" disabled={blocked || game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward'} onClick={() => { clearNotice(); schedule({ kind: 'course', courseId: course.id }, { label: course.name }); }}>安排课程</button></div></div>; })}</div></section>;
 }
 
 function AssetsView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) { return <><div className="section-heading compact"><div><span className="eyebrow">现金只是财富的一种形态</span><h1>财富</h1></div><p>投资、企业、投资房产和月度现金流在同一个地方看清楚。</p></div><FinancialSummaryView game={game} /><div className="asset-columns">{contentRegistry.investments?.map((investment) => { const holding = game.investments?.[investment.id]; const value = holding?.currentValuation ?? investmentUnitValue(investment, game.rng.seed, game.time.day); const referenceValue = investmentUnitValue(investment, game.rng.seed, Math.max(1, game.time.day - 30)); const changePercent = referenceValue > 0 ? Math.round(((investmentUnitValue(investment, game.rng.seed, game.time.day) / referenceValue) - 1) * 1000) / 10 : 0; const invested = holding ? holding.averageCost * holding.units : 0; const unrealized = holding ? holding.currentValuation - invested : 0; return <article className="asset-card" key={investment.id}><div className="secondary-card-art"><PixelIllustration name="wealth" size={70} /></div><div className="item-card-head"><span className="job-kind">{investmentRiskLabels[investment.risk] ?? investment.risk}风险 · {investmentKindLabels[investment.kind] ?? investment.kind}</span>{holding && <span className="current-label">持有 {holding.units} 份</span>}</div><h2>{investment.name}</h2><p>{investment.description}</p><div className="investment-value"><span>当前单位估值</span><strong>{money(value)}</strong></div><div className="investment-detail-grid"><span>30 日变化</span><strong>{changePercent >= 0 ? '+' : ''}{changePercent.toFixed(1)}%</strong>{holding && <><span>已投入</span><strong>{money(invested)}</strong><span>平均成本</span><strong>{money(holding.averageCost)}</strong><span>当前价值</span><strong>{money(holding.currentValuation)}</strong><span>未实现收益</span><strong>{unrealized >= 0 ? '+' : '-'}{money(Math.abs(unrealized))}</strong></>}</div><div className="button-pair"><button className="primary-button" disabled={game.cash < value} onClick={() => dispatch({ type: 'buy_investment', investmentId: investment.id, units: 1 })}>买入 1 份</button>{holding && <button className="secondary-button" onClick={() => dispatch({ type: 'sell_investment', investmentId: investment.id, units: 1 })}>卖出 1 份</button>}</div></article>; })}{contentRegistry.businesses.map((business) => { const holding = game.businesses[business.id]; const unlocked = game.unlockedBusinessIds.includes(business.id); const tier = holding ? ownershipTierForHolding(holding) : undefined; const profit = holding ? calculateDailyBusinessProfit(holding, business) : undefined; const partnership = business.partnership; const partner = partnership ? contentRegistry.characters.find((character) => character.id === partnership.characterId) : undefined; const partnershipReady = Boolean(partnership && (!partnership.requirements || evaluateCondition(partnership.requirements, game, contentRegistry, balanceConfig))); return <div className="item-row" key={business.id}><div><span className="job-kind">企业{tier ? ` · ${tier.name}` : ''}</span><h2>{business.name}</h2><p>{business.description}</p>{profit && <span className="muted">预计净利润 {money(profit.profit)} /天 · 持股 {game.businesses[business.id]?.equityPercent ?? 100}%</span>}{holding && <span className="muted">{tier!.description}</span>}{!holding && unlocked && <span className="muted">{ownershipTierForEquity(30).description}</span>}{!holding && unlocked && partnership && <span className="muted">合伙方案：与{partner?.name ?? displayContentName(partnership.characterId, contentRegistry.characters, '合作联系人')}共同经营 · 你持股 {partnership.playerEquityPercent}%</span>}{!holding && unlocked && partnership && !partnershipReady && <span className="requirement-missing">{explainCondition(partnership.requirements!, game, contentRegistry, balanceConfig)}</span>}</div><div className="row-meta">{holding ? <span className="current-label">已拥有</span> : unlocked ? <div className="button-pair"><button className="text-button" onClick={() => dispatch({ type: 'buy_business_stake', businessId: business.id, percent: 10 })}>入股 10% {money(Math.round(business.price * 0.1))}</button><button className="text-button" onClick={() => dispatch({ type: 'buy_business_stake', businessId: business.id, percent: 30 })}>入股 30% {money(Math.round(business.price * 0.3))}</button>{partnership && <button className="text-button" disabled={!partnershipReady || game.cash - partnership.entryPrice < 0} onClick={() => dispatch({ type: 'join_business_partnership', businessId: business.id })}>加入合伙 {money(partnership.entryPrice)}</button>}<button className="text-button" disabled={game.cash - business.price < 0} onClick={() => dispatch({ type: 'buy_business', businessId: business.id })}>{business.price >= 10000 ? '全资买入' : '买入'} {money(business.price)}</button></div> : <span className="muted">等待机会</span>}</div></div>; })}{contentRegistry.assets.map((asset) => { const holding = game.assets[asset.id]; const unlocked = game.unlockedAssetIds.includes(asset.id); return <div className="item-row" key={asset.id}><div><span className="job-kind">{asset.kind === 'vehicle' ? '车辆' : '投资房产 / 资产'}</span><h2>{asset.name}</h2><p>{asset.description}</p><span className="muted">{asset.kind === 'vehicle' ? `当前估值 ${money(holding?.currentValuation ?? asset.valuation)} · 约 ${money(asset.monthlyCost ?? 0)} /月车辆成本` : `预计收入 ${money(asset.dailyIncome)} /天`}</span></div><div className="row-meta">{holding ? <button className="text-button" onClick={() => dispatch({ type: 'sell_asset', assetId: asset.id })}>出售 {money(holding.currentValuation)}</button> : unlocked ? <button className="text-button" onClick={() => dispatch({ type: 'buy_asset', assetId: asset.id })}>买入 {money(asset.price)}</button> : <span className="muted">等待机会</span>}</div></div>; })}</div><VehicleMaintenanceHistory game={game} /></>; }
@@ -953,7 +970,33 @@ function characterCareerHistoryText(game: GameState, character: CharacterDefinit
 const socialPortraits: readonly PixelIllustrationName[] = ['social', 'social-alt', 'social-mentor', 'social-colleague'];
 const socialPortraitFor = (index: number) => socialPortraits[index % socialPortraits.length];
 
-function RelationsView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) { const messages = game.messages ?? []; const currentYear = Math.max(1, Math.ceil(game.calendar.month / 12)); return <><div className="section-heading compact"><div><span className="eyebrow">人物不是数字，是生活入口</span><h1>社交</h1></div><p>关系会带来推荐、合作和一起度过的时间。互动在暂停后完成，不打断自动运行。</p></div>{messages.length > 0 && <section className="detail-panel" aria-label="消息"><div className="section-heading compact"><div><span className="eyebrow">联系人的来信</span><h2>消息</h2></div><span className="muted">未读 {messages.filter((message) => !message.read).length} 条</span>{messages.some((message) => !message.read) && <button className="text-button" onClick={() => dispatch({ type: 'read_all_messages' })}>全部已读</button>}</div><div className="item-list">{messages.slice().reverse().map((message) => { const character = contentRegistry.characters.find((entry) => entry.id === message.characterId); return <div className="item-row" key={message.id}><div><span className="job-kind">{message.read ? '已读' : '未读'} · 第 {message.day} 天</span><h3>{message.title}</h3><p>{message.body}</p><span className="muted">来自 {character?.name ?? '联系人'}</span></div>{!message.read && <button className="text-button" onClick={() => dispatch({ type: 'read_message', messageId: message.id })}>查看消息</button>}</div>; })}</div></section>}<div className="relation-grid">{contentRegistry.characters.map((character, index) => { const value = game.relationships[character.id] ?? 0; const stage = [...character.stages].reverse().find((entry) => value >= entry.threshold); const interaction = contentRegistry.relationshipInteractions?.find((entry) => entry.characterId === character.id); const option = interaction?.options[0]; const careerHistory = characterCareerHistoryText(game, character, currentYear); return <article className="relation-card" key={character.id}><div className="secondary-card-art"><PixelIllustration name={socialPortraitFor(index)} size={70} /></div><div className="job-card-head"><span className="job-kind">{character.identity}</span><strong>{value}</strong></div><h2>{character.name}</h2><p>{character.description}</p>{careerHistory && <span className="muted">职业经历：{careerHistory}</span>}<div className="relation-stage">{stage?.label ?? '认识'} · {value >= 60 ? '会出现更长期的机会' : value >= 40 ? '可能提供推荐' : '继续相处会更了解彼此'}</div><div className="meter"><i style={{ width: `${value}%` }} /></div>{interaction && option && <button className="secondary-button full" disabled={game.cash < option.cashCost} onClick={() => dispatch({ type: 'interact_character', interactionId: interaction.id, optionId: option.id })}>{option.label} · {money(option.cashCost)}</button>}</article>; })}</div></>; }
+/**
+ * Inbox lifecycle: `unread` still needs handling, `read` stays in the recent
+ * list, and clearing removes a row from the main inbox. Reading is UI state
+ * only — the underlying interaction already wrote its own life record.
+ */
+function MessageInbox({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
+  const messages = [...visibleMessages(game.messages)].reverse();
+  const unread = unreadMessageCount(game.messages);
+  const readCount = messages.filter((message) => message.read).length;
+  if (!messages.length) return null;
+  return <section className="detail-panel" aria-label="消息">
+    <div className="section-heading compact">
+      <div><span className="eyebrow">联系人的来信</span><h2>消息</h2></div>
+      <span className="muted">未读 {unread} 条 · 最近 {messages.length} 条</span>
+      <div className="button-pair">
+        {unread > 0 && <button className="text-button" onClick={() => dispatch({ type: 'read_all_messages' })}>全部已读</button>}
+        {readCount > 0 && <button className="text-button" onClick={() => dispatch({ type: 'clear_read_messages' })}>清除已读</button>}
+      </div>
+    </div>
+    <div className="item-list">{messages.map((message) => {
+      const character = contentRegistry.characters.find((entry) => entry.id === message.characterId);
+      return <div className="item-row" key={message.id}><div><span className="job-kind">{message.read ? '已读' : '未读'} · 第 {message.day} 天</span><h3>{message.title}</h3><p>{message.body}</p><span className="muted">来自 {character?.name ?? '联系人'}</span></div><div className="button-pair">{!message.read && <button className="text-button" onClick={() => dispatch({ type: 'read_message', messageId: message.id })}>查看消息</button>}<button className="text-button" onClick={() => dispatch({ type: 'dismiss_message', messageId: message.id })}>清除</button></div></div>;
+    })}</div>
+  </section>;
+}
+
+function RelationsView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) { const currentYear = Math.max(1, Math.ceil(game.calendar.month / 12)); return <><div className="section-heading compact"><div><span className="eyebrow">人物不是数字，是生活入口</span><h1>社交</h1></div><p>关系会带来推荐、合作和一起度过的时间。互动在暂停后完成，不打断自动运行。</p></div><MessageInbox game={game} dispatch={dispatch} /><div className="relation-grid">{contentRegistry.characters.map((character, index) => { const value = game.relationships[character.id] ?? 0; const stage = [...character.stages].reverse().find((entry) => value >= entry.threshold); const interaction = contentRegistry.relationshipInteractions?.find((entry) => entry.characterId === character.id); const option = interaction?.options[0]; const careerHistory = characterCareerHistoryText(game, character, currentYear); return <article className="relation-card" key={character.id}><div className="secondary-card-art"><PixelIllustration name={socialPortraitFor(index)} size={70} /></div><div className="job-card-head"><span className="job-kind">{character.identity}</span><strong>{value}</strong></div><h2>{character.name}</h2><p>{character.description}</p>{careerHistory && <span className="muted">职业经历：{careerHistory}</span>}<div className="relation-stage">{stage?.label ?? '认识'} · {value >= 60 ? '会出现更长期的机会' : value >= 40 ? '可能提供推荐' : '继续相处会更了解彼此'}</div><div className="meter"><i style={{ width: `${value}%` }} /></div>{interaction && option && <button className="secondary-button full" disabled={game.cash < option.cashCost} onClick={() => dispatch({ type: 'interact_character', interactionId: interaction.id, optionId: option.id })}>{option.label} · {money(option.cashCost)}</button>}</article>; })}</div></>; }
 
 function SocialDetail({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
   const character = contentRegistry.characters.reduce((selected, candidate) => (game.relationships[candidate.id] ?? 0) > (game.relationships[selected.id] ?? 0) ? candidate : selected, contentRegistry.characters[0]);
@@ -1292,6 +1335,24 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
 function EventModal({ event, onChoose }: { event: (typeof contentRegistry.events)[number]; onChoose: (choiceId: string) => void }) { return <div className="modal-backdrop event-paused"><section className="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-title"><span className="eyebrow">世界已暂停 · 发生了一件事</span><h2 id="event-title">{event.title}</h2><p>{event.body}</p><div className="event-choices">{event.choices.map((choice) => <button key={choice.id} className="choice-button" onClick={() => onChoose(choice.id)}>{choice.text}<span>选择</span></button>)}</div></section></div>; }
 
 function EffectRail({ effects }: { effects: ReturnType<typeof gameStore.getState>['effects'] }) { const visible = effects.filter((effect) => effect.type !== 'time' && effect.type !== 'activity'); if (!visible.length) return null; return <div className="effect-rail" aria-live="polite">{visible.slice(-4).map((effect, index) => <div className="effect-item" key={`${effect.type}-${index}`}>{effect.type === 'cash' ? `${effect.amount >= 0 ? '+' : ''}${money(effect.amount)}` : effect.type === 'stat' ? `${effect.stat === 'ability' ? '能力' : effect.stat === 'reputation' ? '声誉' : '生活水平'} ${effect.amount >= 0 ? '+' : ''}${effect.amount}` : effect.type === 'month' ? `第 ${effect.summary.month} 月结算` : effect.type === 'settlement' ? `第 ${effect.day} 天结算` : effect.type === 'unlock' ? `解锁：${humanizeContentId(effect.id)}` : effect.type === 'purchase' ? `已购买 ${effect.quantity} 件` : effect.type === 'message' ? effect.text : '进展更新'}</div>)}</div>; }
+
+function SettingsPanel({ game, saveError, onClose, onReset }: { game: GameState; saveError?: string; onClose: () => void; onReset: () => void }) {
+  return <div className="modal-backdrop" role="presentation" onClick={onClose}><section className="confirm-modal" role="dialog" aria-modal="true" aria-label="设置" onClick={(event) => event.stopPropagation()}>
+    <h2>设置</h2>
+    <p>《余量》会自动保存到浏览器本地存储。这里可以确认存档状态，或重新开始一段人生。</p>
+    <dl className="detail-facts">
+      <span>存档版本</span><strong>v{game.version}</strong>
+      <span>内容版本</span><strong>v{game.contentVersion}</strong>
+      <span>当前进度</span><strong>第 {game.calendar.week} 周 · 第 {game.time.day} 天</strong>
+      <span>自动保存</span><strong className={saveError ? 'requirement-missing' : 'requirement-ok'}>{saveError ? '保存失败' : '正常'}</strong>
+    </dl>
+    {saveError && <p className="requirement-missing">{saveError}</p>}
+    <div className="button-pair">
+      <button className="secondary-button" onClick={onClose}>关闭</button>
+      <button className="text-button" onClick={onReset}>重新开始</button>
+    </div>
+  </section></div>;
+}
 
 function ConfirmReset({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) { return <div className="modal-backdrop"><section className="confirm-modal" role="dialog" aria-modal="true"><h2>重新开始？</h2><p>当前存档会被新的开始替换，之后可以从头体验。</p><div className="button-pair"><button className="secondary-button" onClick={onCancel}>先不重来</button><button className="primary-button" onClick={onConfirm}>确认重新开始</button></div></section></div>; }
 

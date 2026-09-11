@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { ContentRegistry, EmploymentState, JobDefinition, WeeklyPlan } from '../content/contracts';
-import { activityAtTime, createDefaultWeeklyPlan, defaultJobSchedule, deriveActivityProgress, getDailyActivities, validateWeeklyPlan } from './schedule';
+import type { ContentRegistry, EmploymentState, GameState, JobDefinition, WeeklyPlan } from '../content/contracts';
+import { activityAtTime, createDefaultWeeklyPlan, defaultJobSchedule, deriveActivityProgress, getDailyActivities } from './schedule';
+import { collectPlanIssues, planRunError } from './planning';
+import { balanceConfig } from '../balance/config';
 
 const job: JobDefinition = {
   id: 'job.test-regular', contentStatus: 'seed', name: '测试工作', description: '测试', tags: ['work'],
@@ -16,20 +18,20 @@ const travelContent = {
 
 describe('weekly schedule', () => {
   it('keeps formal employment out of the editable plan while supporting timed study and side jobs', () => {
-    const plan = createDefaultWeeklyPlan();
+    const plan = clearWeekPlan();
     plan.days[1].evening = { kind: 'study', durationMinutes: 120 };
     plan.days[6].day = { kind: 'side_job', jobId: sideJob.id, durationMinutes: 240 };
 
     expect(plan.days[1].day.kind).toBe('free');
     expect(plan.days[1].evening).toEqual({ kind: 'study', durationMinutes: 120 });
     expect(plan.days[6].day).toEqual({ kind: 'side_job', jobId: sideJob.id, durationMinutes: 240 });
-    expect(validateWeeklyPlan(plan, employment, content)).toEqual([]);
+    expect(planRunError(stateFor(plan, employment, content), plan, content, balanceConfig)).toBeUndefined();
   });
 
   it('rejects planned work that overlaps the automatic employment schedule', () => {
-    const plan = createDefaultWeeklyPlan();
+    const plan = clearWeekPlan();
     plan.days[1].day = { kind: 'study', durationMinutes: 60 };
-    expect(validateWeeklyPlan(plan, employment, content)).toContain('周一白天与正式工作排班冲突');
+    expect(planRunError(stateFor(plan, employment, content), plan, content, balanceConfig)).toBe('周一白天与正式工作排班冲突');
   });
 
   it('derives activity progress from time rather than persisting progress', () => {
@@ -40,46 +42,67 @@ describe('weekly schedule', () => {
   });
 
   it('keeps a two-day activity active across midnight and restores free time after it ends', () => {
-    const plan = createDefaultWeeklyPlan();
+    const plan = clearWeekPlan();
     plan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay' };
 
-    expect(validateWeeklyPlan(plan, undefined, travelContent)).toEqual([]);
+    expect(planRunError(stateFor(plan, undefined, travelContent), plan, travelContent, balanceConfig)).toBeUndefined();
     expect(activityAtTime({ day: 6, hour: 10, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
     expect(activityAtTime({ day: 7, hour: 14, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
     expect(activityAtTime({ day: 8, hour: 8, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
     expect(activityAtTime({ day: 8, hour: 10, minute: 0 }, plan, undefined, travelContent).kind).toBe('free');
   });
 
-  it('rejects two-day activities that overlap the following day plan or work schedule', () => {
-    const plan = createDefaultWeeklyPlan();
+  it('reports the plan conflict and the work-schedule conflict of a multi-day activity', () => {
+    const plan = clearWeekPlan();
     plan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay' };
     plan.days[7].evening = { kind: 'study', durationMinutes: 120 };
     const weekendEmployment = { ...employment, schedule: { workDays: [7] as const, startMinute: 9 * 60, endMinute: 17 * 60 } };
-
-    expect(validateWeeklyPlan(plan, weekendEmployment, travelContent)).toEqual([
-      '周6多日活动与周日计划冲突',
-      '周6多日活动与周日正式工作排班冲突',
+    const issues = collectPlanIssues(plan, stateFor(plan, weekendEmployment, travelContent), { content: travelContent, balance: balanceConfig, employment: weekendEmployment });
+    expect(issues.map((issue) => issue.message)).toEqual([
+      '周六多日活动与周日计划冲突',
+      '周六多日活动与周日正式工作排班冲突',
     ]);
-  });
+    expect(issues.every((issue) => issue.code === 'MULTI_DAY_CONFLICT')).toBe(true);
 
+    const workPlan = clearWeekPlan();
+    workPlan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay' };
+    const workIssues = collectPlanIssues(workPlan, stateFor(workPlan, weekendEmployment, travelContent), { content: travelContent, balance: balanceConfig, employment: weekendEmployment });
+    expect(workIssues.map((issue) => issue.message)).toEqual(['周六多日活动与周日正式工作排班冲突']);
+  });
   it('keeps three-day and five-day activities active until their exact end time', () => {
-    const threeDayPlan = createDefaultWeeklyPlan();
+    const threeDayPlan = clearWeekPlan();
     threeDayPlan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'three-days' };
-    threeDayPlan.days[7] = { day: { kind: 'free' }, evening: { kind: 'free' } };
-    threeDayPlan.days[1] = { day: { kind: 'free' }, evening: { kind: 'free' } };
-    expect(validateWeeklyPlan(threeDayPlan, undefined, travelContent)).toEqual([]);
+    expect(planRunError(stateFor(threeDayPlan, undefined, travelContent), threeDayPlan, travelContent, balanceConfig)).toBeUndefined();
     expect(activityAtTime({ day: 8, hour: 23, minute: 0 }, threeDayPlan, undefined, travelContent).kind).toBe('activity');
     expect(activityAtTime({ day: 9, hour: 8, minute: 59 }, threeDayPlan, undefined, travelContent).kind).toBe('activity');
     expect(activityAtTime({ day: 9, hour: 9, minute: 0 }, threeDayPlan, undefined, travelContent).kind).toBe('free');
 
-    const fiveDayPlan = createDefaultWeeklyPlan();
+    const fiveDayPlan = clearWeekPlan();
     fiveDayPlan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'five-days' };
-    for (const weekday of [7, 1, 2, 3] as const) fiveDayPlan.days[weekday] = { day: { kind: 'free' }, evening: { kind: 'free' } };
-    expect(validateWeeklyPlan(fiveDayPlan, undefined, travelContent)).toEqual([]);
+    expect(planRunError(stateFor(fiveDayPlan, undefined, travelContent), fiveDayPlan, travelContent, balanceConfig)).toBeUndefined();
     expect(activityAtTime({ day: 10, hour: 23, minute: 0 }, fiveDayPlan, undefined, travelContent).kind).toBe('activity');
     expect(activityAtTime({ day: 11, hour: 9, minute: 0 }, fiveDayPlan, undefined, travelContent).kind).toBe('free');
   });
 });
+
+function clearWeekPlan(): WeeklyPlan {
+  const plan = createDefaultWeeklyPlan();
+  for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) plan.days[weekday] = { day: { kind: 'free' }, evening: { kind: 'free' } };
+  return plan;
+}
+
+function stateFor(plan: WeeklyPlan, employment: EmploymentState | undefined, _content: ContentRegistry, options: { sideJob?: boolean } = {}): GameState {
+  return {
+    time: { day: 1, hour: 8, minute: 0 },
+    calendar: { year: 1, month: 1, week: 1, weekday: 1, weekOfMonth: 1 },
+    weeklyPlan: plan,
+    employment,
+    modifiers: [],
+    lifeHistory: [],
+    courseProgress: {},
+    acquiredSideJobs: options.sideJob === false ? {} : { [sideJob.id]: { jobId: sideJob.id, acquiredDay: 1 } },
+  } as unknown as GameState;
+}
 
 function planFor(evening: WeeklyPlan['days'][1]['evening']): WeeklyPlan {
   const plan = createDefaultWeeklyPlan();

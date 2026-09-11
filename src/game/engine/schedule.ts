@@ -1,23 +1,20 @@
 import type {
-  ActivityDuration, ActivityState, ContentRegistry, EmploymentState, JobDefinition, PlannedActivity, Weekday, WeeklyPlan,
+  ActivityState, ContentRegistry, EmploymentState, GameState, JobDefinition, PlannedActivity, Weekday, WeeklyPlan,
 } from '../content/contracts';
 import { calendarForDay } from './calendar';
+import { employmentWorkWindow } from './effects';
 import { absoluteMinute, type GameTime } from './time';
 import { getActivityDefinition, getActivityOption } from './activities';
+
+/** The slice of game state the schedule projection needs (permanent modifiers). */
+export type ScheduleModifierSource = Pick<GameState, 'modifiers'>;
 
 const DAY_START = 9 * 60;
 const DAY_END = 17 * 60;
 const EVENING_START = 19 * 60;
 const EVENING_END = 23 * 60;
-const DURATIONS: readonly ActivityDuration[] = [60, 120, 240];
 const LONG_ACTIVITY_MIN_DURATION = 2880;
 const MINUTES_PER_DAY = 24 * 60;
-
-export interface ScheduleValidationContent {
-  jobs: readonly JobDefinition[];
-  activities?: ContentRegistry['activities'];
-  courses?: ContentRegistry['courses'];
-}
 
 export function createDefaultWeeklyPlan(): WeeklyPlan {
   const days = {} as WeeklyPlan['days'];
@@ -36,51 +33,7 @@ export function defaultJobSchedule(job: JobDefinition): EmploymentState['schedul
   return { workDays: [1, 2, 3, 4, 5], startMinute, endMinute: startMinute + job.hours * 60 };
 }
 
-export function validateWeeklyPlan(plan: WeeklyPlan, employment: EmploymentState | undefined, content: ScheduleValidationContent): string[] {
-  const errors: string[] = [];
-  for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) {
-    const dayPlan = plan.days[weekday];
-    const slots: readonly [PlanSlotName, PlannedActivity][] = [['day', dayPlan.day], ['evening', dayPlan.evening]];
-    for (const [slot, activity] of slots) {
-      const duration = activity.kind === 'free' ? undefined : activity.kind === 'activity' ? undefined : activity.kind === 'course' ? content.courses?.find((course) => course.id === activity.courseId)?.durationMinutes : activity.durationMinutes;
-      if ((activity.kind === 'study' || activity.kind === 'side_job') && !DURATIONS.includes(activity.durationMinutes)) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}时长无效`);
-      if (activity.kind === 'side_job') {
-        const job = content.jobs.find((entry) => entry.id === activity.jobId);
-        if (!job) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}兼职不存在`);
-        else if (job.kind === 'regular') errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}不能安排正式工作`);
-      }
-      if (activity.kind === 'activity') {
-        const definition = getActivityDefinition(content as ContentRegistry, activity.activityId);
-        const option = definition && getActivityOption(definition, activity.optionId);
-        if (!option) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}活动选项不存在`);
-        else if (slot === 'day' && option.durationMinutes > DAY_END - DAY_START && option.durationMinutes < LONG_ACTIVITY_MIN_DURATION) errors.push(`周${weekday}白天活动时长超出可规划时间`);
-        else if (slot === 'evening' && option.durationMinutes > EVENING_END - EVENING_START) errors.push(`周${weekday}晚间活动时长超出可规划时间`);
-        else if (slot === 'day' && option.durationMinutes >= LONG_ACTIVITY_MIN_DURATION) {
-          const coveredFollowingDays = Math.floor((option.durationMinutes - (24 * 60 - DAY_START)) / MINUTES_PER_DAY);
-          for (let offset = 1; offset <= coveredFollowingDays; offset += 1) {
-            const nextWeekday = weekdayAfter(weekday, offset);
-            const nextDayPlan = plan.days[nextWeekday];
-            if (nextDayPlan.day.kind !== 'free' || nextDayPlan.evening.kind !== 'free') errors.push(`周${weekday}多日活动与周${weekdayLabel(nextWeekday)}计划冲突`);
-            if (employment?.schedule.workDays.includes(nextWeekday)) errors.push(`周${weekday}多日活动与周${weekdayLabel(nextWeekday)}正式工作排班冲突`);
-          }
-        }
-      } else if (activity.kind === 'course') {
-        const course = content.courses?.find((entry) => entry.id === activity.courseId);
-        if (!course) errors.push(`周${weekday}${slot === 'day' ? '白天' : '晚间'}课程不存在`);
-        if (slot === 'day' && duration !== undefined && duration > DAY_END - DAY_START) errors.push(`周${weekday}白天课程时长超出可规划时间`);
-        if (slot === 'evening' && duration !== undefined && duration > EVENING_END - EVENING_START) errors.push(`周${weekday}晚间课程时长超出可规划时间`);
-      } else {
-        if (slot === 'day' && activity.kind !== 'free' && duration! > DAY_END - DAY_START) errors.push(`周${weekday}白天时长超出可规划时间`);
-        if (slot === 'evening' && activity.kind !== 'free' && duration! > EVENING_END - EVENING_START) errors.push(`周${weekday}晚间时长超出可规划时间`);
-      }
-    }
-    const schedule = employment?.schedule;
-    if (schedule?.workDays.includes(weekday) && plan.days[weekday].day.kind !== 'free') errors.push(`周${weekdayLabel(weekday)}白天与正式工作排班冲突`);
-  }
-  return errors;
-}
-
-export function getDailyActivities(day: number, plan: WeeklyPlan, employment: EmploymentState | undefined, content: ContentRegistry): ActivityState[] {
+export function getDailyActivities(day: number, plan: WeeklyPlan, employment: EmploymentState | undefined, content: ContentRegistry, state: ScheduleModifierSource = { modifiers: [] }): ActivityState[] {
   const weekday = calendarForDay(day).weekday;
   const activities: ActivityState[] = [
     activity(day, 0, 7 * 60, 'sleep'),
@@ -93,7 +46,10 @@ export function getDailyActivities(day: number, plan: WeeklyPlan, employment: Em
   const schedule = employment && employment.effectiveWeek <= calendarForDay(day).week ? employment.schedule : undefined;
   if (schedule?.workDays.includes(weekday)) {
     const job = content.jobs.find((entry) => entry.id === employment?.jobId);
-    if (job) replaceRange(activities, schedule.startMinute, schedule.endMinute, activity(day, schedule.startMinute, schedule.endMinute, 'work', job.id));
+    if (job) {
+      const window = employmentWorkWindow(state as GameState, schedule);
+      replaceRange(activities, window.startMinute, window.endMinute, activity(day, window.startMinute, window.endMinute, 'work', job.id));
+    }
   }
   const dayPlan = plan.days[weekday]?.day;
   if (dayPlan && dayPlan.kind !== 'free' && !schedule?.workDays.includes(weekday)) replaceRange(activities, DAY_START, DAY_START + durationOf(dayPlan, content), plannedActivity(day, DAY_START, dayPlan, content));
@@ -110,8 +66,8 @@ export function deriveActivityProgress(activity: ActivityState, time: GameTime):
   return Math.max(0, Math.min(1, (absoluteMinute(time) - absoluteMinute(activity.start)) / total));
 }
 
-export function activityAtTime(time: GameTime, plan: WeeklyPlan, employment: EmploymentState | undefined, content: ContentRegistry): ActivityState {
-  const activities = getDailyActivities(time.day, plan, employment, content);
+export function activityAtTime(time: GameTime, plan: WeeklyPlan, employment: EmploymentState | undefined, content: ContentRegistry, state: ScheduleModifierSource = { modifiers: [] }): ActivityState {
+  const activities = getDailyActivities(time.day, plan, employment, content, state);
   const minute = absoluteMinute(time);
   return activities.find((entry) => absoluteMinute(entry.start) <= minute && minute < absoluteMinute(entry.end)) ?? activities[activities.length - 1];
 }
@@ -197,13 +153,3 @@ function replaceRange(activities: ActivityState[], startMinute: number, endMinut
   result.push(replacement);
   activities.splice(0, activities.length, ...result);
 }
-
-function weekdayLabel(weekday: Weekday): string {
-  return ['一', '二', '三', '四', '五', '六', '日'][weekday - 1];
-}
-
-function weekdayAfter(weekday: Weekday, offset: number): Weekday {
-  return ((weekday - 1 + offset) % 7 + 1) as Weekday;
-}
-
-type PlanSlotName = 'day' | 'evening';

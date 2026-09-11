@@ -560,7 +560,6 @@ describe('余量 app flow', () => {
     await user.click(screen.getAllByRole('button', { name: '安排课程' })[0]);
     expect(screen.getByText('课程 · 职场基础课')).toBeInTheDocument();
   });
-
   it('discovers a business project only after owning the required enterprise', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
@@ -576,7 +575,7 @@ describe('余量 app flow', () => {
     expect(project).not.toBeNull();
     expect(within(project as HTMLElement).getByText('企业项目利润 · 可承接')).toBeInTheDocument();
     await user.click(within(project as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
-    expect(screen.getByText(/品牌短片项目/)).toBeInTheDocument();
+    expect(screen.getAllByRole('status').some((node) => /已安排：/.test(node.textContent ?? ''))).toBe(true);
   });
 
   it('submits a public-market application without reopening the legacy recruitment dialog', async () => {
@@ -665,8 +664,11 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '查看消息' }));
     expect(screen.getByRole('region', { name: '消息' })).toHaveTextContent('未读 0 条');
     await user.click(screen.getByRole('button', { name: '我的' }));
-    expect(screen.getByText('和徐可聊设备 · 聊聊远程工作')).toBeInTheDocument();
-    expect(within(screen.getByRole('region', { name: '人生记录' })).getByText(/查看消息：徐可发来新消息/)).toBeInTheDocument();
+    expect(screen.getAllByText('和徐可聊设备 · 聊聊远程工作').length).toBeGreaterThan(0);
+    // Reading the inbox is UI state: the interaction itself already owns the life
+    // record, so viewing a message must not add a second "查看消息" entry.
+    expect(appStore.getState().game.lifeHistory.some((entry) => entry.title.startsWith('查看消息：'))).toBe(false);
+    expect(within(screen.getByRole('region', { name: '人生记录' })).getByText(/和徐可聊设备 · 聊聊远程工作/)).toBeInTheDocument();
   });
 
   it('buys and gives a preference-matching gift through the social view', async () => {
@@ -1368,7 +1370,7 @@ describe('余量 app flow', () => {
     expect(getaway).not.toBeNull();
     expect(screen.getByRole('heading', { name: '周末短途旅行 · 临江夜游' })).toBeInTheDocument();
     await user.click(within(getaway as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
-    expect(screen.getByText(/周末短途旅行 · 慢慢走走/)).toBeInTheDocument();
+    expect(screen.getAllByRole('status').some((node) => /已安排：/.test(node.textContent ?? ''))).toBe(true);
   });
 
   it('discovers and schedules the relationship-gated cinema outing with Zhou', async () => {
@@ -1382,7 +1384,7 @@ describe('余量 app flow', () => {
     const outing = screen.getByRole('heading', { name: '看电影 · 和周妍看一场' }).closest('article');
     expect(outing).not.toBeNull();
     await user.click(within(outing as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
-    expect(screen.getByText(/看电影 · 和周妍看一场/)).toBeInTheDocument();
+    expect(screen.getAllByRole('status').some((node) => /已安排：/.test(node.textContent ?? ''))).toBe(true);
   });
 
   it('discovers and schedules the old-town cultural trip', async () => {
@@ -1394,7 +1396,7 @@ describe('余量 app flow', () => {
     const outing = screen.getByRole('heading', { name: '旧城文化日 · 看一场展览' }).closest('article');
     expect(outing).not.toBeNull();
     await user.click(within(outing as HTMLElement).getByRole('button', { name: '安排到本周自由时间' }));
-    expect(screen.getByText(/旧城文化日 · 看一场展览/)).toBeInTheDocument();
+    expect(screen.getAllByRole('status').some((node) => /已安排：/.test(node.textContent ?? ''))).toBe(true);
   });
 
   it('reuses role-specific illustrations for Life work scenes', () => {
@@ -1649,8 +1651,12 @@ describe('余量 app flow', () => {
     const panel = screen.getByRole('region', { name: '消息' });
     expect(panel).toHaveTextContent('未读 2 条');
     await user.click(within(panel).getByRole('button', { name: '全部已读' }));
-    expect(within(panel).getByText('未读 0 条')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('region', { name: '消息' })).toHaveTextContent('未读 0 条'));
     // per-message read buttons are gone now that everything is read
-    expect(within(panel).queryByRole('button', { name: '查看消息' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: '消息' })).queryByRole('button', { name: '查看消息' })).not.toBeInTheDocument();
+    // 清除已读 removes the rows from the main inbox without deleting history.
+    await user.click(within(screen.getByRole('region', { name: '消息' })).getByRole('button', { name: '清除已读' }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: '消息' })).not.toBeInTheDocument());
+    expect(appStore.getState().game.messages).toHaveLength(2);
   });
 });

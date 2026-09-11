@@ -1,25 +1,39 @@
 import { create } from 'zustand';
 import type { BalanceConfig } from '../balance/config';
-import type { ActivityDuration, ContentRegistry, GameAction, GameEffect, GameState, JobSchedule, LifeRecordEntry, PlannedActivity, ViewId, WorldSnapshot } from '../content/contracts';
+import type { ActivityDuration, ApplicationCooldownState, ContentRegistry, GameAction, GameEffect, GameState, JobApplicationState, JobSchedule, LifeRecordEntry, PlannedActivity, ViewId, WorldSnapshot } from '../content/contracts';
 import { calendarForDay } from '../engine/calendar';
 import { dispatchGameAction } from '../engine/actions';
 import { createInitialState } from '../engine/initialState';
 import { activityAtTime, createDefaultWeeklyPlan, defaultJobSchedule } from '../engine/schedule';
+import { reconcileStateWithEmployment, CANONICAL_DURATIONS } from '../engine/planning';
+import { applicationCooldownKey, pruneExpiredState, recordApplicationCooldown } from '../engine/lifecycle';
+import { dedupeModifiers } from '../engine/effects';
 import { migrateAttributes, syncLegacyAbility } from '../engine/attributes';
 import { emptyFinancialLedger } from '../engine/financialLedger';
 import { employmentKind, generateVacancies } from '../engine/careers';
 
 export const SAVE_KEY = 'yuliang-save-v1';
+export const SAVE_BACKUP_KEY = 'yuliang-save-v1-last-good';
+
+export interface SaveOutcome {
+  ok: boolean;
+  error?: string;
+}
 
 export interface GameStore {
   game: GameState;
   effects: GameEffect[];
   activeView: ViewId;
   lastError?: string;
+  /** Set when persistence failed; the in-memory state is still valid. */
+  saveError?: string;
+  /** Set when the stored save could not be read, with the raw payload kept. */
+  loadProblem?: { reason: string; raw: string };
   dispatch: (action: GameAction) => void;
   consumeEffects: () => void;
   setView: (view: ViewId) => void;
   reset: (seed?: number) => void;
+  dismissLoadProblem: () => void;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -49,7 +63,7 @@ function normalizePlannedActivity(value: unknown, content: ContentRegistry): Pla
     case 'study':
     case 'side_job': {
       const duration = value.durationMinutes;
-      if (![60, 120, 180, 240].includes(Number(duration))) return { kind: 'free' };
+      if (!CANONICAL_DURATIONS.includes(Number(duration) as ActivityDuration)) return { kind: 'free' };
       if (value.kind === 'side_job') {
         const job = content.jobs.find((entry) => entry.id === value.jobId);
         if (!job || job.kind === 'regular') return { kind: 'free' };
@@ -109,8 +123,74 @@ function migrateWorldPublicBusinessEquities(value: unknown, businessIds: Set<str
   }));
 }
 
-export function saveGameState(state: GameState): void {
-  localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+/**
+ * Persist the save. A quota or serialization failure must never break dispatch
+ * and must never destroy the last good save, so the previous payload stays in
+ * place and the failure is reported to the caller.
+ */
+export function saveGameState(state: GameState): SaveOutcome {
+  let payload: string;
+  try {
+    payload = JSON.stringify(state);
+  } catch (error) {
+    return { ok: false, error: `存档序列化失败：${describeError(error)}` };
+  }
+  try {
+    localStorage.setItem(SAVE_KEY, payload);
+    return { ok: true };
+  } catch (error) {
+    // Keep the last valid save: try a smaller history-trimmed write, and only
+    // then give up with the original payload untouched.
+    const trimmed = trimForStorage(state);
+    if (trimmed) {
+      try {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(trimmed));
+        return { ok: false, error: `存储空间不足，已压缩历史后保存：${describeError(error)}` };
+      } catch {
+        /* fall through to the reported failure */
+      }
+    }
+    return { ok: false, error: `保存失败，最后一次有效存档仍然保留：${describeError(error)}` };
+  }
+}
+
+function describeError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+function trimForStorage(state: GameState): GameState | undefined {
+  const trimmed = structuredClone(state);
+  const history = trimmed.lifeHistory ?? [];
+  if (history.length <= 200 && (trimmed.messages?.length ?? 0) <= 10) return undefined;
+  trimmed.lifeHistory = history.slice(-200);
+  trimmed.messages = (trimmed.messages ?? []).slice(-10);
+  return trimmed;
+}
+
+export interface LoadOutcome {
+  state: GameState;
+  problem?: { reason: string; raw: string };
+}
+
+/**
+ * Read the save. A parse/migration failure keeps the raw payload and reports it
+ * instead of silently pretending the player started a new game.
+ */
+export function loadGameStateWithReport(content: ContentRegistry, balance: BalanceConfig): LoadOutcome {
+  const saved = localStorage.getItem(SAVE_KEY);
+  if (!saved) return { state: createInitialState(content, balance) };
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(saved);
+  } catch (error) {
+    return { state: createInitialState(content, balance), problem: { reason: `存档无法解析：${describeError(error)}`, raw: saved } };
+  }
+  try {
+    return { state: migrateGameState(parsed, content, balance) };
+  } catch (error) {
+    return { state: createInitialState(content, balance), problem: { reason: `存档迁移失败：${describeError(error)}`, raw: saved } };
+  }
 }
 
 export function migrateGameState(raw: unknown, content: ContentRegistry, balance: BalanceConfig): GameState {
@@ -237,9 +317,29 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.qualifications = [...new Set((candidate.qualifications ?? []).filter((id) => typeof id === 'string' && knownQualificationIds.has(id)))];
   candidate.relationships = candidate.relationships ?? {};
   const characterIds = new Set(content.characters.map((entry) => entry.id));
-  candidate.messages = Array.isArray(candidate.messages)
-    ? candidate.messages.filter((entry) => isRecord(entry) && typeof entry.id === 'string' && Number.isInteger(entry.day) && typeof entry.title === 'string' && typeof entry.body === 'string' && typeof entry.read === 'boolean' && (entry.characterId === undefined || characterIds.has(entry.characterId as string))).slice(-30) as GameState['messages']
-    : [];
+  // --- message lifecycle (v9) ---------------------------------------------
+  // Keep the most recent window only, and derive a durable id sequence so the
+  // queue cap can never produce a duplicate id.
+  const storedMessages = Array.isArray(candidate.messages) ? candidate.messages : [];
+  const rawMessages: NonNullable<GameState['messages']> = storedMessages
+    .filter((entry) => isRecord(entry) && Number.isInteger(entry.day) && typeof entry.title === 'string' && typeof entry.body === 'string' && typeof entry.read === 'boolean' && (entry.characterId === undefined || characterIds.has(entry.characterId as string)))
+    .slice(-30);
+  candidate.messages = rawMessages.map((message, index) => ({
+    ...message,
+    id: typeof message.id === 'string' && message.id ? message.id : `message.${message.day}.${index + 1}`,
+    dismissed: message.dismissed === true,
+  }));
+  const highestMessageSequence = candidate.messages.reduce((highest, message) => {
+    const parsed = Number(/(\d+)$/.exec(message.id)?.[1] ?? 0);
+    return Number.isFinite(parsed) ? Math.max(highest, parsed) : highest;
+  }, 0);
+  candidate.nextMessageSequence = Math.max(
+    Number.isInteger(candidate.nextMessageSequence) ? Number(candidate.nextMessageSequence) : 0,
+    highestMessageSequence,
+    candidate.messages.length,
+  );
+  // Reading a message is inbox state, not an event. Legacy saves recorded a
+  // `查看消息：` row that never corresponded to a life event, so drop it here.
   candidate.attributes = migrateAttributes(candidate.attributes, candidate.ability, candidate.lifestyle, candidate.relationships);
   syncLegacyAbility(candidate);
   candidate.eventCooldowns = candidate.eventCooldowns ?? {};
@@ -268,7 +368,9 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     ? candidate.wealthMilestones.filter((entry) => isRecord(entry) && typeof entry.id === 'string' && wealthTierIds.has(entry.id) && Number.isInteger(entry.day) && Number(entry.day) > 0 && Number.isFinite(entry.netWorth)).map((entry) => ({ id: String(entry.id), day: Number(entry.day), netWorth: Number(entry.netWorth) })).slice(-10)
     : [];
   candidate.worldHistory = Array.isArray(candidate.worldHistory) ? candidate.worldHistory.filter((entry) => isRecord(entry) && Number.isInteger(entry.year) && Number(entry.year) > 0 && Number.isInteger(entry.day) && Number(entry.day) > 0 && Number.isFinite(entry.netWorth) && Number.isInteger(entry.businessCount) && Number(entry.businessCount) >= 0 && Number.isInteger(entry.relationshipCount) && Number(entry.relationshipCount) >= 0 && Number.isInteger(entry.visitedLocationCount) && Number(entry.visitedLocationCount) >= 0 && (entry.listedBusinessCount === undefined || (Number.isInteger(entry.listedBusinessCount) && Number(entry.listedBusinessCount) >= 0)) && (entry.publicFloatPercent === undefined || (Number.isFinite(entry.publicFloatPercent) && Number(entry.publicFloatPercent) >= 0)) && (entry.currentJobId === undefined || jobIds.has(String(entry.currentJobId)))).map((entry) => ({ ...entry, locationDevelopment: isRecord(entry.locationDevelopment) ? Object.fromEntries(Object.entries(entry.locationDevelopment).filter(([id, level]) => locationIds.has(id) && Number.isInteger(level) && Number(level) >= 0 && Number(level) <= 5)) : undefined, relationshipValues: isRecord(entry.relationshipValues) ? Object.fromEntries(Object.entries(entry.relationshipValues).filter(([id, value]) => characterIds.has(id) && Number.isFinite(value) && Number(value) >= 0 && Number(value) <= 100).map(([id, value]) => [id, Math.round(Number(value))])) : undefined, characterCareerStates: isRecord(entry.characterCareerStates) ? Object.fromEntries(Object.entries(entry.characterCareerStates).filter(([id, title]) => characterIds.has(id) && typeof title === 'string' && title.trim().length > 0).map(([id, title]) => [id, String(title)])) : undefined, companyStates: isRecord(entry.companyStates) ? Object.fromEntries(Object.entries(entry.companyStates).filter(([id, title]) => (content.companies ?? []).some((company) => company.id === id) && typeof title === 'string' && title.trim().length > 0).map(([id, title]) => [id, String(title)])) : undefined, listedBusinessCount: entry.listedBusinessCount === undefined ? undefined : Number(entry.listedBusinessCount), publicFloatPercent: entry.publicFloatPercent === undefined ? undefined : Number(entry.publicFloatPercent), publicBusinessEquities: migrateWorldPublicBusinessEquities(entry.publicBusinessEquities, businessIds) })).slice(-10) as GameState['worldHistory'] : [];
-  candidate.lifeHistory = Array.isArray(candidate.lifeHistory) ? candidate.lifeHistory.filter(isLifeRecordEntry) : [];
+  candidate.lifeHistory = (Array.isArray(candidate.lifeHistory) ? candidate.lifeHistory : [])
+    .filter(isLifeRecordEntry)
+    .filter((entry) => !entry.title.startsWith('查看消息：'));
   candidate.ambientLog = Array.isArray(candidate.ambientLog) ? candidate.ambientLog.slice(-20) : [];
   const storylines = new Map((content.storylines ?? []).map((storyline) => [storyline.id, new Set(storyline.stages.map((stage) => stage.id))]));
   candidate.storylineStages = Object.fromEntries(Object.entries(candidate.storylineStages ?? {}).filter(([id, stage]) => storylines.get(id)?.has(stage as string)));
@@ -280,7 +382,49 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
       candidate.acquiredSideJobs[jobId] ??= { jobId, acquiredDay: candidate.time.day };
     }
   }
-  candidate.applications = Array.isArray(candidate.applications) ? candidate.applications.filter((entry) => jobIds.has(entry.jobId)) : [];
+  // --- application lifecycle (v9) -----------------------------------------
+  // Re-application cooldowns move out of the application records so clearing
+  // finished applications can never be used to apply again early. Legacy
+  // `nextEligibleDay` values are migrated into the new map.
+  const rawCooldowns = isRecord(candidate.applicationCooldowns) ? candidate.applicationCooldowns : {};
+  const applicationCooldowns: Record<string, ApplicationCooldownState> = {};
+  for (const [key, value] of Object.entries(rawCooldowns)) {
+    if (!isRecord(value)) continue;
+    const jobId = typeof value.jobId === 'string' ? value.jobId : key.split('@')[0];
+    const companyId = typeof value.companyId === 'string' ? value.companyId : key.split('@')[1];
+    if (!jobId || !companyId || !jobIds.has(jobId) || !Number.isInteger(value.nextEligibleDay)) continue;
+    applicationCooldowns[applicationCooldownKey(jobId, companyId)] = { jobId, companyId, nextEligibleDay: Number(value.nextEligibleDay) };
+  }
+  candidate.applicationCooldowns = applicationCooldowns;
+  candidate.applications = Array.isArray(candidate.applications)
+    ? candidate.applications
+      .filter((entry) => isRecord(entry) && jobIds.has(String(entry.jobId)))
+      .map((entry, index) => {
+        const application = entry as JobApplicationState;
+        const applicationId = typeof application.applicationId === 'string' && application.applicationId ? application.applicationId : `application.${application.submittedDay ?? candidate.time.day}.${index + 1}`;
+        if (Number.isInteger(application.nextEligibleDay) && application.nextEligibleDay! > candidate.time.day) {
+          recordApplicationCooldown(candidate, String(application.jobId), String(application.companyId), application.nextEligibleDay!);
+        }
+        return { ...application, applicationId };
+      })
+    : [];
+  // A consumed special opportunity is never re-offered, even after it expired.
+  candidate.consumedOpportunityIds = Array.isArray(candidate.consumedOpportunityIds)
+    ? [...new Set(candidate.consumedOpportunityIds.filter((id) => typeof id === 'string'))]
+    : [];
+  for (const application of candidate.applications) {
+    if (application.opportunityId) candidate.consumedOpportunityIds.push(application.opportunityId);
+  }
+  candidate.consumedOpportunityIds = [...new Set(candidate.consumedOpportunityIds)];
+  const highestApplicationSequence = candidate.applications.reduce((highest, application) => {
+    const parsed = Number(/(\d+)$/.exec(application.applicationId)?.[1] ?? 0);
+    return Number.isFinite(parsed) ? Math.max(highest, parsed) : highest;
+  }, 0);
+  candidate.nextApplicationSequence = Math.max(
+    Number.isInteger(candidate.nextApplicationSequence) ? Number(candidate.nextApplicationSequence) : 0,
+    highestApplicationSequence,
+    candidate.applications.length,
+  );
   const companyIds = new Set((content.companies ?? []).map((entry) => entry.id));
   candidate.opportunities = Array.isArray(candidate.opportunities)
     ? candidate.opportunities.filter((entry) => isRecord(entry)
@@ -327,34 +471,44 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
       candidate.employment = undefined;
     }
   }
-  candidate.currentActivity = activityAtTime(candidate.time, candidate.weeklyPlan, candidate.employment, content);
+  candidate.currentActivity = activityAtTime(candidate.time, candidate.weeklyPlan, candidate.employment, content, candidate);
+  candidate.modifiers = dedupeModifiers(candidate.modifiers);
+  pruneExpiredState(candidate);
+  candidate.currentActivity = activityAtTime(candidate.time, candidate.weeklyPlan, candidate.employment, content, candidate);
+  // Legacy saves can already contain hidden workday conflicts, stacked
+  // modifiers and expired transient entries; repair them rather than resetting
+  // the player's progress.
+  reconcileStateWithEmployment(candidate);
+  candidate.modifiers = dedupeModifiers(candidate.modifiers);
+  pruneExpiredState(candidate);
+  candidate.currentActivity = activityAtTime(candidate.time, candidate.weeklyPlan, candidate.employment, content, candidate);
   return candidate;
 }
 
 export function loadGameState(content: ContentRegistry, balance: BalanceConfig): GameState {
-  const saved = localStorage.getItem(SAVE_KEY);
-  if (!saved) return createInitialState(content, balance);
-  try { return migrateGameState(JSON.parse(saved), content, balance); } catch { return createInitialState(content, balance); }
+  return loadGameStateWithReport(content, balance).state;
 }
 
 export function createGameStore(content: ContentRegistry, balance: BalanceConfig, seed?: number) {
-  const initial = seed === undefined ? loadGameState(content, balance) : createInitialState(content, balance, seed);
+  const loaded = seed === undefined ? loadGameStateWithReport(content, balance) : { state: createInitialState(content, balance, seed) };
   return create<GameStore>((set, get) => ({
-    game: initial,
+    game: loaded.state,
     effects: [],
     activeView: 'life',
+    loadProblem: loaded.problem,
     dispatch: (action) => {
       const result = dispatchGameAction(get().game, action, content, balance);
       if (result.error) { set({ lastError: result.error, effects: [] }); return; }
-      saveGameState(result.state);
-      set({ game: result.state, effects: result.effects, lastError: undefined });
+      const outcome = saveGameState(result.state);
+      set({ game: result.state, effects: result.effects, lastError: undefined, saveError: outcome.ok ? undefined : outcome.error });
     },
     consumeEffects: () => set({ effects: [] }),
     setView: (activeView) => set({ activeView }),
+    dismissLoadProblem: () => set({ loadProblem: undefined }),
     reset: (nextSeed = Date.now()) => {
       const game = createInitialState(content, balance, nextSeed);
-      saveGameState(game);
-      set({ game, effects: [], lastError: undefined });
+      const outcome = saveGameState(game);
+      set({ game, effects: [], lastError: undefined, loadProblem: undefined, saveError: outcome.ok ? undefined : outcome.error });
     },
   }));
 }

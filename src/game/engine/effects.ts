@@ -8,6 +8,23 @@ import { appendLifeRecord } from './lifeHistory';
 
 export const cloneGameState = (state: GameState): GameState => structuredClone(state);
 
+/** Stable identity of a permanent modifier, used to keep repeat events from stacking. */
+export function modifierSignature(modifier: PermanentModifierDefinition): string {
+  return `${modifier.target}|${modifier.mode}|${modifier.value}|${[...(modifier.tags ?? [])].sort().join(',')}`;
+}
+
+export function dedupeModifiers(modifiers: readonly PermanentModifierDefinition[] | undefined): PermanentModifierDefinition[] {
+  const seen = new Set<string>();
+  const result: PermanentModifierDefinition[] = [];
+  for (const modifier of modifiers ?? []) {
+    const signature = modifierSignature(modifier);
+    if (seen.has(signature)) continue;
+    seen.add(signature);
+    result.push(modifier);
+  }
+  return result;
+}
+
 export function modifierValue(state: GameState, target: PermanentModifierDefinition['target'], base: number, tags: readonly string[] = []): number {
   let value = base;
   for (const modifier of state.modifiers) {
@@ -15,6 +32,24 @@ export function modifierValue(state: GameState, target: PermanentModifierDefinit
     value = modifier.mode === 'add' ? value + modifier.value : value * modifier.value;
   }
   return value;
+}
+
+export interface WorkWindow { startMinute: number; endMinute: number; durationMinutes: number }
+
+/**
+ * Formal-work window after the `work_hours` permanent modifier. The employment
+ * schedule stays the authored base; every reader (simulation and UI) goes
+ * through here so the displayed shift is the shift that actually runs.
+ */
+export function employmentWorkWindow(state: Pick<GameState, 'modifiers'>, schedule: { startMinute: number; endMinute: number }): WorkWindow {
+  const base = Math.max(0, schedule.endMinute - schedule.startMinute);
+  const duration = Math.max(0, Math.min(14 * 60, Math.round(modifierValue(state as GameState, 'work_hours', base, ['work']))));
+  return { startMinute: schedule.startMinute, endMinute: schedule.startMinute + duration, durationMinutes: duration };
+}
+
+/** Study gain after the `study_gain` permanent modifier. */
+export function studyGain(state: Pick<GameState, 'modifiers'>, baseAmount: number): number {
+  return Math.max(1, Math.round(modifierValue(state as GameState, 'study_gain', baseAmount, ['study'])));
 }
 
 export function getDiscount(state: GameState, item: ItemDefinition): number {
@@ -105,7 +140,14 @@ export function applyContentEffects(
         output.push({ type: 'unlock', kind: '资产', id: effect.assetId });
         break;
       case 'discount': state.discounts.push({ percent: effect.percent, tags: [...(effect.tags ?? [])], expiresDay: state.time.day + 7 }); break;
-      case 'modifier': state.modifiers.push(effect.modifier); break;
+      case 'modifier': {
+        // A repeatable source must not stack the same permanent effect forever:
+        // an identical (target, mode, tags, value) modifier is applied once.
+        const signature = modifierSignature(effect.modifier);
+        const known = new Set((state.modifiers ?? []).map(modifierSignature));
+        if (!known.has(signature)) state.modifiers.push(effect.modifier);
+        break;
+      }
       case 'advance_time': onAdvanceHours?.(effect.hours); break;
       case 'location_development': {
         if (!content.locations?.some((location) => location.id === effect.locationId)) break;

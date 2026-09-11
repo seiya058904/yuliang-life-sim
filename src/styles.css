@@ -273,6 +273,17 @@ button:focus-visible, input:focus-visible { outline-color: #fff; outline-offset:
 .planner-row > span { color: #fff; background: #000000; border-color: #555; }
 .plan-cell { color: #111; background: #f1f1f1; border-color: #555; font-weight: 700; }
 .plan-cell:hover, .plan-cell.locked { color: #fff; background: #111; }
+.plan-cell.past { color: #777; background: #d8d8d2; border-color: #888; cursor: not-allowed; }
+.plan-cell.past:hover { color: #777; background: #d8d8d2; }
+.plan-cell.has-issue { outline: 2px solid #111; outline-offset: -3px; }
+.plan-cell-flag, .plan-cell-warn { position: absolute; top: 2px; right: 3px; font-size: 9px; font-weight: 900; line-height: 1; }
+.plan-cell { position: relative; }
+.plan-cell-flag { color: #666; letter-spacing: 0; }
+.plan-cell-warn { display: grid; place-items: center; width: 12px; height: 12px; color: #000; background: #f1f1f1; border: 1px solid #111; }
+.planner-notice { margin: 0 0 8px; padding: 8px 12px; color: #111; background: #f1f1ed; border: 1px solid #111; font-weight: 700; }
+.planner-notice.alert { color: #fff; background: #111; }
+.forecast-warnings { margin: 0 0 10px; padding: 8px 12px 8px 28px; color: #f1f1ed; background: #111; border: 1px solid #f1f1ed; list-style: square; font-size: 12px; }
+.forecast-warnings li { margin: 2px 0; }
 .planner-actions { padding: 12px; color: #eee; background: #000000; }
 .item-list, .job-list, .detail-panel, .finance-panel, .monthly-summary { border-color: #aaa; }
 .item-row, .job-row, .relation-row { padding: 15px 12px; border-color: #444; }

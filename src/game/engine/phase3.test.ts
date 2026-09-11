@@ -90,9 +90,11 @@ describe('phase 3 additive systems', () => {
     state.lifeHistory = [{ id: 'life.activity.last-trip', day: 10, category: 'activity', title: '周末短途旅行 · 慢慢走走', sourceId: 'activity.weekend-getaway' }];
     const activity = { kind: 'activity' as const, activityId: 'activity.weekend-getaway', optionId: 'standard' };
 
-    expect(dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity }, contentRegistry, balanceConfig).error).toMatch(/冷却中/);
+    expect(dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity }, contentRegistry, balanceConfig).error).toMatch(/间隔不足 14 天/);
     state.time.day = 24;
-    expect(dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity }, contentRegistry, balanceConfig).error).toBeUndefined();
+    // Day 24 starts a new week, so weekday 1 has already begun; a later weekday
+    // is still editable and its projected run day clears the cooldown.
+    expect(dispatchGameAction(state, { type: 'set_plan', weekday: 5, slot: 'evening', activity }, contentRegistry, balanceConfig).error).toBeUndefined();
   });
 
   it('keeps legacy ability synchronized with fine attributes', () => {

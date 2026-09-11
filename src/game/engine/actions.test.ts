@@ -750,7 +750,10 @@ describe('game action dispatcher', () => {
     const read = dispatchGameAction(relationship.state, { type: 'read_message', messageId: message!.id }, contentRegistry, balanceConfig);
     expect(read.error).toBeUndefined();
     expect(read.state.messages?.[0].read).toBe(true);
-    expect(read.state.lifeHistory?.at(-1)).toMatchObject({ category: 'relationship', title: expect.stringContaining('查看消息') });
+    // Reading is inbox state only: the interaction already owns the life record,
+    // so no `查看消息` entry may be appended.
+    expect(read.state.lifeHistory?.some((entry) => entry.title.startsWith('查看消息：'))).toBe(false);
+    expect(read.state.lifeHistory).toHaveLength(relationship.state.lifeHistory!.length);
     const duplicateRead = dispatchGameAction(read.state, { type: 'read_message', messageId: message!.id }, contentRegistry, balanceConfig);
     expect(duplicateRead.error).toBeUndefined();
     expect(duplicateRead.state.lifeHistory).toHaveLength(read.state.lifeHistory.length);

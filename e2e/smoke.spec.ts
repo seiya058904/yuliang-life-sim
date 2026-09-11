@@ -5439,7 +5439,7 @@ test('discovers and plans the relationship-gated cinema outing with Zhou', async
   const outing = page.locator('article').filter({ hasText: '和周妍看一场' });
   await expect(outing).toContainText('和周妍看一场');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
-  await expect(page.getByText('看电影 · 和周妍看一场')).toBeVisible();
+  await expect(page.getByText('看电影 · 和周妍看一场').first()).toBeVisible();
 });
 
 test('discovers and plans the old-town cultural trip', async ({ page }) => {
@@ -5448,7 +5448,7 @@ test('discovers and plans the old-town cultural trip', async ({ page }) => {
   const outing = page.getByRole('heading', { name: '旧城文化日 · 看一场展览' }).locator('xpath=ancestor::article[1]');
   await expect(outing).toContainText('旧城文化日 · 看一场展览');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
-  await expect(page.getByText('旧城文化日 · 看一场展览')).toBeVisible();
+  await expect(page.getByText('旧城文化日 · 看一场展览').first()).toBeVisible();
 });
 
 test('discovers and plans the riverside park ride', async ({ page }) => {
@@ -5458,7 +5458,7 @@ test('discovers and plans the riverside park ride', async ({ page }) => {
   await expect(ride).toContainText('¥180');
   await expect(ride).toContainText('体能 +2');
   await ride.getByRole('button', { name: '安排到本周自由时间' }).click();
-  await expect(page.getByText('临江公园骑行 · 沿江骑行')).toBeVisible();
+  await expect(page.getByText('临江公园骑行 · 沿江骑行').first()).toBeVisible();
 });
 
 test('buys and gives a preference-matching gift with persisted social history', async ({ page }) => {

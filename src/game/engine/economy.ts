@@ -1,5 +1,6 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AssetDefinition, BusinessDefinition, BusinessHolding, ContentRegistry, GameState, ItemDefinition } from '../content/contracts';
+import { modifierValue } from './effects';
 
 export interface BusinessProfitBreakdown {
   revenue: number;
@@ -74,7 +75,7 @@ export function effectiveBusinessLocationId(holding: Pick<BusinessHolding, 'relo
   return holding.relocatedLocationId ?? definition.locationId;
 }
 
-export function calculateDailyBusinessProfit(holding: BusinessHolding, definition: BusinessDefinition): BusinessProfitBreakdown {
+export function calculateDailyBusinessProfit(holding: BusinessHolding, definition: BusinessDefinition, state?: GameState): BusinessProfitBreakdown {
   const priceMultiplier = definition.priceLevels[holding.priceLevel] ?? 1;
   const wageMultiplier = definition.wageLevels[holding.wageLevel] ?? 1;
   const inventoryMultiplier = definition.inventoryLevels[holding.inventoryLevel] ?? 1;
@@ -84,7 +85,11 @@ export function calculateDailyBusinessProfit(holding: BusinessHolding, definitio
   const goodsCost = roundMoney(definition.baseGoodsCost * inventoryMultiplier);
   const wage = roundMoney(definition.baseWage * wageMultiplier * (1 - bonus));
   const rent = roundMoney(definition.baseRent * (1 - bonus));
-  return { revenue, goodsCost, wage, rent, profit: revenue - goodsCost - wage - rent };
+  // A `business_profit` permanent modifier is a real operating edge, applied to
+  // profit instead of inflating gross revenue.
+  const grossProfit = revenue - goodsCost - wage - rent;
+  const profit = state ? roundMoney(modifierValue(state, 'business_profit', grossProfit, definition.tags ?? [])) : grossProfit;
+  return { revenue, goodsCost, wage, rent, profit };
 }
 
 export function businessValuation(holding: BusinessHolding, balance: BalanceConfig): number {
@@ -96,7 +101,7 @@ export function calculateDailyPublicBusinessDividend(state: GameState, content: 
     const holding = state.businesses[businessId];
     const definition = content.businesses.find((entry) => entry.id === businessId);
     if (!holding?.listed || !definition) return total;
-    const profit = calculateDailyBusinessProfit(holding, definition).profit;
+    const profit = calculateDailyBusinessProfit(holding, definition, state).profit;
     return total + (profit > 0 ? roundMoney(profit * publicHolding.percent / 100) : 0);
   }, 0);
 }
@@ -139,7 +144,7 @@ export function calculateDailyPassiveIncome(state: GameState, content: ContentRe
   const business = Object.values(state.businesses).reduce((total, holding) => {
     const definition = content.businesses.find((entry) => entry.id === holding.businessId);
     if (!definition) return total;
-    const breakdown = calculateDailyBusinessProfit(holding, definition);
+    const breakdown = calculateDailyBusinessProfit(holding, definition, state);
     const equity = Math.min(100, Math.max(0, holding.equityPercent ?? 100)) / 100;
     return {
       revenue: total.revenue + roundMoney(breakdown.revenue * equity),
