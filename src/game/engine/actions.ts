@@ -1119,6 +1119,11 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       }
       break;
     }
+    case 'read_all_messages': {
+      // Bulk read: clear every unread flag without flooding the life record.
+      if (state.messages) for (const message of state.messages) message.read = true;
+      break;
+    }
     case 'start_storyline': {
       const storyline = getStoryline(content, action.storylineId);
       if (!storyline) return fail(input, '找不到这段故事');

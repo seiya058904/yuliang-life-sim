@@ -1635,4 +1635,22 @@ describe('余量 app flow', () => {
     appStore.setState({ game: { ...appStore.getState().game, simulationMode: 'reward' } });
     await waitFor(() => expect(screen.getByRole('button', { name: /周一晚间计划/ })).toBeDisabled());
   });
+
+  it('lets the player bulk-read all pending messages from the relations view', async () => {
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: { ...game, messages: [
+      { id: 'm1', day: 1, characterId: 'character.seed-lin', title: '林晨发来新消息', body: '想保持联系', sourceId: 'interaction.seed-lin-meal', read: false },
+      { id: 'm2', day: 2, characterId: 'character.seed-zhou', title: '周妍发来新消息', body: '想继续聊', sourceId: 'interaction.business-with-zhou', read: false },
+    ] } });
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: '社交' }));
+
+    const panel = screen.getByRole('region', { name: '消息' });
+    expect(panel).toHaveTextContent('未读 2 条');
+    await user.click(within(panel).getByRole('button', { name: '全部已读' }));
+    expect(within(panel).getByText('未读 0 条')).toBeInTheDocument();
+    // per-message read buttons are gone now that everything is read
+    expect(within(panel).queryByRole('button', { name: '查看消息' })).not.toBeInTheDocument();
+  });
 });

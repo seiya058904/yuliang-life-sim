@@ -912,6 +912,7 @@ export type GameAction =
   | { type: 'choose_resignation'; choice: 'leave' | 'stay' }
   | { type: 'interact_character'; interactionId: ContentId; optionId: string }
   | { type: 'read_message'; messageId: string }
+  | { type: 'read_all_messages' }
   | { type: 'start_storyline'; storylineId: ContentId }
   | { type: 'choose_storyline_branch'; storylineId: ContentId; branchId: string }
   | { type: 'continue_after_event' }

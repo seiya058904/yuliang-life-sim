@@ -1042,3 +1042,20 @@ describe('weekly plan candidate cycling', () => {
     expect(findNextPlanOption(state, 1, evening, plan, options, 0, contentRegistry, balanceConfig)).toBeUndefined();
   });
 });
+
+describe('message bulk read', () => {
+  it('marks every unread message as read without adding life records', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    state.messages = [
+      { id: 'message.a', day: 1, characterId: 'character.seed-lin', title: '林晨发来新消息', body: '想保持联系', sourceId: 'interaction.seed-lin-meal', read: false },
+      { id: 'message.b', day: 1, characterId: 'character.seed-zhou', title: '周妍发来新消息', body: '想继续聊', sourceId: 'interaction.business-with-zhou', read: false },
+      { id: 'message.c', day: 2, characterId: 'character.seed-lin', title: '林晨发来新消息', body: '已读示例', sourceId: 'interaction.seed-lin-meal', read: true },
+    ];
+    const before = state.lifeHistory.length;
+    const result = dispatchGameAction(state, { type: 'read_all_messages' }, contentRegistry, balanceConfig);
+    expect(result.error).toBeUndefined();
+    expect(result.state.messages?.every((message) => message.read)).toBe(true);
+    // bulk read clears the queue quietly: no per-message life-record noise
+    expect(result.state.lifeHistory).toHaveLength(before);
+  });
+});
