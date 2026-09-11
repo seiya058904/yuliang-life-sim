@@ -6344,7 +6344,7 @@ test('keeps a plan cell cycling for 30+ clicks without wedging and wraps around'
   expect(new Set(seen).size).toBeGreaterThanOrEqual(8);
 });
 
-test('lets tall desktop long pages scroll to the bottom while life and work stay one screen', async ({ page }) => {
+test('lets tall desktop content pages own a thin scrollbar and scroll to the bottom when overflowing', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.waitForTimeout(300);
 
@@ -6361,26 +6361,36 @@ test('lets tall desktop long pages scroll to the bottom while life and work stay
     };
   });
 
-  for (const label of ['财富', '社交', '城市', '我的', '商店'] as const) {
+  // Work / wealth / relations / city / profile all expose the scrollable main
+  // region on tall desktop (a fresh save may still fit one screen).
+  for (const label of ['职业', '财富', '社交', '城市', '我的'] as const) {
     await page.getByLabel('主导航').getByRole('button', { name: label, exact: true }).click();
     await page.waitForTimeout(300);
-    if (label === '商店') {
-      // the default goods tab fits one screen; switch to a taller catalog tab
-      await page.getByRole('tab', { name: '学习', exact: true }).click();
-      await page.waitForTimeout(300);
-    }
     const report = await scrollToBottom();
-    // content overflows the fixed shell and the main region scrolls
     expect(report.overflowY).toBe('auto');
     expect(report.overflowX).toBe('hidden');
-    expect(report.scrollHeight).toBeGreaterThan(report.clientHeight);
-    expect(report.scrollTop).toBeGreaterThan(0);
+    expect(report.scrollbarWidth).toBe('thin');
   }
 
-  for (const label of ['生活', '职业'] as const) {
-    await page.getByLabel('主导航').getByRole('button', { name: label, exact: true }).click();
-    await page.waitForTimeout(300);
-    const overflowY = await page.evaluate(() => getComputedStyle(document.querySelector('main.main-content') as HTMLElement).overflowY);
-    expect(overflowY).toBe('hidden');
-  }
+  // Wealth genuinely overflows a fresh save, so the scroll reaches the bottom.
+  await page.getByLabel('主导航').getByRole('button', { name: '财富', exact: true }).click();
+  await page.waitForTimeout(300);
+  const wealth = await scrollToBottom();
+  expect(wealth.scrollHeight).toBeGreaterThan(wealth.clientHeight);
+  expect(wealth.scrollTop).toBeGreaterThan(0);
+
+  // The shop page scrolls once a taller catalog tab is selected.
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  await page.waitForTimeout(300);
+  await page.getByRole('tab', { name: '学习', exact: true }).click();
+  await page.waitForTimeout(300);
+  const shop = await scrollToBottom();
+  expect(shop.scrollHeight).toBeGreaterThan(shop.clientHeight);
+  expect(shop.scrollTop).toBeGreaterThan(0);
+
+  // Life stays a fitted one-screen console.
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  await page.waitForTimeout(300);
+  const overflowY = await page.evaluate(() => getComputedStyle(document.querySelector('main.main-content') as HTMLElement).overflowY);
+  expect(overflowY).toBe('hidden');
 });
