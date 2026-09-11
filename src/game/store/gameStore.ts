@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { BalanceConfig } from '../balance/config';
-import type { ActivityDuration, ApplicationCooldownState, ContentRegistry, GameAction, GameEffect, GameState, JobApplicationState, JobSchedule, LifeRecordEntry, PlannedActivity, ViewId, WorldSnapshot } from '../content/contracts';
+import type { ActivityDuration, ApplicationCooldownState, ContentRegistry, FinancialEntry, GameAction, GameEffect, GameState, JobApplicationState, JobSchedule, LifeRecordEntry, PlannedActivity, ViewId, WorldSnapshot } from '../content/contracts';
 import { calendarForDay } from '../engine/calendar';
 import { dispatchGameAction } from '../engine/actions';
 import { createInitialState } from '../engine/initialState';
@@ -41,6 +41,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 const wealthTierIds = new Set(['savings', 'stable', 'abundant', 'high_net_worth', 'entrepreneur', 'billionaire', 'super_wealth', 'world', 'global']);
+const financialDirections = new Set(['income', 'expense', 'transfer']);
+const financialGroups = new Set(['income', 'consumption', 'asset_allocation', 'asset_liquidation']);
+const financialCategories = new Set(['wage', 'side_job', 'bonus', 'business_income', 'property_income', 'investment_dividend', 'event_income', 'other_income', 'housing', 'living', 'food', 'transport', 'communication', 'shopping', 'entertainment', 'social', 'education', 'travel', 'service', 'maintenance', 'business_cost', 'other_expense', 'investment_transfer', 'property_transfer', 'business_transfer', 'collectible_transfer', 'asset_liquidation', 'realized_gain', 'realized_loss', 'valuation_change']);
 
 function knownIds(content: ContentRegistry, category: keyof Pick<ContentRegistry, 'jobs' | 'items' | 'housing' | 'businesses' | 'assets' | 'characters' | 'events' | 'eventChains' | 'milestones'>): Set<string> {
   return new Set(content[category].map((entry) => entry.id));
@@ -107,6 +110,18 @@ function isLifeRecordEntry(value: unknown): value is LifeRecordEntry {
     && Number.isInteger(value.day)
     && ['career', 'purchase', 'service', 'activity', 'housing', 'relationship', 'event', 'business', 'asset', 'investment'].includes(String(value.category))
     && typeof value.title === 'string';
+}
+
+function isFinancialEntry(value: unknown): value is FinancialEntry {
+  return isRecord(value)
+    && typeof value.id === 'string'
+    && Number.isInteger(value.day)
+    && financialDirections.has(String(value.direction))
+    && financialGroups.has(String(value.group))
+    && financialCategories.has(String(value.category))
+    && Number.isFinite(value.amount) && Number(value.amount) >= 0
+    && Number.isFinite(value.cashDelta)
+    && typeof value.label === 'string';
 }
 
 function migrateWorldPublicBusinessEquities(value: unknown, businessIds: Set<string>): WorldSnapshot['publicBusinessEquities'] {
@@ -178,7 +193,12 @@ export interface LoadOutcome {
  * instead of silently pretending the player started a new game.
  */
 export function loadGameStateWithReport(content: ContentRegistry, balance: BalanceConfig): LoadOutcome {
-  const saved = localStorage.getItem(SAVE_KEY);
+  let saved: string | null;
+  try {
+    saved = localStorage.getItem(SAVE_KEY);
+  } catch (error) {
+    return { state: createInitialState(content, balance), problem: { reason: `存档读取失败：${describeError(error)}`, raw: '' } };
+  }
   if (!saved) return { state: createInitialState(content, balance) };
   let parsed: unknown;
   try {
@@ -363,7 +383,13 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.housingReliefUntilDay = candidate.housingReliefUntilDay ?? 0;
   candidate.monthlyLedger = candidate.monthlyLedger ?? initial.monthlyLedger;
   candidate.financialLedger = candidate.financialLedger && Array.isArray(candidate.financialLedger.entries)
-    ? { month: candidate.calendar.month, nextSequence: Math.max(1, Number(candidate.financialLedger.nextSequence) || candidate.financialLedger.entries.length + 1), entries: candidate.financialLedger.entries }
+    ? {
+      month: candidate.calendar.month,
+      nextSequence: Math.max(1, Number(candidate.financialLedger.nextSequence) || candidate.financialLedger.entries.length + 1),
+      entries: candidate.financialLedger.entries.filter(isFinancialEntry),
+      cashStart: Number.isFinite(candidate.financialLedger.cashStart) ? Number(candidate.financialLedger.cashStart) : candidate.monthlyLedger.netWorthStart,
+      netWorthStart: Number.isFinite(candidate.financialLedger.netWorthStart) ? Number(candidate.financialLedger.netWorthStart) : candidate.monthlyLedger.netWorthStart,
+    }
     : emptyFinancialLedger(candidate.calendar.month, candidate.cash, candidate.monthlyLedger.netWorthStart);
   candidate.financialHistory = Array.isArray(candidate.financialHistory) ? candidate.financialHistory.slice(-12) : [];
   candidate.annualHistory = Array.isArray(candidate.annualHistory) ? candidate.annualHistory.filter((entry) => isRecord(entry) && Number.isInteger(entry.year) && Number.isFinite(entry.cashStart) && Number.isFinite(entry.cashEnd) && Number.isFinite(entry.netWorthStart) && Number.isFinite(entry.netWorthEnd) && Number.isFinite(entry.totalIncome) && Number.isFinite(entry.totalConsumption) && Number.isInteger(entry.months)).slice(-10) as GameState['annualHistory'] : [];

@@ -318,6 +318,15 @@ describe('application lifecycle', () => {
     expect(planRunError(affordable, planned, contentRegistry, balance) ?? '').not.toMatch(/现金不足/);
   });
 
+  it('hard-blocks a week when the planned course costs exceed total cash', () => {
+    const state = createInitialState(contentRegistry, balance, 1);
+    const [first, second] = contentRegistry.courses!;
+    const planned = { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 6: { ...state.weeklyPlan.days[6], day: { kind: 'course' as const, courseId: first.id }, evening: { kind: 'course' as const, courseId: second.id } } } };
+    const cash = Math.max(first.cashCost, second.cashCost);
+    expect(first.cashCost + second.cashCost).toBeGreaterThan(cash);
+    expect(planRunError({ ...state, cash }, planned, contentRegistry, balance)).toMatch(/课程总费用/);
+  });
+
   it('rejects the 61st active application without mutating application state', () => {
     const state = createInitialState(contentRegistry, balance, 1);
     const vacancy = state.vacancies![0];

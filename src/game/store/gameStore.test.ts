@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createGameStore, loadGameState, migrateGameState, saveGameState } from './gameStore';
@@ -202,6 +202,26 @@ describe('game store persistence', () => {
     const restored = loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.annualHistory).toEqual([{ year: 1, cashStart: 1000, cashEnd: 1200, netWorthStart: 1000, netWorthEnd: 1400, totalIncome: 500, totalConsumption: 300, months: 12 }]);
+  });
+
+  it('filters malformed financial entries while preserving ledger anchors', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    const valid = { id: 'financial:1:1', day: 1, direction: 'income', group: 'income', category: 'wage', amount: 100, cashDelta: 100, label: '工资' };
+    const restored = migrateGameState({ ...state, financialLedger: { month: 1, nextSequence: 4, cashStart: 321, netWorthStart: 654, entries: [valid, null, { invalid: true }] } }, contentRegistry, balanceConfig);
+
+    expect(restored.financialLedger).toMatchObject({ cashStart: 321, netWorthStart: 654, nextSequence: 4 });
+    expect(restored.financialLedger?.entries).toEqual([valid]);
+  });
+
+  it('reports storage read failures instead of throwing during load', () => {
+    const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('storage blocked'); });
+    try {
+      const outcome = createGameStore(contentRegistry, balanceConfig);
+      expect(outcome.getState().loadProblem?.reason).toContain('存档读取失败');
+      expect(outcome.getState().game.time.day).toBe(1);
+    } finally {
+      getItem.mockRestore();
+    }
   });
 
   it('migrates and filters public business equity snapshots inside world history', () => {

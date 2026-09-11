@@ -333,12 +333,14 @@ function collectActivityIssues(plan: WeeklyPlan, state: GameState, content: Cont
 
 function collectCourseIssues(plan: WeeklyPlan, state: GameState, content: ContentRegistry, balance: BalanceConfig): PlanIssue[] {
   const issues: PlanIssue[] = [];
+  const plannedCourses: Array<{ weekday: Weekday; slot: PlanSlot; course: CourseDefinition }> = [];
   for (const weekday of WEEKDAYS) {
     for (const slot of PLAN_SLOTS) {
       const activity = plan.days[weekday]?.[slot];
       if (activity?.kind !== 'course') continue;
       const course = (content.courses ?? []).find((entry) => entry.id === activity.courseId);
       if (!course) { issues.push(buildIssue('UNKNOWN_COURSE', weekday, slot, `周${weekdayLabel(weekday)}${slotLabel(slot)}课程不存在`)); continue; }
+      plannedCourses.push({ weekday, slot, course });
       const availability = courseAvailability(state, course, content, balance);
       if (availability.reason) {
         const code = availability.cash === 'hard' ? 'COURSE_CASH' : 'COURSE_REQUIREMENTS';
@@ -348,6 +350,14 @@ function collectCourseIssues(plan: WeeklyPlan, state: GameState, content: Conten
       if (course.durationMinutes > SLOT_WINDOW[slot][1] - SLOT_WINDOW[slot][0]) {
         issues.push(buildIssue('ACTIVITY_TOO_LONG', weekday, slot, `周${weekdayLabel(weekday)}${slotLabel(slot)}课程时长超出可规划时间（${durationText(course.durationMinutes)}）`));
       }
+    }
+  }
+  const totalCourseCost = plannedCourses.reduce((total, entry) => total + entry.course.cashCost, 0);
+  if (totalCourseCost > state.cash && plannedCourses.length > 0) {
+    const first = plannedCourses[0];
+    const signature = `${first.weekday}:${first.slot}`;
+    if (!issues.some((issue) => `${issue.weekday}:${issue.slot}` === signature && issue.code === 'COURSE_CASH')) {
+      issues.push(buildIssue('COURSE_CASH', first.weekday, first.slot, `本周课程总费用为 ${totalCourseCost}，超过当前现金 ${state.cash}`));
     }
   }
   return issues;
