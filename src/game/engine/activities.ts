@@ -1,3 +1,4 @@
+import { lastCompletedDay } from './businessFacts';
 import type { ActivityDefinition, ActivityOption, ContentId, ContentRegistry, GameState } from '../content/contracts';
 
 export function getActivityDefinition(content: ContentRegistry, activityId: ContentId): ActivityDefinition | undefined {
@@ -10,7 +11,7 @@ export function getActivityOption(activity: ActivityDefinition, optionId: string
 
 export function activityCooldownRemaining(state: GameState, definition: ActivityDefinition, option: ActivityOption): number {
   if (!option.cooldownDays) return 0;
-  const lastDay = (state.lifeHistory ?? []).filter((record) => record.category === 'activity' && record.sourceId === definition.id).reduce<number | undefined>((latest, record) => Math.max(latest ?? record.day, record.day), undefined);
+  const lastDay = lastCompletedDay(state, 'activity', definition.id);
   if (lastDay === undefined) return 0;
   return Math.max(0, option.cooldownDays - (state.time.day - lastDay));
 }

@@ -86,7 +86,7 @@ describe('planning domain consistency', () => {
 
   it('keeps a pending job from becoming a hidden conflict when the next week starts', () => {
     const state = plan({ kind: 'study', durationMinutes: 240 }, 3, 'day');
-    state.employment = { ...state.employment!, pendingJobId: 'job.seed-warehouse', pendingCompanyId: 'company.xinghe', pendingBasePay: 128 };
+    state.employment = { ...state.employment!, pendingJobId: 'job.seed-warehouse', pendingEffectiveDay: 1, pendingCompanyId: 'company.xinghe', pendingBasePay: 128 };
     state.weeklyPlan = { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 2: { day: { kind: 'study', durationMinutes: 240 }, evening: { kind: 'free' } } } };
     const started = run(state, { type: 'start_week' });
     expect(started.currentJobId).toBe('job.seed-warehouse');

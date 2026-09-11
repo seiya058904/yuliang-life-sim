@@ -565,18 +565,19 @@ export interface FinancialEntry {
   category: FinancialCategory;
   amount: number;
   cashDelta: number;
-  costBasis?: number;
+  costBasis?: KnownAmount;
   sourceType?: string;
   sourceId?: ContentId;
   label: string;
 }
 
 export interface FinancialLedgerState {
+  entriesComplete?: boolean;
   month: number;
   nextSequence: number;
   entries: FinancialEntry[];
-  cashStart?: number;
-  netWorthStart?: number;
+  cashStart?: KnownAmount;
+  netWorthStart?: KnownAmount;
 }
 
 export interface FinancialGroupSummary {
@@ -591,16 +592,16 @@ export interface MonthlyFinancialSummary {
   consumption: FinancialGroupSummary;
   assetAllocation: FinancialGroupSummary;
   assetLiquidation: FinancialGroupSummary;
-  totalIncome: number;
-  totalConsumption: number;
+  totalIncome: KnownAmount;
+  totalConsumption: KnownAmount;
   totalAssetAllocation: number;
   totalAssetLiquidation: number;
-  cashStart: number;
-  cashEnd: number;
-  cashChange: number;
-  netWorthStart: number;
-  netWorthEnd: number;
-  netWorthChange: number;
+  cashStart: KnownAmount;
+  cashEnd: KnownAmount;
+  cashChange: KnownAmount;
+  netWorthStart: KnownAmount;
+  netWorthEnd: KnownAmount;
+  netWorthChange: KnownAmount;
 }
 
 export interface ContentPack {
@@ -656,7 +657,7 @@ export interface BusinessHolding {
   acquiredFromBusinessId?: ContentId;
   partnerCharacterId?: ContentId;
   /** Actual cash the player paid for the current stake, including acquisition premiums. */
-  playerCostBasis?: number;
+  playerCostBasis?: KnownAmount;
   /** One-time board-level efficiency bonus from a controlling-stake decision (0-25). */
   operatingBonusPercent?: number;
   /** Location override recorded by an authored board relocation decision. */
@@ -730,6 +731,7 @@ export interface EmploymentState {
   schedule: JobSchedule;
   effectiveWeek: number;
   pendingJobId?: ContentId;
+  pendingEffectiveDay?: number;
   pendingCompanyId?: ContentId;
   pendingBasePay?: number;
   companyId?: ContentId;
@@ -762,8 +764,8 @@ export interface MonthlyLedger {
   rentExpense: number;
   purchaseExpense: number;
   livingExpense: number;
-  netWorthStart: number;
-  netWorthEnd: number;
+  netWorthStart: KnownAmount;
+  netWorthEnd: KnownAmount;
 }
 
 export interface MonthlySummary {
@@ -772,12 +774,12 @@ export interface MonthlySummary {
 }
 export interface AnnualSummary {
   year: number;
-  cashStart: number;
-  cashEnd: number;
-  netWorthStart: number;
-  netWorthEnd: number;
-  totalIncome: number;
-  totalConsumption: number;
+  cashStart: KnownAmount;
+  cashEnd: KnownAmount;
+  netWorthStart: KnownAmount;
+  netWorthEnd: KnownAmount;
+  totalIncome: KnownAmount;
+  totalConsumption: KnownAmount;
   months: number;
 }
 export interface WealthMilestone {
@@ -826,7 +828,23 @@ export interface RngState {
   cursor: number;
 }
 
+export interface BusinessFacts {
+  history: 'complete' | 'partial';
+  lastCompleted: Record<string, number>;
+  interactions: Record<string, Record<string, number>>;
+  /** Preserve the existing gift rule: item source plus recipient-name match. */
+  relationshipDetails?: Record<string, Record<string, Record<string, number>>>;
+  retentionClaims: Record<string, boolean>;
+}
+
+export type KnownAmount = { kind: 'known'; value: number } | { kind: 'unknown'; reason: string };
+export interface LongActivityInstance { id: string; activity: ActivityState; }
+
 export interface GameState {
+  businessFacts?: BusinessFacts;
+  nextLifeRecordSequence?: number;
+  longActivity?: LongActivityInstance;
+
   version: number;
   contentVersion: number;
   time: GameTime;

@@ -7,7 +7,7 @@ import { absoluteMinute, type GameTime } from './time';
 import { getActivityDefinition, getActivityOption } from './activities';
 
 /** The slice of game state the schedule projection needs (permanent modifiers). */
-export type ScheduleModifierSource = Pick<GameState, 'modifiers'>;
+export type ScheduleModifierSource = Pick<GameState, 'modifiers'> & Partial<Pick<GameState, 'time' | 'longActivity'>>;
 
 const DAY_START = 9 * 60;
 const DAY_END = 17 * 60;
@@ -52,10 +52,10 @@ export function getDailyActivities(day: number, plan: WeeklyPlan, employment: Em
     }
   }
   const dayPlan = plan.days[weekday]?.day;
-  if (dayPlan && dayPlan.kind !== 'free' && !schedule?.workDays.includes(weekday)) replaceRange(activities, DAY_START, DAY_START + durationOf(dayPlan, content), plannedActivity(day, DAY_START, dayPlan, content));
+  if (dayPlan && dayPlan.kind !== 'free' && durationOf(dayPlan, content) < LONG_ACTIVITY_MIN_DURATION && !schedule?.workDays.includes(weekday)) replaceRange(activities, DAY_START, DAY_START + durationOf(dayPlan, content), plannedActivity(day, DAY_START, dayPlan, content));
   const eveningPlan = plan.days[weekday]?.evening;
   if (eveningPlan && eveningPlan.kind !== 'free') replaceRange(activities, EVENING_START, EVENING_START + durationOf(eveningPlan, content), plannedActivity(day, EVENING_START, eveningPlan, content));
-  const longActivity = findLongActivity(day, plan, content);
+  const longActivity = findLongActivity(day, plan, content, state);
   if (longActivity) return overlayLongActivity(activities, longActivity);
   return activities.sort((left, right) => absoluteMinute(left.start) - absoluteMinute(right.start));
 }
@@ -88,11 +88,13 @@ function plannedActivity(day: number, startMinute: number, planned: Exclude<Plan
   };
 }
 
-function findLongActivity(day: number, plan: WeeklyPlan, content: ContentRegistry): ActivityState | undefined {
+function findLongActivity(day: number, plan: WeeklyPlan, content: ContentRegistry, state: ScheduleModifierSource): ActivityState | undefined {
   const targetStart = absoluteMinute({ day, hour: 0, minute: 0 });
   const targetEnd = targetStart + MINUTES_PER_DAY;
   const targetWeek = calendarForDay(day).week;
-  for (const week of [targetWeek - 1, targetWeek]) {
+  const active = state.longActivity?.activity;
+  if (active && absoluteMinute(active.start) < targetEnd && absoluteMinute(active.end) > targetStart) return active;
+  for (const week of [targetWeek]) {
     if (week < 1) continue;
     const weekStartDay = (week - 1) * 7 + 1;
     for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) {
@@ -102,6 +104,7 @@ function findLongActivity(day: number, plan: WeeklyPlan, content: ContentRegistr
       const option = definition && getActivityOption(definition, planned.optionId);
       if (!option || option.durationMinutes < LONG_ACTIVITY_MIN_DURATION) continue;
       const candidate = plannedActivity(weekStartDay + weekday - 1, DAY_START, planned, content);
+      if (state.time && absoluteMinute(candidate.start) < absoluteMinute(state.time)) continue;
       if (absoluteMinute(candidate.start) < targetEnd && absoluteMinute(candidate.end) > targetStart) return candidate;
     }
   }

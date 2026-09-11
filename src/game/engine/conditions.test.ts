@@ -1,3 +1,4 @@
+import { known } from './knownAmount';
 import { describe, expect, it } from 'vitest';
 import { currentMonthlySalary, evaluateCondition, explainCondition } from './conditions';
 import type { ContentRegistry, GameState } from '../content/contracts';
@@ -5,7 +6,7 @@ import { balanceConfig } from '../balance/config';
 
 const state: GameState = {
   version: 1, contentVersion: 1, time: { day: 3, hour: 10, minute: 0 }, calendar: { week: 1, weekday: 3, month: 1, weekOfMonth: 1 }, cash: 1000, ability: 12, reputation: 4, lifestyle: 10,
-  weeklyPlan: { days: {} as never, autoRepeat: true }, autoRepeatPlan: true, simulationMode: 'planning', simulationSpeed: 1, monthlyLedger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 0, netWorthEnd: 0 },
+  weeklyPlan: { days: {} as never, autoRepeat: true }, autoRepeatPlan: true, simulationMode: 'planning', simulationSpeed: 1, monthlyLedger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: known(0), netWorthEnd: known(0) },
   jobExperience: { 'job.seed': 2 }, inventory: { 'item.seed': 1 }, itemPurchasePrices: {}, unlockedCapabilities: ['remote_work'], unlockedJobIds: ['job.seed'], unlockedHousingIds: [], unlockedBusinessIds: [], unlockedAssetIds: [], discounts: [],
   housing: { housingId: 'housing.seed', mode: 'rent' }, relationships: { 'character.seed': 30 }, businesses: {}, assets: {}, completedEvents: ['event.seed'], completedMilestones: [], eventCooldowns: {}, chainStages: { 'chain.seed': 1 }, flags: { ready: true }, modifiers: [], marketJobIds: ['job.seed'], eventMeter: 0, eventDay: 3, eventsToday: 0, lastSettledDay: 2, rentReliefAvailableDay: 0, housingReliefUntilDay: 0, rng: { seed: 1, cursor: 0 },
   lifeHistory: [],

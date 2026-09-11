@@ -1,3 +1,4 @@
+import { lastCompletedDay } from './businessFacts';
 /**
  * Planning Domain — the single source of truth for weekly-plan legality.
  *
@@ -60,6 +61,7 @@ export type PlanIssueCode =
   | 'PLAN_ALREADY_FULL';
 
 export interface PlanIssue {
+  participants?: string[];
   code: PlanIssueCode;
   /** The weekday (1-7) whose cell the player can fix. */
   weekday: Weekday;
@@ -202,12 +204,8 @@ export function courseAvailability(state: GameState, course: CourseDefinition, c
 
 export function courseCooldownRemaining(state: GameState, course: CourseDefinition): number {
   if (!course.cooldownDays) return 0;
-  const days = (state.lifeHistory ?? [])
-    .filter((record) => record.category === 'activity' && record.sourceId === course.id)
-    .map((record) => record.day);
-  if (!days.length) return 0;
-  const lastDay = days.reduce((latest, day) => (day > latest ? day : latest), days[0]);
-  return Math.max(0, course.cooldownDays - (state.time.day - lastDay));
+  const lastDay = lastCompletedDay(state, 'activity', course.id);
+  return lastDay === undefined ? 0 : Math.max(0, course.cooldownDays - (state.time.day - lastDay));
 }
 
 /** Planned (not yet executed) activity occurrences, in schedule order. */
@@ -246,36 +244,23 @@ function activityTimeline(plan: WeeklyPlan, content: ContentRegistry): ActivityT
 /** Projected execution day of the n-th step in the timeline. */
 function projectedDays(timeline: readonly ActivityTimelineStep[], state: GameState): number[] {
   const weekStart = weekStartDayOf(state.time.day);
-  const today = state.time.day;
-  const cursor: Record<string, number> = {};
-  return timeline.map((step) => {
-    const slotKey = `${step.weekday}:${step.slot}`;
-    const slotDay = weekStart + step.weekday - 1;
-    // A slot that has already started never runs this week; anything freed by a
-    // same-week duplicate cooldown fallback can be re-placed on the next Monday.
-    const minimum = slotWithin(step.weekday, step.slot, CURRENT_TIME_FROM, state.time) ? slotDay : slotDay + 7;
-    const day = Math.max(today, minimum, cursor[step.definition.id] ?? 1, cursor[slotKey] ?? 1);
-    cursor[step.definition.id] = day + Math.max(1, Math.ceil(step.durationMinutes / MINUTES_PER_DAY) + 1);
-    cursor[slotKey] = day + 1;
-    return day;
-  });
+  return timeline.map(step => weekStart + step.weekday - 1);
 }
 
 function scanActivityCooldownIssues(plan: WeeklyPlan, timelineSteps: readonly ActivityTimelineStep[], state: GameState, projected: readonly number[]): PlanIssue[] {
   const issues: PlanIssue[] = [];
   const lastScheduledDay = new Map<ContentId, number>();
+  const lastScheduledStep = new Map<ContentId, ActivityTimelineStep>();
   timelineSteps.forEach((step, index) => {
     const day = projected[index];
     if (step.option.cooldownDays) {
-      const executed = state.lifeHistory ?? [];
-      const lastExecuted = executed
-        .filter((record) => record.category === 'activity' && record.sourceId === step.definition.id && record.day <= day)
-        .reduce<number | undefined>((latest, record) => (latest === undefined || record.day > latest ? record.day : latest), undefined);
+      const lastExecuted = lastCompletedDay(state, 'activity', step.definition.id);
       const previousPlanned = lastScheduledDay.get(step.definition.id);
       const anchor = previousPlanned ?? lastExecuted;
       if (anchor !== undefined && day - anchor < step.option.cooldownDays) {
-        issues.push(buildIssue('ACTIVITY_COOLDOWN', step.weekday, step.slot, `周${weekdayLabel(step.weekday)}${slotLabel(step.slot)}${step.definition.name}与上次执行间隔不足 ${step.option.cooldownDays} 天`));
+        issues.push({ ...buildIssue('ACTIVITY_COOLDOWN', step.weekday, step.slot, `周${weekdayLabel(step.weekday)}${slotLabel(step.slot)}${step.definition.name}与上次执行间隔不足 ${step.option.cooldownDays} 天`), participants: [participant(step.weekday, step.slot, plan.days[step.weekday][step.slot]), ...(lastScheduledStep.has(step.definition.id) ? [participant(lastScheduledStep.get(step.definition.id)!.weekday, lastScheduledStep.get(step.definition.id)!.slot, plan.days[lastScheduledStep.get(step.definition.id)!.weekday][lastScheduledStep.get(step.definition.id)!.slot])] : [`history:${step.definition.id}:${lastExecuted}`])] });
       }
+      lastScheduledStep.set(step.definition.id, step);
       lastScheduledDay.set(step.definition.id, day);
       return;
     }
@@ -315,8 +300,8 @@ function collectActivityIssues(plan: WeeklyPlan, state: GameState, content: Cont
           // A day can be blocked by both a plan entry and a workday; report both
           // causes so the player knows exactly what to clear.
           const planBlocked = overrun.planConflict;
-          if (planBlocked) issues.push(buildIssue('MULTI_DAY_CONFLICT', weekday, slot, `周${weekdayLabel(weekday)}多日活动与${label}计划冲突`));
-          if (overrun.workConflict) issues.push(buildIssue('MULTI_DAY_CONFLICT', weekday, slot, `周${weekdayLabel(weekday)}多日活动与${label}正式工作排班冲突`));
+          if (planBlocked) for (const otherSlot of PLAN_SLOTS) { const otherDay = weekdayAfter(weekday, offset); const other = plan.days[otherDay][otherSlot]; if (other.kind !== 'free') issues.push({ ...buildIssue('MULTI_DAY_CONFLICT', weekday, slot, `周${weekdayLabel(weekday)}多日活动与${label}计划冲突`), participants: [participant(weekday, slot, activity), participant(otherDay, otherSlot, other)] }); }
+          if (overrun.workConflict) issues.push({ ...buildIssue('MULTI_DAY_CONFLICT', weekday, slot, `周${weekdayLabel(weekday)}多日活动与${label}正式工作排班冲突`), participants: [participant(weekday, slot, activity), `${weekdayAfter(weekday, offset)}:day:job:${state.employment?.jobId}`] });
         }
         continue;
       }
@@ -412,7 +397,7 @@ export function collectPlanIssues(plan: WeeklyPlan, state: GameState, context: P
       }
     }
   }
-  return issues;
+  return issues.map(issue => ({ ...issue, participants: issue.participants ?? [participant(issue.weekday, issue.slot, issue.slot === 'next' ? undefined : plan.days[issue.weekday][issue.slot])] }));
 }
 
 function issueMessage(issue: PlanIssue): string {
@@ -432,47 +417,38 @@ export interface EditableCell { weekday: Weekday; position: PlanSlot }
  * not increase the number of known problems. A cell that already started, or
  * whose projected run day has passed, is frozen and reports that instead.
  */
-export function planEditIssues(state: GameState, plan: WeeklyPlan, content: ContentRegistry, balance: BalanceConfig, cells?: readonly EditableCell[]): PlanIssue[] {
-  const context: PlanIssueContext = { content, balance, employment: state.employment, from: CURRENT_TIME_FROM };
-  const changedWeekdays = cellsToChangedWeekdays(cells, state.time);
-  const projectedPast = projectedPastCells(plan, state, content);
-  return collectPlanIssues(plan, state, context).filter((issue) => issueIsEditable(issue, changedWeekdays, projectedPast, state.time));
+function participant(day: Weekday, slot: PlanSlot | 'next', activity?: PlannedActivity): string {
+  const entity = !activity ? 'none' : activity.kind === 'activity' ? `${activity.activityId}:${activity.optionId}` : activity.kind === 'course' ? activity.courseId : activity.kind === 'side_job' ? activity.jobId : activity.kind;
+  return `${day}:${slot}:${entity}`;
 }
 
-function cellsToChangedWeekdays(cells: readonly EditableCell[] | undefined, time: GameTime): Set<Weekday> | undefined {
-  if (!cells?.length) return undefined;
-  // Any problem reported on an edited weekday was caused by this edit: the cell
-  // contents differ from what the validator saw a moment ago.
-  return new Set(cells.filter((cell) => slotWithin(cell.weekday, cell.position, CURRENT_TIME_FROM, time)).map((cell) => cell.weekday));
+export function canonicalConflictKey(issue: PlanIssue): string {
+  return JSON.stringify([issue.code, [...(issue.participants ?? [`${issue.weekday}:${issue.slot}`])].sort()]);
 }
 
-/** Cells whose planned activity will not run again this week, because its projected day is behind today. */
-function projectedPastCells(plan: WeeklyPlan, state: GameState, content: ContentRegistry): Set<string> {
-  const frozen = new Set<string>();
-  const timeline = activityTimeline(plan, content);
-  const projected = projectedDays(timeline, state);
-  timeline.forEach((step, index) => {
-    if (projected[index] < state.time.day) frozen.add(`${step.weekday}:${step.slot}`);
-  });
-  return frozen;
+function remainingPlan(state: GameState, plan: WeeklyPlan): WeeklyPlan {
+  const remaining = structuredClone(plan);
+  for (const weekday of WEEKDAYS) for (const slot of PLAN_SLOTS) {
+    if (!slotWithin(weekday, slot, CURRENT_TIME_FROM, state.time)) remaining.days[weekday][slot] = { kind: 'free' };
+  }
+  return remaining;
 }
 
-function issueIsEditable(issue: PlanIssue, changedWeekdays: Set<Weekday> | undefined, projectedPast: Set<string>, time: GameTime): boolean {
-  if (issue.slot === 'next') return true;
-  // A slot that already started only reports that fact when the caller is
-  // resolving a whole-week question; a single-cell edit never reports it, because
-  // `set_plan` already refuses to touch a started slot.
-  if (!slotWithin(issue.weekday, issue.slot, CURRENT_TIME_FROM, time)) return !changedWeekdays && issue.code === 'PAST_SLOT';
-  // A cell whose projected run day is already behind today will never execute
-  // again this week, so its problems are not something the player can repair now.
-  if (projectedPast.has(`${issue.weekday}:${issue.slot}`)) return false;
-  if (!changedWeekdays) return true;
-  return changedWeekdays.has(issue.weekday);
+export function planEditIssues(state: GameState, plan: WeeklyPlan, content: ContentRegistry, balance: BalanceConfig, _cells?: readonly EditableCell[]): PlanIssue[] {
+  const remaining = remainingPlan(state, plan);
+  const issues = collectPlanIssues(remaining, state, { content, balance, employment: state.employment });
+  const active = state.longActivity;
+  if (active) for (const weekday of WEEKDAYS) for (const slot of PLAN_SLOTS) {
+    const planned = remaining.days[weekday][slot];
+    const start = absoluteMinute({ day: weekStartDayOf(state.time.day) + weekday - 1, hour: slot === 'day' ? 9 : 19, minute: 0 });
+    if (planned.kind !== 'free' && start >= absoluteMinute(state.time) && start < absoluteMinute(active.activity.end)) {
+      issues.push({ ...buildIssue('MULTI_DAY_CONFLICT', weekday, slot, `周${weekdayLabel(weekday)}${slotLabel(slot)}与正在进行的长活动冲突`), participants: [`instance:${active.id}`, participant(weekday, slot, planned)] });
+    }
+  }
+  return issues;
 }
 
-function issueSignature(issue: PlanIssue): string {
-  return `${issue.code}:${issue.weekday}:${issue.slot}`;
-}
+const issueSignature = canonicalConflictKey;
 
 export function planEditError(state: GameState, plan: WeeklyPlan, content: ContentRegistry, balance: BalanceConfig, cells?: readonly EditableCell[]): string | undefined {
   const existing = planEditIssues(state, state.weeklyPlan, content, balance, cells);
@@ -493,7 +469,7 @@ export function weeklyPlanErrors(state: GameState, plan: WeeklyPlan, content: Co
  * Returns `undefined` when the week may run.
  */
 export function planRunError(state: GameState, plan: WeeklyPlan, content: ContentRegistry, balance: BalanceConfig): string | undefined {
-  const issues = collectPlanIssues(plan, state, { content, balance, employment: state.employment, from: WEEK_START_FROM });
+  const issues = planEditIssues(state, plan, content, balance);
   return issues.length ? issueMessage(issues[0]) : undefined;
 }
 
@@ -510,11 +486,8 @@ function candidateIssues(candidate: ScheduleCandidate, plan: WeeklyPlan, state: 
       },
     },
   };
-  return [
-    ...occupiedCellIssue(candidate, plan),
-    ...collectPlanIssues(prospective, state, { content, balance, employment: state.employment, from: WEEK_START_FROM })
-      .filter((issue) => issue.weekday === candidate.weekday),
-  ];
+  const existing = new Set(planEditIssues(state, plan, content, balance).map(canonicalConflictKey));
+  return [...occupiedCellIssue(candidate, plan), ...planEditIssues(state, prospective, content, balance).filter(issue => !existing.has(canonicalConflictKey(issue)))];
 }
 
 export function candidateSchedulingError(candidate: ScheduleCandidate, plan: WeeklyPlan, state: GameState, content: ContentRegistry, balance: BalanceConfig): string | undefined {

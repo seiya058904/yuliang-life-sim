@@ -1,3 +1,6 @@
+import { fixedMonthBudget } from './game/engine/settlementMath';
+import { amount, amountText, subtractAmount, scaleAmount, unknown } from './game/engine/knownAmount';
+import type { KnownAmount } from './game/content/contracts';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { balanceConfig } from './game/balance/config';
 import { contentRegistry } from './game/content/registry';
@@ -52,8 +55,21 @@ const navItems: ReadonlyArray<readonly [ViewId, string, PixelIconName]> = [
 ] as const;
 const speedMinutesPerSecond = { 1: 360, 2: 720, 4: 1440 } as const;
 
-function money(value: number): string {
-  return `¥${Math.round(value).toLocaleString('zh-CN')}`;
+function money(value: number | KnownAmount): string {
+  const parsed = amount(value);
+  return parsed.kind === 'unknown' ? '记录不完整' : `¥${Math.round(parsed.value).toLocaleString('zh-CN')}`;
+}
+function signedMoney(value: number | KnownAmount): string {
+  const parsed = amount(value);
+  return parsed.kind === 'unknown' ? '记录不完整' : `${parsed.value >= 0 ? '+' : '-'}${money(Math.abs(parsed.value))}`;
+}
+function amountClass(value: number | KnownAmount): string {
+  const parsed = amount(value);
+  return parsed.kind === 'unknown' ? '' : parsed.value >= 0 ? 'positive' : 'negative';
+}
+function amountDirection(value: number | KnownAmount): string {
+  const parsed = amount(value);
+  return parsed.kind === 'unknown' ? '记录不完整' : parsed.value >= 0 ? '增加' : '减少';
 }
 
 const categoryLabels: Record<string, string> = {
@@ -130,7 +146,9 @@ function App() {
   const consumeEffects = gameStore((store) => store.consumeEffects);
   const reset = gameStore((store) => store.reset);
   const saveError = gameStore((store) => store.saveError);
-  const loadProblem = gameStore((store) => store.loadProblem);
+  const recovery = gameStore((store) => store.recovery);
+  const acceptRecovery = gameStore((store) => store.acceptRecovery);
+  const showRecovery = gameStore((store) => store.showRecovery);
   const dismissLoadProblem = gameStore((store) => store.dismissLoadProblem);
   const [resetOpen, setResetOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -210,7 +228,7 @@ function App() {
         </section>
         {lastError && <div className="notice error" role="alert">{lastError}</div>}
         {saveError && <div className="notice error" role="alert">{saveError}</div>}
-        {loadProblem && <div className="notice error" role="alert"><span>上次存档无法读取（{loadProblem.reason}）。原始数据已保留，未被覆盖。</span><div className="button-pair"><button className="text-button" onClick={dismissLoadProblem}>继续使用新存档</button><button className="text-button" onClick={() => { reset(); dismissLoadProblem(); }}>确认重置存档</button></div></div>}
+        {recovery && (recovery.noticeVisible ? <div className="notice error" role="alert"><span>{recovery.reason}。原始存档尚未被替换，自动保存已暂停。{game.businessFacts?.history === 'partial' ? '旧历史仅恢复现存证据。' : ''}</span><div className="button-pair"><button className="text-button" onClick={acceptRecovery}>{recovery.kind === 'compatibility' ? '确认恢复并继续' : '继续使用当前临时存档'}</button><button className="text-button" onClick={() => reset()}>确认重置存档</button><button className="text-button" onClick={() => { const url = URL.createObjectURL(new Blob([recovery.raw], { type: 'text/plain;charset=utf-8' })); const link = document.createElement('a'); link.href = url; link.download = 'yuliang-original-save.txt'; link.click(); URL.revokeObjectURL(url); }}>导出原始存档</button><button className="text-button" onClick={dismissLoadProblem}>暂时隐藏</button></div></div> : <button onClick={showRecovery}>存档恢复待确认 · 自动保存已暂停</button>)}
         {activeView === 'life' && <LifeView game={game} dispatch={dispatch} onNavigate={navigateToView} />}
         {activeView === 'work' && <CareerWorkspace game={game} dispatch={dispatch} onNavigate={navigateToView} />}
         {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} onNavigate={navigateToView} initialTab={shopTab} /><div className="shop-support-panels"><AcquisitionRequirementsPanel game={game} onNavigate={navigateToView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /></div></>}
@@ -222,11 +240,11 @@ function App() {
       {!game.pendingMonthlySummary && <PersistentStatusBar game={game} onNavigate={navigateToView} />}
 
       <footer className="footer-note">你负责规划，世界负责继续运行。</footer>
-      {pendingEvent && <EventModal event={pendingEvent} onChoose={(choiceId) => dispatch({ type: 'choose_event', eventId: pendingEvent.id, choiceId })} />}
-      {activeRecruitment && game.activeRecruitment && <RecruitmentModal game={game} job={activeRecruitment} dispatch={dispatch} />}
-      {game.pendingReward && <RewardModal reward={game.pendingReward} dispatch={dispatch} />}
-      {game.activeResignation && <ResignationModal game={game} dispatch={dispatch} />}
-      {game.pendingMonthlySummary && <MonthlySummaryModal game={game} dispatch={dispatch} />}
+      {!recovery && pendingEvent && <EventModal event={pendingEvent} onChoose={(choiceId) => dispatch({ type: 'choose_event', eventId: pendingEvent.id, choiceId })} />}
+      {!recovery && activeRecruitment && game.activeRecruitment && <RecruitmentModal game={game} job={activeRecruitment} dispatch={dispatch} />}
+      {!recovery && game.pendingReward && <RewardModal reward={game.pendingReward} dispatch={dispatch} />}
+      {!recovery && game.activeResignation && <ResignationModal game={game} dispatch={dispatch} />}
+      {!recovery && game.pendingMonthlySummary && <MonthlySummaryModal game={game} dispatch={dispatch} />}
       {effects.length > 0 && <EffectRail effects={effects} />}
       {resetOpen && <ConfirmReset onCancel={() => setResetOpen(false)} onConfirm={() => { reset(); setResetOpen(false); }} />}
       {settingsOpen && <SettingsPanel game={game} saveError={saveError} onClose={() => setSettingsOpen(false)} onReset={() => { setSettingsOpen(false); setResetOpen(true); }} />}
@@ -277,7 +295,7 @@ function PortfolioAllocation({ game }: { game: GameState }) {
 
 function PortfolioHistory({ game }: { game: GameState }) {
   const history = (game.financialHistory ?? []).slice(-6);
-  return <section className="detail-panel" aria-label="财富组合历史"><div className="section-heading compact"><div><span className="eyebrow">每月归档</span><h2>财富组合历史</h2></div><p>记录每月现金、净资产与资产配置变化；数据来自已保存的月结账本。</p></div>{history.length === 0 ? <p className="muted">完成第一个月结后，这里会出现组合变化记录。</p> : <div className="item-list">{history.map((entry) => <article className="item-row" key={entry.month}><div><span className="job-kind">第 {entry.month} 月</span><h3>现金 {money(entry.cashStart)} → {money(entry.cashEnd)}</h3><p>净资产 {money(entry.netWorthStart)} → {money(entry.netWorthEnd)} · 变化 {entry.netWorthChange >= 0 ? '+' : '-'}{money(Math.abs(entry.netWorthChange))}</p></div><div className="row-meta"><span>投资配置 {money(entry.assetAllocation.categories.investment_transfer ?? 0)}</span><span>分红 {money(entry.income.categories.investment_dividend ?? 0)}</span></div></article>)}</div>}</section>;
+  return <section className="detail-panel" aria-label="财富组合历史"><div className="section-heading compact"><div><span className="eyebrow">每月归档</span><h2>财富组合历史</h2></div><p>记录每月现金、净资产与资产配置变化；数据来自已保存的月结账本。</p></div>{history.length === 0 ? <p className="muted">完成第一个月结后，这里会出现组合变化记录。</p> : <div className="item-list">{history.map((entry) => <article className="item-row" key={entry.month}><div><span className="job-kind">第 {entry.month} 月</span><h3>现金 {money(entry.cashStart)} → {money(entry.cashEnd)}</h3><p>净资产 {money(entry.netWorthStart)} → {money(entry.netWorthEnd)} · 变化 {signedMoney(entry.netWorthChange)}</p></div><div className="row-meta"><span>投资配置 {money(entry.assetAllocation.categories.investment_transfer ?? 0)}</span><span>分红 {money(entry.income.categories.investment_dividend ?? 0)}</span></div></article>)}</div>}</section>;
 }
 
 function Metric({ label, value }: { label: string; value: number }) {
@@ -321,7 +339,7 @@ function ForecastPanel({ game, scrollTarget = '.life-planning-section' }: { game
   const forecast = useMemo(() => forecastWeeklyPlan(game, game.weeklyPlan, contentRegistry, balanceConfig), [game]);
   const attributes = forecastAttributeOrder.map((key) => [key, forecast.attributes[key] ?? 0] as const);
   return <section className="forecast-strip inverse">
-    <header className="forecast-head"><h2>本周预测</h2><small>确定性计划变化 · 不包含随机事件、市场价格变化、未确定招聘结果</small></header>
+    <header className="forecast-head"><h2>本周剩余安排</h2><small>确定性计划变化 · 不包含随机事件、市场价格变化、未确定招聘结果</small></header>
     {forecast.warnings.length > 0 && <ul className="forecast-warnings" aria-label="无法执行的计划格">{forecast.warnings.slice(0, 4).map((warning) => <li key={warning}>{warning}</li>)}</ul>}
     <div className="forecast-row"><span>预计收入</span><strong>+{money(forecast.income)}</strong></div>
     <div className="forecast-row"><span>预计支出</span><strong>-{money(forecast.expense)}</strong></div>
@@ -435,8 +453,9 @@ function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (
   const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
   const lifestyleScore = calculateLifestyle(game, contentRegistry);
   const lifestyleFactor = Math.min(balanceConfig.lifestyleCostFactorCap, Math.max(0, lifestyleScore * balanceConfig.lifestyleCostFactor));
-  const dailyRent = home ? housingRentPerDay(game, home) : 0;
-  const fixed = dailyRent * 28 + Math.round(balanceConfig.dailyLivingCost * (1 + lifestyleFactor) * 28) + Math.round(balanceConfig.dailyTransportCost * (1 + lifestyleFactor / 2) * 28) + balanceConfig.monthlyCommunicationCost + (home?.fixedMonthlyCost ?? 0);
+  const monthlyBudget = fixedMonthBudget(game, contentRegistry, balanceConfig);
+  const dailyRent = monthlyBudget.rent / 28;
+  const fixed = monthlyBudget.total;
   const [detailsOpen, setDetailsOpen] = useState(false);
   const action = primaryAction(game.simulationMode);
   return <>
@@ -448,7 +467,7 @@ function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (
       <div className="life-secondary-toggle-row"><span className="eyebrow">账本与居住</span><button className="secondary-button" aria-expanded={detailsOpen} aria-controls="life-secondary-details" onClick={() => setDetailsOpen((open) => !open)}>{detailsOpen ? '收起生活详情' : '查看生活详情'}</button></div>
       {detailsOpen && <div id="life-secondary-details" className="life-secondary-details">
         <section className="life-advanced-controls" aria-label="高级时间控制"><span className="eyebrow">更多时间</span><span className="muted">把已规划的人生交给世界运行。</span><button className="text-button" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 1 })}>运行 1 个月</button><button className="text-button" disabled={!action.runEnabled} onClick={() => dispatch({ type: 'advance_period', months: 3 })}>运行 3 个月</button></section>
-        <section className="life-info-grid" aria-label="生活信息面板"><section className="forecast-strip monthly-forecast"><div><span className="eyebrow">本月预计</span><h2>先看余量，再安排生活</h2></div><div><span>固定支出</span><strong>{money(fixed)}</strong></div><div><span>房租</span><strong>{money(dailyRent * 28)}</strong></div><div><span>生活与交通</span><strong>{money(fixed - dailyRent * 28 - balanceConfig.monthlyCommunicationCost)}</strong></div></section><FinancialSummaryView game={game} compact /></section>
+        <section className="life-info-grid" aria-label="生活信息面板"><section className="forecast-strip monthly-forecast"><div><span className="eyebrow">按当前状态折算 28 天</span><h2>先看余量，再安排生活</h2></div><div><span>固定支出</span><strong>{money(fixed)}</strong></div><div><span>房租</span><strong>{money(dailyRent * 28)}</strong></div><div><span>生活与交通</span><strong>{money(monthlyBudget.livingTransport)}</strong></div><div><span>维护与居住费用</span><strong>{money(monthlyBudget.maintenance)}</strong></div><div><span>房贷</span><strong>{money(monthlyBudget.mortgage)}</strong></div><div><span>通信与订阅</span><strong>{money(monthlyBudget.communication + monthlyBudget.subscriptions)}</strong></div></section><FinancialSummaryView game={game} compact /></section>
         <HousingView game={game} dispatch={dispatch} />
         <AcquisitionRequirementsPanel game={game} onNavigate={onNavigate} scope="life" />
       </div>}
@@ -1082,7 +1101,7 @@ function BusinessPublicFloatView({ game, dispatch }: { game: GameState; dispatch
   return <section className="detail-panel" aria-label="公开股权"><div className="section-heading compact"><div><span className="eyebrow">上市后的外部持有人</span><h2>公开股权流通</h2></div><p>公开份额独立记录，不与企业经营股权或普通金融投资混在一起；持有公开份额后按企业经营利润获得分红。</p></div><div className="item-list">{listed.map((business) => { const holding = game.businesses[business.id]; const publicFloat = holding.publicFloatPercent ?? (100 - (holding.equityPercent ?? 100)); const publicHolding = game.publicBusinessEquities?.[business.id]; const available = Math.max(0, publicFloat - (publicHolding?.percent ?? 0)); const tenPercentValue = Math.max(1, Math.round(businessValuation(holding, balanceConfig) * 0.1)); return <div className="item-row" key={business.id}><div><h3>{business.name}</h3><p className="muted">企业持股 {holding.equityPercent ?? 100}% · 市场流通 {publicFloat}%</p>{publicHolding && <p className="muted">你持有公开份额 {publicHolding.percent}% · 当前估值约 {money(Math.round(businessValuation(holding, balanceConfig) * publicHolding.percent / 100))}</p>}</div><div className="button-pair"><button className="text-button" disabled={available < 10 || game.cash - tenPercentValue < 0} onClick={() => dispatch({ type: 'buy_public_business_equity', businessId: business.id, percent: 10 })}>买入公开股权 ¥{tenPercentValue.toLocaleString('zh-CN')}</button>{publicHolding && <button className="text-button" onClick={() => dispatch({ type: 'sell_public_business_equity', businessId: business.id, percent: 10 })}>出售公开股权</button>}</div></div>; })}</div></section>;
 }
 
-function FinancialSummaryView({ game, compact = false }: { game: GameState; compact?: boolean }) { const ledger = game.financialLedger ?? { month: game.calendar.month, nextSequence: 1, entries: [], cashStart: game.cash, netWorthStart: game.cash }; const summary = summarizeFinancialLedger(ledger, ledger.cashStart ?? game.cash, game.cash, ledger.netWorthStart ?? game.cash, calculateNetWorth(game, contentRegistry, balanceConfig)); const row = (label: string, value: number, className = '') => <div className="finance-row"><span>{label}</span><strong className={className}>{value >= 0 ? '+' : '-'}{money(Math.abs(value))}</strong></div>; const categories = (entries: Record<string, number>) => Object.entries(entries).map(([category, amount]) => `${displayMappedLabel(category, financialLabels)} ${money(amount)}`).join(' · ') || '暂无'; return <section className={compact ? 'finance-panel compact' : 'finance-panel'}><div className="section-heading compact"><div><span className="eyebrow">第 {summary.month} 月 · 本月账本</span><h2>钱从哪里来，又去了哪里</h2></div><span className="finance-note">资产配置不算消费</span></div><div className="finance-columns"><div><span className="finance-label">收入</span>{row('全部收入', summary.totalIncome, 'positive')}</div><div><span className="finance-label">消费支出</span>{row('生活与主动消费', -summary.totalConsumption, 'negative')}</div><div><span className="finance-label">资产配置</span>{row('现金 → 投资资产', -summary.totalAssetAllocation, 'transfer')}</div><div><span className="finance-label">现金结余</span>{row('本月现金变化', summary.cashChange, summary.cashChange >= 0 ? 'positive' : 'negative')}</div></div><div className="finance-total"><span>净资产变化</span><strong>{money(summary.netWorthStart)} → {money(summary.netWorthEnd)}（{summary.netWorthChange >= 0 ? '+' : ''}{money(summary.netWorthChange)}）</strong></div>{!compact && <><div className="ledger-detail"><span>收入来源</span><small>{categories(summary.income.categories)}</small></div><div className="ledger-detail"><span>消费分类</span><small>{categories(summary.consumption.categories)}</small></div><div className="ledger-detail"><span>资产配置</span><small>{categories(summary.assetAllocation.categories)}</small></div><div className="ledger-detail"><span>最近月份</span><small>{(game.financialHistory ?? []).slice(-6).map((entry) => `第${entry.month}月 ${money(entry.cashChange)}`).join(' · ') || '还没有已归档月份'}</small></div></>}</section>; }
+function FinancialSummaryView({ game, compact = false }: { game: GameState; compact?: boolean }) { const ledger = game.financialLedger ?? { month: game.calendar.month, nextSequence: 1, entries: [], cashStart: unknown(), netWorthStart: unknown(), entriesComplete: false }; const summary = summarizeFinancialLedger(ledger, ledger.cashStart, game.cash, ledger.netWorthStart, calculateNetWorth(game, contentRegistry, balanceConfig)); const row = (label: string, value: number | KnownAmount, className = '') => <div className="finance-row"><span>{label}</span><strong className={className}>{signedMoney(value)}</strong></div>; const categories = (entries: Record<string, number>) => Object.entries(entries).map(([category, amount]) => `${displayMappedLabel(category, financialLabels)} ${money(amount)}`).join(' · ') || '暂无'; return <section className={compact ? 'finance-panel compact' : 'finance-panel'}><div className="section-heading compact"><div><span className="eyebrow">第 {summary.month} 月 · 本月账本</span><h2>钱从哪里来，又去了哪里</h2></div><span className="finance-note">资产配置不算消费</span></div><div className="finance-columns"><div><span className="finance-label">收入</span>{row('全部收入', summary.totalIncome, 'positive')}</div><div><span className="finance-label">消费支出</span>{row('生活与主动消费', scaleAmount(summary.totalConsumption, -1), 'negative')}</div><div><span className="finance-label">资产配置</span>{row('现金 → 投资资产', -summary.totalAssetAllocation, 'transfer')}</div><div><span className="finance-label">现金结余</span>{row('本月现金变化', summary.cashChange, amountClass(summary.cashChange))}</div></div><div className="finance-total"><span>净资产变化</span><strong>{money(summary.netWorthStart)} → {money(summary.netWorthEnd)}（{signedMoney(summary.netWorthChange)}）</strong></div>{!compact && <><div className="ledger-detail"><span>收入来源</span><small>{categories(summary.income.categories)}</small></div><div className="ledger-detail"><span>消费分类</span><small>{categories(summary.consumption.categories)}</small></div><div className="ledger-detail"><span>资产配置</span><small>{categories(summary.assetAllocation.categories)}</small></div><div className="ledger-detail"><span>最近月份</span><small>{(game.financialHistory ?? []).slice(-6).map((entry) => `第${entry.month}月 ${money(entry.cashChange)}`).join(' · ') || '还没有已归档月份'}</small></div></>}</section>; }
 
 function BusinessLocationSummary({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
   const owned = contentRegistry.businesses.filter((business) => game.businesses[business.id]);
@@ -1126,7 +1145,7 @@ function AnnualHistoryView({ game }: { game: GameState }) {
   const visible = entries.slice(-range);
   const first = visible[0];
   const last = visible.at(-1);
-  return <section className="detail-panel"><div className="section-heading compact"><div><span className="eyebrow">长期记录</span><h2>年度回顾</h2></div><p>年度记录来自已完成的十二个月，不改变自动模拟的暂停与决策节点。</p></div>{entries.length > 0 && <div className="filter-row" aria-label="年度跨度">{([3, 5, 10] as const).map((value) => <button key={value} className={range === value ? 'filter-button selected' : 'filter-button'} aria-pressed={range === value} onClick={() => setRange(value)}>近 {value} 年</button>)}</div>}{first && last && visible.length >= 3 && <div className="finance-total"><span>近 {visible.length} 年净资产变化</span><strong>{money(first.netWorthStart)} → {money(last.netWorthEnd)}（{last.netWorthEnd - first.netWorthStart >= 0 ? '+' : ''}{money(last.netWorthEnd - first.netWorthStart)}）</strong></div>}{entries.length ? <div className="item-list">{visible.map((entry) => { const world = worldHistory.find((snapshot) => snapshot.year === entry.year); const relationships = Object.entries(world?.relationshipValues ?? {}).filter(([, value]) => value > 0).map(([id, value]) => `${displayContentName(id, contentRegistry.characters, '联系人')} ${value}`).join(' · '); const companyStates = Object.entries(world?.companyStates ?? {}).map(([id, title]) => `${displayContentName(id, contentRegistry.companies ?? [], '企业')}：${title}`).join(' · '); return <div className="item-row" key={entry.year}><div><h3>第 {entry.year} 年</h3><p>{entry.months} 个月 · 收入 {money(entry.totalIncome)} · 消费 {money(entry.totalConsumption)} · 联系人 {world?.relationshipCount ?? '—'} 人</p>{relationships && <span className="muted">关系：{relationships}</span>}{companyStates && <span className="muted">公司状态：{companyStates}</span>}</div><div className="row-meta"><strong>{money(entry.netWorthStart)} → {money(entry.netWorthEnd)}</strong><span className="muted">现金 {money(entry.cashStart)} → {money(entry.cashEnd)}</span></div></div>; })}</div> : <p className="muted">完成第一个年度后，这里会出现年度现金流与净资产记录。</p>}</section>;
+  return <section className="detail-panel"><div className="section-heading compact"><div><span className="eyebrow">长期记录</span><h2>年度回顾</h2></div>{game.businessFacts?.history === 'partial' && <p>旧版历史仅恢复现存证据，不补造冷却日期；旧岗位的挽留奖励按已领取处理。</p>}<p>年度记录来自已完成的十二个月，不改变自动模拟的暂停与决策节点。</p></div>{entries.length > 0 && <div className="filter-row" aria-label="年度跨度">{([3, 5, 10] as const).map((value) => <button key={value} className={range === value ? 'filter-button selected' : 'filter-button'} aria-pressed={range === value} onClick={() => setRange(value)}>近 {value} 年</button>)}</div>}{first && last && visible.length >= 3 && <div className="finance-total"><span>近 {visible.length} 年净资产变化</span><strong>{money(first.netWorthStart)} → {money(last.netWorthEnd)}（{signedMoney(subtractAmount(last.netWorthEnd, first.netWorthStart))}）</strong></div>}{entries.length ? <div className="item-list">{visible.map((entry) => { const world = worldHistory.find((snapshot) => snapshot.year === entry.year); const relationships = Object.entries(world?.relationshipValues ?? {}).filter(([, value]) => value > 0).map(([id, value]) => `${displayContentName(id, contentRegistry.characters, '联系人')} ${value}`).join(' · '); const companyStates = Object.entries(world?.companyStates ?? {}).map(([id, title]) => `${displayContentName(id, contentRegistry.companies ?? [], '企业')}：${title}`).join(' · '); return <div className="item-row" key={entry.year}><div><h3>第 {entry.year} 年</h3><p>{entry.months} 个月 · 收入 {money(entry.totalIncome)} · 消费 {money(entry.totalConsumption)} · 联系人 {world?.relationshipCount ?? '—'} 人</p>{relationships && <span className="muted">关系：{relationships}</span>}{companyStates && <span className="muted">公司状态：{companyStates}</span>}</div><div className="row-meta"><strong>{money(entry.netWorthStart)} → {money(entry.netWorthEnd)}</strong><span className="muted">现金 {money(entry.cashStart)} → {money(entry.cashEnd)}</span></div></div>; })}</div> : <p className="muted">完成第一个年度后，这里会出现年度现金流与净资产记录。</p>}</section>;
 }
 
 function WorldHistoryView({ game }: { game: GameState }) {
@@ -1210,11 +1229,12 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
   const ledger = pending.summary.ledger;
   const netWorthStart = ledger.netWorthStart;
   const netWorthEnd = ledger.netWorthEnd;
-  const netWorthChange = financial?.netWorthChange ?? (netWorthEnd - netWorthStart);
-  const cashDelta = financial?.cashChange ?? ledger.netWorthEnd - ledger.netWorthStart;
+  const netWorthChange = financial?.netWorthChange ?? subtractAmount(netWorthEnd, netWorthStart);
+  const cashDelta = financial?.cashChange ?? unknown();
   const monthStartDay = (pending.month - 1) * 28 + 1;
   const monthEndDay = pending.month * 28;
-  const growthPercent = netWorthStart > 0 ? Math.round((netWorthChange / netWorthStart) * 1000) / 10 : null;
+  const startAmount = amount(netWorthStart), changeAmount = amount(netWorthChange);
+  const growthPercent = startAmount.kind === 'known' && changeAmount.kind === 'known' && startAmount.value > 0 ? Math.round(changeAmount.value / startAmount.value * 1000) / 10 : null;
   const incomeRows = Object.entries(financial?.income.categories ?? {}).filter(([, amount]) => amount > 0).slice(0, 5);
   const expenseRows = Object.entries(financial?.consumption.categories ?? {}).filter(([, amount]) => amount > 0).slice(0, 6);
   const allocationCategoryOrder = ['investment_transfer', 'property_transfer', 'business_transfer', 'collectible_transfer'] as const;
@@ -1277,16 +1297,16 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
         <h3>资产配置（变化）</h3>
         <div className="settle-panel-art"><PixelIllustration name="settlement-allocation" size={68} /></div>
         <ul className="settle-rows alloc">{allocationRows.length ? allocationRows.map(([category, amount]) => { const label = displayMappedLabel(category, financialLabels); return <li className={amount === 0 ? 'is-zero' : undefined} key={category}><span>{label}{amount === 0 && <em>无变化</em>}</span><SegmentMeter value={Math.abs(amount)} max={allocationScale} segments={10} label={`${label} ${amount === 0 ? '本月无配置流动' : money(amount)}`} /><b>{amount === 0 ? '±0' : money(Math.abs(amount))}</b></li>; }) : <li className="settle-empty-row"><span className="settle-empty-copy" role="status" aria-label="本月没有资产配置流动。">本月没有资产配置流动。</span></li>}</ul>
-        <div className="ledger-detail"><span>现金变化</span><small>{cashDelta >= 0 ? '+' : '-'}{money(Math.abs(cashDelta))}</small></div>
+        <div className="ledger-detail"><span>现金变化</span><small>{signedMoney(cashDelta)}</small></div>
         <div className="settle-panel-note" aria-label="资产配置摘要"><span>{allocationNote}</span></div>
       </section>
       <div className="settle-result-column" aria-label="净资产结果与变现结果">
         <section className="settle-result settle-result-inverse pixel-corners" aria-label="净资产结果">
           <h3 className="settle-result-title">净资产变化</h3>
-          <span className="settle-ribbon">本月净资产{netWorthChange >= 0 ? '增加' : '减少'}</span>
-          <strong className={`settle-big ${netWorthChange >= 0 ? 'positive' : 'negative'}`}>{netWorthChange >= 0 ? '+' : '-'}{money(Math.abs(netWorthChange))}</strong>
+          <span className="settle-ribbon">本月净资产{amountDirection(netWorthChange)}</span>
+          <strong className={`settle-big ${amountClass(netWorthChange)}`}>{signedMoney(netWorthChange)}</strong>
           <p className="settle-range">净资产从 {money(netWorthStart)} 变化为 {money(netWorthEnd)}（估值变化不等于现金收入）</p>
-          {growthPercent !== null && <em className="settle-badge"><span>增幅</span><strong>{netWorthChange >= 0 ? '+' : ''}{growthPercent}%</strong></em>}
+          {growthPercent !== null && <em className="settle-badge"><span>增幅</span><strong>{changeAmount.kind === 'known' && changeAmount.value >= 0 ? '+' : ''}{growthPercent}%</strong></em>}
           <div className="settle-result-motif" aria-hidden="true">
             {Array.from({ length: 16 }, (_, index) => <i className={`settle-ray settle-ray-${index + 1}`} key={`ray-${index}`} />)}
             {Array.from({ length: 14 }, (_, index) => <i className={`settle-spark settle-spark-${index + 1}`} key={`spark-${index}`} />)}
@@ -1316,7 +1336,7 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
         <article className="highlight-card reflection" aria-label="本月回顾">
           <PixelIcon name="chart" size={26} />
           <h3>本月回顾</h3>
-          <strong className={`reflection-metric ${netWorthChange >= 0 ? 'positive' : 'negative'}`}>{netWorthChange >= 0 ? '+' : '-'}{money(Math.abs(netWorthChange))}</strong>
+          <strong className={`reflection-metric ${amountClass(netWorthChange)}`}>{signedMoney(netWorthChange)}</strong>
           <small className="reflection-range">{money(netWorthStart)} → {money(netWorthEnd)}</small>
           <p>{pending.highlights.length ? `写下了 ${pending.highlights.length} 条值得记住的变化。` : '这个月平稳地过去了，没有标记的重大变化。'}</p>
         </article>

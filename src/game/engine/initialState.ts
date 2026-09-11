@@ -1,3 +1,4 @@
+import { known } from './knownAmount';
 import type { BalanceConfig } from '../balance/config';
 import type { ContentRegistry, GameState } from '../content/contracts';
 import { calendarForDay } from './calendar';
@@ -19,6 +20,8 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
   const employment = currentJob?.kind === 'regular' ? { jobId: currentJob.id, startedDay: balance.initialDay, schedule: defaultJobSchedule(currentJob), effectiveWeek: calendar.week, basePay: currentJob.basePay, salaryAdjustment: 0, negotiationStage: 0 as const } : undefined;
   const state: GameState = {
     version: balance.saveVersion,
+    nextLifeRecordSequence: 0,
+    businessFacts: { history: 'complete', lastCompleted: {}, interactions: {}, retentionClaims: {} },
     contentVersion: balance.contentVersion,
     time,
     calendar,
@@ -35,7 +38,7 @@ export function createInitialState(content: ContentRegistry, balance: BalanceCon
     currentActivity: activityAtTime(time, weeklyPlan, employment, content, { modifiers: [] }),
     simulationMode: 'planning',
     simulationSpeed: 1,
-    monthlyLedger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: balance.initialCash, netWorthEnd: balance.initialCash },
+    monthlyLedger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: known(balance.initialCash), netWorthEnd: known(balance.initialCash) },
     financialLedger: emptyFinancialLedger(calendar.month, balance.initialCash, balance.initialCash),
     financialHistory: [],
     annualHistory: [],

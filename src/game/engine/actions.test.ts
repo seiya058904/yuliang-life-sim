@@ -1,3 +1,4 @@
+import { known } from './knownAmount';
 import { describe, expect, it } from 'vitest';
 import type { GameAction } from '../content/contracts';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
@@ -460,14 +461,14 @@ describe('game action dispatcher', () => {
     expect(exited.error).toBeUndefined();
     expect(exited.state.businesses['business.seed-kiosk']).toBeUndefined();
     expect(exited.state.cash).toBe(10000 - 3200 + 2400 + 2912);
-    expect(exited.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', group: 'asset_liquidation', amount: 2912, cashDelta: 2912 });
+    expect(exited.state.financialLedger?.entries.filter(entry => entry.category === 'business_transfer').at(-1)).toMatchObject({ category: 'business_transfer', group: 'asset_liquidation', amount: 2912, cashDelta: 2912 });
     expect(exited.state.lifeHistory?.at(-1)).toMatchObject({ title: '退出早餐与咖啡档', category: 'business' });
   });
 
   it('lists a mature business and sells a partial public equity stake', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.cash = 10000;
-    state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, fundingRaised: 4800, fundingRound: 2, equityPercent: 65 };
+    state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, fundingRaised: 4800, fundingRound: 2, equityPercent: 65, playerCostBasis: known(2080) };
     const listed = dispatchGameAction(state, { type: 'list_business', businessId: 'business.seed-kiosk' }, contentRegistry, balanceConfig);
     const lockedSale = dispatchGameAction(listed.state, { type: 'sell_business_equity', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
     const afterLock = { ...listed.state, time: { ...listed.state.time, day: 29 } };
@@ -486,7 +487,7 @@ describe('game action dispatcher', () => {
     expect(soldEntries[0]).toMatchObject({ category: 'business_transfer', group: 'asset_liquidation', amount: 520, cashDelta: 520 });
     // External funding lifted the implied company value above the proportional legacy basis, so
     // selling 10% records a genuine realized gain instead of a plain liquidation.
-    expect(soldEntries[1]).toMatchObject({ category: 'realized_gain', amount: 200, cashDelta: 0, costBasis: 320 });
+    expect(soldEntries[1]).toMatchObject({ category: 'realized_gain', amount: 200, cashDelta: 0, costBasis: known(320) });
     expect(sold.state.lifeHistory.at(-1)).toMatchObject({ category: 'business', title: '出售早餐与咖啡档 10% 股权' });
 
     const bought = dispatchGameAction(sold.state, { type: 'buy_business_equity', businessId: 'business.seed-kiosk', percent: 5 }, contentRegistry, balanceConfig);
@@ -881,7 +882,7 @@ describe('enterprise control and holding group', () => {
   it('enters an unlocked business as a minority stakeholder without operational control', () => {
     const staked = dispatchGameAction(stakeableState(), { type: 'buy_business_stake', businessId: 'business.seed-kiosk', percent: 30 }, contentRegistry, balanceConfig);
     expect(staked.error).toBeUndefined();
-    expect(staked.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 30, purchasePrice: 3200, playerCostBasis: 960 });
+    expect(staked.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 30, purchasePrice: 3200, playerCostBasis: known(960) });
     expect(staked.state.cash).toBe(20000 - 960);
     expect(staked.state.locationVisits?.['location.central']).toBe(1);
     expect(staked.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 960, cashDelta: -960 });
@@ -903,7 +904,7 @@ describe('enterprise control and holding group', () => {
     // Implied company value from books: (3200 + 0 + 0) * 0.65 = 2080; +20% costs round(2080*0.2*1.15) = 478.
     const raised = dispatchGameAction(entered.state, { type: 'increase_business_stake', businessId: 'business.seed-kiosk', percent: 20 }, contentRegistry, balanceConfig);
     expect(raised.error).toBeUndefined();
-    expect(raised.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 50, playerCostBasis: 960 + 478 });
+    expect(raised.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 50, playerCostBasis: known(960 + 478) });
     expect(raised.state.financialLedger?.entries.at(-1)).toMatchObject({ group: 'asset_allocation', category: 'business_transfer', amount: 478, cashDelta: -478 });
     expect(raised.state.lifeHistory.at(-1)).toMatchObject({ title: '增持早餐与咖啡档至 50%' });
 
@@ -921,15 +922,15 @@ describe('enterprise control and holding group', () => {
 
   it('sells down part of a private stake with proportional basis and realized gain', () => {
     const state = stakeableState();
-    state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, fundingRaised: 4800, fundingRound: 1, equityPercent: 50 };
-    // Implied value (3200+4800)*0.65 = 5200; legacy basis 3200*0.5 = 1600.
+    state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, fundingRaised: 4800, fundingRound: 1, equityPercent: 50, playerCostBasis: known(1600) };
+    // Implied value (3200+4800)*0.65 = 5200; documented remaining basis = 1600.
     const reduced = dispatchGameAction(state, { type: 'sell_business_stake', businessId: 'business.seed-kiosk', percent: 10 }, contentRegistry, balanceConfig);
     expect(reduced.error).toBeUndefined();
-    expect(reduced.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 40, playerCostBasis: 1280 });
+    expect(reduced.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 40, playerCostBasis: known(1280) });
     expect(reduced.state.cash).toBe(20000 + 520);
     const entries = reduced.state.financialLedger?.entries.slice(-2) ?? [];
     expect(entries[0]).toMatchObject({ group: 'asset_liquidation', category: 'business_transfer', amount: 520, cashDelta: 520 });
-    expect(entries[1]).toMatchObject({ category: 'realized_gain', amount: 200, costBasis: 320 });
+    expect(entries[1]).toMatchObject({ category: 'realized_gain', amount: 200, costBasis: known(320) });
     expect(reduced.state.lifeHistory.at(-1)).toMatchObject({ title: '减持早餐与咖啡档 10% 股权' });
 
     const invalidReduction = dispatchGameAction(reduced.state, { type: 'sell_business_stake', businessId: 'business.seed-kiosk', percent: 40 }, contentRegistry, balanceConfig);
@@ -967,7 +968,7 @@ describe('enterprise control and holding group', () => {
     expect(exited.state.businesses['business.seed-kiosk']).toBeUndefined();
     // Proceeds: implied value (3200 * 0.65) * 30% = 624.
     expect(exited.state.cash).toBe(20000 - 960 + 624);
-    const exitEntry = exited.state.financialLedger?.entries.at(-1) ?? {};
+    const exitEntry = exited.state.financialLedger?.entries.filter(entry => entry.category === 'business_transfer').at(-1) ?? {};
     expect(exitEntry).toMatchObject({ group: 'asset_liquidation', category: 'business_transfer', amount: 624, cashDelta: 624 });
     expect(exited.state.lifeHistory.at(-1)).toMatchObject({ title: '退出早餐与咖啡档' });
   });

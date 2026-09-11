@@ -1,3 +1,4 @@
+import { known } from '../engine/knownAmount';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
@@ -150,19 +151,19 @@ describe('game store persistence', () => {
     expect(loadGameState(contentRegistry, balanceConfig).businesses['business.seed-kiosk'].partnerCharacterId).toBeUndefined();
   });
 
-  it('migrates control-era business fields and backfills legacy cost basis', () => {
+  it('migrates control-era business fields without guessing legacy cost basis', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 7, businesses: {
       // Legacy stake-style holding without any control-era fields.
       'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 30 },
       // Holding that already used the staged control fields plus an unknown relocation target.
-      'business.online-store': { businessId: 'business.online-store', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 7800, equityPercent: 60, playerCostBasis: 5200, operatingBonusPercent: 40, relocatedLocationId: 'location.nowhere', acquiredDay: 12, acquiredFromBusinessId: 'business.unknown' },
+      'business.online-store': { businessId: 'business.online-store', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 7800, equityPercent: 60, playerCostBasis: known(5200), operatingBonusPercent: 40, relocatedLocationId: 'location.nowhere', acquiredDay: 12, acquiredFromBusinessId: 'business.unknown' },
     } }));
 
     const restored = loadGameState(contentRegistry, balanceConfig);
 
-    expect(restored.businesses['business.seed-kiosk']).toMatchObject({ playerCostBasis: Math.round(3200 * 0.3), equityPercent: 30 });
-    expect(restored.businesses['business.online-store']).toMatchObject({ playerCostBasis: 5200, operatingBonusPercent: 25, acquiredDay: 12 });
+    expect(restored.businesses['business.seed-kiosk']).toMatchObject({ playerCostBasis: { kind: 'unknown' }, equityPercent: 30 });
+    expect(restored.businesses['business.online-store']).toMatchObject({ playerCostBasis: { kind: 'unknown' }, operatingBonusPercent: 25, acquiredDay: 12 });
     expect(restored.businesses['business.online-store'].relocatedLocationId).toBeUndefined();
     expect(restored.businesses['business.online-store'].acquiredFromBusinessId).toBeUndefined();
     expect(restored.version).toBe(balanceConfig.saveVersion);
@@ -195,21 +196,21 @@ describe('game store persistence', () => {
   it('keeps valid annual records while dropping malformed entries during migration', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, annualHistory: [
-      { year: 1, cashStart: 1000, cashEnd: 1200, netWorthStart: 1000, netWorthEnd: 1400, totalIncome: 500, totalConsumption: 300, months: 12 },
+      { year: 1, cashStart: known(1000), cashEnd: known(1200), netWorthStart: known(1000), netWorthEnd: known(1400), totalIncome: known(500), totalConsumption: known(300), months: 12 },
       { year: 2, cashStart: 'invalid' },
     ] }));
 
     const restored = loadGameState(contentRegistry, balanceConfig);
 
-    expect(restored.annualHistory).toEqual([{ year: 1, cashStart: 1000, cashEnd: 1200, netWorthStart: 1000, netWorthEnd: 1400, totalIncome: 500, totalConsumption: 300, months: 12 }]);
+    expect(restored.annualHistory).toEqual([{ year: 1, cashStart: known(1000), cashEnd: known(1200), netWorthStart: known(1000), netWorthEnd: known(1400), totalIncome: known(500), totalConsumption: known(300), months: 12 }]);
   });
 
   it('filters malformed financial entries while preserving ledger anchors', () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     const valid = { id: 'financial:1:1', day: 1, direction: 'income', group: 'income', category: 'wage', amount: 100, cashDelta: 100, label: '工资' };
-    const restored = migrateGameState({ ...state, financialLedger: { month: 1, nextSequence: 4, cashStart: 321, netWorthStart: 654, entries: [valid, null, { invalid: true }] } }, contentRegistry, balanceConfig);
+    const restored = migrateGameState({ ...state, financialLedger: { month: 1, nextSequence: 4, cashStart: known(321), netWorthStart: known(654), entries: [valid, null, { invalid: true }] } }, contentRegistry, balanceConfig);
 
-    expect(restored.financialLedger).toMatchObject({ cashStart: 321, netWorthStart: 654, nextSequence: 4 });
+    expect(restored.financialLedger).toMatchObject({ cashStart: known(321), netWorthStart: known(654), nextSequence: 4 });
     expect(restored.financialLedger?.entries).toEqual([valid]);
   });
 

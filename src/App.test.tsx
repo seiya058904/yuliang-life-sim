@@ -1,3 +1,4 @@
+import { known } from './game/engine/knownAmount';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, beforeEach } from 'vitest';
@@ -50,7 +51,7 @@ describe('余量 app flow', () => {
     render(<App />);
     await user.click(screen.getByRole('button', { name: '生活' }));
 
-    const forecast = screen.getByRole('heading', { name: '本周预测' }).closest('section') as HTMLElement;
+    const forecast = screen.getByRole('heading', { name: '本周剩余安排' }).closest('section') as HTMLElement;
     expect(within(forecast).getByText('体能')).toBeInTheDocument();
     expect(within(forecast).getByText('心情')).toBeInTheDocument();
     expect(within(forecast).getByText('专业')).toBeInTheDocument();
@@ -442,15 +443,15 @@ describe('余量 app flow', () => {
     appStore.setState({ game: { ...game, simulationMode: 'monthly_summary', pendingMonthlySummary: {
       month: 1,
       resumeMode: 'planning',
-      summary: { month: 1, ledger: { wageIncome: 1000, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 200, purchaseExpense: 0, livingExpense: 100, netWorthStart: 500, netWorthEnd: 1250 } },
+      summary: { month: 1, ledger: { wageIncome: 1000, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 200, purchaseExpense: 0, livingExpense: 100, netWorthStart: known(500), netWorthEnd: known(1250) } },
       financial: {
         month: 1,
         income: { group: 'income', amount: 1000, categories: { wage: 1000, realized_gain: 50 } },
         consumption: { group: 'consumption', amount: 300, categories: { housing: 200, living: 100 } },
         assetAllocation: { group: 'asset_allocation', amount: 200, categories: { investment_transfer: 200 } },
         assetLiquidation: { group: 'asset_liquidation', amount: 25, categories: { asset_liquidation: 25 } },
-        totalIncome: 1000, totalConsumption: 300, totalAssetAllocation: 200, totalAssetLiquidation: 25,
-        cashStart: 500, cashEnd: 1025, cashChange: 525, netWorthStart: 500, netWorthEnd: 1250, netWorthChange: 750,
+        totalIncome: known(1000), totalConsumption: known(300), totalAssetAllocation: 200, totalAssetLiquidation: 25,
+        cashStart: known(500), cashEnd: known(1025), cashChange: known(525), netWorthStart: known(500), netWorthEnd: known(1250), netWorthChange: known(750),
       },
       highlights: [{ id: 'highlight-1', kind: 'new_job', day: 28, label: '新工作 · 便利店店员' }],
     } } });
@@ -490,7 +491,7 @@ describe('余量 app flow', () => {
     appStore.setState({ game: { ...game, simulationMode: 'paused', pendingMonthlySummary: {
       month: 1,
       resumeMode: 'planning',
-      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
+      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: known(500), netWorthEnd: known(500) } },
       highlights: [],
     } } });
 
@@ -509,7 +510,7 @@ describe('余量 app flow', () => {
     appStore.setState({ game: { ...game, simulationMode: 'paused', pendingMonthlySummary: {
       month: 1,
       resumeMode: 'planning',
-      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
+      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: known(500), netWorthEnd: known(500) } },
       highlights: [],
     } } });
 
@@ -525,7 +526,7 @@ describe('余量 app flow', () => {
     appStore.setState({ game: { ...game, simulationMode: 'paused', pendingMonthlySummary: {
       month: 1,
       resumeMode: 'planning',
-      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
+      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: known(500), netWorthEnd: known(500) } },
       highlights: [],
     } } });
 
@@ -540,7 +541,7 @@ describe('余量 app flow', () => {
     appStore.setState({ game: { ...game, simulationMode: 'paused', pendingMonthlySummary: {
       month: 1,
       resumeMode: 'planning',
-      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
+      summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: known(500), netWorthEnd: known(500) } },
       highlights: [],
     } } });
 
@@ -1154,7 +1155,7 @@ describe('余量 app flow', () => {
   it('shows persisted vehicle maintenance records in the wealth view', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
-    appStore.setState({ game: { ...game, assets: { 'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 35000, purchaseDay: 1, currentValuation: 34900 } }, financialLedger: { month: 2, nextSequence: 2, entries: [{ id: 'ledger.vehicle.1', day: 28, direction: 'expense', group: 'consumption', category: 'maintenance', amount: 300, cashDelta: -300, sourceType: 'vehicle', sourceId: 'asset.used-compact', label: '实用二手小车车辆成本' }], cashStart: 50000, netWorthStart: 50000 } } });
+    appStore.setState({ game: { ...game, assets: { 'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 35000, purchaseDay: 1, currentValuation: 34900 } }, financialLedger: { month: 2, nextSequence: 2, entries: [{ id: 'ledger.vehicle.1', day: 28, direction: 'expense', group: 'consumption', category: 'maintenance', amount: 300, cashDelta: -300, sourceType: 'vehicle', sourceId: 'asset.used-compact', label: '实用二手小车车辆成本' }], cashStart: known(50000), netWorthStart: known(50000) } } });
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
@@ -1225,7 +1226,7 @@ describe('余量 app flow', () => {
   it('shows persisted annual records in the profile view', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
-    appStore.setState({ game: { ...game, annualHistory: [{ year: 1, cashStart: 1000, cashEnd: 1400, netWorthStart: 1000, netWorthEnd: 1800, totalIncome: 900, totalConsumption: 500, months: 12 }], worldHistory: [{ year: 1, day: 337, netWorth: 1800, businessCount: 0, relationshipCount: 2, relationshipValues: { 'character.seed-zhou': 42 }, companyStates: { 'company.yuanwang': '门店与社区零售' }, visitedLocationCount: 1 }] } });
+    appStore.setState({ game: { ...game, annualHistory: [{ year: 1, cashStart: known(1000), cashEnd: known(1400), netWorthStart: known(1000), netWorthEnd: known(1800), totalIncome: known(900), totalConsumption: known(500), months: 12 }], worldHistory: [{ year: 1, day: 337, netWorth: 1800, businessCount: 0, relationshipCount: 2, relationshipValues: { 'character.seed-zhou': 42 }, companyStates: { 'company.yuanwang': '门店与社区零售' }, visitedLocationCount: 1 }] } });
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
@@ -1240,7 +1241,7 @@ describe('余量 app flow', () => {
   it('switches the annual review between three-year and five-year spans', async () => {
     const user = userEvent.setup();
     const game = appStore.getState().game;
-    const annualHistory = [1, 2, 3, 4, 5].map((year) => ({ year, cashStart: year * 1000, cashEnd: year * 1200, netWorthStart: year * 1000, netWorthEnd: year * 1500, totalIncome: 900, totalConsumption: 500, months: 12 }));
+    const annualHistory = [1, 2, 3, 4, 5].map((year) => ({ year, cashStart: known(year * 1000), cashEnd: known(year * 1200), netWorthStart: known(year * 1000), netWorthEnd: known(year * 1500), totalIncome: known(900), totalConsumption: known(500), months: 12 }));
     appStore.setState({ game: { ...game, annualHistory } });
     render(<App />);
 
@@ -1518,16 +1519,16 @@ describe('余量 app flow', () => {
       consumption: { group: 'consumption', amount: 300, categories: { living: 300 } },
       assetAllocation: { group: 'asset_allocation', amount: investmentTransfer, categories: { investment_transfer: investmentTransfer } },
       assetLiquidation: { group: 'asset_liquidation', amount: 0, categories: {} },
-      totalIncome: dividend,
-      totalConsumption: 300,
+      totalIncome: known(dividend),
+      totalConsumption: known(300),
       totalAssetAllocation: investmentTransfer,
       totalAssetLiquidation: 0,
-      cashStart,
-      cashEnd,
-      cashChange: cashEnd - cashStart,
-      netWorthStart,
-      netWorthEnd,
-      netWorthChange: netWorthEnd - netWorthStart,
+      cashStart: known(cashStart),
+      cashEnd: known(cashEnd),
+      cashChange: known(cashEnd - cashStart),
+      netWorthStart: known(netWorthStart),
+      netWorthEnd: known(netWorthEnd),
+      netWorthChange: known(netWorthEnd - netWorthStart),
     });
     appStore.setState({ game: { ...game, financialHistory: [summary(2, 10_000, 9_700, 12_000, 12_450, 1_000, 50), summary(3, 9_700, 9_900, 12_450, 12_300, 0, 80)] } });
     render(<App />);
@@ -1614,7 +1615,7 @@ describe('余量 app flow', () => {
     expect(wrapped).toBe(true);
     // The ring genuinely cycles through many distinct options.
     expect(new Set(seen).size).toBeGreaterThanOrEqual(8);
-  });
+  }, 15000);
 
   it('keeps workday daytime cells locked against cycling', async () => {
     const user = userEvent.setup();

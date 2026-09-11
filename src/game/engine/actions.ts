@@ -1,3 +1,6 @@
+import { known, amount, addAmount, subtractAmount, scaleAmount } from './knownAmount';
+import { enterRunning } from './running';
+import { recordBusinessFact, recentGiftCount, recentInteractionCount, retentionKey, factsFromHistory } from './businessFacts';
 import type { BalanceConfig } from '../balance/config';
 import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity, PlanSlot, Weekday } from '../content/contracts';
 import { evaluateCondition, explainCondition } from './conditions';
@@ -56,8 +59,9 @@ function reserveRequired(state: GameState, content: ContentRegistry): number {
 
 function addLifeRecord(state: GameState, record: Omit<LifeRecordEntry, 'id' | 'day'> & { id?: string; day?: number }): void {
   const source = (record.sourceId ?? record.title).replace(/[^a-zA-Z0-9_.-]+/g, '-').replace(/^-|-$/g, '') || record.category;
+  state.nextLifeRecordSequence = (state.nextLifeRecordSequence ?? state.lifeHistory?.length ?? 0) + 1;
   const nextRecord: LifeRecordEntry = {
-    id: record.id ?? `life.${record.category}.${source}.${record.day ?? state.time.day}.${(state.lifeHistory ?? []).length + 1}`,
+    id: record.id ?? `life.${record.category}.${source}.${record.day ?? state.time.day}.${state.nextLifeRecordSequence}`,
     day: record.day ?? state.time.day,
     category: record.category,
     title: record.title,
@@ -65,6 +69,7 @@ function addLifeRecord(state: GameState, record: Omit<LifeRecordEntry, 'id' | 'd
     sourceId: record.sourceId,
     amount: record.amount,
   };
+  if (!(state.lifeHistory ?? []).some(entry => entry.id === nextRecord.id)) recordBusinessFact(state, nextRecord);
   state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], nextRecord);
 }
 
@@ -147,35 +152,26 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
 
   const state = cloneGameState(input);
   const effects: GameEffect[] = [];
-  if (!state.financialLedger) state.financialLedger = { month: state.calendar.month, nextSequence: 1, entries: [], cashStart: state.cash, netWorthStart: calculateNetWorth(state, content, balance) };
+  if (!state.financialLedger) state.financialLedger = { month: state.calendar.month, nextSequence: 1, entries: [], cashStart: known(state.cash), netWorthStart: known(calculateNetWorth(state, content, balance)) };
   // A formal job only ever lives in the employment schedule. Normalising the
   // underlying plan on every action means an accepted / pending / switched job
   // can never leave a stale day-slot activity behind.
   reconcileStateWithEmployment(state);
 
   switch (action.type) {
-    case 'acknowledge_monthly_summary':
+    case 'acknowledge_monthly_summary': {
       if (!state.pendingMonthlySummary) return fail(input, '当前没有待确认的月结');
-      state.simulationMode = state.pendingMonthlySummary.resumeMode === 'running' && state.autoRepeatPlan ? 'running' : state.pendingMonthlySummary.resumeMode === 'paused' ? 'paused' : 'planning';
+      const resume = state.pendingMonthlySummary.resumeMode;
       state.pendingMonthlySummary = undefined;
+      state.simulationMode = resume === 'paused' ? 'paused' : 'planning';
+      if (resume === 'running' && state.autoRepeatPlan) { const error = enterRunning(state, content, balance); if (error) effects.push({ type: 'message', text: error }); }
       break;
+    }
     case 'start_week': {
       if (!['planning', 'paused', 'week_complete'].includes(state.simulationMode)) return fail(input, '当前不能开始新一周');
-      // The prospective employment change applies before the week is validated,
-      // so a job that starts this week can never be a hidden conflict.
-      if (state.employment?.pendingJobId) {
-        const nextJob = find(content.jobs, state.employment.pendingJobId);
-        if (nextJob) {
-          state.employmentHistory = [...(state.employmentHistory ?? []), { jobId: state.employment.jobId, companyId: state.employment.companyId, startedDay: state.employment.startedDay, endedDay: state.time.day - 1, finalPay: (state.employment.basePay ?? 0) + (state.employment.salaryAdjustment ?? 0), reason: '换岗' }];
-          state.currentJobId = nextJob.id;
-          state.employment = { jobId: nextJob.id, startedDay: state.time.day, companyId: state.employment.pendingCompanyId, basePay: state.employment.pendingBasePay ?? nextJob.basePay, salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(nextJob), effectiveWeek: state.calendar.week };
-        }
-      }
-      reconcileStateWithEmployment(state);
-      const runError = planRunError(state, state.weeklyPlan, content, balance);
-      if (runError) return fail(input, runError);
-      state.simulationMode = 'running';
-      state.currentActivity = activityAtTime(state.time, state.weeklyPlan, state.employment, content);
+      const error = enterRunning(state, content, balance);
+      if (error) return fail(input, error);
+      state.currentActivity = activityAtTime(state.time, state.weeklyPlan, state.employment, content, state);
       effects.push({ type: 'message', text: `第 ${state.calendar.week} 周开始运行` });
       break;
     }
@@ -184,17 +180,18 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       break;
     case 'resume_simulation':
       if (state.pendingEventId) return fail(input, '请先处理当前事件');
-      if (state.simulationMode === 'paused') state.simulationMode = 'running';
+      if (state.simulationMode === 'paused') { const error = enterRunning(state, content, balance); if (error) return fail(input, error); }
       break;
     case 'continue_after_event':
       if (state.pendingEventId) return fail(input, '请先选择事件结果');
       if (state.pendingReward) return fail(input, '请先收下本次奖励');
-      if (state.simulationMode === 'paused') state.simulationMode = 'running';
+      if (state.simulationMode === 'paused') { const error = enterRunning(state, content, balance); if (error) return fail(input, error); }
       break;
     case 'claim_reward':
       if (!state.pendingReward) return fail(input, '当前没有待领取奖励');
       state.pendingReward = undefined;
-      state.simulationMode = state.pendingEventId ? 'event' : action.resume ? 'running' : 'paused';
+      state.simulationMode = state.pendingEventId ? 'event' : 'paused';
+      if (action.resume) { const error = enterRunning(state, content, balance); if (error) effects.push({ type: 'message', text: error }); }
       break;
     case 'set_simulation_speed':
       state.simulationSpeed = action.speed;
@@ -335,6 +332,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       application.status = 'accepted';
       if (state.employment) {
         state.employment.pendingJobId = job.id;
+        state.employment.pendingEffectiveDay = state.time.day + 8 - state.calendar.weekday;
         state.employment.pendingCompanyId = application.companyId;
         state.employment.pendingBasePay = application.salaryRange[0];
       }
@@ -375,8 +373,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (job.kind === 'regular') {
         if (state.simulationMode !== 'planning' && state.simulationMode !== 'week_complete') {
           state.employment = state.employment
-            ? { ...state.employment, pendingJobId: job.id }
-            : { jobId: state.currentJobId ?? job.id, startedDay: state.time.day, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week, pendingJobId: job.id };
+            ? { ...state.employment, pendingJobId: job.id, pendingEffectiveDay: state.time.day + 8 - state.calendar.weekday }
+            : { jobId: state.currentJobId ?? job.id, startedDay: state.time.day, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week, pendingJobId: job.id, pendingEffectiveDay: state.time.day + 8 - state.calendar.weekday };
         } else {
           state.currentJobId = job.id;
           state.employment = { jobId: job.id, startedDay: state.time.day, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
@@ -422,6 +420,14 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
           employment.lastNegotiationDay = state.time.day;
           effects.push({ type: 'message', text: '第二次薪资复核通过：工资调整已达到普通上限' });
         } else {
+          state.businessFacts ??= factsFromHistory(state.lifeHistory ?? [], state.time.day);
+          const key = retentionKey(job!.id, employment?.companyId);
+          if (state.businessFacts.retentionClaims[key]) {
+            state.activeResignation = undefined;
+            effects.push({ type: 'message', text: '已确认继续留任，本岗位的挽留奖励已领取' });
+            break;
+          }
+          state.businessFacts.retentionClaims[key] = true;
           const bonus = job?.resignation?.retentionBonus ?? 0;
           if (bonus) {
           state.monthlyLedger.wageIncome += bonus;
@@ -702,7 +708,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!hasRequirements(state, business.requirements, content, balance)) return fail(input, '经营条件还不满足');
       if (state.cash - business.price < reserveRequired(state, content)) return fail(input, '现金不足以购买这项生意');
       state.cash -= business.price;
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: business.price };
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: known(business.price) };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: business.price, label: `购买${business.name}`, sourceType: 'business', sourceId: business.id });
       addLifeRecord(state, { category: 'business', title: `买入${business.name}`, sourceId: business.id, amount: -business.price });
@@ -717,7 +723,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!hasRequirements(state, business.requirements, content, balance) || !hasRequirements(state, partnership.requirements, content, balance)) return fail(input, '当前合伙条件还不满足');
       if (state.cash - partnership.entryPrice < reserveRequired(state, content)) return fail(input, '现金不足以加入合伙');
       state.cash -= partnership.entryPrice;
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: partnership.entryPrice, capitalInvested: 0, equityPercent: partnership.playerEquityPercent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, partnerCharacterId: partnership.characterId, playerCostBasis: partnership.entryPrice };
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: partnership.entryPrice, capitalInvested: 0, equityPercent: partnership.playerEquityPercent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, partnerCharacterId: partnership.characterId, playerCostBasis: known(partnership.entryPrice) };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       const partner = content.characters.find((character) => character.id === partnership.characterId);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: partnership.entryPrice, label: `加入${business.name}合伙`, sourceType: 'business', sourceId: business.id, cashDelta: -partnership.entryPrice });
@@ -735,7 +741,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!hasRequirements(state, business.requirements, content, balance)) return fail(input, '并购条件还不满足');
       if (state.cash - acquisitionPrice < reserveRequired(state, content)) return fail(input, '现金不足以完成并购');
       state.cash -= acquisitionPrice;
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: acquisitionPrice, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, acquiredDay: state.time.day, acquiredFromBusinessId: parentBusinessId, playerCostBasis: acquisitionPrice };
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: acquisitionPrice, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, acquiredDay: state.time.day, acquiredFromBusinessId: parentBusinessId, playerCostBasis: known(acquisitionPrice) };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: acquisitionPrice, label: `并购${business.name}`, sourceType: 'business', sourceId: business.id, cashDelta: -acquisitionPrice });
       addLifeRecord(state, { category: 'business', title: `并购${business.name}`, detail: `纳入${content.businesses.find((entry) => entry.id === parentBusinessId)?.name ?? parentBusinessId}企业组合`, sourceId: business.id, amount: -acquisitionPrice });
@@ -753,7 +759,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (state.cash - stakeCost < reserveRequired(state, content)) return fail(input, '现金不足以完成入股');
       state.cash -= stakeCost;
       // purchasePrice stays the whole-company fair value so valuation/net worth scale by real equity.
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: percent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: stakeCost };
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: percent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: known(stakeCost) };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: stakeCost, label: `入股${business.name} ${percent}%`, sourceType: 'business', sourceId: business.id, cashDelta: -stakeCost });
       addLifeRecord(state, { category: 'business', title: `入股${business.name}`, detail: `以少数股权投资者身份买入 ${percent}%，当前身份：${ownershipTierForEquity(percent).name}`, sourceId: business.id, amount: -stakeCost });
@@ -779,7 +785,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const tierAfter = ownershipTierForEquity(nextEquity).tier;
       state.cash -= cost;
       holding.equityPercent = nextEquity;
-      holding.playerCostBasis = Math.max(0, Math.round((holding.playerCostBasis ?? Math.round(holding.purchasePrice * previousEquity / 100)) + cost));
+      holding.playerCostBasis = addAmount(holding.playerCostBasis, cost);
       if (business.locationId ?? holding.relocatedLocationId) recordLocationVisit(state, holding.relocatedLocationId ?? business.locationId!, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_allocation', category: 'business_transfer', amount: cost, label: `增持${business.name} ${percent}%`, sourceType: 'business', sourceId: business.id, cashDelta: -cost });
       const controlNote = tierBefore !== tierAfter && (tierAfter === 'controlling' || tierAfter === 'wholly_owned') ? `，晋升为${ownershipTierForEquity(nextEquity).name}` : '';
@@ -797,15 +803,15 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!Number.isInteger(action.percent) || percent < 10 || percent % 10 !== 0 || percent >= previousEquity) return fail(input, '减持比例无效：减持后需至少保留 10% 持股');
       const impliedValue = businessValuation(holding, balance);
       const proceeds = Math.max(0, Math.round(impliedValue * percent / 100));
-      const basis = holding.playerCostBasis ?? Math.round(holding.purchasePrice * previousEquity / 100);
-      const basisShare = Math.min(basis, Math.round(basis * percent / previousEquity));
-      const realized = proceeds - basisShare;
+      const basis = amount(holding.playerCostBasis);
+      const basisShare = scaleAmount(basis, percent / previousEquity, true);
+      const realized = subtractAmount(proceeds, basisShare);
       state.cash += proceeds;
       holding.equityPercent = previousEquity - percent;
-      holding.playerCostBasis = Math.max(0, basis - basisShare);
-      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: proceeds, label: `减持${business.name} ${percent}%股权`, sourceType: 'business', sourceId: business.id, cashDelta: proceeds });
-      if (realized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: realized, cashDelta: 0, label: `已实现收益 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
-      if (realized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized, cashDelta: 0, label: `已实现亏损 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
+      holding.playerCostBasis = subtractAmount(basis, basisShare);
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: proceeds, label: `减持${business.name} ${percent}%股权`, sourceType: 'business', sourceId: business.id, cashDelta: proceeds, costBasis: basisShare });
+      if (realized.kind === 'known' && realized.value > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: realized.value, cashDelta: 0, label: `已实现收益 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
+      if (realized.kind === 'known' && realized.value < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized.value, cashDelta: 0, label: `已实现亏损 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
       addLifeRecord(state, { category: 'business', title: `减持${business.name} ${percent}% 股权`, detail: `剩余持股 ${holding.equityPercent}% · 身份：${ownershipTierForEquity(holding.equityPercent).name}`, sourceId: business.id, amount: proceeds });
       effects.push({ type: 'cash', amount: proceeds, reason: `减持${business.name}` });
       break;
@@ -875,6 +881,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (state.cash - amount < reserveRequired(state, content)) return fail(input, '现金不足以投入企业资本');
       state.cash -= amount;
       holding.capitalInvested = (holding.capitalInvested ?? 0) + amount;
+      holding.playerCostBasis = addAmount(holding.playerCostBasis, amount);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount, label: `投入${business.name}资本`, sourceType: 'business', sourceId: business.id, cashDelta: -amount });
       addLifeRecord(state, { category: 'business', title: `投入${business.name}资本`, detail: '企业资本投入，不计入日常经营费用', sourceId: business.id, amount: -amount });
       effects.push({ type: 'cash', amount: -amount, reason: '企业资本投入' });
@@ -926,16 +933,16 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const valuation = (holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio;
       const saleValue = Math.max(0, Math.round(valuation * percent / 100));
       const previousEquity = holding.equityPercent ?? 100;
-      const basisTotal = holding.playerCostBasis ?? Math.round(holding.purchasePrice * previousEquity / 100);
-      const basisShare = Math.min(basisTotal, Math.round(basisTotal * percent / previousEquity));
+      const basisTotal = amount(holding.playerCostBasis);
+      const basisShare = scaleAmount(basisTotal, percent / previousEquity, true);
       holding.equityPercent = Math.max(0, previousEquity - percent);
-      holding.playerCostBasis = Math.max(0, basisTotal - basisShare);
+      holding.playerCostBasis = subtractAmount(basisTotal, basisShare);
       holding.publicFloatPercent = Math.min(100, (holding.publicFloatPercent ?? (100 - previousEquity - percent)) + percent);
       state.cash += saleValue;
-      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: saleValue, label: `出售${business.name} ${percent}%股权`, sourceType: 'business', sourceId: business.id, cashDelta: saleValue });
-      const equityRealized = saleValue - basisShare;
-      if (equityRealized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: equityRealized, cashDelta: 0, label: `已实现收益 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
-      if (equityRealized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -equityRealized, cashDelta: 0, label: `已实现亏损 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: saleValue, label: `出售${business.name} ${percent}%股权`, sourceType: 'business', sourceId: business.id, cashDelta: saleValue, costBasis: basisShare });
+      const equityRealized = subtractAmount(saleValue, basisShare);
+      if (equityRealized.kind === 'known' && equityRealized.value > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: equityRealized.value, cashDelta: 0, label: `已实现收益 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
+      if (equityRealized.kind === 'known' && equityRealized.value < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -equityRealized.value, cashDelta: 0, label: `已实现亏损 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basisShare });
       addLifeRecord(state, { category: 'business', title: `出售${business.name} ${percent}% 股权`, detail: `上市后部分变现，剩余持股 ${holding.equityPercent}%`, sourceId: business.id, amount: saleValue });
       effects.push({ type: 'cash', amount: saleValue, reason: '出售公开股权' });
       break;
@@ -955,7 +962,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const purchaseValue = Math.max(0, Math.round(valuation * percent / 100));
       if (state.cash - purchaseValue < reserveRequired(state, content)) return fail(input, '现金不足以回购企业股权');
       holding.equityPercent = Math.min(100, currentEquity + percent);
-      holding.playerCostBasis = Math.max(0, Math.round((holding.playerCostBasis ?? Math.round(holding.purchasePrice * currentEquity / 100)) + purchaseValue));
+      holding.playerCostBasis = addAmount(holding.playerCostBasis, purchaseValue);
       holding.publicFloatPercent = Math.max(0, publicFloat - percent);
       state.cash -= purchaseValue;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_allocation', category: 'business_transfer', amount: purchaseValue, label: `回购${business.name} ${percent}%股权`, sourceType: 'business', sourceId: business.id, cashDelta: -purchaseValue });
@@ -1015,13 +1022,13 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (state.publicBusinessEquities?.[action.businessId]) return fail(input, '请先出售这项企业的公开股权');
       const equityPercent = Math.min(100, Math.max(0, holding.equityPercent ?? 100));
       const saleValue = Math.max(0, Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio * equityPercent / 100));
-      const basis = Math.min(holding.playerCostBasis ?? Math.round(holding.purchasePrice * equityPercent / 100), saleValue);
+      const basis = amount(holding.playerCostBasis);
       delete state.businesses[action.businessId];
       state.cash += saleValue;
-      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: saleValue, label: `退出${business.name}`, sourceType: 'business', sourceId: business.id, cashDelta: saleValue });
-      const exitRealized = saleValue - basis;
-      if (exitRealized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: exitRealized, cashDelta: 0, label: `已实现收益 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basis });
-      if (exitRealized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -exitRealized, cashDelta: 0, label: `已实现亏损 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basis });
+      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', group: 'asset_liquidation', category: 'business_transfer', amount: saleValue, label: `退出${business.name}`, sourceType: 'business', sourceId: business.id, cashDelta: saleValue, costBasis: basis });
+      const exitRealized = subtractAmount(saleValue, basis);
+      if (exitRealized.kind === 'known' && exitRealized.value > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: exitRealized.value, cashDelta: 0, label: `已实现收益 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basis });
+      if (exitRealized.kind === 'known' && exitRealized.value < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -exitRealized.value, cashDelta: 0, label: `已实现亏损 · ${business.name}`, sourceType: 'business', sourceId: business.id, costBasis: basis });
       addLifeRecord(state, { category: 'business', title: `退出${business.name}`, detail: `按持股 ${equityPercent}% 变现`, sourceId: business.id, amount: saleValue });
       effects.push({ type: 'cash', amount: saleValue, reason: '企业退出变现' });
       break;
@@ -1083,7 +1090,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (state.cash < option.cashCost) return fail(input, '现金不足以完成这次互动');
       const character = content.characters.find((entry) => entry.id === interaction.characterId);
       const preferred = character?.preferredInteractionCategories?.includes(interaction.category) ?? false;
-      const recentRepeats = (state.lifeHistory ?? []).filter((entry) => entry.category === 'relationship' && entry.sourceId === interaction.id && entry.day >= state.time.day - 30).length;
+      const recentRepeats = recentInteractionCount(state, interaction.id);
       const relationshipMultiplier = Math.max(0.25, 1 - recentRepeats * 0.25);
       state.cash -= option.cashCost;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'social', amount: option.cashCost, label: `${interaction.name} · ${option.label}`, sourceType: 'relationship', sourceId: interaction.id });
@@ -1106,7 +1113,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if ((state.inventory[item.id] ?? 0) < 1) return fail(input, '库存里没有这件礼物');
       state.inventory[item.id] -= 1;
       const liked = item.giftTags?.some((tag) => character.preferredGiftTags?.includes(tag)) ?? false;
-      const recentGifts = (state.lifeHistory ?? []).filter((entry) => entry.category === 'relationship' && entry.sourceId === item.id && entry.detail?.includes(character.name) && entry.day >= state.time.day - 30).length;
+      const recentGifts = recentGiftCount(state, item.id, character.name);
       const relationshipGain = Math.max(1, (liked ? 3 : 1) - recentGifts);
       applyContentEffects(state, [{ type: 'relation', characterId: character.id, amount: relationshipGain }], content, balance, effects);
       addLifeRecord(state, { category: 'relationship', title: `送给${character.name}：${item.name}`, detail: `${character.name}收到礼物${liked ? '，符合对方偏好' : ''}；关系 +${relationshipGain}`, sourceId: item.id });

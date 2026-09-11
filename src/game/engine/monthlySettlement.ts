@@ -1,3 +1,5 @@
+import { mortgagePayment, subscriptionFee } from './settlementMath';
+import { amount, known, unknown, addAmount } from './knownAmount';
 import type { BalanceConfig } from '../balance/config';
 import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary, WorldSnapshot } from '../content/contracts';
 import { businessValuation, calculateNetWorth, ownershipTierForEquity, wealthTierForNetWorth } from './economy';
@@ -6,8 +8,8 @@ import { emptyFinancialLedger, projectLegacyMonthlyLedger, recordStateFinancialE
 import { appendLifeRecord } from './lifeHistory';
 import { housingPrice, housingRentPerDay } from './locations';
 
-export function emptyMonthlyLedger(netWorthStart: number): MonthlyLedger {
-  return { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart, netWorthEnd: netWorthStart };
+export function emptyMonthlyLedger(netWorthStart: import('../content/contracts').KnownAmount | number): MonthlyLedger {
+  return { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: amount(netWorthStart), netWorthEnd: amount(netWorthStart) };
 }
 
 export function closeMonth(state: GameState, month: number, content: ContentRegistry, balance: BalanceConfig, output: GameEffect[]): MonthlySummary {
@@ -17,20 +19,21 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       delete state.activeSubscriptions![subscriptionId];
       continue;
     }
-    if (state.cash < subscription.monthlyFee) {
+    const fee = subscriptionFee(content, subscription.id);
+    if (state.cash < fee) {
       delete state.activeSubscriptions![subscriptionId];
       state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.service.subscription-paused.${subscription.id}.${month}`, day: state.time.day, category: 'service', title: `订阅暂停${subscription.name}`, detail: '本月现金不足，已停止自动续费', sourceId: subscription.id });
       output.push({ type: 'message', text: `${subscription.name}因现金不足暂停` });
       continue;
     }
-    state.cash -= subscription.monthlyFee;
-    recordSubscriptionFee(state, subscription.id, subscription.name, subscription.monthlyFee);
-    state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.service.subscription-fee.${subscription.id}.${month}`, day: state.time.day, category: 'service', title: `${subscription.name}月度扣费`, sourceId: subscription.id, amount: -subscription.monthlyFee });
+    state.cash -= fee;
+    recordSubscriptionFee(state, subscription.id, subscription.name, fee);
+    state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.service.subscription-fee.${subscription.id}.${month}`, day: state.time.day, category: 'service', title: `${subscription.name}月度扣费`, sourceId: subscription.id, amount: -fee });
   }
   const mortgage = state.mortgage;
   if (mortgage) {
     state.financialLedger ??= emptyFinancialLedger(month, state.cash, state.monthlyLedger.netWorthStart);
-    if (state.cash >= mortgage.monthlyPayment) {
+    if (mortgagePayment(state) > 0) {
       const interest = Math.round(mortgage.remainingPrincipal * 0.004);
       const principalPaid = Math.min(mortgage.remainingPrincipal, Math.max(0, mortgage.monthlyPayment - interest));
       state.cash -= mortgage.monthlyPayment;
@@ -58,8 +61,8 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
   }
   const financialLedger = state.financialLedger ?? emptyFinancialLedger(month, state.monthlyLedger.netWorthStart, state.monthlyLedger.netWorthStart);
   const netWorthEnd = calculateNetWorth(state, content, balance);
-  const financialSummary = summarizeFinancialLedger(financialLedger, financialLedger.cashStart ?? state.monthlyLedger.netWorthStart, state.cash, financialLedger.netWorthStart ?? state.monthlyLedger.netWorthStart, netWorthEnd);
-  const ledger = { ...projectLegacyMonthlyLedger(financialSummary), netWorthEnd };
+  const financialSummary = summarizeFinancialLedger(financialLedger, financialLedger.cashStart, state.cash, financialLedger.netWorthStart, netWorthEnd);
+  const ledger = { ...projectLegacyMonthlyLedger(financialSummary), netWorthEnd: known(netWorthEnd) };
   const summary = { month, ledger };
   state.lastMonthlySummary = summary;
   state.lastFinancialSummary = financialSummary;
@@ -83,12 +86,12 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
     const yearMonths = (state.financialHistory ?? []).filter((entry) => entry.month >= month - 11 && entry.month <= month);
     const annual: AnnualSummary = {
       year: Math.ceil(month / 12),
-      cashStart: yearMonths[0]?.cashStart ?? state.cash,
-      cashEnd: state.cash,
-      netWorthStart: yearMonths[0]?.netWorthStart ?? netWorthEnd,
-      netWorthEnd,
-      totalIncome: yearMonths.reduce((sum, entry) => sum + entry.totalIncome, 0),
-      totalConsumption: yearMonths.reduce((sum, entry) => sum + entry.totalConsumption, 0),
+      cashStart: yearMonths.length === 12 ? amount(yearMonths[0].cashStart) : unknown('年度月份不完整'),
+      cashEnd: known(state.cash),
+      netWorthStart: yearMonths.length === 12 ? amount(yearMonths[0].netWorthStart) : unknown('年度月份不完整'),
+      netWorthEnd: known(netWorthEnd),
+      totalIncome: yearMonths.length === 12 ? yearMonths.reduce((sum, entry) => addAmount(sum, entry.totalIncome), known(0)) : unknown('年度月份不完整'),
+      totalConsumption: yearMonths.length === 12 ? yearMonths.reduce((sum, entry) => addAmount(sum, entry.totalConsumption), known(0)) : unknown('年度月份不完整'),
       months: yearMonths.length,
     };
     state.annualHistory = [...(state.annualHistory ?? []).filter((entry) => entry.year !== annual.year), annual].slice(-10);

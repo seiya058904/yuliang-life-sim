@@ -1,3 +1,4 @@
+import { known } from './knownAmount';
 import { describe, expect, it } from 'vitest';
 import { calculateDailyBusinessProfit, calculateDailyPassiveIncome, calculateDailyPublicBusinessDividend, calculateLifestyle, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity, wealthTierForNetWorth } from './economy';
 import type { ContentRegistry, GameState } from '../content/contracts';
@@ -5,7 +6,7 @@ import { balanceConfig } from '../balance/config';
 
 const state: GameState = {
   version: 1, contentVersion: 1, time: { day: 1, hour: 8, minute: 0 }, calendar: { week: 1, weekday: 1, month: 1, weekOfMonth: 1 }, cash: 100, ability: 10, reputation: 0, lifestyle: 12,
-  weeklyPlan: { days: {} as never, autoRepeat: true }, autoRepeatPlan: true, simulationMode: 'planning', simulationSpeed: 1, monthlyLedger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 0, netWorthEnd: 0 },
+  weeklyPlan: { days: {} as never, autoRepeat: true }, autoRepeatPlan: true, simulationMode: 'planning', simulationSpeed: 1, monthlyLedger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: known(0), netWorthEnd: known(0) },
   jobExperience: {}, inventory: { 'item.collectible': 1 }, itemPurchasePrices: { 'item.collectible': 200 }, unlockedCapabilities: [], unlockedJobIds: [], unlockedHousingIds: [], unlockedBusinessIds: [], unlockedAssetIds: [], discounts: [],
   housing: { housingId: 'housing.room', mode: 'owned' }, relationships: {}, businesses: { 'business.kiosk': { businessId: 'business.kiosk', priceLevel: 1, wageLevel: 0, inventoryLevel: 2, purchasePrice: 1000 } }, assets: { 'asset.fund': { assetId: 'asset.fund', purchasePrice: 500, purchaseDay: 1, currentValuation: 550 } }, completedEvents: [], completedMilestones: [], eventCooldowns: {}, chainStages: {}, flags: {}, modifiers: [], marketJobIds: [], eventMeter: 0, eventDay: 1, eventsToday: 0, lastSettledDay: 0, housingReliefUntilDay: 0, rentReliefAvailableDay: 0, rng: { seed: 1, cursor: 0 },
   lifeHistory: [],

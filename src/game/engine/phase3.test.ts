@@ -1,3 +1,4 @@
+import { known } from './knownAmount';
 import { describe, expect, it } from 'vitest';
 import { balanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
@@ -209,20 +210,20 @@ describe('phase 3 additive systems', () => {
     ledger = recordFinancialEntry(ledger, { day: 3, direction: 'transfer', category: 'investment_transfer', amount: 200, label: '买入基金' });
     const summary = summarizeFinancialLedger(ledger, 500, 852, 1000, 1304);
 
-    expect(summary.totalIncome).toBe(620);
-    expect(summary.totalConsumption).toBe(68);
+    expect(summary.totalIncome).toEqual(known(620));
+    expect(summary.totalConsumption).toEqual(known(68));
     expect(summary.totalAssetAllocation).toBe(200);
-    expect(summary.cashChange).toBe(352);
-    expect(summary.netWorthChange).toBe(304);
+    expect(summary.cashChange).toEqual(known(352));
+    expect(summary.netWorthChange).toEqual(known(304));
   });
 
   it('records investment principal as liquidation and only the realized gain as income', () => {
     let ledger = emptyFinancialLedger(1, 1000, 1000);
-    ledger = recordFinancialEntry(ledger, { day: 1, direction: 'transfer', category: 'asset_liquidation', amount: 2300, costBasis: 2000, label: '资产变现' });
+    ledger = recordFinancialEntry(ledger, { day: 1, direction: 'transfer', category: 'asset_liquidation', amount: 2300, costBasis: known(2000), label: '资产变现' });
     ledger = recordFinancialEntry(ledger, { day: 1, direction: 'income', category: 'realized_gain', amount: 300, cashDelta: 0, label: '已实现收益' });
     const summary = summarizeFinancialLedger(ledger, 1000, 3300, 1000, 1300);
 
-    expect(summary.totalIncome).toBe(300);
+    expect(summary.totalIncome).toEqual(known(300));
     expect(summary.totalAssetLiquidation).toBe(2300);
     expect(ledger.entries[1].cashDelta).toBe(0);
   });

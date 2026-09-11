@@ -12691,3 +12691,18 @@ textarea {
     margin: 0 12px;
   }
 }
+
+/* Expanded budgets must escape the compact drawer's 28px closed height. */
+.view-life .life-secondary-drawer.is-open {
+  height: auto;
+  min-height: 0;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.life-info-grid .monthly-forecast {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.life-info-grid .monthly-forecast > :first-child {
+  grid-column: 1 / -1;
+}

@@ -1,12 +1,16 @@
+import { known } from './knownAmount';
+import { dailyCosts, shiftPay, studyRewards, jobAvailable } from './settlementMath';
+import { enterRunning, applyDueEmployment } from './running';
+import { recordBusinessFact, lastCompletedDay as completedDay } from './businessFacts';
 import type { BalanceConfig } from '../balance/config';
-import type { ContentRegistry, GameEffect, GameResult, GameState, JobDefinition, MonthlySummary } from '../content/contracts';
-import { calculateDailyPassiveIncome, calculateDailyPublicBusinessDividend, calculateLifestyle, calculateNetWorth } from './economy';
+import type { ContentRegistry, GameEffect, GameResult, GameState, MonthlySummary } from '../content/contracts';
+import { calculateDailyPassiveIncome, calculateDailyPublicBusinessDividend, calculateNetWorth } from './economy';
 import { calendarForDay } from './calendar';
 import { closeMonth } from './monthlySettlement';
-import { applyCareerExperience, careerRequirementsSatisfied } from './careerProgression';
-import { commuteCostMultiplier, housingRentPerDay, recordLocationVisit } from './locations';
-import { applyContentEffects, applyReachedMilestones, chooseAmbientEvent, chooseWeightedEvent, cloneGameState, modifierValue, studyGain } from './effects';
-import { activityAtTime, defaultJobSchedule } from './schedule';
+import { applyCareerExperience } from './careerProgression';
+import { recordLocationVisit } from './locations';
+import { applyContentEffects, applyReachedMilestones, chooseAmbientEvent, chooseWeightedEvent, cloneGameState } from './effects';
+import { activityAtTime } from './schedule';
 import { collectPlanIssues, planRunError, reconcilePlanWithContent, reconcileStateWithEmployment } from './planning';
 import { advanceMinutes, absoluteMinute } from './time';
 import { evaluateCondition } from './conditions';
@@ -14,7 +18,7 @@ import { applyAttributeDelta } from './attributes';
 import { recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
 import { updateInvestmentValuations } from './investments';
 import { activityCashCost, activityDiscountLabel, applyActivityFamiliarity, getActivityDefinition, getActivityOption } from './activities';
-import { advanceCareerLifecycle, employmentKind, generateVacancies } from './careers';
+import { advanceCareerLifecycle, generateVacancies } from './careers';
 import { appendLifeRecord } from './lifeHistory';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
@@ -25,7 +29,7 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
   if (!Number.isInteger(minutes) || minutes <= 0) return fail(input, '模拟时间必须是正整数分钟');
 
   const state = cloneGameState(input);
-  if (!state.financialLedger) state.financialLedger = { month: state.calendar.month, nextSequence: 1, entries: [], cashStart: state.cash, netWorthStart: calculateNetWorth(state, content, balance) };
+  if (!state.financialLedger) state.financialLedger = { month: state.calendar.month, nextSequence: 1, entries: [], cashStart: known(state.cash), netWorthStart: known(calculateNetWorth(state, content, balance)) };
   const effects: GameEffect[] = [];
   const start = state.time;
   let remaining = minutes;
@@ -33,12 +37,26 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
   while (remaining > 0 && state.simulationMode === 'running') {
     const beforeTime = state.time;
     const beforeActivity = activityAtTime(beforeTime, state.weeklyPlan, state.employment, content, state);
+    if (beforeActivity.kind === 'activity' && absoluteMinute(beforeActivity.end) - absoluteMinute(beforeActivity.start) >= 2880 && !state.longActivity && absoluteMinute(beforeActivity.start) === absoluteMinute(beforeTime)) {
+      const definition = getActivityDefinition(content, beforeActivity.activityId!);
+      const option = definition && getActivityOption(definition, beforeActivity.optionId!);
+      const last = definition ? completedDay(state, 'activity', definition.id) : undefined;
+      if (definition && option && state.cash >= activityCashCost(state, definition, option, content)
+        && (!option.requirements || evaluateCondition(option.requirements, state, content, balance))
+        && (!option.requiredCharacterId || content.characters.some(c => c.id === option.requiredCharacterId))
+        && (!option.cooldownDays || last === undefined || beforeTime.day - last >= option.cooldownDays)) {
+        state.longActivity = { id: `${definition.id}:${absoluteMinute(beforeTime)}`, activity: structuredClone(beforeActivity) };
+      } else effects.push({ type: 'message', text: '长活动开始条件不满足，本次未开始' });
+    }
     const next = advanceMinutes(beforeTime, 1).time;
     state.time = next;
     state.calendar = calendarForDay(next.day);
     state.currentActivity = activityAtTime(next, state.weeklyPlan, state.employment, content, state);
 
-    if (absoluteMinute(next) >= absoluteMinute(beforeActivity.end)) settleActivity(state, beforeActivity, content, balance, effects);
+    if (absoluteMinute(next) >= absoluteMinute(beforeActivity.end)) {
+      settleActivity(state, beforeActivity, content, balance, effects);
+      if (state.longActivity && absoluteMinute(state.longActivity.activity.end) <= absoluteMinute(next)) state.longActivity = undefined;
+    }
 
     if (next.day !== beforeTime.day) {
       if (state.eventDay !== next.day) {
@@ -68,32 +86,7 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
         }
       }
       if (next.day % 7 === 1) {
-        if (state.employment?.pendingJobId) {
-          const nextJob = content.jobs.find((entry) => entry.id === state.employment?.pendingJobId);
-          if (nextJob) {
-            const previousEmployment = state.employment;
-            state.employmentHistory = [...(state.employmentHistory ?? []), {
-              jobId: previousEmployment.jobId,
-              companyId: previousEmployment.companyId,
-              startedDay: previousEmployment.startedDay,
-              endedDay: state.time.day - 1,
-              finalPay: (previousEmployment.basePay ?? 0) + (previousEmployment.salaryAdjustment ?? 0),
-              reason: '换岗',
-            }];
-            state.currentJobId = nextJob.id;
-            state.employment = {
-              jobId: nextJob.id,
-              startedDay: state.time.day,
-              companyId: previousEmployment.pendingCompanyId,
-              basePay: previousEmployment.pendingBasePay ?? nextJob.basePay,
-              salaryAdjustment: 0,
-              negotiationStage: 0 as const,
-              schedule: defaultJobSchedule(nextJob),
-              effectiveWeek: state.calendar.week,
-            };
-            effects.push({ type: 'message', text: `${nextJob.name}已于本周入职` });
-          }
-        }
+        applyDueEmployment(state, content);
         // The new week inherits the plan, but entries that can no longer execute
         // at all are dropped first, and whatever remains is revalidated rather
         // than silently running a plan that cannot execute.
@@ -107,6 +100,7 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
         const runError = planRunError(state, state.weeklyPlan, content, balance);
         if (!runError && (state.autoRepeatPlan || state.weeklyPlan.autoRepeat)) {
           state.weeklyPlan = { ...state.weeklyPlan, days: structuredClone(state.weeklyPlan.days) };
+          if (!state.pendingMonthlySummary) enterRunning(state, content, balance);
         } else {
           if (runError) {
             const issues = collectPlanIssues(state.weeklyPlan, state, { content, balance, employment: state.employment, from: { day: state.time.day, hour: 0, minute: 0 } });
@@ -148,6 +142,8 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
   if (activity.kind === 'activity') {
     const definition = activity.activityId ? getActivityDefinition(content, activity.activityId) : undefined;
     const option = definition && activity.optionId ? getActivityOption(definition, activity.optionId) : undefined;
+    const lastDay = definition ? completedDay(state, 'activity', definition.id) : undefined;
+    if (option?.cooldownDays && lastDay !== undefined && activity.start.day - lastDay < option.cooldownDays) { output.push({ type: 'message', text: '活动仍在冷却，未扣费或发放奖励' }); return; }
     const cost = definition && option ? activityCashCost(state, definition, option, content) : undefined;
     if (definition && option?.requirements && !evaluateCondition(option.requirements, state, content, balance)) {
       output.push({ type: 'message', text: `当前条件未满足，未能完成${definition.name}` });
@@ -180,7 +176,7 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
       recordStateFinancialEntry(state, { day: state.time.day, direction: profit >= 0 ? 'income' : 'expense', category: profit >= 0 ? 'business_income' : 'business_cost', amount: Math.abs(profit), label: `${definition.name}利润分配`, sourceType: 'business', sourceId: option.businessProject.businessId });
       applyContentEffects(state, option.effects ?? [], content, balance, output);
       if (definition.locationId) recordLocationVisit(state, definition.locationId, content);
-      state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.business-project.${projectId}.${state.time.day}`, day: state.time.day, category: 'business', title: `完成企业项目：${definition.name}`, detail: `合同收入 ¥${option.businessProject.revenue.toLocaleString('zh-CN')} · 项目成本 ¥${option.businessProject.cost.toLocaleString('zh-CN')} · 按持股获得利润 ¥${profit.toLocaleString('zh-CN')}`, sourceId: option.businessProject.businessId, amount: profit });
+      state.lifeHistory = appendExecutedRecord(state, { id: `life.business-project.${projectId}.${state.time.day}`, day: state.time.day, category: 'business', title: `完成企业项目：${definition.name}`, detail: `合同收入 ¥${option.businessProject.revenue.toLocaleString('zh-CN')} · 项目成本 ¥${option.businessProject.cost.toLocaleString('zh-CN')} · 按持股获得利润 ¥${profit.toLocaleString('zh-CN')}`, sourceId: option.businessProject.businessId, amount: profit });
       output.push({ type: 'cash', amount: profit, reason: `${definition.name}利润分配` });
       return;
     }
@@ -197,13 +193,14 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     const familiarity = applyActivityFamiliarity(state, definition);
     const baseDetail = discountLabel === '自驾优惠' ? '自驾出行，交通费用有所减少' : discountLabel === '地点发展优惠' ? '地点发展使活动更便利' : '活动已完成';
     const detail = companion ? `和${companion.name}一起，${baseDetail}${preferenceMatch ? `；${companion.name}喜欢这类活动` : ''}` : baseDetail;
-    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: familiarity.length ? `${detail} · ${familiarity.join('、')}熟练度提升` : detail, sourceId: definition.id, amount: -cost });
+    state.lifeHistory = appendExecutedRecord(state, { id: `life.activity.${definition.id}.${option.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `${definition.name} · ${option.label}`, detail: familiarity.length ? `${detail} · ${familiarity.join('、')}熟练度提升` : detail, sourceId: definition.id, amount: -cost });
     return;
   }
   if (activity.kind === 'study') {
-    const amount = studyGain(state, Math.max(1, Math.floor((absoluteMinute(activity.end) - absoluteMinute(activity.start)) / 120)));
-    applyAttributeDelta(state, 'knowledge', amount);
-    applyAttributeDelta(state, 'professional', Math.max(0, Math.floor(amount / 2)));
+    const rewards = studyRewards(state, absoluteMinute(activity.end) - absoluteMinute(activity.start));
+    const amount = rewards.knowledge;
+    applyAttributeDelta(state, 'knowledge', rewards.knowledge);
+    applyAttributeDelta(state, 'professional', rewards.professional);
     output.push({ type: 'stat', stat: 'ability', amount });
     return;
   }
@@ -214,7 +211,7 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
       return;
     }
     const completed = state.courseProgress?.[course.id] ?? 0;
-    const lastCompletedDay = [...(state.lifeHistory ?? [])].reverse().find((entry) => entry.sourceId === course.id)?.day;
+    const lastCompletedDay = completedDay(state, 'activity', course.id);
     const cooldownReady = lastCompletedDay === undefined || state.time.day - lastCompletedDay >= (course.cooldownDays ?? 0);
     const maxReady = course.maxCompletions === undefined || completed < course.maxCompletions;
     if (!cooldownReady || !maxReady || (course.requirements && !evaluateCondition(course.requirements, state, content, balance))) {
@@ -235,23 +232,20 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     }
     if (course.qualificationId && !state.qualifications?.includes(course.qualificationId)) state.qualifications = [...(state.qualifications ?? []), course.qualificationId];
     applyContentEffects(state, course.effects ?? [], content, balance, output);
-    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.course.${course.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `完成课程：${course.name}`, detail: course.qualificationId ? `获得资格：${course.qualificationId}` : '课程已完成', sourceId: course.id, amount: -course.cashCost });
+    state.lifeHistory = appendExecutedRecord(state, { id: `life.course.${course.id}.${state.time.day}`, day: state.time.day, category: 'activity', title: `完成课程：${course.name}`, detail: course.qualificationId ? `获得资格：${course.qualificationId}` : '课程已完成', sourceId: course.id, amount: -course.cashCost });
     output.push({ type: 'message', text: `${course.name}已完成` });
     return;
   }
   if (activity.kind !== 'work' && activity.kind !== 'side_job') return;
   const job = content.jobs.find((entry) => entry.id === activity.jobId);
   if (!job || !jobAvailable(state, job, content, balance)) return;
-  const contractedPay = activity.kind === 'work' && state.employment?.jobId === job.id
-    ? (state.employment.basePay ?? job.basePay) + (state.employment.salaryAdjustment ?? 0)
-    : job.basePay;
-  const pay = Math.round(modifierValue(state, 'work_pay', contractedPay, job.tags));
+  const pay = shiftPay(state, job, activity.kind === 'work');
   state.cash += pay;
   state.jobExperience[job.id] = (state.jobExperience[job.id] ?? 0) + job.careerXp;
   applyCareerExperience(state, job.experienceTags ?? [], job.careerXp);
   recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: activity.kind === 'side_job' ? 'side_job' : 'wage', amount: pay, label: `${job.name}工资`, sourceType: 'job', sourceId: job.id });
   if (activity.kind === 'side_job') {
-    state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], { id: `life.side-job.${job.id}.${state.time.day}`, day: state.time.day, category: 'career', title: `完成${job.name}`, detail: `长期兼职已结算 · 获得 ¥${pay.toLocaleString('zh-CN')} · 职业经验已记录`, sourceId: job.id, amount: pay });
+    state.lifeHistory = appendExecutedRecord(state, { id: `life.side-job.${job.id}.${state.time.day}`, day: state.time.day, category: 'career', title: `完成${job.name}`, detail: `长期兼职已结算 · 获得 ¥${pay.toLocaleString('zh-CN')} · 职业经验已记录`, sourceId: job.id, amount: pay });
   }
   output.push({ type: 'cash', amount: pay, reason: `${job.name}工资结算` });
   applyContentEffects(state, job.rewards ?? [], content, balance, output);
@@ -263,13 +257,7 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
   const publicBusinessDividend = calculateDailyPublicBusinessDividend(state, content);
   const investmentDividend = updateInvestmentValuations(state, content, day);
   const home = content.housing.find((entry) => entry.id === state.housing.housingId);
-  const rent = state.housing.mode === 'rent' && home ? housingRentPerDay(state, home) : 0;
-  const lifestyleScore = calculateLifestyle(state, content);
-  const lifestyleFactor = Math.min(balance.lifestyleCostFactorCap, Math.max(0, lifestyleScore * balance.lifestyleCostFactor));
-  const living = Math.round(balance.dailyLivingCost * (1 + lifestyleFactor));
-  const transport = Math.round(balance.dailyTransportCost * (1 + lifestyleFactor / 2) * commuteCostMultiplier(state, content));
-  const homeFixed = Math.round((home?.fixedMonthlyCost ?? 0) / 28);
-  const communication = day % 28 === 1 ? balance.monthlyCommunicationCost : 0;
+  const { rent, living, transport, homeFixed, communication } = dailyCosts(state, content, balance, day);
   let vehicleCost = 0;
   for (const [assetId, holding] of Object.entries(state.assets)) {
     const vehicle = content.assets.find((asset) => asset.id === assetId);
@@ -318,17 +306,12 @@ function settleDay(state: GameState, day: number, content: ContentRegistry, bala
   syncLegacyMonthlyLedger(state, content, balance);
 }
 
-function jobAvailable(state: GameState, job: JobDefinition, content: ContentRegistry, balance: BalanceConfig): boolean {
-  if (employmentKind(job) === 'repeatable_side_job' && !state.acquiredSideJobs?.[job.id]) return false;
-  if (job.abilityRequired !== undefined && state.ability < job.abilityRequired) return false;
-  if (job.reputationRequired !== undefined && state.reputation < job.reputationRequired) return false;
-  if (job.requirements && !evaluateCondition(job.requirements, state, content, balance)) return false;
-  if (!careerRequirementsSatisfied(job, state)) return false;
-  if (job.requiredItems?.some((itemId) => (state.inventory[itemId] ?? 0) < 1)) return false;
-  if (job.requiredCapabilities?.some((capability) => !state.unlockedCapabilities.includes(capability))) return false;
-  return true;
-}
 
 export function projectMonthlySummary(state: GameState, content: ContentRegistry, balance: BalanceConfig): MonthlySummary {
-  return { month: state.calendar.month, ledger: { ...state.monthlyLedger, netWorthEnd: calculateNetWorth(state, content, balance) } };
+  return { month: state.calendar.month, ledger: { ...state.monthlyLedger, netWorthEnd: known(calculateNetWorth(state, content, balance)) } };
+}
+
+function appendExecutedRecord(state: GameState, record: import('../content/contracts').LifeRecordEntry) {
+  if (!(state.lifeHistory ?? []).some(entry => entry.id === record.id)) recordBusinessFact(state, record);
+  return appendLifeRecord(state.lifeHistory ?? [], record);
 }

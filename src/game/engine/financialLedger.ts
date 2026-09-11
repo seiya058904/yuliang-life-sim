@@ -1,3 +1,5 @@
+import { amount as parseAmount, known, unknown, subtractAmount } from './knownAmount';
+import type { KnownAmount } from '../content/contracts';
 import type { BalanceConfig } from '../balance/config';
 import type { ContentRegistry, FinancialCategory, FinancialEntry, FinancialGroup, FinancialLedgerState, GameState, MonthlyFinancialSummary } from '../content/contracts';
 import { calculateNetWorth } from './economy';
@@ -12,7 +14,7 @@ export interface FinancialEntryInput {
   sourceId?: string;
   group?: FinancialGroup;
   cashDelta?: number;
-  costBasis?: number;
+  costBasis?: KnownAmount | number;
 }
 
 const incomeCategories = new Set<FinancialCategory>(['wage', 'side_job', 'bonus', 'business_income', 'property_income', 'investment_dividend', 'event_income', 'other_income', 'realized_gain']);
@@ -27,8 +29,8 @@ export function groupForCategory(category: FinancialCategory, explicit?: Financi
   return 'consumption';
 }
 
-export function emptyFinancialLedger(month: number, cashStart = 0, netWorthStart = cashStart): FinancialLedgerState {
-  return { month, nextSequence: 1, entries: [], cashStart, netWorthStart };
+export function emptyFinancialLedger(month: number, cashStart: KnownAmount | number = 0, netWorthStart: KnownAmount | number = cashStart): FinancialLedgerState {
+  return { month, nextSequence: 1, entriesComplete: true, entries: [], cashStart: parseAmount(cashStart), netWorthStart: parseAmount(netWorthStart) };
 }
 
 export function recordFinancialEntry(ledger: FinancialLedgerState, input: FinancialEntryInput): FinancialLedgerState {
@@ -44,7 +46,7 @@ export function recordFinancialEntry(ledger: FinancialLedgerState, input: Financ
     category: input.category,
     amount,
     cashDelta,
-    costBasis: input.costBasis,
+    costBasis: input.costBasis === undefined ? undefined : parseAmount(input.costBasis),
     sourceType: input.sourceType,
     sourceId: input.sourceId,
     label: input.label,
@@ -58,7 +60,7 @@ function groupSummary(entries: readonly FinancialEntry[], group: FinancialGroup)
   return { group, amount: Object.values(categories).reduce((sum, amount) => sum + amount, 0), categories };
 }
 
-export function summarizeFinancialLedger(ledger: FinancialLedgerState, cashStart: number, cashEnd: number, netWorthStart: number, netWorthEnd: number): MonthlyFinancialSummary {
+export function summarizeFinancialLedger(ledger: FinancialLedgerState, cashStart: KnownAmount | number | undefined, cashEnd: number, netWorthStart: KnownAmount | number | undefined, netWorthEnd: number): MonthlyFinancialSummary {
   const income = groupSummary(ledger.entries, 'income');
   const consumption = groupSummary(ledger.entries, 'consumption');
   const assetAllocation = groupSummary(ledger.entries, 'asset_allocation');
@@ -69,20 +71,20 @@ export function summarizeFinancialLedger(ledger: FinancialLedgerState, cashStart
     consumption,
     assetAllocation,
     assetLiquidation,
-    totalIncome: income.amount,
-    totalConsumption: consumption.amount,
+    totalIncome: ledger.entriesComplete === false ? unknown('本月流水不完整') : known(income.amount),
+    totalConsumption: ledger.entriesComplete === false ? unknown('本月流水不完整') : known(consumption.amount),
     totalAssetAllocation: assetAllocation.amount,
     totalAssetLiquidation: assetLiquidation.amount,
-    cashStart,
-    cashEnd,
-    cashChange: cashEnd - cashStart,
-    netWorthStart,
-    netWorthEnd,
-    netWorthChange: netWorthEnd - netWorthStart,
+    cashStart: parseAmount(cashStart),
+    cashEnd: known(cashEnd),
+    cashChange: subtractAmount(cashEnd, cashStart),
+    netWorthStart: parseAmount(netWorthStart),
+    netWorthEnd: known(netWorthEnd),
+    netWorthChange: subtractAmount(netWorthEnd, netWorthStart),
   };
 }
 
-export function projectLegacyMonthlyLedger(summary: MonthlyFinancialSummary): { wageIncome: number; sideJobIncome: number; businessIncome: number; assetIncome: number; rentExpense: number; purchaseExpense: number; livingExpense: number; netWorthStart: number; netWorthEnd: number } {
+export function projectLegacyMonthlyLedger(summary: MonthlyFinancialSummary): { wageIncome: number; sideJobIncome: number; businessIncome: number; assetIncome: number; rentExpense: number; purchaseExpense: number; livingExpense: number; netWorthStart: KnownAmount; netWorthEnd: KnownAmount } {
   const categories = (summary: { categories: Record<string, number> }, key: string) => summary.categories[key] ?? 0;
   return {
     wageIncome: categories(summary.income, 'wage'),
@@ -106,9 +108,9 @@ export function syncLegacyMonthlyLedger(state: GameState, content: ContentRegist
   const ledger = state.financialLedger ?? emptyFinancialLedger(state.calendar.month, state.cash, state.monthlyLedger.netWorthStart);
   const summary = summarizeFinancialLedger(
     ledger,
-    ledger.cashStart ?? state.monthlyLedger.netWorthStart,
+    ledger.cashStart,
     state.cash,
-    ledger.netWorthStart ?? state.monthlyLedger.netWorthStart,
+    ledger.netWorthStart,
     calculateNetWorth(state, content, balance),
   );
   state.monthlyLedger = projectLegacyMonthlyLedger(summary);

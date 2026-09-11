@@ -46,10 +46,10 @@ describe('weekly schedule', () => {
     plan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay' };
 
     expect(planRunError(stateFor(plan, undefined, travelContent), plan, travelContent, balanceConfig)).toBeUndefined();
-    expect(activityAtTime({ day: 6, hour: 10, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
-    expect(activityAtTime({ day: 7, hour: 14, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
-    expect(activityAtTime({ day: 8, hour: 8, minute: 0 }, plan, undefined, travelContent).kind).toBe('activity');
-    expect(activityAtTime({ day: 8, hour: 10, minute: 0 }, plan, undefined, travelContent).kind).toBe('free');
+    expect(activityAtTime({ day: 6, hour: 10, minute: 0 }, plan, undefined, travelContent, { modifiers: [], longActivity: { id: 'started', activity: { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay', start: { day: 6, hour: 9, minute: 0 }, end: { day: 8, hour: 9, minute: 0 } } } }).kind).toBe('activity');
+    expect(activityAtTime({ day: 7, hour: 14, minute: 0 }, plan, undefined, travelContent, { modifiers: [], longActivity: { id: 'started', activity: { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay', start: { day: 6, hour: 9, minute: 0 }, end: { day: 8, hour: 9, minute: 0 } } } }).kind).toBe('activity');
+    expect(activityAtTime({ day: 8, hour: 8, minute: 0 }, plan, undefined, travelContent, { modifiers: [], longActivity: { id: 'started', activity: { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay', start: { day: 6, hour: 9, minute: 0 }, end: { day: 8, hour: 9, minute: 0 } } } }).kind).toBe('activity');
+    expect(activityAtTime({ day: 8, hour: 10, minute: 0 }, plan, undefined, travelContent, { modifiers: [], longActivity: { id: 'started', activity: { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'stay', start: { day: 6, hour: 9, minute: 0 }, end: { day: 8, hour: 9, minute: 0 } } } }).kind).toBe('free');
   });
 
   it('reports the plan conflict and the work-schedule conflict of a multi-day activity', () => {
@@ -73,15 +73,15 @@ describe('weekly schedule', () => {
     const threeDayPlan = clearWeekPlan();
     threeDayPlan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'three-days' };
     expect(planRunError(stateFor(threeDayPlan, undefined, travelContent), threeDayPlan, travelContent, balanceConfig)).toBeUndefined();
-    expect(activityAtTime({ day: 8, hour: 23, minute: 0 }, threeDayPlan, undefined, travelContent).kind).toBe('activity');
-    expect(activityAtTime({ day: 9, hour: 8, minute: 59 }, threeDayPlan, undefined, travelContent).kind).toBe('activity');
-    expect(activityAtTime({ day: 9, hour: 9, minute: 0 }, threeDayPlan, undefined, travelContent).kind).toBe('free');
+    expect(activityAtTime({ day: 8, hour: 23, minute: 0 }, threeDayPlan, undefined, travelContent, { modifiers: [], longActivity: { id: 'started', activity: { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'three', start: { day: 6, hour: 9, minute: 0 }, end: { day: 9, hour: 9, minute: 0 } } } }).kind).toBe('activity');
+    expect(activityAtTime({ day: 9, hour: 8, minute: 59 }, threeDayPlan, undefined, travelContent, { modifiers: [], longActivity: { id: 'started', activity: { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'three', start: { day: 6, hour: 9, minute: 0 }, end: { day: 9, hour: 9, minute: 0 } } } }).kind).toBe('activity');
+    expect(activityAtTime({ day: 9, hour: 9, minute: 0 }, threeDayPlan, undefined, travelContent, { modifiers: [], longActivity: { id: 'started', activity: { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'three', start: { day: 6, hour: 9, minute: 0 }, end: { day: 9, hour: 9, minute: 0 } } } }).kind).toBe('free');
 
     const fiveDayPlan = clearWeekPlan();
     fiveDayPlan.days[6].day = { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'five-days' };
     expect(planRunError(stateFor(fiveDayPlan, undefined, travelContent), fiveDayPlan, travelContent, balanceConfig)).toBeUndefined();
-    expect(activityAtTime({ day: 10, hour: 23, minute: 0 }, fiveDayPlan, undefined, travelContent).kind).toBe('activity');
-    expect(activityAtTime({ day: 11, hour: 9, minute: 0 }, fiveDayPlan, undefined, travelContent).kind).toBe('free');
+    expect(activityAtTime({ day: 10, hour: 23, minute: 0 }, fiveDayPlan, undefined, travelContent, { modifiers: [], longActivity: { id: 'started', activity: { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'five', start: { day: 6, hour: 9, minute: 0 }, end: { day: 11, hour: 9, minute: 0 } } } }).kind).toBe('activity');
+    expect(activityAtTime({ day: 11, hour: 9, minute: 0 }, fiveDayPlan, undefined, travelContent, { modifiers: [], longActivity: { id: 'started', activity: { kind: 'activity', activityId: 'activity.test-weekend', optionId: 'five', start: { day: 6, hour: 9, minute: 0 }, end: { day: 11, hour: 9, minute: 0 } } } }).kind).toBe('free');
   });
 });
 

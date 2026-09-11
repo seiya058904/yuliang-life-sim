@@ -646,7 +646,7 @@ test('keeps the Life forecast header on the reference inverse surface', async ({
 
   const forecast = page.locator('.view-life .life-hero-grid > .forecast-strip.inverse');
   const header = forecast.locator('.forecast-head');
-  const title = header.getByRole('heading', { name: '本周预测', exact: true });
+  const title = header.getByRole('heading', { name: '本周剩余安排', exact: true });
   const headerGeometry = await header.evaluate((element) => {
     const rect = element.getBoundingClientRect();
     return { height: rect.height, width: rect.width, scrollWidth: element.scrollWidth, clientWidth: element.clientWidth };

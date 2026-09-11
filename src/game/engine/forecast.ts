@@ -1,11 +1,11 @@
+import { dailyCosts, shiftPay, studyRewards, mortgagePayment, jobAvailable, subscriptionBudget } from './settlementMath';
+import { getDailyActivities } from './schedule';
+import { absoluteMinute } from './time';
 import type { BalanceConfig } from '../balance/config';
 import type { ContentRegistry, GameState, PlannedActivity, Weekday, WeeklyPlan } from '../content/contracts';
-import { calculateLifestyle } from './economy';
-import { employmentWorkWindow, modifierValue } from './effects';
 import { employmentKind } from './careers';
 import { activityCashCost } from './activities';
-import { housingRentPerDay } from './locations';
-import { collectPlanIssues, weekdayLabel } from './planning';
+import { planEditIssues, weekdayLabel } from './planning';
 
 export interface WeeklyPlanForecast {
   income: number;
@@ -20,14 +20,6 @@ export interface WeeklyPlanForecast {
   blockedWeekdays: Weekday[];
 }
 
-/** The forecast window covers the days the next run settles, including the monthly boundary. */
-function includesMonthlyCommunication(state: GameState): boolean {
-  for (let offset = 0; offset <= 6; offset += 1) {
-    if ((state.time.day + offset - 1) % 28 === 0) return true;
-  }
-  return false;
-}
-
 /**
  * The forecast reads the planning domain, so it never counts income or effects
  * from a slot the simulation would actually skip, and it tells the player which
@@ -37,49 +29,57 @@ export function forecastWeeklyPlan(state: GameState, plan: WeeklyPlan, content: 
   const result: WeeklyPlanForecast = {
     income: 0, expense: fixedWeeklyExpense(state, content, balance), netCash: 0,
     hours: { work: 0, sideJob: 0, study: 0, leisure: 0 }, attributes: {}, relationships: {},
-    notes: ['不包含随机事件、市场价格变化、未确定招聘结果'],
+    notes: ['不包含随机事件、市场价格变化、未确定招聘结果', '余额不足时订阅或房贷扣款可能变化'],
     warnings: [], blockedWeekdays: [],
   };
-  const issues = collectPlanIssues(plan, state, { content, balance, employment: state.employment });
+  const issues = planEditIssues(state, plan, content, balance);
   const blocked = new Set<Weekday>(issues.map((issue) => issue.weekday));
   result.blockedWeekdays = [...blocked].sort((left, right) => left - right);
   result.warnings = issues.map((issue) => `周${weekdayLabel(issue.weekday)}：${issue.message}`);
   if (issues.length) result.notes.push(`有 ${issues.length} 处计划当前无法执行，未计入预测`);
-  const currentJob = state.employment ? content.jobs.find((job) => job.id === state.employment?.jobId) : undefined;
-  if (currentJob && state.employment) {
-    const shifts = state.employment.schedule.workDays.length;
-    const pay = (state.employment.basePay ?? currentJob.basePay) + (state.employment.salaryAdjustment ?? 0);
-    const perShift = modifierValue(state, 'work_pay', pay, currentJob.tags);
-    result.income += Math.round(perShift * shifts);
-    result.hours.work += employmentWorkWindow(state, state.employment.schedule).durationMinutes / 60 * shifts;
-  }
-  for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) {
-    if (blocked.has(weekday)) continue;
-    applyPlanned(plan.days[weekday].day, state, content, result);
-    applyPlanned(plan.days[weekday].evening, state, content, result);
+  const endDay = state.time.day + 7 - state.calendar.weekday;
+  const seen = new Set<string>();
+  for (let day = state.time.day; day <= endDay; day++) {
+    for (const activity of getDailyActivities(day, plan, state.employment, content, state)) {
+      const end = absoluteMinute(activity.end);
+      if (end <= absoluteMinute(state.time) || end > endDay * 1440) continue;
+      const key = `${activity.kind}:${absoluteMinute(activity.start)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const weekday = ((activity.start.day - 1) % 7 + 1) as Weekday;
+      const minutes = end - absoluteMinute(activity.start);
+      if (activity.kind === 'work') {
+        const job = content.jobs.find(job => job.id === activity.jobId);
+        if (job && jobAvailable(state, job, content, balance)) { result.income += shiftPay(state, job, true); result.hours.work += minutes / 60; }
+      } else if (!blocked.has(weekday)) {
+        if (activity.kind === 'study') applyPlanned({ kind: 'study', durationMinutes: minutes as 120 }, state, content, balance, result);
+        if (activity.kind === 'side_job') applyPlanned({ kind: 'side_job', jobId: activity.jobId!, durationMinutes: minutes as 120 }, state, content, balance, result);
+        if (activity.kind === 'course') applyPlanned({ kind: 'course', courseId: activity.courseId! }, state, content, balance, result);
+        if (activity.kind === 'activity') applyPlanned({ kind: 'activity', activityId: activity.activityId!, optionId: activity.optionId! }, state, content, balance, result);
+      }
+    }
   }
   result.netCash = result.income - result.expense;
   return result;
 }
 
 function fixedWeeklyExpense(state: GameState, content: ContentRegistry, balance: BalanceConfig): number {
-  const home = content.housing.find((entry) => entry.id === state.housing.housingId);
-  const score = calculateLifestyle(state, content);
-  const factor = Math.min(balance.lifestyleCostFactorCap, Math.max(0, score * balance.lifestyleCostFactor));
-  const daily = (state.housing.mode === 'rent' && home ? housingRentPerDay(state, home) : 0)
-    + Math.round(balance.dailyLivingCost * (1 + factor))
-    + Math.round(balance.dailyTransportCost * (1 + factor / 2))
-    + Math.round((home?.fixedMonthlyCost ?? 0) / 28);
-  // The weekly forecast must match the settlement exactly, including the monthly
-  // communication charge when the coming seven days cross the month boundary.
-  return daily * 7 + (includesMonthlyCommunication(state) ? balance.monthlyCommunicationCost : 0);
+  const endDay = state.time.day + 7 - state.calendar.weekday;
+  let total = 0;
+  for (let day = Math.max(state.time.day, state.lastSettledDay + 1); day <= endDay; day++) {
+    total += dailyCosts(state, content, balance, day).total;
+    if (day % 28 === 0) total += mortgagePayment(state) + subscriptionBudget(state, content);
+  }
+  return total;
 }
 
-function applyPlanned(activity: PlannedActivity, state: GameState, content: ContentRegistry, result: WeeklyPlanForecast): void {
+function applyPlanned(activity: PlannedActivity, state: GameState, content: ContentRegistry, balance: BalanceConfig, result: WeeklyPlanForecast): void {
   if (activity.kind === 'free') return;
   if (activity.kind === 'study') {
     result.hours.study += activity.durationMinutes / 60;
-    result.attributes.knowledge = (result.attributes.knowledge ?? 0) + Math.max(1, Math.floor(activity.durationMinutes / 120));
+    const rewards = studyRewards(state, activity.durationMinutes);
+    result.attributes.knowledge = (result.attributes.knowledge ?? 0) + rewards.knowledge;
+    result.attributes.professional = (result.attributes.professional ?? 0) + rewards.professional;
     return;
   }
   if (activity.kind === 'course') {
@@ -93,9 +93,9 @@ function applyPlanned(activity: PlannedActivity, state: GameState, content: Cont
   }
   if (activity.kind === 'side_job') {
     const job = content.jobs.find((entry) => entry.id === activity.jobId);
-    if (!job || employmentKind(job) === 'gig' || !state.acquiredSideJobs?.[job.id]) return;
+    if (!job || !jobAvailable(state, job, content, balance) || employmentKind(job) === 'gig' || !state.acquiredSideJobs?.[job.id]) return;
     result.hours.sideJob += activity.durationMinutes / 60;
-    result.income += job.basePay;
+    result.income += shiftPay(state, job, false);
     return;
   }
   const definition = content.activities?.find((entry) => entry.id === activity.activityId);
