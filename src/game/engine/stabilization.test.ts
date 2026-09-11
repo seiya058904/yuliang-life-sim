@@ -298,12 +298,47 @@ describe('application lifecycle', () => {
     expect(applied.opportunities).toHaveLength(0);
     expect(applied.consumedOpportunityIds).toContain('opportunity.test');
 
-    advanceSimulation({ ...at(applied, 10), simulationMode: 'running' as const }, 24 * 60, contentRegistry, balance);
-    expect(applied.opportunities).toHaveLength(0);
+    const advanced = advanceSimulation({ ...at(applied, 10), simulationMode: 'running' as const }, 24 * 60, contentRegistry, balance);
+    expect(advanced.state.opportunities).toHaveLength(0);
 
     // Re-submitting the same consumed opportunity is impossible.
     const again = dispatchGameAction(at(applied, 10), { type: 'submit_application', opportunityId: 'opportunity.test' }, contentRegistry, balance);
     expect(again.error).toBe('这项招聘已经结束');
+  });
+
+  it('hard-blocks a course when its cash cost is unaffordable', () => {
+    const course = contentRegistry.courses!.find((entry) => entry.cashCost > 0)!;
+    const state = createInitialState(contentRegistry, balance, 1);
+    const planned = { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 1: { ...state.weeklyPlan.days[1], evening: { kind: 'course' as const, courseId: course.id } } } };
+    const unaffordable = { ...state, cash: 0, weeklyPlan: planned };
+    expect(planRunError(unaffordable, planned, contentRegistry, balance)).toMatch(/现金不足/);
+    expect(dispatchGameAction(unaffordable, { type: 'start_week' }, contentRegistry, balance).error).toMatch(/现金不足/);
+
+    const affordable = { ...unaffordable, cash: course.cashCost };
+    expect(planRunError(affordable, planned, contentRegistry, balance) ?? '').not.toMatch(/现金不足/);
+  });
+
+  it('rejects the 61st active application without mutating application state', () => {
+    const state = createInitialState(contentRegistry, balance, 1);
+    const vacancy = state.vacancies![0];
+    const applications = Array.from({ length: 60 }, (_, index) => ({
+      applicationId: `application.1.${index + 1}`,
+      jobId: vacancy.jobId,
+      companyId: `company.active-${index}`,
+      salaryRange: vacancy.salaryRange,
+      route: vacancy.route,
+      submittedDay: state.time.day,
+      resultDay: state.time.day + 2,
+      status: 'submitted' as const,
+      competitivenessTier: 'minimum' as const,
+      probabilityBand: 0.5,
+      willReceiveOffer: false,
+      feedback: [],
+    }));
+    const full = { ...state, ability: 99, reputation: 99, applications };
+    const result = dispatchGameAction(full, { type: 'submit_application', vacancyId: vacancy.vacancyId }, contentRegistry, balance);
+    expect(result.error).toBe('申请记录已达上限');
+    expect(result.state.applications).toEqual(applications);
   });
 
   it('surfaces an open Offer on the life page so a dated offer cannot be missed', () => {
@@ -504,6 +539,30 @@ describe('persistence safety', () => {
     expect(migrated.lifeHistory.some((entry) => entry.title.startsWith('查看消息：'))).toBe(false);
     expect(migrated.lifeHistory.some((entry) => entry.title === '接受仓库助理 Offer')).toBe(true);
     expect(planRunError(migrated, migrated.weeklyPlan, contentRegistry, balance)).toBeUndefined();
+  });
+
+  it('repairs duplicate and invalid message/application ids without dropping records', () => {
+    const base = createInitialState(contentRegistry, balance, 1);
+    const job = contentRegistry.jobs.find((entry) => entry.id === 'job.course-teaching-assistant')!;
+    const raw = {
+      ...base,
+      messages: [
+        { id: 'message.1.1', day: 1, title: 'A', body: 'a', read: true },
+        { id: 'message.1.1', day: 2, title: 'B', body: 'b', read: false },
+        { id: '', day: 3, title: 'C', body: 'c', read: true },
+      ],
+      applications: [
+        { applicationId: 'application.1.1', jobId: job.id, companyId: 'company.a', salaryRange: [1, 2], route: 'market', submittedDay: 1, resultDay: 2, status: 'rejected', competitivenessTier: 'minimum', probabilityBand: 0.5, willReceiveOffer: false, feedback: [] },
+        { applicationId: 'application.1.1', jobId: job.id, companyId: 'company.b', salaryRange: [1, 2], route: 'market', submittedDay: 2, resultDay: 3, status: 'withdrawn', competitivenessTier: 'minimum', probabilityBand: 0.5, willReceiveOffer: false, feedback: [] },
+      ],
+    };
+    const migrated = migrateGameState(raw, contentRegistry, balance);
+    const messageIds = migrated.messages!.map((entry) => entry.id);
+    const applicationIds = migrated.applications!.map((entry) => entry.applicationId);
+    expect(new Set(messageIds).size).toBe(messageIds.length);
+    expect(new Set(applicationIds).size).toBe(applicationIds.length);
+    expect(migrated.messages).toHaveLength(3);
+    expect(migrated.applications).toHaveLength(2);
   });
 
   it('keeps the reconcile helper idempotent and evening-safe', () => {

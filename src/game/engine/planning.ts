@@ -29,12 +29,12 @@ export const LONG_ACTIVITY_MIN_DURATION = 2880;
 export const CANONICAL_DURATIONS: readonly ActivityDuration[] = [60, 120, 180, 240];
 
 /** `from` sentinel meaning "the whole week is still editable" (validation, migration). */
-export const WEEK_START_FROM = { day: 0, hour: 0, minute: 0 } as const;
+export const WEEK_START_FROM = { kind: 'week_start' } as const;
 /** `from` sentinel meaning "everything before the current instant is settled". */
-export const CURRENT_TIME_FROM = { day: -1, hour: 0, minute: 0 } as const;
+export const CURRENT_TIME_FROM = { kind: 'current_time' } as const;
 
 /** `true` means "resolve against the live clock". */
-export type PlanPosition = GameTime;
+export type PlanPosition = GameTime | typeof WEEK_START_FROM | typeof CURRENT_TIME_FROM;
 
 export type PlanIssueCode =
   | 'PAST_SLOT'
@@ -55,6 +55,7 @@ export type PlanIssueCode =
   | 'COURSE_MAX_COMPLETIONS'
   | 'COURSE_REQUIREMENTS'
   | 'COURSE_COOLDOWN'
+  | 'COURSE_CASH'
   | 'MULTI_DAY_CONFLICT'
   | 'PLAN_ALREADY_FULL';
 
@@ -127,8 +128,10 @@ export function weekStartDayOf(day: number): number {
 
 /** Resolve a plan position into an absolute minute for comparisons. */
 export function resolvePlanMinute(from: PlanPosition, time: GameTime): number {
-  if (from === CURRENT_TIME_FROM) return absoluteMinute(time);
-  if (from === WEEK_START_FROM) return absoluteMinute({ day: weekStartDayOf(time.day), hour: 0, minute: 0 });
+  if ('kind' in from) {
+    if (from.kind === 'current_time') return absoluteMinute(time);
+    return absoluteMinute({ day: weekStartDayOf(time.day), hour: 0, minute: 0 });
+  }
   return absoluteMinute(from);
 }
 
@@ -193,6 +196,7 @@ export function courseAvailability(state: GameState, course: CourseDefinition, c
   if (course.requirements && !evaluateCondition(course.requirements, state, content, balance)) {
     return { ...availability, reason: `${course.name}：${explainCondition(course.requirements, state, content, balance)}` };
   }
+  if (availability.cash === 'hard') return { ...availability, reason: `${course.name}：现金不足，需要 ${course.cashCost}` };
   return availability;
 }
 
@@ -336,7 +340,11 @@ function collectCourseIssues(plan: WeeklyPlan, state: GameState, content: Conten
       const course = (content.courses ?? []).find((entry) => entry.id === activity.courseId);
       if (!course) { issues.push(buildIssue('UNKNOWN_COURSE', weekday, slot, `周${weekdayLabel(weekday)}${slotLabel(slot)}课程不存在`)); continue; }
       const availability = courseAvailability(state, course, content, balance);
-      if (availability.reason) { issues.push(buildIssue('COURSE_REQUIREMENTS', weekday, slot, `周${weekdayLabel(weekday)}${slotLabel(slot)}${availability.reason}`)); continue; }
+      if (availability.reason) {
+        const code = availability.cash === 'hard' ? 'COURSE_CASH' : 'COURSE_REQUIREMENTS';
+        issues.push(buildIssue(code, weekday, slot, `周${weekdayLabel(weekday)}${slotLabel(slot)}${availability.reason}`));
+        continue;
+      }
       if (course.durationMinutes > SLOT_WINDOW[slot][1] - SLOT_WINDOW[slot][0]) {
         issues.push(buildIssue('ACTIVITY_TOO_LONG', weekday, slot, `周${weekdayLabel(weekday)}${slotLabel(slot)}课程时长超出可规划时间（${durationText(course.durationMinutes)}）`));
       }
@@ -386,7 +394,7 @@ export function collectPlanIssues(plan: WeeklyPlan, state: GameState, context: P
     ...collectActivityIssues(plan, state, context.content, context.balance).issues,
     ...collectCourseIssues(plan, state, context.content, context.balance),
   ];
-  if (resolvePlanMinute(from, state.time) > absoluteMinute(WEEK_START_FROM)) {
+  if (resolvePlanMinute(from, state.time) > resolvePlanMinute(WEEK_START_FROM, state.time)) {
     for (const weekday of WEEKDAYS) {
       for (const slot of PLAN_SLOTS) {
         if (slotWithin(weekday, slot, from, state.time)) continue;
@@ -573,7 +581,7 @@ export function reconcileStateWithEmployment(state: GameState): void {
  */
 const CLEARABLE_ISSUE_CODES: readonly PlanIssueCode[] = [
   'UNKNOWN_ACTIVITY', 'UNKNOWN_ACTIVITY_OPTION', 'ACTIVITY_REQUIREMENTS', 'ACTIVITY_COOLDOWN', 'ACTIVITY_TOO_LONG',
-  'UNKNOWN_COURSE', 'COURSE_REQUIREMENTS', 'COURSE_MAX_COMPLETIONS', 'COURSE_COOLDOWN',
+  'UNKNOWN_COURSE', 'COURSE_REQUIREMENTS', 'COURSE_MAX_COMPLETIONS', 'COURSE_COOLDOWN', 'COURSE_CASH',
   'UNKNOWN_JOB', 'NOT_SIDE_JOB', 'SIDE_JOB_NOT_ACQUIRED', 'REGULAR_JOB_IN_PLAN', 'INVALID_DURATION',
 ];
 

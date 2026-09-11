@@ -324,11 +324,14 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   const rawMessages: NonNullable<GameState['messages']> = storedMessages
     .filter((entry) => isRecord(entry) && Number.isInteger(entry.day) && typeof entry.title === 'string' && typeof entry.body === 'string' && typeof entry.read === 'boolean' && (entry.characterId === undefined || characterIds.has(entry.characterId as string)))
     .slice(-30);
-  candidate.messages = rawMessages.map((message, index) => ({
-    ...message,
-    id: typeof message.id === 'string' && message.id ? message.id : `message.${message.day}.${index + 1}`,
-    dismissed: message.dismissed === true,
-  }));
+  const usedMessageIds = new Set<string>();
+  let fallbackMessageSequence = 0;
+  candidate.messages = rawMessages.map((message) => {
+    let id = typeof message.id === 'string' && /^message\.\d+\.\d+$/.test(message.id) ? message.id : '';
+    while (!id || usedMessageIds.has(id)) id = `message.${message.day}.${++fallbackMessageSequence}`;
+    usedMessageIds.add(id);
+    return { ...message, id, dismissed: message.dismissed === true };
+  });
   const highestMessageSequence = candidate.messages.reduce((highest, message) => {
     const parsed = Number(/(\d+)$/.exec(message.id)?.[1] ?? 0);
     return Number.isFinite(parsed) ? Math.max(highest, parsed) : highest;
@@ -396,12 +399,16 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     applicationCooldowns[applicationCooldownKey(jobId, companyId)] = { jobId, companyId, nextEligibleDay: Number(value.nextEligibleDay) };
   }
   candidate.applicationCooldowns = applicationCooldowns;
+  const usedApplicationIds = new Set<string>();
+  let fallbackApplicationSequence = 0;
   candidate.applications = Array.isArray(candidate.applications)
     ? candidate.applications
       .filter((entry) => isRecord(entry) && jobIds.has(String(entry.jobId)))
-      .map((entry, index) => {
+      .map((entry) => {
         const application = entry as JobApplicationState;
-        const applicationId = typeof application.applicationId === 'string' && application.applicationId ? application.applicationId : `application.${application.submittedDay ?? candidate.time.day}.${index + 1}`;
+        let applicationId = typeof application.applicationId === 'string' && /^application\.\d+\.\d+$/.test(application.applicationId) ? application.applicationId : '';
+        while (!applicationId || usedApplicationIds.has(applicationId)) applicationId = `application.${application.submittedDay ?? candidate.time.day}.${++fallbackApplicationSequence}`;
+        usedApplicationIds.add(applicationId);
         if (Number.isInteger(application.nextEligibleDay) && application.nextEligibleDay! > candidate.time.day) {
           recordApplicationCooldown(candidate, String(application.jobId), String(application.companyId), application.nextEligibleDay!);
         }

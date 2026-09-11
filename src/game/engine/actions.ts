@@ -10,7 +10,7 @@ import {
   CURRENT_TIME_FROM, collectPlanIssues, courseAvailability, findNextSchedulableSlot, formatPlanIssues, planEditError, planRunError, reconcilePlanWithContent, reconcilePlanWithEmployment, reconcileStateWithEmployment, slotWithin, weekdayLabel,
 } from './planning';
 import {
-  appendMessage, applicationCooldownKey, applicationCooldownRemaining, clearReadMessages, clearTerminalApplications, createApplicationId, dismissMessage, dismissTerminalApplication, markAllMessagesRead, markMessageRead, pruneApplicationHistory, pruneExpiredState, recordApplicationCooldown, visibleMessages,
+  APPLICATION_HISTORY_LIMIT, activeApplications, appendMessage, applicationCooldownKey, applicationCooldownRemaining, clearReadMessages, clearTerminalApplications, createApplicationId, dismissMessage, dismissTerminalApplication, markAllMessagesRead, markMessageRead, pruneApplicationHistory, pruneExpiredState, recordApplicationCooldown, visibleMessages,
 } from './lifecycle';
 import { groupForCategory, recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
 import { investmentUnitValue } from './investments';
@@ -246,6 +246,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       // can never be used to apply again early.
       const cooldownRemaining = applicationCooldownRemaining(state, job.id, source.companyId);
       if (cooldownRemaining > 0) return fail(input, `该公司这个岗位还需等待 ${cooldownRemaining} 天才能再次申请`);
+      if (activeApplications(state).length >= APPLICATION_HISTORY_LIMIT) return fail(input, '申请记录已达上限');
       if (employmentKind(job) === 'full_time') {
         const active = applications.filter((entry) => entry.status === 'submitted' || entry.status === 'screening' || entry.status === 'interview' || entry.status === 'waiting').filter((entry) => employmentKind(find(content.jobs, entry.jobId)!) === 'full_time');
         if (active.length >= balance.applicationMaxActiveFullTime) return fail(input, '同时进行的正式岗位申请已达到上限');
