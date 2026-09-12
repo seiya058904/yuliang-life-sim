@@ -7,6 +7,14 @@ import { appStore, highlightIconFor, highlightIllustrationFor, highlightTitleFor
 import { contentRegistry } from './game/content/registry';
 import type { MonthlyFinancialSummary } from './game/content/contracts';
 
+async function findCatalogPage(user: ReturnType<typeof userEvent.setup>, title: string, kind: '商品' | '活动' = '商品') {
+  for (let page = 0; page < 12 && !screen.queryAllByRole('heading', { name: title }).length; page++) {
+    const next = screen.getByRole('button', { name: '下一页' + kind });
+    expect(next).not.toBeDisabled();
+    await user.click(next);
+  }
+}
+
 describe('余量 app flow', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -582,7 +590,7 @@ describe('余量 app flow', () => {
     const shop = screen.getByRole('region', { name: '商品目录布局' });
     await user.click(within(shop).getByRole('tab', { name: '社交' }));
     const activityPager = within(shop).queryByRole('navigation', { name: '活动分页' });
-    if (activityPager) await user.click(within(activityPager).getByRole('button', { name: '下一页活动' }));
+    if (activityPager) await findCatalogPage(user, '品牌短片项目 · 完成客户合同', '活动');
     const project = within(shop).getByRole('heading', { name: '品牌短片项目 · 完成客户合同' }).closest('.activity-card');
     expect(project).not.toBeNull();
     expect(within(project as HTMLElement).getByText('企业项目利润 · 可承接')).toBeInTheDocument();
@@ -696,11 +704,13 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '社交' }));
+    await user.click(within(screen.getByRole('navigation', { name: '联系人' })).getByRole('button', { name: /徐可/ }));
     await user.click(screen.getByRole('button', { name: /聊聊远程工作/ }));
     expect(screen.getByRole('region', { name: '消息' })).toHaveTextContent('未读 1 条');
     await user.click(screen.getByRole('button', { name: '查看消息' }));
     expect(screen.getByRole('region', { name: '消息' })).toHaveTextContent('未读 0 条');
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getAllByText('和徐可聊设备 · 聊聊远程工作').length).toBeGreaterThan(0);
     // Reading the inbox is UI state: the interaction itself already owns the life
     // record, so viewing a message must not add a second "查看消息" entry.
@@ -715,6 +725,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await user.click(screen.getByRole('button', { name: /筛选/ }));
     await user.click(screen.getByRole('button', { name: '休闲用品' }));
     const flowers = screen.getByRole('heading', { name: '一束花' }).closest('article') as HTMLElement;
     await user.click(within(flowers).getByRole('button', { name: '加入购物袋：一束花' }));
@@ -724,6 +735,7 @@ describe('余量 app flow', () => {
     await user.click(within(gifts).getAllByRole('button', { name: '送 一束花（×1）' })[0]);
     expect(gifts).toHaveTextContent('准备一份礼物');
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('送给林晨：一束花')).toBeInTheDocument();
   });
 
@@ -745,6 +757,7 @@ describe('余量 app flow', () => {
     expect(screen.getByText('徐可的朋友推荐')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '申请机会' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText(/远程连接：约个时间聊聊/)).toBeInTheDocument();
   });
 
@@ -753,12 +766,16 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '市场' }));
     expect(screen.getByRole('heading', { name: '灵活储蓄' })).toBeInTheDocument();
-    const investmentCard = screen.getByRole('heading', { name: '灵活储蓄' }).closest('article');
+    let investmentCard = screen.getByRole('heading', { name: '灵活储蓄' }).closest('article');
     expect(investmentCard).not.toBeNull();
     await user.click(within(investmentCard as HTMLElement).getByRole('button', { name: '买入 1 份' }));
+    await user.click(screen.getByRole('navigation', { name: '财富分区' }).querySelector('button:nth-child(2)')!);
+    investmentCard = screen.getByRole('heading', { name: '灵活储蓄' }).closest('article');
     await user.click(within(investmentCard as HTMLElement).getByRole('button', { name: '卖出 1 份' }));
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('买入灵活储蓄')).toBeInTheDocument();
     expect(screen.getByText('卖出灵活储蓄')).toBeInTheDocument();
   });
@@ -770,6 +787,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '经营' }));
     expect(screen.getByRole('heading', { name: '企业经营' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '经营地点' })).toBeInTheDocument();
     expect(screen.getByText(/中央区 · 澄川市/)).toBeInTheDocument();
@@ -785,9 +803,11 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '经营' }));
     expect(screen.getByRole('heading', { name: '可并购企业' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '并购 ¥8,580' }));
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('并购线上小店')).toBeInTheDocument();
   });
 
@@ -798,10 +818,13 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '市场' }));
     expect(screen.getByText(/合伙方案：与周妍共同经营 · 你持股 50%/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '加入合伙 ¥4,200' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '持有' }));
     expect(screen.getByText(/预计净利润 .*持股 50%/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('加入线上小店合伙')).toBeInTheDocument();
   });
 
@@ -822,6 +845,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '经营' }));
     const businessPanel = screen.getByRole('heading', { name: '企业经营' }).closest('section') as HTMLElement;
     await user.click(screen.getByRole('button', { name: '投入 ¥1,000' }));
     expect(screen.getByText(/已投入资本 ¥1,000/)).toBeInTheDocument();
@@ -844,6 +868,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '经营' }));
     expect(screen.getByRole('region', { name: '公开股权' })).toHaveTextContent('市场流通 5%');
     expect(screen.queryByRole('button', { name: '回购 10% 股权' })).not.toBeInTheDocument();
   });
@@ -855,6 +880,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '经营' }));
     await user.click(screen.getByRole('button', { name: '退出企业' }));
     expect(screen.queryByRole('heading', { name: '企业经营' })).not.toBeInTheDocument();
   });
@@ -874,6 +900,7 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('region', { name: '服务与订阅' })).toHaveTextContent('最近服务记录');
     expect(screen.getByRole('region', { name: '服务记录' })).toHaveTextContent('基础理发');
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('基础理发')).toBeInTheDocument();
     expect(screen.getByText('开通基础通信套餐')).toBeInTheDocument();
     expect(screen.getByText('取消基础通信套餐')).toBeInTheDocument();
@@ -900,7 +927,7 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '商店' }));
     const shop = screen.getByRole('region', { name: '商品目录布局' });
     const itemCards = Array.from(shop.querySelectorAll('[data-catalog-card]'));
-    expect(itemCards).toHaveLength(12);
+    expect(itemCards).toHaveLength(6);
     itemCards.forEach((card) => expect(card.querySelectorAll('.catalog-meter-row')).toHaveLength(0));
 
     const selectedProductDetail = within(shop).getByRole('region', { name: '已选商品详情' });
@@ -922,7 +949,7 @@ describe('余量 app flow', () => {
     await user.click(within(shop).getByRole('tab', { name: '娱乐' }));
     const grid = shop.querySelector('.activity-grid');
     expect(grid).not.toBeNull();
-    expect(grid?.children).toHaveLength(12);
+    expect(grid?.children).toHaveLength(6);
     expect(within(shop).getByRole('navigation', { name: '活动分页' })).toBeInTheDocument();
 
     const firstPageTitle = grid?.querySelector('h3')?.textContent;
@@ -937,8 +964,14 @@ describe('余量 app flow', () => {
     await user.click(screen.getByRole('button', { name: '商店' }));
     await user.click(screen.getByRole('tab', { name: '娱乐' }));
 
-    const cards = Array.from(screen.getByRole('region', { name: '商品目录布局' }).querySelectorAll<HTMLElement>('.activity-card[data-catalog-card]'));
-    const silhouettes = new Set(cards.map((card) => Array.from(card.querySelector('.card-art .pixel-illustration')?.classList ?? []).find((name) => name.startsWith('il-'))));
+    const silhouettes = new Set<string | undefined>();
+    for (let page = 0; page < 12; page++) {
+      const cards = Array.from(screen.getByRole('region', { name: '商品目录布局' }).querySelectorAll<HTMLElement>('.activity-card[data-catalog-card]'));
+      cards.forEach(card => silhouettes.add(Array.from(card.querySelector('.card-art .pixel-illustration')?.classList ?? []).find(name => name.startsWith('il-'))));
+      const next = screen.getByRole('button', { name: '下一页活动' });
+      if (next.hasAttribute('disabled')) break;
+      await user.click(next);
+    }
     expect(silhouettes.size).toBeGreaterThanOrEqual(5);
   });
 
@@ -950,11 +983,13 @@ describe('余量 app flow', () => {
     const shop = screen.getByRole('region', { name: '商品目录布局' });
     const expectedIcons = [['现磨咖啡', 'coffee'], ['实用手机', 'phone'], ['轻薄笔记本电脑', 'laptop'], ['简洁书桌', 'desk'], ['合身衬衫', 'hoodie'], ['电影票', 'film'], ['实用书籍', 'book']] as const;
     for (const [title, illustration] of expectedIcons) {
+      await findCatalogPage(user, title);
       const card = Array.from(shop.querySelectorAll<HTMLElement>('[data-catalog-card]')).find((entry) => entry.querySelector('h2')?.textContent === title);
       expect(card).not.toBeNull();
       expect(card?.querySelector(`.pixel-illustration.il-${illustration}`)).not.toBeNull();
     }
 
+    await user.click(within(screen.getByRole('navigation', { name: '商品分页' })).getByRole('button', { name: '1' }));
     const itemCard = screen.getByRole('heading', { name: '实用手机' }).closest('[data-catalog-card]') as HTMLElement;
     expect(itemCard.querySelectorAll('button.primary-button')).toHaveLength(1);
     expect(itemCard.querySelector('.button-pair')).toBeNull();
@@ -995,7 +1030,8 @@ describe('余量 app flow', () => {
 
     const timeConsole = screen.getByRole('region', { name: '世界时间' });
     expect(timeConsole.querySelectorAll('.activity-progress i')).toHaveLength(20);
-    expect(within(timeConsole).getByRole('button', { name: '暂停' })).toBeDisabled();
+    expect(within(timeConsole).getByRole('button', { name: '开始本周' })).toBeEnabled();
+    expect(within(timeConsole).getByRole('button', { name: '查看待处理事项' })).toBeEnabled();
   });
 
   it('renders the selected shop detail with reference-scale art and four honest fact cells', async () => {
@@ -1163,11 +1199,13 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '商店' }));
+    await findCatalogPage(user, '新款手机');
     await user.click(screen.getByRole('button', { name: '加入愿望清单：新款手机' }));
     const wishlist = screen.getByRole('region', { name: '愿望清单' });
     expect(wishlist).toHaveTextContent('新款手机');
     await user.click(within(wishlist).getByRole('button', { name: '买下' }));
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('愿望清单完成：新款手机')).toBeInTheDocument();
   });
 
@@ -1178,12 +1216,16 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
-    const vehicleRow = screen.getByRole('heading', { name: '实用二手小车' }).closest('.item-row');
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '市场' }));
+    let vehicleRow = screen.getByRole('heading', { name: '实用二手小车' }).closest('.item-row');
     expect(vehicleRow).not.toBeNull();
     await user.click(within(vehicleRow as HTMLElement).getByRole('button', { name: '买入 ¥35,000' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '持有' }));
+    vehicleRow = screen.getByRole('heading', { name: '实用二手小车' }).closest('.item-row');
     expect(within(vehicleRow as HTMLElement).getByRole('button', { name: /出售/ })).toBeInTheDocument();
     await user.click(within(vehicleRow as HTMLElement).getByRole('button', { name: /出售/ }));
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('买入实用二手小车')).toBeInTheDocument();
     expect(screen.getByText('出售实用二手小车')).toBeInTheDocument();
   });
@@ -1195,6 +1237,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '历史' }));
     expect(screen.getByRole('region', { name: '车辆维护记录' })).toHaveTextContent('实用二手小车车辆成本');
   });
 
@@ -1212,6 +1255,7 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('button', { name: '出售' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '出售' }));
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('出售独立单间')).toBeInTheDocument();
   });
 
@@ -1251,6 +1295,7 @@ describe('余量 app flow', () => {
     expect(screen.getByRole('heading', { name: '商品' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     const newest = screen.getByText('接受仓库助理 Offer');
     const oldest = screen.getByText('购买现磨咖啡');
     expect(newest.compareDocumentPosition(oldest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -1266,6 +1311,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByRole('heading', { name: '年度回顾' })).toBeInTheDocument();
     expect(screen.getByText('第 1 年')).toBeInTheDocument();
     expect(screen.getByText(/收入 ¥900/)).toBeInTheDocument();
@@ -1282,6 +1328,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('近 5 年净资产变化')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '近 3 年' }));
     expect(screen.getByText('近 3 年净资产变化')).toBeInTheDocument();
@@ -1296,6 +1343,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByRole('heading', { name: '世界记录' })).toBeInTheDocument();
     expect(screen.getByText(/第 1 年 · 经营 1 家企业/)).toBeInTheDocument();
     expect(screen.getByText(/访问 3 个地点/)).toBeInTheDocument();
@@ -1318,6 +1366,7 @@ describe('余量 app flow', () => {
     await user.click(within(storyline).getByRole('button', { name: '先从低风险开始' }));
     await user.click(within(storyline).getByRole('button', { name: '把投资留在生活计划里' }));
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     expect(screen.getByText('第一次买基金：把投资留在生活计划里')).toBeInTheDocument();
   });
 
@@ -1328,6 +1377,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
 
     expect(screen.getByRole('region', { name: '年度公开股权记录' })).toHaveTextContent('早餐与咖啡档 10% · 年末估值 ¥220');
   });
@@ -1351,6 +1401,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '里程碑' }));
     const records = screen.getByRole('region', { name: '财富阶段记录' });
     expect(records).toHaveTextContent('有积蓄');
     expect(records).toHaveTextContent('稳定');
@@ -1365,11 +1416,12 @@ describe('余量 app flow', () => {
 
     await user.click(screen.getByRole('button', { name: '城市' }));
     expect(screen.getByRole('heading', { name: '城市与地点' })).toBeInTheDocument();
-    const central = screen.getByRole('heading', { name: '中央区' }).closest('article');
+    await user.click(within(screen.getByRole('navigation', { name: '城市地区' })).getByRole('button', { name: '中央区' }));
+    const central = document.querySelector('.district-summary');
     expect(central).not.toBeNull();
     expect(central).toHaveTextContent('已访问 3 次');
     expect(central).toHaveTextContent('发展阶段 2/5');
-    expect(screen.getByRole('region', { name: '城市见闻' })).toHaveTextContent('夜间公交延长');
+    expect(document.querySelector('.city-history')).toHaveTextContent('夜间公交延长');
   });
 
   it('discovers a venue and reaches its executable activity entry', async () => {
@@ -1382,7 +1434,7 @@ describe('余量 app flow', () => {
     expect(venue).toHaveTextContent('去咖啡馆坐一会');
     await user.click(within(venue as HTMLElement).getByRole('button', { name: '去安排活动' }));
     expect(screen.getByRole('heading', { name: '娱乐与生活活动' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeInTheDocument();
+    expect(within(document.querySelector('.activity-grid') as HTMLElement).getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeInTheDocument();
   });
 
   it('discovers the bookstore venue and its knowledge activity', async () => {
@@ -1392,7 +1444,7 @@ describe('余量 app flow', () => {
     const venue = screen.getByRole('heading', { name: '叶脉书店' }).closest('article') as HTMLElement;
     expect(venue).toHaveTextContent('周末逛书店');
     await user.click(within(venue).getByRole('button', { name: '去安排活动' }));
-    expect(screen.getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeInTheDocument();
+    expect(within(document.querySelector('.activity-grid') as HTMLElement).getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '周末逛书店 · 和周妍一起逛' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeInTheDocument();
   });
@@ -1405,7 +1457,7 @@ describe('余量 app flow', () => {
     expect(venue).toHaveTextContent('演唱会');
     expect(venue).not.toHaveTextContent('周末逛书店');
     await user.click(within(venue).getByRole('button', { name: '去安排活动' }));
-    expect(screen.getByRole('heading', { name: '演唱会 · 去现场' })).toBeInTheDocument();
+    expect(within(document.querySelector('.activity-grid') as HTMLElement).getByRole('heading', { name: '演唱会 · 去现场' })).toBeInTheDocument();
   });
 
   it('discovers and schedules the official short trip activity', async () => {
@@ -1489,6 +1541,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '社交' }));
+    await user.click(screen.getByText('全部人物偏好'));
     expect(screen.getByRole('heading', { name: '人物偏好' })).toBeInTheDocument();
     expect(screen.getAllByText('偏好：吃饭').length).toBeGreaterThanOrEqual(2);
   });
@@ -1498,7 +1551,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '社交' }));
-    const lin = screen.getByRole('heading', { name: '林晨', level: 2 }).closest('article') as HTMLElement;
+    const lin = screen.getByRole('complementary', { name: '选中人物详情' }) as HTMLElement;
     expect(lin).toHaveTextContent('职业经历');
     expect(lin).toHaveTextContent('第 1 年 · 远望零售 · 门店员工');
   });
@@ -1546,6 +1599,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '持有' }));
     const investment = screen.getByRole('heading', { name: '广域市场指数基金' }).closest('article') as HTMLElement;
     expect(investment).toHaveTextContent('已投入');
     expect(investment).toHaveTextContent('¥1,000');
@@ -1581,6 +1635,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '历史' }));
     const history = screen.getByRole('region', { name: '财富组合历史' });
     expect(history).toHaveTextContent('第 2 月');
     expect(history).toHaveTextContent('第 3 月');
@@ -1597,6 +1652,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '里程碑' }));
     const records = screen.getByRole('region', { name: '里程碑记录' });
     expect(records).toHaveTextContent('第一万现金');
     expect(records).toHaveTextContent('已达成');
@@ -1613,6 +1669,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     const history = screen.getByRole('region', { name: '关系历史' });
     expect(history).toHaveTextContent('周妍');
     expect(history).toHaveTextContent('当前关系 12');
@@ -1632,6 +1689,7 @@ describe('余量 app flow', () => {
     render(<App />);
 
     await user.click(screen.getByRole('button', { name: '我的' }));
+    await user.click(within(screen.getByRole('navigation', { name: '我的分区' })).getByRole('button', { name: '经历与历史' }));
     const history = screen.getByRole('region', { name: '人生记录' });
     expect(history).toHaveTextContent('获得客户服务经验资格');
     expect(history).not.toHaveTextContent('client_service_experience');

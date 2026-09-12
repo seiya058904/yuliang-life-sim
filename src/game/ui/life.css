@@ -1,0 +1,82 @@
+/* Life console owns its layout at every height. Short screens scroll, never shrink text. */
+.life-hero-dashboard { display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 16px; margin-bottom: 16px; }
+.time-console { min-width: 0; padding: 24px; color: #f5f5f1; background: #090909; border: 2px solid #f5f5f1; }
+.hero-cols { display: grid; grid-template-columns: minmax(180px, .85fr) minmax(240px, 1.2fr) minmax(160px, .7fr); height: 100%; gap: 20px; }
+.hero-cols > div { min-width: 0; }
+.console-kicker { display: block; color: #aaa; font-size: 12px; line-height: 1.5; }
+.hero-time { display: flex; flex-direction: column; gap: 16px; }
+.hero-clock { --pixel-clock-unit: 7px; }
+.hero-date { display: grid; gap: 8px; font-size: 14px; }
+.hero-date small { font-size: 12px; color: #aaa; }
+.hero-day-icon { margin: auto 0 0 auto; }
+.week-track { display: flex; gap: 4px; }
+.track-day { flex: 1; padding: 8px 0; border-bottom: 2px solid #575753; font-size: 12px; text-align: center; }
+.track-day.current { color: #090909; background: #f5f5f1; }
+.hero-activity { display: grid; grid-template-columns: 80px minmax(0,1fr); align-content: center; gap: 10px 12px; padding-inline: 16px; border-inline: 1px solid #575753; }
+.hero-activity-head { display: flex; align-items: center; gap: 8px; grid-column: 1 / -1; }
+.hero-activity > .pixel-illustration { grid-row: span 2; width: 80px; height: 80px; align-self: center; }
+.hero-activity h2 { margin: 0; align-self: end; font-size: 28px; line-height: 1.2; overflow-wrap: anywhere; }
+.hero-range { margin: 0; font-size: 12px; color: #d5d5cf; }
+.activity-progress { display: flex; gap: 3px; height: 12px; grid-column: 1 / -1; margin-top: 12px; }
+.activity-progress i { flex: 1; background: #171717; border: 1px solid #575753; }
+.activity-progress i.filled { background: #f5f5f1; }
+.progress-caption, .hero-next { display: flex; justify-content: space-between; gap: 8px; grid-column: 1 / -1; font-size: 12px; }
+.hero-next { border-top: 1px solid #575753; padding-top: 12px; margin-top: 4px; flex-wrap: wrap; }
+.hero-next > span { color: #aaa; }
+.hero-controls { display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.hero-controls .speed-controls { display: flex; gap: 4px; }
+.hero-controls .speed-button { min-width: 0; flex: 1; min-height: 36px; }
+.hero-controls .speed-button.active { color: #090909; background: #f5f5f1; }
+.hero-controls .hero-start { min-height: 44px; font-size: 16px; background: #f5f5f1; color: #090909; }
+.hero-controls .hero-pause { display: none; }
+.hero-controls .mode-label { font-size: 12px; }
+.forecast-strip.inverse { display: flex; flex-direction: column; gap: 0; min-width: 0; padding: 16px; margin: 0; background: #f5f5f1; color: #090909; border: 1px solid #f5f5f1; }
+.forecast-head h2 { margin: 0 0 6px; font-size: 20px; line-height: 1.2; }
+.forecast-head { display: flex; align-items: baseline; gap: 8px; justify-content: space-between; }
+.forecast-scope { font-size: 12px; }
+.forecast-scope summary { font-size: 12px; min-height: 36px; padding: 4px 0; border: 0; white-space: nowrap; }
+.forecast-head:has(details[open]) { display: block; }
+.forecast-head:has(details[open]) summary { margin-bottom: 0; }
+.forecast-head small { display: block; font-size: 12px; line-height: 1.5; color: #444; margin-bottom: 10px; }
+.forecast-row, .forecast-net { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-block: 3px; font-size: 14px; }
+.forecast-row strong, .forecast-net strong { font-size: 22px; line-height: 1.1; }
+.forecast-net { border-top: 1px solid #575753; margin-top: 4px; padding-top: 8px; font-weight: 700; }
+.forecast-attrs { margin-top: 8px; }
+.forecast-sub { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; }
+.forecast-attr { display: grid; grid-template-columns: 16px 28px minmax(40px, 1fr) 26px 32px; align-items: center; gap: 6px; min-height: 20px; font-size: 12px; }
+.forecast-attr .segment-meter { display: grid; grid-template-columns: repeat(10,minmax(0,1fr)); gap: 2px; }
+.forecast-attr .segment-meter i { height: 8px; background: transparent; border: 1px solid #777; }
+.forecast-attr .segment-meter i.filled { background: #090909; border-color: #090909; }
+.forecast-current { text-align: right; color: #444; }
+.forecast-attr b { text-align: right; }
+.forecast-more { margin-top: 12px; min-height: 36px; background: #090909; color: #f5f5f1; border: 1px solid #090909; font-size: 12px; cursor: pointer; }
+.forecast-more .pixel-action { display: flex; justify-content: center; align-items: center; gap: 8px; }
+.forecast-warnings { padding: 8px 8px 8px 24px; margin: 0 0 8px; border: 1px solid #575753; font-size: 12px; line-height: 1.5; }
+.forecast-strip.monthly-forecast { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; padding: 16px; border: 1px solid #575753; }
+.monthly-forecast > div { min-width: 0; display: grid; gap: 8px; font-size: 14px; }
+.monthly-forecast h2 { font-size: 20px; margin: 0; }
+.monthly-forecast strong { font-size: 20px; }
+@media (max-height: 800px) {
+  .time-console { padding: 16px; }
+  .hero-cols { gap: 12px; }
+  .hero-time { gap: 12px; }
+  .hero-day-icon, .week-track { display: none; }
+  .hero-activity { padding-inline: 12px; }
+  .forecast-strip.inverse { padding: 8px 12px; }
+  .forecast-row { padding-block: 2px; }
+  .forecast-net { padding-top: 4px; }
+  .forecast-attrs { margin-top: 4px; }
+  .forecast-more { margin-top: 8px; }
+}
+@media (max-width: 1180px) {
+  .life-hero-dashboard { grid-template-columns: minmax(0,1fr) 260px; gap: 12px; }
+  .hero-cols { grid-template-columns: minmax(150px,.8fr) minmax(0,1fr); }
+  .hero-controls { grid-column: 1 / -1; flex-direction: row; align-items: center; flex-wrap: wrap; }
+  .hero-controls .console-kicker { display: none; }
+  .hero-controls .speed-controls { flex: 1; }
+  .hero-controls .hero-start { flex: 1; }
+  .hero-activity { border-right: 0; grid-template-columns: 50px minmax(0,1fr); }
+  .hero-activity > .pixel-illustration { width: 50px; height: 50px; }
+  .hero-activity h2 { font-size: 22px; }
+  .hero-clock { --pixel-clock-unit: 5px; }
+}
