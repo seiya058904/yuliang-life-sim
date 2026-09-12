@@ -18,11 +18,61 @@ describe('game store persistence', () => {
     const first = createGameStore(contentRegistry, balance, 1);
     first.getState().dispatch({ type: 'start_week' });
     first.getState().dispatch({ type: 'advance_simulation', minutes: 386 });
+    first.getState().flushSave();
     const persisted = loadGameState(contentRegistry, balance);
 
     expect(persisted.time).toEqual({ day: 1, hour: 14, minute: 26 });
     expect(persisted.currentActivity?.kind).toBe('work');
     expect(persisted.simulationMode).toBe('paused');
+  });
+
+  it('throttles running-tick saves and flushes them explicitly', () => {
+    const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+    const store = createGameStore(contentRegistry, balance, 1);
+    store.getState().dispatch({ type: 'start_week' });
+
+    store.getState().dispatch({ type: 'advance_simulation', minutes: 60 });
+    const beforeFlush = loadGameState(contentRegistry, balance);
+    expect(beforeFlush.time).toEqual({ day: 1, hour: 8, minute: 0 });
+
+    store.getState().flushSave();
+    const afterFlush = loadGameState(contentRegistry, balance);
+    expect(afterFlush.time).toEqual({ day: 1, hour: 9, minute: 0 });
+
+    // Any non-tick action persists immediately, no explicit flush needed.
+    store.getState().dispatch({ type: 'pause_simulation' });
+    const afterPause = loadGameState(contentRegistry, balance);
+    expect(afterPause.simulationMode).toBe('paused');
+  });
+
+  it('cancels the trailing autosave timer once an immediate save or flush happens', () => {
+    vi.useFakeTimers();
+    try {
+      const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
+      const store = createGameStore(contentRegistry, balance, 1);
+      const setItem = vi.spyOn(Storage.prototype, 'setItem');
+      store.getState().dispatch({ type: 'start_week' });
+      setItem.mockClear();
+
+      // tick 挂起尾随定时器；随后的立即保存必须取消它，避免 2 秒后重复写旧状态
+      store.getState().dispatch({ type: 'advance_simulation', minutes: 30 });
+      store.getState().dispatch({ type: 'pause_simulation' });
+      expect(setItem.mock.calls.filter(([key]) => key === 'yuliang-save-v1').length).toBeGreaterThan(0);
+      setItem.mockClear();
+      vi.advanceTimersByTime(5000);
+      expect(setItem.mock.calls.filter(([key]) => key === 'yuliang-save-v1')).toHaveLength(0);
+
+      // flushSave 同样清空定时器
+      store.getState().dispatch({ type: 'resume_simulation' });
+      store.getState().dispatch({ type: 'advance_simulation', minutes: 10 });
+      store.getState().flushSave();
+      setItem.mockClear();
+      vi.advanceTimersByTime(5000);
+      expect(setItem.mock.calls.filter(([key]) => key === 'yuliang-save-v1')).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    }
   });
 
   it('migrates an old hour-only save without losing the world state', () => {

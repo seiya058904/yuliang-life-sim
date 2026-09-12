@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createInitialState } from './initialState';
-import { advanceCareerLifecycle, evaluateApplicationCompetitiveness, generateVacancies, requirementHints } from './careers';
+import { advanceCareerLifecycle, evaluateApplicationCompetitiveness, generateVacancies, isJobEligible, requirementHints } from './careers';
 import { dispatchGameAction } from './actions';
 import { migrateGameState } from '../store/gameStore';
 
@@ -354,5 +354,166 @@ describe('career market', () => {
         requiredValue: 1,
       }),
     ]);
+  });
+
+  it('turns a fresh Offer into a decision gate and files an inbox message', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    state.applications = [{
+      applicationId: 'application.gate', jobId: 'job.seed-office', companyId: 'company.xinghe',
+      salaryRange: [160, 180], route: 'market', submittedDay: 1, resultDay: 3, status: 'waiting',
+      competitivenessTier: 'competitive', probabilityBand: 0.8, willReceiveOffer: true, feedback: [],
+    }];
+
+    advanceCareerLifecycle(state, 3, contentRegistry, balanceConfig);
+
+    expect(state.applications![0]).toMatchObject({ status: 'offer', offerExpiresDay: 10 });
+    expect(state.pendingOfferApplicationId).toBe('application.gate');
+    expect(state.messages?.some((message) => message.title === '收到新的 Offer')).toBe(true);
+  });
+
+  it('blocks time passing until the Offer notice is dismissed', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    state.simulationMode = 'paused';
+    state.applications = [{
+      applicationId: 'application.gate', jobId: 'job.seed-office', companyId: 'company.xinghe',
+      salaryRange: [160, 180], route: 'market', submittedDay: 1, resultDay: 2, status: 'waiting',
+      competitivenessTier: 'competitive', probabilityBand: 0.8, willReceiveOffer: true, feedback: [],
+    }];
+
+    advanceCareerLifecycle(state, 2, contentRegistry, balanceConfig);
+    expect(state.pendingOfferApplicationId).toBe('application.gate');
+
+    const tick = dispatchGameAction(state, { type: 'advance_simulation', minutes: 30 }, contentRegistry, balanceConfig);
+    expect(tick.error).toBe('请先处理新的 Offer 通知');
+    const resumed = dispatchGameAction(state, { type: 'resume_simulation' }, contentRegistry, balanceConfig);
+    expect(resumed.error).toBe('请先处理新的 Offer 通知');
+
+    const dismissed = dispatchGameAction(state, { type: 'dismiss_offer_notice' }, contentRegistry, balanceConfig);
+    expect(dismissed.state.pendingOfferApplicationId).toBeUndefined();
+    const running = dispatchGameAction(dismissed.state, { type: 'resume_simulation' }, contentRegistry, balanceConfig);
+    expect(running.error).toBeUndefined();
+    expect(running.state.simulationMode).toBe('running');
+  });
+
+  it('stops a long advance_period the moment a fresh Offer lands', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    state.simulationMode = 'paused';
+    // 押后随机事件，保证测试场景先走到 Offer 结算
+    state.eventMeter = -100000;
+    state.applications = [{
+      applicationId: 'application.gate', jobId: 'job.seed-office', companyId: 'company.xinghe',
+      salaryRange: [160, 180], route: 'market', submittedDay: 1, resultDay: 2, status: 'waiting',
+      competitivenessTier: 'competitive', probabilityBand: 0.8, willReceiveOffer: true, feedback: [],
+    }];
+
+    const result = dispatchGameAction(state, { type: 'advance_period', months: 1 }, contentRegistry, balanceConfig);
+
+    expect(result.error).toBeUndefined();
+    expect(result.state.pendingOfferApplicationId).toBe('application.gate');
+    expect(result.state.simulationMode).toBe('paused');
+    expect(result.state.applications![0]).toMatchObject({ status: 'offer', offerExpiresDay: 9 });
+    expect(result.state.time.day).toBeLessThan(result.state.applications![0].offerExpiresDay!);
+  });
+
+  it('records an inbox message when an unanswered Offer lapses', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    state.applications = [{
+      applicationId: 'application.gate', jobId: 'job.seed-office', companyId: 'company.xinghe',
+      salaryRange: [160, 180], route: 'market', submittedDay: 1, resultDay: 1, status: 'offer', offerExpiresDay: 5,
+      competitivenessTier: 'competitive', probabilityBand: 0.8, willReceiveOffer: true, feedback: [],
+    }];
+
+    advanceCareerLifecycle(state, 6, contentRegistry, balanceConfig);
+
+    expect(state.applications![0]).toMatchObject({ status: 'expired', nextEligibleDay: 6 + balanceConfig.applicationCooldownDays });
+    expect(state.messages?.some((message) => message.title === 'Offer 已过期')).toBe(true);
+    expect(state.pendingOfferApplicationId).toBeUndefined();
+  });
+
+  it('leaves no ghost Offer gate after the player resolves the application', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    state.simulationMode = 'paused';
+    state.currentJobId = undefined;
+    state.employment = undefined;
+    state.applications = [{
+      applicationId: 'application.gate', jobId: 'job.seed-office', companyId: 'company.xinghe',
+      salaryRange: [160, 180], route: 'market', submittedDay: 1, resultDay: 2, status: 'offer', offerExpiresDay: 9,
+      competitivenessTier: 'competitive', probabilityBand: 0.8, willReceiveOffer: true, feedback: [],
+    }];
+    state.pendingOfferApplicationId = 'application.gate';
+
+    // 玩家没走"稍后再说"，而是直接接受了 Offer：resume 必须自愈放行
+    const accepted = dispatchGameAction(state, { type: 'accept_application_offer', applicationId: 'application.gate' }, contentRegistry, balanceConfig);
+    expect(accepted.error).toBeUndefined();
+    expect(accepted.state.applications![0].status).toBe('accepted');
+    expect(accepted.state.pendingOfferApplicationId).toBe('application.gate');
+
+    const resumed = dispatchGameAction(accepted.state, { type: 'resume_simulation' }, contentRegistry, balanceConfig);
+    expect(resumed.error).toBeUndefined();
+    expect(resumed.state.simulationMode).toBe('running');
+    expect(resumed.state.pendingOfferApplicationId).toBeUndefined();
+  });
+
+  it('announces every Offer landing the same day and keeps them all open', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    state.eventMeter = -100000;
+    state.applications = [
+      {
+        applicationId: 'application.first', jobId: 'job.seed-office', companyId: 'company.xinghe',
+        salaryRange: [160, 180], route: 'market', submittedDay: 1, resultDay: 2, status: 'waiting',
+        competitivenessTier: 'competitive', probabilityBand: 0.8, willReceiveOffer: true, feedback: [],
+      },
+      {
+        applicationId: 'application.second', jobId: 'job.seed-warehouse', companyId: 'company.yuanwang',
+        salaryRange: [120, 140], route: 'market', submittedDay: 1, resultDay: 2, status: 'waiting',
+        competitivenessTier: 'competitive', probabilityBand: 0.8, willReceiveOffer: true, feedback: [],
+      },
+    ];
+
+    advanceCareerLifecycle(state, 2, contentRegistry, balanceConfig);
+
+    // 两个申请同时转 Offer：各自都有收件箱消息，pending 不会吞掉另一个的通知
+    expect(state.applications.map((entry) => entry.status)).toEqual(['offer', 'offer']);
+    expect(state.messages?.filter((message) => message.title === '收到新的 Offer')).toHaveLength(2);
+    expect(state.pendingOfferApplicationId).toBeDefined();
+
+    // 关闭通知只是解除时间门，两个 Offer 都保持可回复，不因单值字段被丢弃
+    const dismissed = dispatchGameAction(state, { type: 'dismiss_offer_notice' }, contentRegistry, balanceConfig);
+    expect(dismissed.error).toBeUndefined();
+    expect(dismissed.state.pendingOfferApplicationId).toBeUndefined();
+    expect((dismissed.state.applications ?? []).every((entry) => entry.status === 'offer')).toBe(true);
+  });
+
+  it('messages the player when a delayed application is rejected', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 3);
+    state.applications = [{
+      applicationId: 'application.reject', jobId: 'job.seed-office', companyId: 'company.xinghe',
+      salaryRange: [160, 180], route: 'market', submittedDay: 1, resultDay: 3, status: 'waiting',
+      competitivenessTier: 'minimum', probabilityBand: 0.2, willReceiveOffer: false, feedback: [],
+    }];
+
+    advanceCareerLifecycle(state, 3, contentRegistry, balanceConfig);
+
+    expect(state.applications![0].status).toBe('rejected');
+    expect(state.messages?.some((message) => message.title === '申请未通过')).toBe(true);
+    expect(state.pendingOfferApplicationId).toBeUndefined();
+  });
+
+  it('shares one eligibility predicate for market cards and dashboard counts', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 5);
+    state.ability = 99;
+    state.reputation = 99;
+    const baseJob = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-office')!;
+    const job = { ...baseJob, requiredItems: ['item.seed-laptop'] };
+
+    // 缺少必需物品时，生活页计数与招聘市场必须同时判为不符合
+    expect(isJobEligible(job, state, contentRegistry, balanceConfig)).toBe(false);
+    state.inventory['item.seed-laptop'] = 1;
+    expect(isJobEligible(job, state, contentRegistry, balanceConfig)).toBe(true);
+
+    const capabilityJob = { ...baseJob, requiredCapabilities: ['capability.logistics-license'] };
+    expect(isJobEligible(capabilityJob, state, contentRegistry, balanceConfig)).toBe(false);
+    state.unlockedCapabilities = ['capability.logistics-license'];
+    expect(isJobEligible(capabilityJob, state, contentRegistry, balanceConfig)).toBe(true);
   });
 });

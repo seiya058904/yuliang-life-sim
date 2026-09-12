@@ -921,6 +921,8 @@ export interface GameState {
   discounts: Array<{ percent: number; tags: string[]; expiresDay?: number }>;
   marketJobIds: ContentId[];
   pendingEventId?: ContentId;
+  /** A fresh Offer is waiting for the player's decision; time may not pass until it is dismissed. */
+  pendingOfferApplicationId?: string;
   eventMeter: number;
   eventDay: number;
   eventsToday: number;
@@ -976,6 +978,7 @@ export type GameAction =
   | { type: 'choose_storyline_branch'; storylineId: ContentId; branchId: string }
   | { type: 'continue_after_event' }
   | { type: 'claim_reward'; resume?: boolean }
+  | { type: 'dismiss_offer_notice' }
   | { type: 'work'; jobId: ContentId }
   | { type: 'study' }
   | { type: 'rest' }

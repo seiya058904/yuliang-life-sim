@@ -6282,9 +6282,9 @@ textarea {
   }
 }
 
-/* Use the installed MS Gothic face only for the high-signal display tier so
-   headings keep a harder console silhouette without changing body-copy
-   wrapping or the meaning of any live value. */
+/* High-signal display tier keeps a monospace-led stack. MS Gothic is limited
+   to digit/clock HUD elsewhere; CJK text leads with Chinese fonts so
+   simplified-only glyphs never fall back mid-sentence. */
 :is(
   .brand-mark,
   .hero-activity h2,
@@ -6295,7 +6295,7 @@ textarea {
   .settle-big,
   .metric-box
 ) {
-  font-family: "MS Gothic", "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
   font-synthesis: none;
   text-rendering: geometricPrecision;
   -webkit-font-smoothing: none;
@@ -7738,7 +7738,7 @@ textarea {
     .highlight-card h3,
     .settle-continue
   ) {
-    font-family: "MS Gothic", "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
+    font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
     font-synthesis: none;
     text-rendering: geometricPrecision;
     -webkit-font-smoothing: none;
@@ -8952,7 +8952,7 @@ button,
 input,
 select,
 textarea {
-  font-family: "MS Gothic", "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
+  font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", ui-monospace, monospace;
   font-synthesis: none;
   font-kerning: none;
   font-variant-ligatures: none;

@@ -34,6 +34,8 @@ export interface GameStore {
   showRecovery: () => void;
   acceptRecovery: () => void;
   dispatch: (action: GameAction) => boolean;
+  /** Persists a throttled simulation-tick save right away (page hide, tests). */
+  flushSave: () => void;
   consumeEffects: () => void;
   setView: (view: ViewId) => void;
   reset: (seed?: number) => void;
@@ -590,16 +592,38 @@ export function loadGameState(content: ContentRegistry, balance: BalanceConfig):
 export function createGameStore(content: ContentRegistry, balance: BalanceConfig, seed?: number) {
   const loaded = seed === undefined ? loadGameStateWithReport(content, balance) : { state: createInitialState(content, balance, seed) };
   const recovery: RecoverySession | undefined = loaded.recovery ?? (loaded.problem ? { ...loaded.problem, writeProtected: true, noticeVisible: true, kind: 'unreadable' } : undefined);
-  return create<GameStore>((set, get) => ({
+  // Running-week ticks arrive once per animation frame; serializing and writing
+  // the full save on each one starves the frame budget. Ticks mark the store
+  // dirty and a trailing timer persists them; every other action saves at once.
+  const AUTOSAVE_THROTTLE_MS = 2000;
+  let pendingSaveTimer: ReturnType<typeof setTimeout> | undefined;
+  return create<GameStore>((set, get) => {
+    const flushSave = () => {
+      if (pendingSaveTimer === undefined) return;
+      clearTimeout(pendingSaveTimer);
+      pendingSaveTimer = undefined;
+      const outcome = saveGameState(get().game);
+      if (outcome.error) set({ saveError: outcome.error });
+    };
+    return {
     game: loaded.state, effects: [], activeView: 'life', recovery,
     loadProblem: loaded.problem,
     dispatch: (action): boolean => {
       const result = dispatchGameAction(get().game, action, content, balance);
       if (result.error) { set({ lastError: result.error, effects: [] }); return false; }
-      const outcome = get().recovery?.writeProtected ? undefined : saveGameState(result.state);
+      let outcome: { error?: string } | undefined;
+      if (!get().recovery?.writeProtected) {
+        if (action.type === 'advance_simulation' && result.state.simulationMode === 'running') {
+          if (pendingSaveTimer === undefined) pendingSaveTimer = setTimeout(flushSave, AUTOSAVE_THROTTLE_MS);
+        } else {
+          if (pendingSaveTimer !== undefined) { clearTimeout(pendingSaveTimer); pendingSaveTimer = undefined; }
+          outcome = saveGameState(result.state);
+        }
+      }
       set({ game: result.state, effects: result.effects, lastError: undefined, saveError: outcome?.error });
       return true;
     },
+    flushSave,
     consumeEffects: () => set({ effects: [] }),
     setView: (activeView) => set({ activeView }),
     dismissLoadProblem: () => set({ loadProblem: undefined, recovery: get().recovery ? { ...get().recovery!, noticeVisible: false } : undefined }),
@@ -618,5 +642,6 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
       const outcome = saveGameState(game);
       set({ game, effects: [], lastError: undefined, saveError: outcome.error, ...(outcome.status !== 'failed' ? { recovery: undefined, loadProblem: undefined } : {}) });
     },
-  }));
+    };
+  });
 }

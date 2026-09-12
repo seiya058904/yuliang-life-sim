@@ -114,6 +114,7 @@ export function findNextPlanOption(
 }
 
 function advancePeriod(input: GameState, months: 1 | 3, content: ContentRegistry, balance: BalanceConfig): GameResult {
+  if (input.pendingOfferApplicationId) return fail(input, '请先处理新的 Offer 通知');
   if (!['planning', 'paused', 'week_complete'].includes(input.simulationMode)) return fail(input, '当前不能开始长期运行');
   let state = cloneGameState(input);
   state.autoRepeatPlan = true;
@@ -123,7 +124,7 @@ function advancePeriod(input: GameState, months: 1 | 3, content: ContentRegistry
   const targetMonth = input.calendar.month + months - 1;
   let elapsed = 0;
   while (elapsed < targetMinutes) {
-    if (state.simulationMode === 'planning' || state.simulationMode === 'paused' || state.simulationMode === 'week_complete') {
+    if (!state.pendingOfferApplicationId && (state.simulationMode === 'planning' || state.simulationMode === 'paused' || state.simulationMode === 'week_complete')) {
       const started = dispatchGameAction(state, { type: 'start_week' }, content, balance);
       if (started.error) return { state: input, effects: [], error: started.error };
       state = started.state;
@@ -146,7 +147,7 @@ function advancePeriod(input: GameState, months: 1 | 3, content: ContentRegistry
     const advanced = absoluteMinute(state.time) - before;
     if (advanced <= 0) break;
     elapsed += advanced;
-    if (state.simulationMode === 'event' || state.simulationMode === 'reward') break;
+    if (state.simulationMode === 'event' || state.simulationMode === 'reward' || state.pendingOfferApplicationId) break;
   }
   return { state, effects };
 }
@@ -200,6 +201,11 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       state.pendingReward = undefined;
       state.simulationMode = state.pendingEventId ? 'event' : 'paused';
       if (action.resume) { const error = enterRunning(state, content, balance); if (error) effects.push({ type: 'message', text: error }); }
+      break;
+    case 'dismiss_offer_notice':
+      if (!state.pendingOfferApplicationId) return fail(input, '当前没有待处理的 Offer 通知');
+      state.pendingOfferApplicationId = undefined;
+      if (state.simulationMode === 'running') state.simulationMode = 'paused';
       break;
     case 'set_simulation_speed':
       state.simulationSpeed = action.speed;

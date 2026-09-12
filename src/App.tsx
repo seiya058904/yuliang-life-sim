@@ -31,7 +31,8 @@ import { getDialogue } from './game/engine/dialogue';
 import { activityCashCost, activityCooldownRemaining, activityDiscountLabel, interestFamiliarityLabel, interestFamiliarityStage } from './game/engine/activities';
 import { serviceCooldownRemaining } from './game/engine/services';
 import { useWeekScheduler } from './game/ui/weekScheduler';
-import { CURRENT_TIME_FROM, CANONICAL_DURATIONS, collectPlanIssues, courseAvailability, slotWithin } from './game/engine/planning';
+import { CURRENT_TIME_FROM, CANONICAL_DURATIONS, collectPlanIssues, courseAvailability, slotWithin, slotStartMinute, DAY_START, DAY_END, EVENING_START, EVENING_END } from './game/engine/planning';
+import { isJobEligible } from './game/engine/careers';
 import { applicationCooldownRemaining, activeApplications, openOfferApplications, terminalApplications, unreadMessageCount, visibleMessages } from './game/engine/lifecycle';
 import './styles.css';
 
@@ -145,6 +146,7 @@ function App() {
   const setView = gameStore((store) => store.setView);
   const consumeEffects = gameStore((store) => store.consumeEffects);
   const reset = gameStore((store) => store.reset);
+  const flushSave = gameStore((store) => store.flushSave);
   const saveError = gameStore((store) => store.saveError);
   const recovery = gameStore((store) => store.recovery);
   const acceptRecovery = gameStore((store) => store.acceptRecovery);
@@ -180,6 +182,18 @@ function App() {
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [dispatch, game.simulationMode, game.simulationSpeed]);
+
+  // Throttled simulation saves must not depend on the trailing timer alone:
+  // hiding or closing the page flushes them so little playtime is ever lost.
+  useEffect(() => {
+    const flush = () => flushSave();
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', flush);
+    return () => {
+      window.removeEventListener('pagehide', flush);
+      document.removeEventListener('visibilitychange', flush);
+    };
+  }, [flushSave]);
 
   useEffect(() => {
     const main = document.querySelector('.main-content');
@@ -245,6 +259,7 @@ function App() {
       {!recovery && game.pendingReward && <RewardModal reward={game.pendingReward} dispatch={dispatch} />}
       {!recovery && game.activeResignation && <ResignationModal game={game} dispatch={dispatch} />}
       {!recovery && game.pendingMonthlySummary && <MonthlySummaryModal game={game} dispatch={dispatch} />}
+      {!recovery && game.pendingOfferApplicationId && <OfferNoticeModal game={game} dispatch={dispatch} onNavigate={navigateToView} />}
       {effects.length > 0 && <EffectRail effects={effects} />}
       {resetOpen && <ConfirmReset onCancel={() => setResetOpen(false)} onConfirm={() => { reset(); setResetOpen(false); }} />}
       {settingsOpen && <SettingsPanel game={game} saveError={saveError} onClose={() => setSettingsOpen(false)} onReset={() => { setSettingsOpen(false); setResetOpen(true); }} />}
@@ -551,7 +566,7 @@ function InboxGrid({ game, onNavigate }: { game: GameState; onNavigate?: (view: 
   if (!offerRows.length) {
     const eligibleCount = (game.vacancies ?? []).filter((vacancy) => {
       const job = contentRegistry.jobs.find((candidate) => candidate.id === vacancy.jobId);
-      return Boolean(job) && (job!.abilityRequired ?? 0) <= game.ability && (job!.reputationRequired ?? 0) <= game.reputation;
+      return Boolean(job) && isJobEligible(job!, game, contentRegistry, balanceConfig);
     }).length;
     offerRows.push({ icon: 'target', title: `${eligibleCount} 个岗位符合当前条件`, meta: '去招聘市场查看公开机会' });
   }
@@ -612,17 +627,30 @@ function WeekPlanner({ game, dispatch }: { game: GameState; dispatch: (action: G
   const planIssues = collectPlanIssues(game.weeklyPlan, game, { content: contentRegistry, balance: balanceConfig, employment: game.employment });
   const issueFor = (weekday: Weekday, slot: PlanSlot | 'next') => planIssues.find((issue) => issue.weekday === weekday && issue.slot === slot);
   const blocked = new Set(planIssues.map((issue) => `${issue.weekday}:${issue.slot}`));
-  const frozen = (weekday: Weekday, slot: PlanSlot) => !slotWithin(weekday, slot, CURRENT_TIME_FROM, game.time);
+  // A started slot can no longer be edited, but "进行中" and "已完成" are
+  // different states for the player: only a slot whose window has fully passed
+  // is actually done.
+  type PlanCellPhase = 'past' | 'active' | 'future';
+  const cellPhase = (weekday: Weekday, slot: PlanSlot): PlanCellPhase => {
+    if (slotWithin(weekday, slot, CURRENT_TIME_FROM, game.time)) return 'future';
+    const windowMinutes = slot === 'day' ? DAY_END - DAY_START : EVENING_END - EVENING_START;
+    const endMinute = slotStartMinute(weekday, slot, game.time) + windowMinutes;
+    return absoluteMinute(game.time) >= endMinute ? 'past' : 'active';
+  };
   const locked = game.simulationMode === 'running' || game.simulationMode === 'event' || game.simulationMode === 'reward';
   const cell = (weekday: Weekday, slot: PlanSlot, label: string, extraClass: string, disabled: boolean, content: React.ReactNode) => {
     const issue = issueFor(weekday, slot) ?? (slot === 'day' ? issueFor(weekday, 'next') : undefined);
-    const isFrozen = frozen(weekday, slot);
-    const classes = ['plan-cell', extraClass, isFrozen ? 'past' : '', issue ? 'has-issue' : ''].filter(Boolean).join(' ');
-    const title = isFrozen ? '这一格已经过去，不能再修改' : issue ? issue.message : undefined;
-    return <button key={weekday} className={classes} title={title} disabled={disabled} onClick={() => cycle(weekday, slot)} aria-label={`${label}${isFrozen ? '（已过去）' : ''}${issue ? `（需要调整：${issue.message}）` : ''}`}>{content}{isFrozen && <span className="plan-cell-flag">已完成</span>}{issue && !isFrozen && <span className="plan-cell-warn" aria-hidden="true">!</span>}</button>;
+    const phase = cellPhase(weekday, slot);
+    const isLocked = phase !== 'future';
+    const phaseFlag = phase === 'past' ? '已完成' : '进行中';
+    const phaseSuffix = phase === 'past' ? '（已完成）' : phase === 'active' ? '（进行中）' : '';
+    const phaseTitle = phase === 'past' ? '这一格已经结束，不能再修改' : phase === 'active' ? '这一格正在进行，不能修改' : undefined;
+    const classes = ['plan-cell', extraClass, isLocked ? 'past' : '', issue ? 'has-issue' : ''].filter(Boolean).join(' ');
+    const title = issue ? issue.message : phaseTitle;
+    return <button key={weekday} className={classes} title={title} disabled={disabled} onClick={() => cycle(weekday, slot)} aria-label={`${label}${phaseSuffix}${issue ? `（需要调整：${issue.message}）` : ''}`}>{content}{isLocked && <span className="plan-cell-flag">{phaseFlag}</span>}{issue && !isLocked && <span className="plan-cell-warn" aria-hidden="true">!</span>}</button>;
   };
   const notice = game.planNotice ?? [...new Set(planIssues.map((issue) => issue.message))].slice(0, 2).join('；');
-  return <div className="planner pixel-corners">{notice && <p className={game.planNotice ? 'planner-notice alert' : 'planner-notice'} role="status">{game.planNotice ? `${game.planNotice}：` : ''}{notice}</p>}<div className="planner-head"><span>计划格</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday, index) => <strong key={weekday} className={weekday === game.calendar.weekday ? 'today' : ''}><span>周{weekdayLabel(weekday)}</span><small>第 {weekStartDay + index} 天</small></strong>)}</div><div className="planner-row"><span>白天</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => { const working = game.employment?.schedule.workDays.includes(weekday); const plan = game.weeklyPlan.days[weekday].day; return cell(weekday, 'day', `周${weekdayLabel(weekday)}白天计划`, working ? 'locked' : '', working || frozen(weekday, 'day') || locked, planContent(plan, 'day', working)); })}</div><div className="planner-row"><span>晚间</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => { const plan = game.weeklyPlan.days[weekday].evening; return cell(weekday, 'evening', `周${weekdayLabel(weekday)}晚间计划`, '', frozen(weekday, 'evening') || locked, planContent(plan, 'evening')); })}</div><div className="planner-actions"><button className="secondary-button" onClick={() => dispatch({ type: 'copy_previous_plan' })}>使用上周计划</button><label className="repeat-toggle"><input type="checkbox" checked={game.autoRepeatPlan} onChange={(event) => dispatch({ type: 'set_auto_repeat_plan', enabled: event.target.checked })} /> 自动重复计划</label><span className="plan-cost">本周课程与活动预计 {money(plannedCost)}</span></div></div>;
+  return <div className="planner pixel-corners">{notice && <p className={game.planNotice ? 'planner-notice alert' : 'planner-notice'} role="status">{game.planNotice ? `${game.planNotice}：` : ''}{notice}</p>}<div className="planner-head"><span>计划格</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday, index) => <strong key={weekday} className={weekday === game.calendar.weekday ? 'today' : ''}><span>周{weekdayLabel(weekday)}</span><small>第 {weekStartDay + index} 天</small></strong>)}</div><div className="planner-row"><span>白天</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => { const working = game.employment?.schedule.workDays.includes(weekday); const plan = game.weeklyPlan.days[weekday].day; return cell(weekday, 'day', `周${weekdayLabel(weekday)}白天计划`, working ? 'locked' : '', working || cellPhase(weekday, 'day') !== 'future' || locked, planContent(plan, 'day', working)); })}</div><div className="planner-row"><span>晚间</span>{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => { const plan = game.weeklyPlan.days[weekday].evening; return cell(weekday, 'evening', `周${weekdayLabel(weekday)}晚间计划`, '', cellPhase(weekday, 'evening') !== 'future' || locked, planContent(plan, 'evening')); })}</div><div className="planner-actions"><button className="secondary-button" onClick={() => dispatch({ type: 'copy_previous_plan' })}>使用上周计划</button><label className="repeat-toggle"><input type="checkbox" checked={game.autoRepeatPlan} onChange={(event) => dispatch({ type: 'set_auto_repeat_plan', enabled: event.target.checked })} /> 自动重复计划</label><span className="plan-cost">本周课程与活动预计 {money(plannedCost)}</span></div></div>;
 }
 
 function InventoryPanel({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
@@ -1167,6 +1195,19 @@ function RewardModal({ reward, dispatch }: { reward: NonNullable<GameState['pend
   return <div className="modal-backdrop event-paused"><section className="event-modal reward-modal" role="dialog" aria-modal="true" aria-labelledby="reward-title"><span className="eyebrow">本次获得</span><h2 id="reward-title">结果已经写入人生</h2><div className="reward-lines">{reward.lines.map((line, index) => <div key={`${line}-${index}`}>{line}</div>)}</div><p className="reward-auto-note">奖励已经结算。选择接下来是否继续运行。</p><div className="button-pair"><button className="secondary-button" onClick={() => dispatch({ type: 'claim_reward' })}>收下并暂停</button><button className="primary-button" onClick={() => dispatch({ type: 'claim_reward', resume: true })}>收下并继续运行</button></div></section></div>;
 }
 
+function OfferNoticeModal({ game, dispatch, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate: (view: ViewId) => void }) {
+  const application = game.applications?.find((entry) => entry.applicationId === game.pendingOfferApplicationId);
+  if (!application) return null;
+  const job = contentRegistry.jobs.find((entry) => entry.id === application.jobId);
+  const company = contentRegistry.companies?.find((entry) => entry.id === application.companyId);
+  // pending 字段只记录"有新 Offer 需要确认"；同一天落下多个 Offer 时必须
+  // 一并列出，避免玩家只见到其中一个而让另一个静默过期。
+  const otherOffers = (game.applications ?? []).filter((entry) => entry.applicationId !== application.applicationId
+    && entry.status === 'offer'
+    && entry.offerExpiresDay !== undefined && entry.offerExpiresDay >= game.time.day);
+  return <div className="modal-backdrop"><section className="event-modal" role="dialog" aria-modal="true" aria-labelledby="offer-notice-title"><span className="eyebrow">世界已暂停 · 收到新的 Offer</span><h2 id="offer-notice-title">{job?.name ?? '工作岗位'}</h2><p>{company?.name ?? '招聘方'}向你发出工作邀请：月薪约 {money(application.salaryRange[0])}–{money(application.salaryRange[1])}。Offer 在第 {application.offerExpiresDay} 天前有效，过期会自动关闭并进入该公司冷却。</p>{otherOffers.length > 0 && <p>同时还有 {otherOffers.length} 个 Offer 待回复：{otherOffers.map((entry) => `${contentRegistry.jobs.find((candidate) => candidate.id === entry.jobId)?.name ?? entry.jobId}（第 ${entry.offerExpiresDay} 天前有效）`).join('、')}。</p>}<div className="button-pair"><button className="primary-button" onClick={() => { dispatch({ type: 'dismiss_offer_notice' }); onNavigate('work'); }}>前往职业页处理</button><button className="secondary-button" onClick={() => dispatch({ type: 'dismiss_offer_notice' })}>稍后再说</button></div></section></div>;
+}
+
 function ResignationModal({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) { const job = contentRegistry.jobs.find((entry) => entry.id === game.activeResignation?.jobId); const outcome = game.activeResignation?.stage === 'outcome'; return <div className="modal-backdrop"><section className="event-modal" role="dialog" aria-modal="true" aria-labelledby="resignation-title"><span className="eyebrow">离职沟通</span><h2 id="resignation-title">{job?.name ?? '当前工作'}</h2>{!outcome ? <><p>主管看着你的安排：“你确定要离开吗？最近你的表现其实不错。”</p><div className="button-pair"><button className="primary-button" onClick={() => dispatch({ type: 'advance_resignation' })}>继续沟通</button></div></> : <><p>“如果待遇可以提高，我愿意替你争取一下。”你也可以选择换一个方向。</p><div className="button-pair"><button className="primary-button" onClick={() => dispatch({ type: 'choose_resignation', choice: 'stay' })}>留下来谈谈</button><button className="secondary-button" onClick={() => dispatch({ type: 'choose_resignation', choice: 'leave' })}>我想换个方向</button></div></>}</section></div>; }
 
 function MonthlySummary({ summary, financial }: { summary: NonNullable<GameState['lastMonthlySummary']>; financial?: GameState['lastFinancialSummary'] }) { const fallback = [['工资', summary.ledger.wageIncome], ['兼职', summary.ledger.sideJobIncome], ['企业收益', summary.ledger.businessIncome], ['投资收益', summary.ledger.assetIncome], ['固定生活支出', -(summary.ledger.rentExpense + summary.ledger.livingExpense)], ['主动消费', -summary.ledger.purchaseExpense]]; const group = (label: string, entries: Record<string, number> | undefined, sign: 1 | -1) => <div className="summary-group" key={label}><span className="summary-group-title">{label}</span>{Object.entries(entries ?? {}).filter(([, amount]) => amount > 0).map(([category, amount]) => <div key={category}><span>{displayMappedLabel(category, financialLabels)}</span><strong className={sign > 0 ? 'positive' : 'negative'}>{sign > 0 ? '+' : '-'}{money(amount)}</strong></div>)}</div>; return <section className="monthly-summary"><div><span className="eyebrow">四周结算 · 现金流仪式</span><h2>第 {summary.month} 月账单</h2><p>现金变化和净资产变化分开计算；买入资产只是把现金换成了另一种财富。</p></div><div className="summary-lines">{financial ? <>{group('收入', financial.income.categories, 1)}{group('消费支出', financial.consumption.categories, -1)}{group('资产配置 · 现金转为资产', financial.assetAllocation.categories, -1)}{group('资产变现', financial.assetLiquidation.categories, 1)}</> : fallback.map(([label, amount]) => <div key={label as string}><span>{label}</span><strong className={(amount as number) >= 0 ? 'positive' : 'negative'}>{(amount as number) >= 0 ? '+' : ''}{money(amount as number)}</strong></div>)}</div><div className="summary-total"><span>收入</span><strong>{money(financial?.totalIncome ?? summary.ledger.wageIncome + summary.ledger.sideJobIncome + summary.ledger.businessIncome + summary.ledger.assetIncome)}</strong><span>消费支出</span><strong>{money(financial?.totalConsumption ?? summary.ledger.rentExpense + summary.ledger.livingExpense + summary.ledger.purchaseExpense)}</strong><span>现金变化</span><strong>{financial ? `${money(financial.cashStart)} → ${money(financial.cashEnd)}` : '—'}</strong><span>净资产</span><strong>{money(summary.ledger.netWorthStart)} → {money(summary.ledger.netWorthEnd)}</strong></div></section>; }
@@ -1354,7 +1395,16 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
 
 function EventModal({ event, onChoose }: { event: (typeof contentRegistry.events)[number]; onChoose: (choiceId: string) => void }) { return <div className="modal-backdrop event-paused"><section className="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-title"><span className="eyebrow">世界已暂停 · 发生了一件事</span><h2 id="event-title">{event.title}</h2><p>{event.body}</p><div className="event-choices">{event.choices.map((choice) => <button key={choice.id} className="choice-button" onClick={() => onChoose(choice.id)}>{choice.text}<span>选择</span></button>)}</div></section></div>; }
 
-function EffectRail({ effects }: { effects: ReturnType<typeof gameStore.getState>['effects'] }) { const visible = effects.filter((effect) => effect.type !== 'time' && effect.type !== 'activity'); if (!visible.length) return null; return <div className="effect-rail" aria-live="polite">{visible.slice(-4).map((effect, index) => <div className="effect-item" key={`${effect.type}-${index}`}>{effect.type === 'cash' ? `${effect.amount >= 0 ? '+' : ''}${money(effect.amount)}` : effect.type === 'stat' ? `${effect.stat === 'ability' ? '能力' : effect.stat === 'reputation' ? '声誉' : '生活水平'} ${effect.amount >= 0 ? '+' : ''}${effect.amount}` : effect.type === 'month' ? `第 ${effect.summary.month} 月结算` : effect.type === 'settlement' ? `第 ${effect.day} 天结算` : effect.type === 'unlock' ? `解锁：${humanizeContentId(effect.id)}` : effect.type === 'purchase' ? `已购买 ${effect.quantity} 件` : effect.type === 'message' ? effect.text : '进展更新'}</div>)}</div>; }
+// 解锁提示优先使用内容的中文名；kind 决定去哪个内容集合里查。
+const unlockCollectionByKind: Record<string, readonly { id: string; name: string }[]> = {
+  工作: contentRegistry.jobs,
+  事件: contentRegistry.events,
+  住房: contentRegistry.housing,
+  企业: contentRegistry.businesses ?? [],
+  资产: contentRegistry.assets ?? [],
+};
+
+function EffectRail({ effects }: { effects: ReturnType<typeof gameStore.getState>['effects'] }) { const visible = effects.filter((effect) => effect.type !== 'time' && effect.type !== 'activity'); if (!visible.length) return null; const unlockLabel = (effect: Extract<ReturnType<typeof gameStore.getState>['effects'][number], { type: 'unlock' }>) => { const entries = unlockCollectionByKind[effect.kind]; return `解锁${effect.kind}：${entries ? displayContentName(effect.id, entries, humanizeContentId(effect.id)) : humanizeContentId(effect.id)}`; }; return <div className="effect-rail" aria-live="polite">{visible.slice(-4).map((effect, index) => <div className="effect-item" key={`${effect.type}-${index}`}>{effect.type === 'cash' ? `${effect.amount >= 0 ? '+' : ''}${money(effect.amount)}` : effect.type === 'stat' ? `${effect.stat === 'ability' ? '能力' : effect.stat === 'reputation' ? '声誉' : '生活水平'} ${effect.amount >= 0 ? '+' : ''}${effect.amount}` : effect.type === 'month' ? `第 ${effect.summary.month} 月结算` : effect.type === 'settlement' ? `第 ${effect.day} 天结算` : effect.type === 'unlock' ? unlockLabel(effect) : effect.type === 'purchase' ? `已购买 ${effect.quantity} 件` : effect.type === 'message' ? effect.text : '进展更新'}</div>)}</div>; }
 
 function SettingsPanel({ game, saveError, onClose, onReset }: { game: GameState; saveError?: string; onClose: () => void; onReset: () => void }) {
   return <div className="modal-backdrop" role="presentation" onClick={onClose}><section className="confirm-modal" role="dialog" aria-modal="true" aria-label="设置" onClick={(event) => event.stopPropagation()}>

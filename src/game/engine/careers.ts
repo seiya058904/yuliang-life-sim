@@ -1,9 +1,9 @@
 import type { BalanceConfig } from '../balance/config';
-import type { AcquisitionHint, ApplicationRoute, ConditionDefinition, ContentId, ContentRegistry, GameState, JobDefinition, VacancyState, VacancyTemplate, ViewId } from '../content/contracts';
+import type { AcquisitionHint, ApplicationRoute, ConditionDefinition, ContentId, ContentRegistry, GameState, JobApplicationState, JobDefinition, VacancyState, VacancyTemplate, ViewId } from '../content/contracts';
 import { getAttribute } from './attributes';
 import { currentMonthlySalary, evaluateCondition, getPlayerStage } from './conditions';
-import { requirementForJob } from './careerProgression';
-import { pruneApplicationHistory, recordApplicationCooldown } from './lifecycle';
+import { careerRequirementsSatisfied, requirementForJob } from './careerProgression';
+import { pruneApplicationHistory, recordApplicationCooldown, appendMessage } from './lifecycle';
 
 export interface CompetitivenessResult {
   tier: 'minimum' | 'competitive' | 'strong' | 'exceptional';
@@ -17,6 +17,20 @@ export function employmentKind(job: JobDefinition): 'full_time' | 'repeatable_si
   if (job.employmentKind) return job.employmentKind;
   if (job.kind === 'temporary') return 'gig';
   return job.kind === 'freelance' ? 'repeatable_side_job' : 'full_time';
+}
+
+/**
+ * The single "can apply right now" predicate. The career market and every
+ * summary count (life dashboard, offer panel) must share it, otherwise the two
+ * surfaces drift apart about which jobs the player can actually take.
+ */
+export function isJobEligible(job: JobDefinition, game: GameState, content: ContentRegistry, balance: BalanceConfig): boolean {
+  return (job.abilityRequired ?? 0) <= game.ability
+    && (job.reputationRequired ?? 0) <= game.reputation
+    && careerRequirementsSatisfied(job, game)
+    && (!job.requirements || evaluateCondition(job.requirements, game, content, balance))
+    && !(job.requiredItems ?? []).some((itemId) => (game.inventory[itemId] ?? 0) < 1)
+    && !(job.requiredCapabilities ?? []).some((capability) => !game.unlockedCapabilities.includes(capability));
 }
 
 export function generateVacancies(state: GameState, content: ContentRegistry, balance: BalanceConfig): VacancyState[] {
@@ -425,12 +439,27 @@ function strongerHint(candidate: AcquisitionHint, existing: AcquisitionHint): bo
   return candidate.requirementId === 'day_at_most' ? candidateRequired < existingRequired : candidateRequired > existingRequired;
 }
 
-export function advanceCareerLifecycle(state: GameState, day: number, _content: ContentRegistry, balance: BalanceConfig): void {
+function jobLabel(content: ContentRegistry, application: JobApplicationState): string {
+  const job = content.jobs.find((entry) => entry.id === application.jobId);
+  const company = content.companies?.find((entry) => entry.id === application.companyId);
+  return `${company?.name ?? '招聘方'}的${job?.name ?? '岗位'}`;
+}
+
+function moneyRange(range: readonly [number, number]): string {
+  return `¥${range[0].toLocaleString('zh-CN')}–¥${range[1].toLocaleString('zh-CN')}`;
+}
+
+export function advanceCareerLifecycle(state: GameState, day: number, content: ContentRegistry, balance: BalanceConfig): void {
   for (const application of state.applications ?? []) {
     if (application.status === 'offer' && application.offerExpiresDay !== undefined && day > application.offerExpiresDay) {
       application.status = 'expired';
       application.nextEligibleDay = day + balance.applicationCooldownDays;
       recordApplicationCooldown(state, application.jobId, application.companyId, application.nextEligibleDay);
+      appendMessage(state, {
+        title: 'Offer 已过期',
+        body: `${jobLabel(content, application)}的 Offer 没有在第 ${application.offerExpiresDay} 天前回复，这次招聘到此结束，短期内不能再次申请同一家公司。`,
+        sourceId: application.jobId,
+      });
       continue;
     }
     if (['rejected', 'accepted', 'withdrawn', 'expired', 'offer'].includes(application.status)) continue;
@@ -438,10 +467,23 @@ export function advanceCareerLifecycle(state: GameState, day: number, _content: 
       if (application.willReceiveOffer) {
         application.status = 'offer';
         application.offerExpiresDay = day + balance.applicationOfferDurationRange[0];
+        // A fresh Offer is a decision gate: the world must stop before time can
+        // run past its validity, so the player always gets to answer it.
+        state.pendingOfferApplicationId = application.applicationId;
+        appendMessage(state, {
+          title: '收到新的 Offer',
+          body: `${jobLabel(content, application)}向你发出 Offer：月薪约 ${moneyRange(application.salaryRange)}，请在第 ${application.offerExpiresDay} 天前回复。`,
+          sourceId: application.jobId,
+        });
       } else {
         application.status = 'rejected';
         application.nextEligibleDay = day + balance.applicationCooldownDays;
         recordApplicationCooldown(state, application.jobId, application.companyId, application.nextEligibleDay);
+        appendMessage(state, {
+          title: '申请未通过',
+          body: `${jobLabel(content, application)}这次没有录用你。反馈已记录，之后可以再投递其他机会。`,
+          sourceId: application.jobId,
+        });
       }
     } else if (day >= application.resultDay - 1) application.status = 'interview';
     else if (day > application.submittedDay) application.status = 'screening';
@@ -453,10 +495,10 @@ export function advanceCareerLifecycle(state: GameState, day: number, _content: 
   state.gigs = (state.gigs ?? []).filter((gig) => gig.expiresDay >= day);
   pruneApplicationHistory(state);
   if (!(state.gigs ?? []).length) {
-    const gigJob = _content.jobs.find((job) => employmentKind(job) === 'gig'
+    const gigJob = content.jobs.find((job) => employmentKind(job) === 'gig'
       && (job.abilityRequired ?? 0) <= state.ability
       && (job.reputationRequired ?? 0) <= state.reputation
-      && (!job.requirements || evaluateCondition(job.requirements, state, _content, balance))
+      && (!job.requirements || evaluateCondition(job.requirements, state, content, balance))
       && (job.requiredItems ?? []).every((itemId) => (state.inventory[itemId] ?? 0) > 0)
       && (job.requiredCapabilities ?? []).every((capability) => state.unlockedCapabilities.includes(capability)));
     if (gigJob) state.gigs = [{ id: `gig.offer.${gigJob.id}.${day}`, jobId: gigJob.id, validFromDay: day, expiresDay: day + 6, executableDay: day, startMinute: 18 * 60, endMinute: 18 * 60 + gigJob.hours * 60, pay: gigJob.basePay, source: '工作市场' }];

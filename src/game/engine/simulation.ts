@@ -25,6 +25,7 @@ const fail = (state: GameState, error: string): GameResult => ({ state, effects:
 
 export function advanceSimulation(input: GameState, minutes: number, content: ContentRegistry, balance: BalanceConfig): GameResult {
   if (input.pendingEventId) return fail(input, '请先处理当前事件');
+  if (input.pendingOfferApplicationId) return fail(input, '请先处理新的 Offer 通知');
   if (input.simulationMode !== 'running') return fail(input, '请先开始本周运行');
   if (!Number.isInteger(minutes) || minutes <= 0) return fail(input, '模拟时间必须是正整数分钟');
 
@@ -114,6 +115,15 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
           }
         }
         state.currentActivity = activityAtTime(state.time, state.weeklyPlan, state.employment, content, state);
+      }
+      // A fresh Offer pauses the world before any further day can pass, so the
+      // player always answers it inside its validity window. The monthly
+      // summary keeps precedence: it already blocks time, and the notice
+      // resurfaces the moment the summary is acknowledged.
+      if (state.pendingOfferApplicationId && !state.pendingMonthlySummary) {
+        state.simulationMode = 'paused';
+        remaining = 0;
+        effects.push({ type: 'message', text: '时间已暂停：收到了新的 Offer，请尽快回复' });
       }
     }
 

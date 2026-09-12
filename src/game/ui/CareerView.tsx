@@ -2,11 +2,10 @@ import { useMemo, useState } from 'react';
 import { PixelIcon, type PixelIconName } from './pixel/PixelIcon';
 
 import type { GameAction, GameState, JobApplicationState, JobDefinition, ViewId } from '../content/contracts';
-import { employmentKind, requirementHints } from '../engine/careers';
+import { employmentKind, isJobEligible, requirementHints } from '../engine/careers';
 import { contentRegistry } from '../content/registry';
 import { balanceConfig } from '../balance/config';
-import { evaluateCondition } from '../engine/conditions';
-import { careerExperienceLabel, careerExperienceStage, careerRequirementsSatisfied } from '../engine/careerProgression';
+import { careerExperienceLabel, careerExperienceStage } from '../engine/careerProgression';
 import { buildMobilityEntries } from '../engine/mobility';
 import { CANONICAL_DURATIONS, NO_SLOT_REASON, findNextSchedulableSlot } from '../engine/planning';
 import { activeApplications, applicationCooldownRemaining, terminalApplications } from '../engine/lifecycle';
@@ -80,12 +79,6 @@ export const jobArtFor = (job: JobDefinition): PixelIllustrationName => {
   return jobArtByCategory[job.category ?? job.kind] ?? 'career-market';
 };
 const applicationStatusLabels: Record<string, string> = { submitted: '已提交', screening: '筛选中', interview: '面试中', waiting: '等待结果', rejected: '未通过', offer: 'Offer 待回复', accepted: '已接受', withdrawn: '已撤回', expired: '已过期' };
-const isJobEligible = (job: JobDefinition, game: GameState) => (job.abilityRequired ?? 0) <= game.ability
-  && (job.reputationRequired ?? 0) <= game.reputation
-  && careerRequirementsSatisfied(job, game)
-  && (!job.requirements || evaluateCondition(job.requirements, game, contentRegistry, balanceConfig))
-  && !(job.requiredItems ?? []).some((itemId) => (game.inventory[itemId] ?? 0) < 1)
-  && !(job.requiredCapabilities ?? []).some((capability) => !game.unlockedCapabilities.includes(capability));
 
 export function CareerView({ game, dispatch, jobs, onNavigate, onOpenTools }: { game: GameState; dispatch: (action: GameAction) => void; jobs: readonly JobDefinition[]; onNavigate?: (view: ViewId) => void; onOpenTools?: () => void }) {
   const [tab, setTab] = useState<CareerTab>('market');
@@ -138,7 +131,7 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }:
     const state: Record<string, number> = Object.fromEntries(states.map((entry) => [entry, 0]));
     for (const { vacancy, job } of vacancyRows) {
       const application = game.applications?.find((entry) => entry.vacancyId === vacancy.vacancyId);
-      const eligible = isJobEligible(job!, game);
+      const eligible = isJobEligible(job!, game, contentRegistry, balanceConfig);
       const close = !eligible && (job!.abilityRequired ?? 0) - game.ability <= 5 && (job!.reputationRequired ?? 0) - game.reputation <= 5;
       const cooldown = applicationCooldownRemaining(game, job!.id, vacancy.companyId) > 0;
       const categoryMatches = (entry: (typeof categories)[number]) => entry === '全部' || (entry === '兼职' ? employmentKind(job!) !== 'full_time' : job!.category === categoryMap[entry]);
@@ -155,7 +148,7 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }:
   const rows = useMemo(() => vacancyRows.filter((row) => {
     const job = row.job!;
     const application = game.applications?.find((entry) => entry.vacancyId === row.vacancy.vacancyId);
-    const eligible = isJobEligible(job, game);
+    const eligible = isJobEligible(job, game, contentRegistry, balanceConfig);
     const close = !eligible && (job.abilityRequired ?? 0) - game.ability <= 5 && (job.reputationRequired ?? 0) - game.reputation <= 5;
     const cooldown = applicationCooldownRemaining(game, job.id, row.vacancy.companyId) > 0;
     const categoryMatches = category === '全部' || (category === '兼职' ? employmentKind(job) !== 'full_time' : job.category === categoryMap[category]);
@@ -218,7 +211,7 @@ function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }:
 function VacancyCard({ game, vacancy, job, dispatch, selected, onSelect }: { game: GameState; vacancy: any; job: any; dispatch: (action: GameAction) => void; selected?: boolean; onSelect?: () => void }) {
   const application = game.applications?.find((entry) => entry.vacancyId === vacancy.vacancyId);
   const acquired = game.acquiredSideJobs?.[job.id];
-  const eligible = isJobEligible(job, game);
+  const eligible = isJobEligible(job, game, contentRegistry, balanceConfig);
   const { schedule, notice } = useWeekScheduler(game, dispatch);
   const durationMinutes = sideJobDurationMinutes(job);
   const schedulable = Boolean(acquired)
@@ -238,7 +231,7 @@ function VacancyCard({ game, vacancy, job, dispatch, selected, onSelect }: { gam
 function VacancyDetail({ game, vacancy, job, dispatch }: { game: GameState; vacancy: any; job: JobDefinition; dispatch: (action: GameAction) => void }) {
   const hints = requirementHints(job, game, contentRegistry, balanceConfig);
   const application = game.applications?.find((entry) => entry.vacancyId === vacancy.vacancyId);
-  const eligible = isJobEligible(job, game);
+  const eligible = isJobEligible(job, game, contentRegistry, balanceConfig);
   const recruiterId = job.recruiterCharacterId ?? job.recruitment?.recruiterCharacterId;
   const recruiter = recruiterId ? contentRegistry.characters.find((character) => character.id === recruiterId) : undefined;
   const abilityTarget = job.abilityRequired;

@@ -1032,9 +1032,9 @@ test('keeps the header brand cat as a dense stepped 1-bit mark', async ({ page }
   expect(Math.round(metrics.x)).toBe(272);
   expect(Math.round(metrics.y)).toBe(33);
   expect(metrics.markX).toBe(44);
-  expect(metrics.markY).toBe(27);
+  expect(metrics.markY).toBe(26);
   expect(metrics.subtitleX).toBe(174);
-  expect(metrics.subtitleY).toBe(35);
+  expect(metrics.subtitleY).toBe(34);
   expect(metrics.brandGap).toBe('23px');
   expect(metrics.wordmarkGap).toBe('18px');
   expect(metrics.subtitleFontSize).toBe('18px');
@@ -2243,7 +2243,7 @@ test('keeps the low-height Career pager above the persistent footer', async ({ p
   expect(geometry.scrollHeight).toBeGreaterThan(geometry.clientHeight);
 });
 
-test('uses the installed pixel console face for high-signal display headings', async ({ page }) => {
+test('uses the Chinese-first console face for high-signal display headings', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'display font tier is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '职业', exact: true }).click();
@@ -2252,7 +2252,10 @@ test('uses the installed pixel console face for high-signal display headings', a
     getComputedStyle(heading).fontFamily
   );
 
-  expect(fontFamily).toContain('MS Gothic');
+  // MS Gothic 只允许出现在数字/时钟 HUD；CJK 标题必须由中文字体置首渲染，
+  // 否则简体专用字形会在句中逐字回退（审计发现 #5）。
+  expect(fontFamily).toContain('Microsoft YaHei UI');
+  expect(fontFamily).not.toContain('MS Gothic');
 });
 
 test('keeps Shop product metadata and secondary actions in the readable pixel tier', async ({ page }) => {
@@ -4047,10 +4050,10 @@ test('uses crisp grayscale typography across the desktop console', async ({ page
     };
   });
   expect(typography).toEqual({
-    bodyFamily: 'MS Gothic',
-    buttonFamily: 'MS Gothic',
-    titleFamily: 'MS Gothic',
-    copyFamily: 'MS Gothic',
+    bodyFamily: 'Microsoft YaHei UI',
+    buttonFamily: 'Microsoft YaHei UI',
+    titleFamily: 'Microsoft YaHei UI',
+    copyFamily: 'Microsoft YaHei UI',
     bodySmoothing: 'none',
     buttonSmoothing: 'none',
     bodyRendering: 'geometricprecision',
