@@ -50,12 +50,19 @@ declare global {
     __yuliang?: { store: typeof appStore; eventChoices: Record<string, readonly string[]> };
   }
 }
-if (typeof window !== 'undefined' && window.localStorage.getItem('yuliang-e2e-hook') === '1') {
-  const eventChoices: Record<string, readonly string[]> = {};
-  for (const event of contentRegistry.events) {
-    eventChoices[event.id] = event.choices.map((choice) => choice.id);
+// The bridge is optional: browsers configured to block storage make any
+// localStorage access throw, and that must never break the app's startup
+// (the save loader already degrades on its own; this read is not required).
+try {
+  if (typeof window !== 'undefined' && window.localStorage.getItem('yuliang-e2e-hook') === '1') {
+    const eventChoices: Record<string, readonly string[]> = {};
+    for (const event of contentRegistry.events) {
+      eventChoices[event.id] = event.choices.map((choice) => choice.id);
+    }
+    (window as unknown as { __yuliang?: unknown }).__yuliang = { store: appStore, eventChoices };
   }
-  (window as unknown as { __yuliang?: unknown }).__yuliang = { store: appStore, eventChoices };
+} catch {
+  // Storage denied: skip the optional debug bridge and keep rendering.
 }
 const navItems: ReadonlyArray<readonly [ViewId, string, PixelIconName]> = [
   ['life', '生活', 'home'], ['work', '职业', 'career'], ['shop', '商店', 'shop'], ['wealth', '财富', 'wealth'], ['relations', '社交', 'social'], ['city', '城市', 'city'], ['profile', '我的', 'profile'],

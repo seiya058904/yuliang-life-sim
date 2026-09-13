@@ -27,8 +27,25 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
+      - name: Unit tests
+        run: npm test
       - name: Build
         run: npm run build
+      - name: Prepare Chrome for Playwright
+        run: npx playwright install --with-deps chrome
+      - name: Release browser acceptance (production preview)
+        # Runs the key layout/wheel-reachability specs against the built dist
+        # via `vite preview`; a failure here must stop the Pages upload.
+        run: npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts --project=desktop
+        env:
+          YULIANG_E2E_SERVER: preview
+      - name: Upload test diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-diagnostics
+          path: test-results/
+          retention-days: 7
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
 });
@@ -935,8 +935,12 @@ test('hides dormant scroll tracks on the fitted tall desktop surface', async ({ 
   }));
 
   expect(overflow).toHaveLength(2);
-  expect(overflow.every(({ overflowX, overflowY, scrollWidth, clientWidth, scrollHeight, clientHeight }) =>
-    overflowX === 'hidden' && overflowY === 'hidden' &&
+  // The nav stays a fixed band. The main content is the page-level scroll
+  // owner (overflow-y: auto at every desktop height); on a fresh save Life
+  // fits, so no track renders and nothing is clipped.
+  expect(overflow.find(({ className }) => className.includes('main-nav'))).toMatchObject({ overflowX: 'hidden', overflowY: 'hidden' });
+  expect(overflow.find(({ className }) => className.includes('main-content'))).toMatchObject({ overflowX: 'hidden', overflowY: 'auto' });
+  expect(overflow.every(({ scrollWidth, clientWidth, scrollHeight, clientHeight }) =>
     scrollWidth <= clientWidth + 2 && scrollHeight <= clientHeight + 1
   )).toBe(true);
 
@@ -963,6 +967,9 @@ test('keeps tall desktop marks on shared pixel primitives without live scrollbar
         return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
       };
       const liveScrollbars = Array.from(document.querySelectorAll<HTMLElement>('*'))
+        // main.main-content is the intentional page-level scroll owner on
+        // desktop; every other live scroller (rails, nested panels) is audited.
+        .filter((element) => element !== document.querySelector('main.main-content'))
         .filter((element) => visible(element))
         .filter((element) => {
           const style = getComputedStyle(element);
@@ -6401,9 +6408,11 @@ test('lets tall desktop content pages own a thin scrollbar and scroll to the bot
   expect(shop.scrollHeight).toBeGreaterThan(shop.clientHeight);
   expect(shop.scrollTop).toBeGreaterThan(0);
 
-  // Life stays a fitted one-screen console.
+  // Life fits one screen on a fresh save and keeps the same scroll owner as
+  // every other page, so drawer or history growth becomes reachable instead
+  // of silently clipped.
   await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
   await page.waitForTimeout(300);
   const overflowY = await page.evaluate(() => getComputedStyle(document.querySelector('main.main-content') as HTMLElement).overflowY);
-  expect(overflowY).toBe('hidden');
+  expect(overflowY).toBe('auto');
 });

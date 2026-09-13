@@ -1974,13 +1974,14 @@ button, input, select { border-radius: 0; }
 
 /* Next reference pass: keep the desktop surface a single HUD viewport. The
    main content owns its scroll area, so the persistent status bar never
-   covers the last row at 1280px-wide desktop sizes. */
+   covers the last row at 1280px-wide desktop sizes. The shell always fits the
+   real viewport: short desktop windows shrink the content row (which scrolls
+   internally) instead of pushing the status bar below the visible area. */
 @media (min-width: 1181px) {
   html,
   body,
   #root {
     height: 100%;
-    min-height: 720px;
     overflow: hidden;
   }
 
@@ -1988,7 +1989,6 @@ button, input, select { border-radius: 0; }
     display: grid;
     grid-template-rows: 94px 48px minmax(0, 1fr) 78px;
     height: 100dvh;
-    min-height: 720px;
     padding-bottom: 0;
     overflow: hidden;
   }
@@ -2797,12 +2797,6 @@ textarea {
 }
 
 @media (min-width: 1181px) {
-  html,
-  body,
-  #root {
-    min-height: 720px;
-  }
-
   .app-shell {
     grid-template-rows: 82px 44px minmax(0, 1fr) 76px;
   }
@@ -5985,23 +5979,13 @@ textarea {
   }
 }
 
-/* Tall desktop pages are already composed to the viewport height. Life keeps
-   its fitted console surface clean. Work / wealth / relations / city / profile
-   / shop can exceed one screen (more vacancies, many catalog rows, long ledgers),
-   so they own a thin pixel scrollbar inside the fixed shell instead of being
-   clipped. */
+/* Every desktop height shares one scroll model: pages are composed to fit the
+   viewport when they can, and when they grow (more vacancies, many catalog
+   rows, long ledgers, the expanded life drawer) the main content grows a thin
+   pixel scrollbar inside the fixed shell instead of being clipped. */
 @media (min-width: 1181px) and (min-height: 801px) {
   .main-nav {
     overflow: hidden;
-  }
-
-  .main-content {
-    overflow: hidden;
-  }
-
-  .main-content:has(.life-secondary-drawer.is-open) {
-    overflow-x: hidden;
-    overflow-y: auto;
   }
 }
 
@@ -6492,11 +6476,11 @@ textarea {
   }
 }
 
-/* Low-height desktop pages intentionally keep an internal main viewport. The
-   compact track is the navigation affordance that tells the player more
-   truthful content continues below the visible board; the tall reference
-   canvas remains scrollbar-free when its content fits. */
-@media (min-width: 1181px) and (max-height: 800px) {
+/* Desktop pages intentionally keep the main viewport as the page-level scroll
+   owner. The compact track is the navigation affordance that tells the player
+   more truthful content continues below the visible board; with
+   overflow-y: auto it only renders when content actually overflows. */
+@media (min-width: 1181px) {
   .main-content {
     scrollbar-color: #777 #000000;
     scrollbar-width: thin;

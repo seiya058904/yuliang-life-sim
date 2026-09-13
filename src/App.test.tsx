@@ -1,7 +1,7 @@
 import { known } from './game/engine/knownAmount';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import App from './App';
 import { appStore, highlightIconFor, highlightIllustrationFor, highlightTitleFor, workSceneFor } from './App';
 import { contentRegistry } from './game/content/registry';
@@ -21,6 +21,27 @@ describe('余量 app flow', () => {
     appStore.getState().reset(1);
     appStore.setState({ activeView: 'work' });
     localStorage.clear();
+  });
+
+  it('still boots the whole shell when the browser denies localStorage reads', async () => {
+    const denyReads = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('Access is denied for this document.', 'SecurityError');
+    });
+    try {
+      vi.resetModules();
+      const { default: FreshApp } = await import('./App');
+      render(<FreshApp />);
+      expect(screen.getByRole('heading', { name: '余量' })).toBeInTheDocument();
+      expect(screen.getByRole('navigation', { name: '主导航' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: '角色状态' })).toBeInTheDocument();
+      // The failed save read keeps its own recovery notice; skipping the debug
+      // bridge must not swallow it.
+      expect(screen.getByRole('alert')).toHaveTextContent('自动保存已暂停');
+      expect(screen.getByRole('button', { name: '导出原始存档' })).toBeInTheDocument();
+    } finally {
+      denyReads.mockRestore();
+      vi.resetModules();
+    }
   });
 
   it('shows the living clock and lets the player plan, start, and pause a week', async () => {

@@ -4,7 +4,7 @@ import { expect, test } from '@playwright/test';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('yuliang-e2e-hook', '1'));
-  await page.goto('/');
+  await page.goto('./');
   await page.waitForFunction(() => Boolean(window.__yuliang));
 });
 

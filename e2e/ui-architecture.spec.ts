@@ -1,10 +1,18 @@
 import { expect, test, type Page } from '@playwright/test';
+import {
+  clickAtVerifiedPoint,
+  navigate,
+  openApp,
+  PERSISTENT_STATUS,
+  readMainMetrics,
+  targetVisibility,
+  wheelMainToBottom,
+  wheelToAndClick,
+} from './harness';
 
-const navigate = (page: Page, name: string) => page.getByRole('navigation', { name: '主导航', exact: true }).getByRole('button', { name, exact: true }).click();
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('yuliang-e2e-hook', '1'));
-  await page.goto('/');
-  await page.waitForFunction(() => Boolean(window.__yuliang));
+  await openApp(page);
 });
 
 for (const [width, height] of [[1448,1086], [1366,768], [1920,1080], [932,430]]) {
@@ -36,13 +44,73 @@ for (const [width, height] of [[1448,1086], [1366,768], [1920,1080], [932,430]])
     for (const selector of ['.shop-main .item-card-foot button', '.catalog-secondary-action']) {
       expect(await page.locator(selector).evaluateAll(elements => elements.every(element => element.getBoundingClientRect().height >= 36))).toBe(true);
     }
-    const last = page.locator('.shop-main .item-card-foot button').last();
-    await last.scrollIntoViewIfNeeded();
-    await last.click();
+    // Real wheel reachability: locator auto-scroll and scrollIntoView must not
+    // be the delivery mechanism for the last catalog action.
+    const shop = await readMainMetrics(page);
+    expect(shop.overflowY, '商店页主区应为页面级滚动容器').toBe('auto');
+    expect(shop.scrollHeight, `商店页在 ${width}x${height} 应有溢出内容`).toBeGreaterThan(shop.clientHeight);
+    await wheelToAndClick(page, page.locator('.shop-main .item-card-foot button').last());
     await expect(page.locator('.rail-cart')).toContainText('购物袋（1）');
     expect(errors).toEqual([]);
   });
 }
+
+// Both sides of the height and width breakpoints share one rule: overflowing
+// pages must be wheel-reachable to the bottom, and the status bar must stay
+// inside the viewport (no 720px floor pushing it off-screen).
+const wheelViewports = [[1920, 1080], [1366, 801], [1366, 800], [1181, 900], [1180, 900], [1280, 600]] as const;
+for (const [width, height] of wheelViewports) {
+  test(`mouse wheel reaches page bottoms at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    for (const name of ['财富', '城市']) {
+      await navigate(page, name);
+      await page.waitForTimeout(650);
+      const before = await readMainMetrics(page);
+      expect(before.overflowY, `${name} 主区应为页面级滚动容器`).toBe('auto');
+      expect(before.scrollHeight, `${name} 在 ${width}x${height} 应有溢出内容`).toBeGreaterThan(before.clientHeight);
+      const bottom = await wheelMainToBottom(page);
+      expect(bottom.scrollTop, '真实滚轮必须产生实际位移并到达底部').toBeGreaterThan(0);
+      expect(bottom.scrollTop).toBeGreaterThanOrEqual(bottom.scrollHeight - bottom.clientHeight - 2);
+      const footerBottom = await page.evaluate((selector) => document.querySelector(selector)!.getBoundingClientRect().bottom, PERSISTENT_STATUS);
+      expect(footerBottom, '状态栏必须始终留在视口内').toBeLessThanOrEqual(height);
+    }
+  });
+}
+
+test('large desktop real-input regression covers every main page', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  for (const name of ['生活', '职业', '商店', '财富', '社交', '城市', '我的']) {
+    await navigate(page, name);
+    await page.waitForTimeout(650);
+    const metrics = await readMainMetrics(page);
+    expect(metrics.overflowY, `${name} 主区应为页面级滚动容器`).toBe('auto');
+    if (metrics.scrollHeight > metrics.clientHeight + 1) {
+      // Overflowing page: real wheel input must reach the last content.
+      const bottom = await wheelMainToBottom(page);
+      expect(bottom.scrollTop, `${name} 溢出内容必须能被真实滚轮滚到末尾`).toBeGreaterThan(0);
+    } else {
+      // Fitting page: content is complete — nothing clipped, no forced track.
+      expect(metrics.scrollWidth, `${name} 无溢出时不得有被裁切的横向内容`).toBeLessThanOrEqual(metrics.clientWidth + 2);
+      const footerBottom = await page.evaluate((selector) => document.querySelector(selector)!.getBoundingClientRect().bottom, PERSISTENT_STATUS);
+      expect(footerBottom).toBeLessThanOrEqual(1080);
+    }
+  }
+});
+
+test('life drawer long content stays wheel-reachable on tall desktop', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await navigate(page, '生活');
+  await page.waitForTimeout(650);
+  await page.getByRole('button', { name: '查看生活详情', exact: true }).click();
+  await page.waitForTimeout(650);
+  const expanded = await readMainMetrics(page);
+  expect(expanded.scrollHeight, '展开生活详情后主区应出现长内容').toBeGreaterThan(expanded.clientHeight);
+  const bottom = await wheelMainToBottom(page);
+  expect(bottom.scrollTop, '真实滚轮必须能滚到展开内容末尾').toBeGreaterThan(0);
+  expect(bottom.scrollTop).toBeGreaterThanOrEqual(bottom.scrollHeight - bottom.clientHeight - 2);
+  const lastRow = page.locator('.life-secondary-details').last();
+  expect((await targetVisibility(page, lastRow)).rect.bottom).toBeLessThanOrEqual(1080);
+});
 
 test('settings traps Tab, cancels and restores focus, reset remains a separate confirmation', async ({ page }) => {
   const trigger = page.getByRole('button', { name: '设置', exact: true });
