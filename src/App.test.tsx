@@ -42,7 +42,9 @@ describe('余量 app flow', () => {
       denyReads.mockRestore();
       vi.resetModules();
     }
-  });
+    // vi.resetModules() re-evaluates the whole App module graph; on cold CI
+    // runners that alone can exceed the 5s default timeout.
+  }, 30000);
 
   it('shows the living clock and lets the player plan, start, and pause a week', async () => {
     const user = userEvent.setup();
