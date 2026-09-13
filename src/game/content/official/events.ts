@@ -2100,6 +2100,7 @@ export const officialEvents = [
         "id": "accept",
         "text": "接受收购报价",
         "effects": [
+          { "type": "liquidate_investment", "investmentId": "investment.citylife-private-equity" },
           { "type": "set_flag", "flag": "private_equity_exit_offer" },
           { "type": "attribute", "attribute": "knowledge", "amount": 1 }
         ]
@@ -2186,7 +2187,7 @@ export const officialEvents = [
       ]
     },
     "choices": [
-      { "id": "accept", "text": "接受退出报价", "effects": [{ "type": "set_flag", "flag": "local_restaurant_exit_offer" }, { "type": "attribute", "attribute": "knowledge", "amount": 1 }] },
+      { "id": "accept", "text": "接受退出报价", "effects": [{ "type": "liquidate_investment", "investmentId": "investment.local-restaurant-share" }, { "type": "set_flag", "flag": "local_restaurant_exit_offer" }, { "type": "attribute", "attribute": "knowledge", "amount": 1 }] },
       { "id": "hold", "text": "继续持有", "effects": [{ "type": "set_flag", "flag": "local_restaurant_exit_offer" }, { "type": "attribute", "attribute": "network", "amount": 1 }] }
     ],
     "tags": ["investment", "business", "private-equity", "story"]
@@ -2210,7 +2211,7 @@ export const officialEvents = [
       ]
     },
     "choices": [
-      { "id": "accept", "text": "接受退出报价", "effects": [{ "type": "set_flag", "flag": "creative_studio_exit_offer" }, { "type": "attribute", "attribute": "knowledge", "amount": 1 }] },
+      { "id": "accept", "text": "接受退出报价", "effects": [{ "type": "liquidate_investment", "investmentId": "investment.creative-studio-share" }, { "type": "set_flag", "flag": "creative_studio_exit_offer" }, { "type": "attribute", "attribute": "knowledge", "amount": 1 }] },
       { "id": "hold", "text": "继续持有", "effects": [{ "type": "set_flag", "flag": "creative_studio_exit_offer" }, { "type": "attribute", "attribute": "network", "amount": 1 }] }
     ],
     "tags": ["investment", "business", "private-equity", "story"]

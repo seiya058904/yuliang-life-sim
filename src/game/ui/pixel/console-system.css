@@ -20,7 +20,8 @@
 .topbar .status-line { display: grid; grid-template-columns: minmax(180px,1fr) 160px minmax(190px,1.2fr) minmax(180px,1.1fr) 56px; gap: 0; min-width: 0; width: 100%; height: 100%; padding-left: 0; }
 .topbar .status-line > span { min-width: 0; min-height: 0; height: 100%; padding: 4px 12px; }
 .topbar .settings-button { min-height: 36px; height: 100%; }
-.topbar .status-line b { white-space: normal; overflow-wrap: anywhere; }
+/* Money and counters must never break mid-number, even on narrow landscape. */
+.topbar .status-line b { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .topbar :is(.status-line small,.brand-subtitle small) { font-size: 12px; line-height: 1.4; }
 .topbar .status-date { display: flex; gap: 12px; align-items: center; justify-content: space-between; }
 .topbar .status-date b { white-space: nowrap; font-size: 16px; }
@@ -116,13 +117,16 @@ dialog .detail-facts { font-size: 14px; }
   .main-nav { min-height: 0; height: auto; }
   .main-content { min-height: 0; width: calc(100% - 32px); padding: 12px 0; overflow: auto; }
   .footer-note { display: none; }
-  .app-shell .topbar { grid-template-columns: 170px minmax(0,1fr); gap: 12px; }
+  .app-shell .topbar { grid-template-columns: minmax(124px,auto) minmax(0,1fr); gap: 10px; }
   .brand-block { min-width: 0; flex: 0 1 240px; }
   .status-line { min-width: 0; flex: 1; gap: 8px; }
-  .topbar .status-line { grid-template-columns: minmax(130px,1fr) 145px minmax(130px,1fr) minmax(115px,1fr) 54px; }
+  /* Content-sized columns keep amounts whole; the net-worth column absorbs slack. */
+  .topbar .status-line { grid-template-columns: auto auto auto minmax(0,1fr) 54px; }
   .topbar .status-date b { font-size: 14px; }
-  .status-line > span { min-width: 0; padding-inline: 8px; }
-  .status-line b { font-size: 14px; }
+  .status-line > span { min-width: 0; padding-inline: 6px; }
+  /* Money stays whole; a slightly smaller size keeps two 7-digit values side by side. */
+  .status-line b { font-size: 11px; }
+  .topbar .status-line :is([data-testid="cash-value"],span:nth-last-of-type(1) b) { font-size: 11px; }
   .brand-subtitle, .brand-mascot { display: none; }
   .main-nav .nav-tabs { min-width: 0; }
   .shell-run-control { gap: 8px; }

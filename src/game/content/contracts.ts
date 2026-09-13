@@ -93,7 +93,14 @@ export type EffectDefinition =
   | { type: 'advance_time'; hours: number }
   | { type: 'location_development'; locationId: ContentId; amount: number }
   | { type: 'set_flag'; flag: string }
-  | { type: 'advance_chain'; chainId: ContentId; stage: number };
+  | { type: 'advance_chain'; chainId: ContentId; stage: number }
+  /**
+   * Sells the whole holding of one investment at its current unit value through
+   * the shared liquidation path (cost basis, realized gain/loss, cash, life
+   * record). Applied by `choose_event` in actions.ts — not by
+   * `applyContentEffects` — so the accounting stays next to `sell_investment`.
+   */
+  | { type: 'liquidate_investment'; investmentId: ContentId };
 
 export interface JobDefinition extends ContentMeta {
   kind: 'regular' | 'temporary' | 'freelance';
@@ -691,6 +698,12 @@ export interface InvestmentHolding {
   averageCost: number;
   currentValuation: number;
   lastValuationDay: number;
+  /**
+   * Private-equity sell lock, anchored at the (re)purchase day + 90. Only
+   * private_equity holdings carry it; `lastValuationDay` must never anchor a
+   * lock because daily settlement keeps refreshing it.
+   */
+  lockUntilDay?: number;
 }
 
 export interface HousingState {

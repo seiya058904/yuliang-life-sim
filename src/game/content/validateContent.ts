@@ -155,7 +155,7 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     if (effect.type === 'location_development') return effect.amount > 0;
     if (effect.type === 'item') return effect.quantity > 0;
     if (effect.type === 'discount') return effect.percent > 0;
-    if (effect.type === 'unlock_capability' || effect.type.startsWith('unlock_') || effect.type === 'advance_chain') return true;
+    if (effect.type === 'unlock_capability' || effect.type.startsWith('unlock_') || effect.type === 'advance_chain' || effect.type === 'liquidate_investment') return true;
     if (effect.type === 'modifier') {
       return effect.modifier.mode === 'add' ? effect.modifier.value > 0 :
         (effect.modifier.target === 'work_hours' || effect.modifier.target === 'housing_rent' || effect.modifier.target === 'shop_price')
@@ -176,6 +176,7 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     if (effect.type === 'unlock_asset' && !known.assets.has(effect.assetId)) errors.push(`${owner} 引用了未知资产: ${effect.assetId}`);
     if (effect.type === 'unlock_capability' && !registry.vocabulary.capabilities.includes(effect.capability)) errors.push(`${owner} 引用了未知 Capability: ${effect.capability}`);
     if (effect.type === 'advance_chain' && !known.eventChains.has(effect.chainId)) errors.push(`${owner} 引用了未知事件链: ${effect.chainId}`);
+    if (effect.type === 'liquidate_investment' && !known.investments.has(effect.investmentId)) errors.push(`${owner} 引用了未知投资: ${effect.investmentId}`);
     if (effect.type === 'attribute' && registry.vocabulary.attributes && !registry.vocabulary.attributes.includes(effect.attribute)) errors.push(`${owner} 引用了未知属性: ${effect.attribute}`);
     if (effect.type === 'modifier') checkModifier(effect.modifier, owner);
     if (!Number.isFinite('amount' in effect ? effect.amount : 0) && effect.type !== 'modifier') errors.push(`${owner} 的 effect 数值无效`);

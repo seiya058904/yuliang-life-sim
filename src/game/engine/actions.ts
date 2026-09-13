@@ -2,7 +2,7 @@ import { known, amount, addAmount, subtractAmount, scaleAmount } from './knownAm
 import { enterRunning } from './running';
 import { recordBusinessFact, recentGiftCount, recentInteractionCount, retentionKey, factsFromHistory } from './businessFacts';
 import type { BalanceConfig } from '../balance/config';
-import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity, PlanSlot, Weekday } from '../content/contracts';
+import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, InvestmentDefinition, InvestmentHolding, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity, PlanSlot, Weekday } from '../content/contracts';
 import { evaluateCondition, explainCondition } from './conditions';
 import { businessValuation, calculateDailyBusinessProfit, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity } from './economy';
 import { applyContentEffects, applyReachedMilestones, cashEffectAmount, cloneGameState, itemCost, refreshUnlocks } from './effects';
@@ -16,7 +16,7 @@ import {
   APPLICATION_HISTORY_LIMIT, activeApplications, appendMessage, applicationCooldownKey, applicationCooldownRemaining, clearReadMessages, clearTerminalApplications, createApplicationId, dismissMessage, dismissTerminalApplication, markAllMessagesRead, markMessageRead, pruneApplicationHistory, pruneExpiredState, recordApplicationCooldown, visibleMessages,
 } from './lifecycle';
 import { groupForCategory, recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
-import { investmentUnitValue } from './investments';
+import { investmentUnitValue, PRIVATE_EQUITY_LOCK_DAYS } from './investments';
 import { applyAttributeDelta } from './attributes';
 import { deterministicApplicationDecision, employmentKind, evaluateApplicationCompetitiveness } from './careers';
 import { appendLifeRecord } from './lifeHistory';
@@ -82,6 +82,33 @@ function addLifeRecord(state: GameState, record: Omit<LifeRecordEntry, 'id' | 'd
 }
 
 /**
+ * The one liquidation path for investment holdings: current unit value out,
+ * cost basis and realized gain/loss recorded separately, cash and life record
+ * included. Callers own the policy checks (lock, unit bounds); this owns the
+ * accounting. `sell_investment` and the authored private-equity exit events
+ * share it so a buyout can never grow its own formula.
+ */
+function liquidateInvestmentHolding(state: GameState, investment: InvestmentDefinition, units: number, output: GameEffect[]): number | undefined {
+  const holding = state.investments?.[investment.id];
+  if (!holding || units <= 0 || units > holding.units) return undefined;
+  const unitValue = Math.round(investmentUnitValue(investment, state.rng.seed, state.time.day));
+  const total = unitValue * units;
+  const costBasis = holding.averageCost * units;
+  const realized = total - costBasis;
+  holding.units -= units;
+  holding.currentValuation = unitValue * holding.units;
+  holding.lastValuationDay = state.time.day;
+  if (holding.units === 0) delete state.investments![investment.id];
+  state.cash += total;
+  recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: total, costBasis, label: `资产变现 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
+  if (realized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: realized, cashDelta: 0, label: `已实现收益 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
+  if (realized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized, cashDelta: 0, label: `已实现亏损 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
+  addLifeRecord(state, { category: 'investment', title: `卖出${investment.name}`, detail: `${units} 份`, sourceId: investment.id, amount: total });
+  output.push({ type: 'cash', amount: total, reason: '投资退出' });
+  return total;
+}
+
+/**
  * Backwards-compatible facade over the planning domain. `planEditError` lives
  * in `planning.ts` so a single broken cell can never block repairing another.
  */
@@ -116,6 +143,10 @@ export function findNextPlanOption(
 function advancePeriod(input: GameState, months: 1 | 3, content: ContentRegistry, balance: BalanceConfig): GameResult {
   if (input.pendingOfferApplicationId) return fail(input, '请先处理新的 Offer 通知');
   if (!['planning', 'paused', 'week_complete'].includes(input.simulationMode)) return fail(input, '当前不能开始长期运行');
+  // Auto-repeat is forced only for the internal long run; the player's own
+  // preference must come back on every way out of this function.
+  const previousAutoRepeatPlan = input.autoRepeatPlan;
+  const previousPlanAutoRepeat = input.weeklyPlan.autoRepeat;
   let state = cloneGameState(input);
   state.autoRepeatPlan = true;
   state.weeklyPlan = { ...state.weeklyPlan, autoRepeat: true, days: structuredClone(state.weeklyPlan.days) };
@@ -149,6 +180,8 @@ function advancePeriod(input: GameState, months: 1 | 3, content: ContentRegistry
     elapsed += advanced;
     if (state.simulationMode === 'event' || state.simulationMode === 'reward' || state.pendingOfferApplicationId) break;
   }
+  state.autoRepeatPlan = previousAutoRepeatPlan;
+  state.weeklyPlan = { ...state.weeklyPlan, autoRepeat: previousPlanAutoRepeat };
   return { state, effects };
 }
 
@@ -490,6 +523,15 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (choice.nextEventId) state.pendingEventId = choice.nextEventId;
       if (choice.nextChainStage) state.chainStages[choice.nextChainStage.chainId] = choice.nextChainStage.stage;
       applyContentEffects(state, choice.effects, content, balance, effects);
+      // Authored exit offers liquidate through the same accounting path as a
+      // manual sale; an external buyout is the one exit that may ignore the
+      // private-equity lock.
+      for (const effect of choice.effects) {
+        if (effect.type !== 'liquidate_investment') continue;
+        const investment = content.investments?.find((entry) => entry.id === effect.investmentId);
+        const holding = investment ? state.investments?.[effect.investmentId] : undefined;
+        if (investment && holding) liquidateInvestmentHolding(state, investment, holding.units, effects);
+      }
       if (choice.opportunity) {
         const opportunityId = `opportunity.${event.id}.${choice.id}.${state.time.day}`;
         const { expiresInDays, ...opportunity } = choice.opportunity;
@@ -632,6 +674,9 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const home = find(content.housing, action.housingId);
       if (!home) return fail(input, '找不到这套住房');
       if (state.mortgage) return fail(input, '当前有未结清的住房分期');
+      // Owning outright must not be silently replaced either: the old home
+      // would vanish without a sale, so require the explicit sell first.
+      if (state.housing.mode === 'owned') return fail(input, '请先出售当前自住房，再更换住处');
       if (home.mode !== 'both' && home.mode !== action.mode) return fail(input, '这套住房不支持该方式');
       if (!state.unlockedHousingIds.includes(home.id) && home.id !== state.housing.housingId) return fail(input, '这套住房还没有解锁');
       if (!hasRequirements(state, home.requirements, content, balance)) return fail(input, '当前条件还不满足');
@@ -1089,13 +1134,17 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const previous = state.investments?.[investment.id];
       const previousUnits = previous?.units ?? 0;
       state.investments ??= {};
-      state.investments[investment.id] = {
+      const nextHolding: InvestmentHolding = {
         investmentId: investment.id,
         units: previousUnits + action.units,
         averageCost: previous ? Math.round((previous.averageCost * previousUnits + unitValue * action.units) / (previousUnits + action.units)) : unitValue,
         currentValuation: unitValue * (previousUnits + action.units),
         lastValuationDay: state.time.day,
       };
+      // (Re)buying private equity anchors the whole aggregated holding's lock
+      // at this purchase; lastValuationDay must never serve as a lock anchor.
+      if (investment.kind === 'private_equity') nextHolding.lockUntilDay = state.time.day + PRIVATE_EQUITY_LOCK_DAYS;
+      state.investments[investment.id] = nextHolding;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'investment_transfer', amount: total, label: `买入${investment.name}`, sourceType: 'investment', sourceId: investment.id });
       addLifeRecord(state, { category: 'investment', title: `买入${investment.name}`, detail: `${action.units} 份`, sourceId: investment.id, amount: -total });
       effects.push({ type: 'cash', amount: -total, reason: '投资配置' });
@@ -1196,21 +1245,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const investment = content.investments?.find((entry) => entry.id === action.investmentId);
       const holding = state.investments?.[action.investmentId];
       if (!investment || !holding || !Number.isInteger(action.units) || action.units <= 0 || action.units > holding.units) return fail(input, '出售数量无效');
-      if (investment.kind === 'private_equity' && state.time.day < holding.lastValuationDay + 90) return fail(input, '私人股权仍在锁定期内');
-      const unitValue = Math.round(investmentUnitValue(investment, state.rng.seed, state.time.day));
-      const total = unitValue * action.units;
-      const costBasis = holding.averageCost * action.units;
-      const realized = total - costBasis;
-      holding.units -= action.units;
-      holding.currentValuation = unitValue * holding.units;
-      holding.lastValuationDay = state.time.day;
-      if (holding.units === 0) delete state.investments![action.investmentId];
-      state.cash += total;
-      recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'asset_liquidation', amount: total, costBasis, label: `资产变现 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
-      if (realized > 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'realized_gain', amount: realized, cashDelta: 0, label: `已实现收益 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
-      if (realized < 0) recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'realized_loss', amount: -realized, cashDelta: 0, label: `已实现亏损 · ${investment.name}`, sourceType: 'investment', sourceId: investment.id });
-      addLifeRecord(state, { category: 'investment', title: `卖出${investment.name}`, detail: `${action.units} 份`, sourceId: investment.id, amount: total });
-      effects.push({ type: 'cash', amount: total, reason: '投资退出' });
+      if (investment.kind === 'private_equity' && holding.lockUntilDay !== undefined && state.time.day < holding.lockUntilDay) return fail(input, `私人股权仍在锁定期内，还需 ${holding.lockUntilDay - state.time.day} 天解锁`);
+      if (liquidateInvestmentHolding(state, investment, action.units, effects) === undefined) return fail(input, '出售数量无效');
       break;
     }
     case 'execute_gig': {
@@ -1268,6 +1304,10 @@ function describeRewardEffect(effect: EffectDefinition, content: ContentRegistry
   if (effect.type === 'advance_time') return `安排提前 ${effect.hours} 小时完成`;
   if (effect.type === 'location_development') return `${content.locations?.find((location) => location.id === effect.locationId)?.name ?? effect.locationId}发展 ${effect.amount >= 0 ? '+' : ''}${effect.amount}`;
   if (effect.type === 'set_flag') return '留下了一项长期进展';
+  if (effect.type === 'liquidate_investment') {
+    const investment = content.investments?.find((entry) => entry.id === effect.investmentId);
+    return `接受报价，按当前估值变现${investment?.name ?? '持有份额'}`;
+  }
   return '生活有了新的进展';
 }
 

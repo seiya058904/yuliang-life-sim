@@ -5780,6 +5780,7 @@ test('unlocks and persists a private-equity opportunity from a relationship even
     state.pendingEventId = 'event.private-equity-introduction';
     state.simulationMode = 'event';
     localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5787,38 +5788,131 @@ test('unlocks and persists a private-equity opportunity from a relationship even
   await page.getByRole('dialog').getByRole('button', { name: '了解这个项目' }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByRole('button', { name: '财富', exact: true }).click();
+  // Unowned cards live in the wealth market section.
+  await page.getByRole('button', { name: '市场', exact: true }).click();
   const investment = page.getByRole('heading', { name: '城际生活早期股权' }).locator('..');
   await expect(investment).toContainText('私人股权');
   await investment.getByRole('button', { name: '买入 1 份' }).click();
-  await expect(investment).toContainText('持有 1 份');
+  // The purchased card moves to the owned section.
+  await page.getByRole('button', { name: '持有', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).toContainText('持有 1 份');
+  await awaitSaveSynced(page);
 
   await page.reload();
   await page.getByRole('button', { name: '财富', exact: true }).click();
+  await page.getByRole('button', { name: '持有', exact: true }).click();
   await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).toContainText('持有 1 份');
 });
 
+/**
+ * Wait until the store's deferred (Web Locks critical section) save has landed
+ * in storage, so a following reload or direct storage read observes it.
+ */
+async function awaitSaveSynced(page: import('@playwright/test').Page) {
+  await page.waitForFunction(() => {
+    const raw = localStorage.getItem('yuliang-save-v1');
+    return raw !== null && raw === JSON.stringify(window.__yuliang.store.getState().game);
+  }, undefined, { timeout: 5000 });
+}
+
+/**
+ * Real engine time advance inside the page: starts weeks, settles days and
+ * months, and answers events with their first choice. Authored exit offers are
+ * held instead of accepted so a test's own seeded exit event stays reachable,
+ * and the final state is force-saved (advance ticks persist on a throttle).
+ */
+async function advanceRealDays(page: import('@playwright/test').Page, targetDay: number) {
+  for (let cycle = 0; cycle < 40; cycle += 1) {
+    const day = await page.evaluate(() => window.__yuliang.store.getState().game.time.day);
+    if (day >= targetDay) break;
+    // advance_period only starts from planning/paused/week_complete; a running
+    // week (auto-repeated after a monthly summary) must be paused first.
+    await page.evaluate(() => {
+      const game = window.__yuliang.store.getState().game;
+      if (game.simulationMode === 'running') window.__yuliang.store.getState().dispatch({ type: 'pause_simulation' });
+    });
+    await page.evaluate(() => { window.__yuliang.store.getState().dispatch({ type: 'advance_period', months: 1 }); });
+    for (let guard = 0; guard < 80; guard += 1) {
+      const status = await page.evaluate(() => {
+        const st = window.__yuliang.store.getState();
+        const game = st.game;
+        const out = { day: game.time.day, mode: game.simulationMode, event: (game.pendingEventId ?? null) as string | null, reward: Boolean(game.pendingReward), summary: Boolean(game.pendingMonthlySummary), offer: Boolean(game.pendingOfferApplicationId), choices: [] as string[] };
+        if (out.event) out.choices = [...(window.__yuliang.eventChoices[out.event] ?? [])];
+        return out;
+      });
+      if (status.offer) {
+        await page.evaluate(() => { window.__yuliang.store.getState().dispatch({ type: 'dismiss_offer_notice' }); });
+        continue;
+      }
+      if (status.event && status.choices.length > 0) {
+        const choiceId = /exit-offer/.test(status.event) ? status.choices[status.choices.length - 1] : status.choices[0];
+        await page.evaluate(({ eventId, choiceId }: { eventId: string; choiceId: string }) => {
+          window.__yuliang.store.getState().dispatch({ type: 'choose_event', eventId, choiceId } as never);
+        }, { eventId: status.event, choiceId });
+        continue;
+      }
+      if (status.reward) {
+        await page.evaluate(() => { window.__yuliang.store.getState().dispatch({ type: 'claim_reward' }); });
+        continue;
+      }
+      if (status.summary) {
+        await page.evaluate(() => { window.__yuliang.store.getState().dispatch({ type: 'acknowledge_monthly_summary' }); });
+        continue;
+      }
+      break;
+    }
+  }
+  // Force a durable save: advance ticks persist on a trailing timer only.
+  await page.evaluate(() => { window.__yuliang.store.getState().dispatch({ type: 'set_simulation_speed', speed: window.__yuliang.store.getState().game.simulationSpeed }); });
+  await awaitSaveSynced(page);
+}
+
 test('settles the authored private-equity exit opportunity', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
+  // Story-gate fixture only: eligibility and the intro event. The holding is
+  // created by a real buy on the wealth page, then aged by real engine days so
+  // daily settlement runs over the whole lock window.
   const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
   await page.evaluate(({ key, state }) => {
-    state.time = { ...state.time, day: 120 };
-    state.cash = 5_000;
+    state.time = { ...state.time, day: 30 };
+    state.cash = 20_000;
     state.flags = { ...(state.flags ?? {}), private_equity_access: true };
-    state.investments = { ...(state.investments ?? {}), 'investment.citylife-private-equity': { investmentId: 'investment.citylife-private-equity', units: 1, averageCost: 10_000, currentValuation: 10_000, lastValuationDay: 30 } };
-    state.pendingEventId = 'event.private-equity-exit-offer';
+    state.pendingEventId = 'event.private-equity-introduction';
     state.simulationMode = 'event';
     localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
 
+  await expect(page.getByRole('dialog')).toContainText('一个没有挂在市场上的机会');
+  await page.getByRole('dialog').getByRole('button', { name: '了解这个项目' }).click();
+  await page.getByRole('button', { name: '收下并暂停' }).click();
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await page.getByRole('button', { name: '市场', exact: true }).click();
+  await page.getByRole('heading', { name: '城际生活早期股权' }).locator('..').getByRole('button', { name: '买入 1 份' }).click();
+  await page.getByRole('button', { name: '持有', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).toContainText('持有 1 份');
+
+  await advanceRealDays(page, 130);
+
+  // The authored buyout arrives; accepting it must liquidate the whole holding
+  // through the same accounting path as a manual sale.
+  await page.evaluate(({ key }) => {
+    const state = JSON.parse(localStorage.getItem(key) ?? '{}');
+    state.pendingEventId = 'event.private-equity-exit-offer';
+    state.simulationMode = 'event';
+    localStorage.setItem(key, JSON.stringify(state));
+  }, { key: saveKey });
+  await page.reload();
   await expect(page.getByRole('dialog')).toContainText('有人愿意接手这部分股权');
   await page.getByRole('dialog').getByRole('button', { name: '接受收购报价' }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByRole('button', { name: '财富', exact: true }).click();
-  const investment = page.getByRole('heading', { name: '城际生活早期股权' }).locator('..');
-  await investment.getByRole('button', { name: '卖出 1 份' }).click();
-  await expect(investment).not.toContainText('持有 1 份');
-  await expect(investment).toContainText('买入 1 份');
+  await page.getByRole('button', { name: '市场', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).not.toContainText('持有 1 份');
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await page.getByRole('button', { name: '经历与历史', exact: true }).click();
+  await expect(page.getByText('卖出城际生活早期股权')).toBeVisible();
 });
 
 test('unlocks and trades the authored local restaurant investment opportunity', async ({ page }) => {
@@ -5831,6 +5925,7 @@ test('unlocks and trades the authored local restaurant investment opportunity', 
     state.pendingEventId = 'event.local-restaurant-investment';
     state.simulationMode = 'event';
     localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5838,10 +5933,13 @@ test('unlocks and trades the authored local restaurant investment opportunity', 
   await page.getByRole('dialog').getByRole('button', { name: '了解合伙条件' }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByRole('button', { name: '财富', exact: true }).click();
+  await page.getByRole('button', { name: '市场', exact: true }).click();
   const investment = page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..');
   await expect(investment).toContainText('私人股权');
   await investment.getByRole('button', { name: '买入 1 份' }).click();
-  await expect(investment).toContainText('持有 1 份');
+  await page.getByRole('button', { name: '持有', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..')).toContainText('持有 1 份');
+  await awaitSaveSynced(page);
 
   await page.evaluate(({ key }) => {
     const state = JSON.parse(localStorage.getItem(key) ?? '{}');
@@ -5855,9 +5953,54 @@ test('unlocks and trades the authored local restaurant investment opportunity', 
   await page.getByRole('dialog').getByRole('button', { name: '接受退出报价' }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByRole('button', { name: '财富', exact: true }).click();
-  const matureInvestment = page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..');
-  await matureInvestment.getByRole('button', { name: '卖出 1 份' }).click();
-  await expect(matureInvestment).not.toContainText('持有 1 份');
+  await page.getByRole('button', { name: '市场', exact: true }).click();
+  // Accepting the authored buyout liquidates the holding in the same accounting
+  // path as a manual sale, so no second sell step remains.
+  await expect(page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..')).not.toContainText('持有 1 份');
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await page.getByRole('button', { name: '经历与历史', exact: true }).click();
+  await expect(page.getByText('卖出小型餐饮项目合伙份额')).toBeVisible();
+});
+
+test('keeps a fresh private-equity holding locked for 90 days and unlocks selling in the UI', async ({ page }) => {
+  const saveKey = 'yuliang-save-v1';
+  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  await page.evaluate(({ key, state }) => {
+    state.cash = 20_000;
+    state.flags = { ...(state.flags ?? {}), private_equity_access: true };
+    state.simulationMode = 'paused';
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.setItem('yuliang-e2e-hook', '1');
+  }, { key: saveKey, state: initial });
+  await page.reload();
+
+  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await page.getByRole('button', { name: '市场', exact: true }).click();
+  await page.getByRole('heading', { name: '城际生活早期股权' }).locator('..').getByRole('button', { name: '买入 1 份' }).click();
+  await page.getByRole('button', { name: '持有', exact: true }).click();
+  const investment = page.getByRole('heading', { name: '城际生活早期股权' }).locator('..');
+  await expect(investment).toContainText('持有 1 份');
+
+  // Locked at purchase: the sell button must be disabled with the unlock day
+  // visible instead of a dead button that only reports an error.
+  const sellButton = investment.getByRole('button', { name: '卖出 1 份' });
+  await expect(sellButton).toBeDisabled();
+  await expect(investment).toContainText('第 91 天起可卖出');
+  await expect(investment).toContainText('还需 90 天');
+
+  // Real engine days: valuation refreshes must not extend the lock.
+  await advanceRealDays(page, 91);
+  await expect(sellButton).toBeEnabled();
+  await expect(investment).not.toContainText('锁定中');
+  await sellButton.click();
+  // The sold card leaves the owned section and returns to the market as buyable.
+  await page.getByRole('button', { name: '市场', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).not.toContainText('持有 1 份');
+  await awaitSaveSynced(page);
+  await page.reload();
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await page.getByRole('button', { name: '经历与历史', exact: true }).click();
+  await expect(page.getByText('卖出城际生活早期股权')).toBeVisible();
 });
 
 test('buys and sells independent public company equity with persisted history', async ({ page }) => {

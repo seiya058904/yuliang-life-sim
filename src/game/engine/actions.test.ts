@@ -283,17 +283,20 @@ describe('game action dispatcher', () => {
     expect(bought.state.investments?.['investment.citylife-private-equity']?.averageCost).toBeGreaterThan(9_000);
 
     const locked = dispatchGameAction(bought.state, { type: 'sell_investment', investmentId: 'investment.citylife-private-equity', units: 1 }, contentRegistry, balanceConfig);
-    expect(locked.error).toBe('私人股权仍在锁定期内');
+    expect(locked.error).toContain('锁定期');
 
+    // Accepting the authored buyout liquidates the whole holding through the
+    // shared sale accounting; no second manual sell is needed (or possible).
     const offered = { ...bought.state, time: { day: 120, hour: 8, minute: 0 }, pendingEventId: 'event.private-equity-exit-offer', simulationMode: 'event' as const };
+    const cashBeforeExit = offered.cash;
     const exitEvent = dispatchGameAction(offered, { type: 'choose_event', eventId: 'event.private-equity-exit-offer', choiceId: 'accept' }, contentRegistry, balanceConfig);
     expect(exitEvent.error).toBeUndefined();
     expect(exitEvent.state.flags.private_equity_exit_offer).toBe(true);
+    expect(exitEvent.state.investments?.['investment.citylife-private-equity']).toBeUndefined();
+    expect(exitEvent.state.cash).toBeGreaterThan(cashBeforeExit);
+    expect(exitEvent.state.lifeHistory.some((record) => record.category === 'investment' && record.title === '卖出城际生活早期股权')).toBe(true);
     const acknowledgedExit = dispatchGameAction(exitEvent.state, { type: 'claim_reward', resume: true }, contentRegistry, balanceConfig);
-    const sold = dispatchGameAction(acknowledgedExit.state, { type: 'sell_investment', investmentId: 'investment.citylife-private-equity', units: 1 }, contentRegistry, balanceConfig);
-    expect(sold.error).toBeUndefined();
-    expect(sold.state.investments?.['investment.citylife-private-equity']).toBeUndefined();
-    expect(sold.state.lifeHistory.at(-1)?.category).toBe('investment');
+    expect(acknowledgedExit.error).toBeUndefined();
   });
 
   it('unlocks and trades both authored private investment projects through their event gates', () => {
@@ -321,10 +324,12 @@ describe('game action dispatcher', () => {
       const exitEvent = dispatchGameAction(offered, { type: 'choose_event', eventId: entry.exitEventId, choiceId: 'accept' }, contentRegistry, balanceConfig);
       expect(exitEvent.error).toBeUndefined();
       expect(exitEvent.state.flags[entry.exitFlag]).toBe(true);
+      // Accepting the authored buyout liquidates the whole holding through the
+      // same accounting path as a manual sale.
+      expect(exitEvent.state.investments?.[entry.investmentId]).toBeUndefined();
+      expect(exitEvent.state.lifeHistory.some((record) => record.category === 'investment' && record.sourceId === entry.investmentId && record.title.startsWith('卖出'))).toBe(true);
       const acknowledgedExit = dispatchGameAction(exitEvent.state, { type: 'claim_reward', resume: true }, contentRegistry, balanceConfig);
-      const sold = dispatchGameAction(acknowledgedExit.state, { type: 'sell_investment', investmentId: entry.investmentId, units: 1 }, contentRegistry, balanceConfig);
-      expect(sold.error).toBeUndefined();
-      expect(sold.state.investments?.[entry.investmentId]).toBeUndefined();
+      expect(acknowledgedExit.error).toBeUndefined();
     }
   });
 

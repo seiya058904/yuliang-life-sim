@@ -1,5 +1,8 @@
 import type { ContentRegistry, GameState, InvestmentDefinition, InvestmentHolding } from '../content/contracts';
 
+/** Private-equity shares unlock for sale this many days after the (re)purchase. */
+export const PRIVATE_EQUITY_LOCK_DAYS = 90;
+
 function hash(seed: number, investmentId: string, day: number): number {
   let value = (seed ^ day * 374761393) >>> 0;
   for (const char of investmentId) value = Math.imul(value ^ char.charCodeAt(0), 16777619) >>> 0;

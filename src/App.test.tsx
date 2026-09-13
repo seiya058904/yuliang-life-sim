@@ -17,10 +17,11 @@ async function findCatalogPage(user: ReturnType<typeof userEvent.setup>, title: 
 
 describe('余量 app flow', () => {
   beforeEach(() => {
-    localStorage.clear();
+    // reset(1) both resets the in-memory game and re-persists a deterministic
+    // save, keeping storage in sync with the store's single-writer guard.
+    // Clearing storage here would look like an external overwrite and trip it.
     appStore.getState().reset(1);
     appStore.setState({ activeView: 'work' });
-    localStorage.clear();
   });
 
   it('still boots the whole shell when the browser denies localStorage reads', async () => {

@@ -5,6 +5,7 @@ import type { BalanceConfig } from '../balance/config';
 import type { ActivityDuration, ApplicationCooldownState, ContentRegistry, FinancialEntry, GameAction, GameEffect, GameState, JobApplicationState, JobSchedule, LifeRecordEntry, PlannedActivity, ViewId, WorldSnapshot } from '../content/contracts';
 import { calendarForDay } from '../engine/calendar';
 import { dispatchGameAction } from '../engine/actions';
+import { PRIVATE_EQUITY_LOCK_DAYS } from '../engine/investments';
 import { createInitialState } from '../engine/initialState';
 import { activityAtTime, createDefaultWeeklyPlan, defaultJobSchedule } from '../engine/schedule';
 import { reconcileStateWithEmployment, CANONICAL_DURATIONS } from '../engine/planning';
@@ -17,9 +18,66 @@ import { absoluteMinute } from '../engine/time';
 
 export const SAVE_KEY = 'yuliang-save-v1';
 export const SAVE_BACKUP_KEY = 'yuliang-save-v1-last-good';
+/** Monotonic write counter for SAVE_KEY; bumped by every successful canonical write. */
+export const SAVE_REVISION_KEY = 'yuliang-save-revision';
+/** Per-session emergency candidates written by the unload path (see flushSave). */
+export const EMERGENCY_SAVE_PREFIX = 'yuliang-pending-';
 
-export type SaveOutcome = { status: 'full' | 'compressed'; ok: true; error?: string } | { status: 'failed'; ok: false; error: string };
+function readSaveRevision(): number {
+  try {
+    const revision = Number(localStorage.getItem(SAVE_REVISION_KEY));
+    return Number.isInteger(revision) && revision > 0 ? revision : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export interface EmergencySaveCandidate { key: string; baseRevision: number; state: unknown }
+
+/**
+ * Collect unload emergency candidates for boot. Records superseded by a newer
+ * canonical revision (their owning tab lost the write race) are pruned; the
+ * rest are returned ordered by base revision. A surviving candidate descends
+ * from the canonical payload it recorded, so it is at least as new as the
+ * canonical save.
+ */
+export function collectEmergencyCandidates(): EmergencySaveCandidate[] {
+  const canonicalRevision = readSaveRevision();
+  const candidates: EmergencySaveCandidate[] = [];
+  try {
+    for (let index = 0; index < localStorage.length; index += 1) {
+      const key = localStorage.key(index);
+      if (!key || !key.startsWith(EMERGENCY_SAVE_PREFIX)) continue;
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        if (!isRecord(parsed) || !isRecord(parsed.save) || !Number.isInteger(parsed.baseRevision) || Number(parsed.baseRevision) < 0) {
+          localStorage.removeItem(key);
+          continue;
+        }
+        // Superseded: canonical advanced past this candidate's base revision,
+        // so its owning tab lost the write race and the payload is stale.
+        if (Number(parsed.baseRevision) < canonicalRevision) {
+          localStorage.removeItem(key);
+          continue;
+        }
+        candidates.push({ key, baseRevision: Number(parsed.baseRevision), state: parsed.save });
+      } catch {
+        localStorage.removeItem(key);
+      }
+    }
+  } catch {
+    return [];
+  }
+  return candidates.sort((a, b) => a.baseRevision - b.baseRevision || (a.key < b.key ? -1 : 1));
+}
+
+export type SaveOutcome = { status: 'full' | 'compressed'; ok: true; payload: string; error?: string } | { status: 'failed'; ok: false; error: string };
 export interface RecoverySession { raw: string; reason: string; writeProtected: true; noticeVisible: boolean; kind: 'unreadable' | 'compatibility' }
+
+/** Shown when another tab won the save race and this tab became read-only. */
+export const EXTERNAL_SAVE_CONFLICT_MESSAGE = '另一个游戏窗口已经更新了存档。为避免覆盖最新进度，本窗口已停止保存。';
 
 export interface GameStore {
   game: GameState;
@@ -31,6 +89,8 @@ export interface GameStore {
   /** Set when the stored save could not be read, with the raw payload kept. */
   loadProblem?: { reason: string; raw: string };
   recovery?: RecoverySession;
+  /** True once another tab overwrote the save; this tab is read-only until reloaded. */
+  externalSaveConflict: boolean;
   showRecovery: () => void;
   acceptRecovery: () => void;
   dispatch: (action: GameAction) => boolean;
@@ -158,15 +218,16 @@ export function saveGameState(state: GameState): SaveOutcome {
   }
   try {
     localStorage.setItem(SAVE_KEY, payload);
-    return { status: 'full', ok: true };
+    return { status: 'full', ok: true, payload };
   } catch (error) {
     // Keep the last valid save: try a smaller history-trimmed write, and only
     // then give up with the original payload untouched.
     const trimmed = trimForStorage(state);
     if (trimmed) {
       try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify(trimmed));
-        return { status: 'compressed', ok: true, error: `存储空间不足，已压缩历史后保存：${describeError(error)}` };
+        const compressedPayload = JSON.stringify(trimmed);
+        localStorage.setItem(SAVE_KEY, compressedPayload);
+        return { status: 'compressed', ok: true, payload: compressedPayload, error: `存储空间不足，已压缩历史后保存：${describeError(error)}` };
       } catch {
         /* fall through to the reported failure */
       }
@@ -441,6 +502,20 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     .filter(isLifeRecordEntry)
     .filter((entry) => !entry.title.startsWith('查看消息：'));
   candidate.nextLifeRecordSequence = Math.max(Number.isInteger(raw.nextLifeRecordSequence) ? Number(raw.nextLifeRecordSequence) : 0, candidate.lifeHistory.length, ...candidate.lifeHistory.map(entry => Number(/(\d+)$/.exec(entry.id)?.[1] ?? 0)));
+  // Private-equity sell locks: anchor the explicit field at the latest real
+  // purchase record. A holding without a reliable purchase fact is already
+  // unlocked — the legacy lastValuationDay anchor was continuously refreshed
+  // by daily settlement and must never re-punish long-held positions.
+  for (const [investmentId, holding] of Object.entries(candidate.investments ?? {})) {
+    if (!isRecord(holding)) continue;
+    const definition = (content.investments ?? []).find((entry) => entry.id === investmentId);
+    if (definition?.kind !== 'private_equity') continue;
+    if (Number.isFinite(holding.lockUntilDay) && Number(holding.lockUntilDay) > 0) continue;
+    const purchaseDays = (candidate.lifeHistory ?? [])
+      .filter((entry) => entry.category === 'investment' && entry.sourceId === investmentId && entry.title.startsWith('买入'))
+      .map((entry) => entry.day);
+    holding.lockUntilDay = purchaseDays.length ? Math.max(...purchaseDays) + PRIVATE_EQUITY_LOCK_DAYS : candidate.time.day;
+  }
   candidate.businessFacts = Number(raw.version) >= 10 && isRecord(raw.businessFacts)
     ? structuredClone(raw.businessFacts) as unknown as GameState['businessFacts']
     : factsFromHistory(candidate.lifeHistory, candidate.time.day);
@@ -600,36 +675,221 @@ export function loadGameState(content: ContentRegistry, balance: BalanceConfig):
   return loadGameStateWithReport(content, balance).state;
 }
 
-export function createGameStore(content: ContentRegistry, balance: BalanceConfig, seed?: number) {
-  const loaded = seed === undefined ? loadGameStateWithReport(content, balance) : { state: createInitialState(content, balance, seed) };
-  const recovery: RecoverySession | undefined = loaded.recovery ?? (loaded.problem ? { ...loaded.problem, writeProtected: true, noticeVisible: true, kind: 'unreadable' } : undefined);
+/** Test-only seams for deterministic interleaving; production passes nothing. */
+export interface PersistenceTestHooks {
+  /** Runs inside the Web Locks critical section after the pre-write check and before the canonical setItem. */
+  afterPreWriteCheckBeforeSet?: () => Promise<void> | void;
+}
+
+let emergencySessionCounter = 0;
+
+export function createGameStore(content: ContentRegistry, balance: BalanceConfig, seed?: number, testHooks?: PersistenceTestHooks) {
+  let loaded = seed === undefined ? loadGameStateWithReport(content, balance) : { state: createInitialState(content, balance, seed) };
+  // Boot adoption of unload emergency candidates: a surviving candidate
+  // descends from the canonical revision it recorded, so it carries the latest
+  // unsaved progress from a tab that could not persist before hiding. It is
+  // offered through the write-protected recovery flow instead of silently
+  // replacing the canonical save.
+  let emergencyRaw: string | undefined;
+  const bestCandidates = seed === undefined ? collectEmergencyCandidates() : [];
+  if (bestCandidates.length) {
+    const best = bestCandidates[bestCandidates.length - 1];
+    try {
+      loaded = { state: migrateGameState(best.state, content, balance) };
+      emergencyRaw = JSON.stringify(best.state);
+    } catch (error) {
+      console.error('[yuliang] 紧急存档候选不可用', error);
+    }
+  }
+  const recoveryReason = [loaded.recovery?.reason, emergencyRaw ? '检测到上次关闭时未能写入正式存档的进度，已临时恢复' : undefined].filter(Boolean).join('；') || undefined;
+  const recovery: RecoverySession | undefined = loaded.recovery || emergencyRaw
+    ? { raw: loaded.recovery?.raw ?? emergencyRaw!, reason: recoveryReason!, writeProtected: true, noticeVisible: true, kind: 'compatibility' }
+    : (loaded.problem ? { ...loaded.problem, writeProtected: true, noticeVisible: true, kind: 'unreadable' } : undefined);
   // Running-week ticks arrive once per animation frame; serializing and writing
   // the full save on each one starves the frame budget. Ticks mark the store
   // dirty and a trailing timer persists them; every other action saves at once.
   const AUTOSAVE_THROTTLE_MS = 2000;
   let pendingSaveTimer: ReturnType<typeof setTimeout> | undefined;
+  // Single-writer guard across tabs: the exact payload this tab believes is in
+  // storage. `undefined` means storage itself is unreadable, which turns the
+  // divergence check off (writes will fail on their own and be reported).
+  let lastKnownPersisted: string | null | undefined;
+  try {
+    lastKnownPersisted = localStorage.getItem(SAVE_KEY);
+  } catch {
+    lastKnownPersisted = undefined;
+  }
+  // Dirty marker for the Web Locks write coordinator: the newest game state
+  // whose save has been scheduled but has not verifiably landed in storage.
+  // The pagehide flush persists it synchronously; a queued lock callback skips
+  // itself once this marker has been superseded or cleared.
+  let pendingPersist: GameState | undefined;
+  // Identity of this store instance for the unload emergency key.
+  const emergencySessionId = `${Date.now().toString(36)}.${(++emergencySessionCounter).toString(36)}.${Math.random().toString(36).slice(2, 8)}`;
   return create<GameStore>((set, get) => {
+    let externalSaveConflict = false;
+    const readSaveRaw = (): string | null | undefined => {
+      try { return localStorage.getItem(SAVE_KEY); } catch { return undefined; }
+    };
+    const enterExternalConflict = (): void => {
+      if (externalSaveConflict) return;
+      externalSaveConflict = true;
+      if (pendingSaveTimer !== undefined) { clearTimeout(pendingSaveTimer); pendingSaveTimer = undefined; }
+      const game = get().game;
+      // A stale tab must not keep simulating: every tick would be a rejected
+      // dispatch, so the world pauses instead.
+      set({ externalSaveConflict: true, game: game.simulationMode === 'running' ? { ...game, simulationMode: 'paused' } : game });
+    };
+    // Another tab overwriting SAVE_KEY marks this tab stale. The live value is
+    // read instead of trusting event.newValue, so clear() and write bursts are
+    // handled identically.
+    if (typeof window !== 'undefined') {
+      try {
+        window.addEventListener('storage', (event: StorageEvent) => {
+          if (externalSaveConflict || lastKnownPersisted === undefined) return;
+          if (event.key !== SAVE_KEY && event.key !== null) return;
+          if (readSaveRaw() !== lastKnownPersisted) enterExternalConflict();
+        });
+      } catch { /* environments without window listeners */ }
+    }
+    /**
+     * The write critical section gate. The read-compare-write-update sequence
+     * must be atomic across tabs; `persistGame` runs it inside a same-origin
+     * exclusive Web Lock, so two tabs saving simultaneously can never both pass
+     * the check — the loser detects the winner's payload inside the lock and
+     * goes stale without writing.
+     */
+    const SAVE_WRITE_LOCK = 'yuliang-save-write';
+    type LockManagerLike = { request: (name: string, options: { mode: 'exclusive' }, callback: () => Promise<void> | void) => Promise<unknown> };
+    const webLocks = (): LockManagerLike | undefined => {
+      try { return (navigator as { locks?: LockManagerLike }).locks; } catch { return undefined; }
+    };
+    const checkPreWrite = (): boolean => {
+      // `undefined` means storage itself is unreadable: the check is off and the
+      // write will fail on its own and be reported as before.
+      if (lastKnownPersisted === undefined) return true;
+      const current = readSaveRaw();
+      if (current !== undefined && current !== lastKnownPersisted) {
+        enterExternalConflict();
+        return false;
+      }
+      return true;
+    };
+    const writeNow = (state: GameState): SaveOutcome => {
+      const outcome = saveGameState(state);
+      if (outcome.status !== 'failed') {
+        lastKnownPersisted = outcome.payload;
+        // Every canonical write advances the revision so unload emergency
+        // candidates can be ordered against the canonical save at boot.
+        try { localStorage.setItem(SAVE_REVISION_KEY, String(readSaveRevision() + 1)); } catch { /* canonical save already landed; report path unaffected */ }
+      }
+      return outcome;
+    };
+    /**
+     * Unload-only emergency record. The pagehide path cannot acquire the Web
+     * Lock synchronously, so it must never touch the canonical SAVE_KEY — that
+     * would bypass the single-writer protocol and could overwrite a concurrent
+     * in-lock write (check→write TOCTOU). Instead the latest memory goes to a
+     * session-scoped emergency key annotated with the canonical revision it was
+     * based on; the next boot offers it through the recovery flow.
+     */
+    const writeEmergencySave = (state: GameState): void => {
+      try {
+        const record = { baseRevision: readSaveRevision(), save: state };
+        localStorage.setItem(EMERGENCY_SAVE_PREFIX + emergencySessionId, JSON.stringify(record));
+      } catch { /* best-effort: a queued lock write may still land after all */ }
+    };
+    /**
+     * pagehide / visibilitychange flush. Fires whenever a deferred Web Locks
+     * write is still pending or a throttle timer is outstanding. With Web Locks
+     * available the flush never writes the canonical SAVE_KEY (it cannot hold
+     * the writer lock synchronously) and records an emergency candidate
+     * instead; without Web Locks there is no lock protocol to bypass, so the
+     * historical best-effort synchronous write remains.
+     */
     const flushSave = () => {
-      if (pendingSaveTimer === undefined) return;
-      clearTimeout(pendingSaveTimer);
-      pendingSaveTimer = undefined;
-      const outcome = saveGameState(get().game);
+      const hadTimer = pendingSaveTimer !== undefined;
+      if (hadTimer) { pendingSaveTimer = undefined; }
+      if (!hadTimer && pendingPersist === undefined) return;
+      if (externalSaveConflict) return;
+      if (!checkPreWrite()) return;
+      const state = get().game;
+      if (webLocks()?.request) {
+        writeEmergencySave(state);
+        return;
+      }
+      const outcome = writeNow(state);
+      if (outcome.status !== 'failed') pendingPersist = undefined;
       if (outcome.error) set({ saveError: outcome.error });
     };
+    /**
+     * Dispatch-path persist — the canonical write coordinator. The
+     * read-compare-write-update sequence runs inside a same-origin exclusive
+     * Web Lock; without Web Locks (tests, older browsers) every arm degrades to
+     * the synchronous best-effort fallback below, which is a compatibility path
+     * only, not an atomic cross-tab CAS. Returns `undefined` when the write was
+     * refused (already stale) or merely scheduled — the conflict flag and the
+     * dirty marker distinguish the two.
+     */
+    const persistGame = (state: GameState): SaveOutcome | undefined => {
+      if (externalSaveConflict) return undefined;
+      if (!checkPreWrite()) return undefined;
+      const locks = webLocks();
+      if (!locks?.request) return writeNow(state);
+      // Dirty marker: the newest memory whose save may not have landed yet. The
+      // pagehide flush records it as an emergency candidate, and a queued
+      // callback skips itself once it has been superseded by a flush, a reset,
+      // or a newer dispatch.
+      pendingPersist = state;
+      const attemptLockedWrite = async (): Promise<void> => {
+        if (pendingPersist !== state) return;
+        if (externalSaveConflict) { pendingPersist = undefined; return; }
+        if (!checkPreWrite()) { pendingPersist = undefined; return; }
+        // Test-only barrier: freezes this writer between its in-lock check and
+        // the canonical setItem so tests can prove the unload path cannot
+        // interleave a canonical write into this window.
+        await testHooks?.afterPreWriteCheckBeforeSet?.();
+        if (pendingPersist !== state) return;
+        const outcome = writeNow(state);
+        if (pendingPersist === state) pendingPersist = undefined;
+        if (outcome.error) set({ saveError: outcome.error });
+      };
+      void locks.request(SAVE_WRITE_LOCK, { mode: 'exclusive' }, attemptLockedWrite).catch(() => {
+        // Lock request itself failed (rare): keep the best-effort behaviour
+        // instead of silently dropping the save.
+        void attemptLockedWrite();
+      });
+      return undefined;
+    };
     return {
-    game: loaded.state, effects: [], activeView: 'life', recovery,
+    game: loaded.state, effects: [], activeView: 'life', recovery, externalSaveConflict: false,
     loadProblem: loaded.problem,
     dispatch: (action): boolean => {
+      if (get().externalSaveConflict) {
+        // The persistent conflict banner already explains the freeze.
+        return false;
+      }
       const result = dispatchGameAction(get().game, action, content, balance);
       if (result.error) { set({ lastError: result.error, effects: [] }); return false; }
-      let outcome: { error?: string } | undefined;
+      let outcome: SaveOutcome | undefined;
+      let conflictDuringSave = false;
       if (!get().recovery?.writeProtected) {
         if (action.type === 'advance_simulation' && result.state.simulationMode === 'running') {
           if (pendingSaveTimer === undefined) pendingSaveTimer = setTimeout(flushSave, AUTOSAVE_THROTTLE_MS);
         } else {
           if (pendingSaveTimer !== undefined) { clearTimeout(pendingSaveTimer); pendingSaveTimer = undefined; }
-          outcome = saveGameState(result.state);
+          outcome = persistGame(result.state);
+          // The divergence can surface only at save time; an action whose save
+          // was refused must not land in memory either, or the stale tab keeps
+          // drifting while telling the player it worked.
+          conflictDuringSave = outcome === undefined && get().externalSaveConflict;
         }
+      }
+      if (conflictDuringSave) {
+        // The persistent conflict banner already explains the freeze; repeating
+        // it as lastError would only duplicate the text on screen.
+        set({ effects: [] });
+        return false;
       }
       set({ game: result.state, effects: result.effects, lastError: undefined, saveError: outcome?.error });
       return true;
@@ -640,18 +900,29 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
     dismissLoadProblem: () => set({ loadProblem: undefined, recovery: get().recovery ? { ...get().recovery!, noticeVisible: false } : undefined }),
     showRecovery: () => set({ recovery: get().recovery ? { ...get().recovery!, noticeVisible: true } : undefined }),
     acceptRecovery: () => {
+      if (get().externalSaveConflict) return;
       const game = structuredClone(get().game);
       if (get().recovery?.kind === 'compatibility') {
         if (game.pendingEventId && !content.events.some(event => event.id === game.pendingEventId)) game.pendingEventId = undefined;
         game.simulationMode = game.pendingEventId ? 'event' : game.pendingReward ? 'reward' : game.pendingMonthlySummary ? 'monthly_summary' : 'paused';
       }
-      const outcome = saveGameState(game);
-      set({ game, saveError: outcome.error, ...(outcome.status !== 'failed' ? { recovery: undefined, loadProblem: undefined } : {}) });
+      // The explicit confirmation is a canonical write like any other: it goes
+      // through the shared Web Locks coordinator so it can never interleave
+      // with another tab's in-lock check→write window. The confirmation
+      // supersedes any queued deferred write via the dirty marker. Only a
+      // synchronously failed write keeps the recovery ownership.
+      const outcome = persistGame(game);
+      const failed = outcome?.status === 'failed';
+      set({ game, saveError: outcome?.error, ...(failed ? {} : { recovery: undefined, loadProblem: undefined }) });
     },
     reset: (nextSeed = Date.now()) => {
+      if (get().externalSaveConflict) return;
       const game = createInitialState(content, balance, nextSeed);
-      const outcome = saveGameState(game);
-      set({ game, effects: [], lastError: undefined, saveError: outcome.error, ...(outcome.status !== 'failed' ? { recovery: undefined, loadProblem: undefined } : {}) });
+      // Same coordination as acceptRecovery: the reset write holds the writer
+      // lock, and the dirty marker supersedes any queued pre-reset write.
+      const outcome = persistGame(game);
+      const failed = outcome?.status === 'failed';
+      set({ game, effects: [], lastError: undefined, saveError: outcome?.error, ...(failed ? {} : { recovery: undefined, loadProblem: undefined }) });
     },
     };
   });
