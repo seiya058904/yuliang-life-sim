@@ -178,6 +178,8 @@ describe('余量 app flow', () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole('button', { name: '职业' }));
+    // 默认详情是当前职位（现任职于此）；换一个可申请岗位验证申请底栏。
+    await user.click(screen.getByRole('button', { name: '查看岗位详情：仓库理货员' }));
 
     const detail = screen.getByRole('complementary', { name: '岗位详情' });
     const applyBar = detail.querySelector('.career-detail-apply-bar');
@@ -639,10 +641,11 @@ describe('余量 app flow', () => {
     render(<App />);
     await user.click(screen.getByRole('button', { name: '职业' }));
     await user.click(screen.getByRole('button', { name: '查看岗位详情：便利店店员' }));
-    await user.click(screen.getByRole('button', { name: '申请岗位' }));
 
-    expect(screen.getByRole('alert')).toHaveTextContent('你已经在这份工作中');
-    expect(appStore.getState().game.applications).toEqual([]);
+    // 当前职位在市场里提前表现为非交互状态，而不是可点击后再由 engine 报错。
+    const applyButton = within(screen.getByRole('complementary', { name: '岗位详情' })).getByRole('button', { name: '现任职于此' }) as HTMLButtonElement;
+    expect(applyButton.disabled).toBe(true);
+    expect(appStore.getState().game.applications ?? []).toHaveLength(0);
   });
 
   it('browses the official shop without time passing and checks out multiple items once', async () => {

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { balanceConfig } from './game/balance/config';
 import { contentRegistry } from './game/content/registry';
 import type { ActivityOption, AttributeId, CharacterDefinition, ContentId, EffectDefinition, GameAction, GameState, JobDefinition, MonthlyHighlight, PlannedActivity, PlanSlot, StatName, ViewId, Weekday } from './game/content/contracts';
-import { businessValuation, calculateDailyBusinessProfit, calculateLifestyle, calculateNetWorth, canDirectBusinessOperations, effectiveBusinessLocationId, ownershipTierForEquity, ownershipTierForHolding, wealthTierForNetWorth } from './game/engine/economy';
+import { businessValuation, calculateDailyBusinessProfit, calculateLifestyle, calculateNetWorth, canDirectBusinessOperations, effectiveBusinessLocationId, ownershipTierForEquity, ownershipTierForHolding, wealthAllocationBreakdown, wealthTierForNetWorth } from './game/engine/economy';
 import { activityAtTime, deriveActivityProgress, defaultJobSchedule, getDailyActivities } from './game/engine/schedule';
 import { formatClock, formatDate, absoluteMinute } from './game/engine/time';
 import { calendarForDay, weekdayLabel } from './game/engine/calendar';
@@ -310,16 +310,13 @@ function PortfolioSummary({ game }: { game: GameState }) {
 }
 
 function PortfolioAllocation({ game }: { game: GameState }) {
-  const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
-  const categories = [
-    ['现金', game.cash],
-    ['自住房净值', game.housing.mode === 'owned' && home ? Math.max(0, (housingPrice(game, home) ?? home.valuation) - (game.mortgage?.remainingPrincipal ?? 0)) : 0],
-    ['投资房', Object.values(game.housingHoldings ?? {}).reduce((sum, holding) => sum + holding.currentValuation, 0)],
-    ['金融投资', Object.values(game.investments ?? {}).reduce((sum, holding) => sum + holding.currentValuation, 0)],
-    ['企业与股权', Object.values(game.businesses).reduce((sum, holding) => sum + Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balanceConfig.businessValuationRatio * ((holding.equityPercent ?? 100) / 100)), 0)],
-    ['车辆与收藏', Object.values(game.assets).reduce((sum, holding) => sum + holding.currentValuation, 0)],
-  ] as const;
-  return <section className="detail-panel" aria-label="财富配置"><div className="section-heading compact"><div><span className="eyebrow">估值拆分</span><h2>财富配置</h2></div><p>这里展示当前各类持有物的估值；资产配置变化会继续进入月度账本。</p></div><div className="item-list">{categories.filter(([, value]) => value > 0).map(([label, value]) => <div className="item-row" key={label}><span>{label}</span><strong>{money(value)}</strong></div>)}</div></section>;
+  // 分项与估值规则由 wealthAllocationBreakdown 统一提供，保证加总与净资产一致。
+  const allocationLabels: Record<string, string> = {
+    cash: '现金', own_home: '自住房价值', mortgage: '贷款余额', rental_housing: '投资房', investments: '金融投资',
+    business_equity: '企业与股权', public_business_equity: '公开股权', vehicles_collectibles: '车辆与收藏', inventory_items: '物品余值',
+  };
+  const categories = wealthAllocationBreakdown(game, contentRegistry, balanceConfig).map((entry) => [allocationLabels[entry.key] ?? entry.key, entry.value] as const);
+  return <section className="detail-panel" aria-label="财富配置"><div className="section-heading compact"><div><span className="eyebrow">估值拆分</span><h2>财富配置</h2></div><p>这里展示当前各类持有物的估值；贷款余额按负债列出，分项合计与净资产一致。</p></div><div className="item-list">{categories.filter(([, value]) => value !== 0).map(([label, value]) => <div className="item-row" key={label}><span>{label}</span><strong>{money(value)}</strong></div>)}</div></section>;
 }
 
 function PortfolioHistory({ game }: { game: GameState }) {
@@ -539,7 +536,7 @@ function InboxGrid({ game, onNavigate }: { game: GameState; onNavigate?: (view: 
   const openOffers = openOfferApplications(game);
   for (const application of openOffers.slice(0, 3)) {
     const jobName = displayContentName(application.jobId, contentRegistry.jobs, '工作机会');
-    pending.push({ icon: 'tag', title: `Offer 待回复：${jobName}`, meta: application.offerExpiresDay !== undefined ? `第 ${application.offerExpiresDay} 天前有效` : '尽快回复' });
+    pending.push({ icon: 'tag', title: `Offer 待回复：${jobName}`, meta: application.offerExpiresDay !== undefined ? `有效至第 ${application.offerExpiresDay} 天（含当天）` : '尽快回复' });
   }
   if (game.simulationMode === 'planning') pending.push({ icon: 'calendar', title: game.planNotice ?? '本周计划待开始', meta: game.planNotice ? `第 ${game.calendar.week} 周 · 部分计划格需要调整` : `第 ${game.calendar.week} 周 · 周${weekdayLabel(game.calendar.weekday)}` });
   const unreadCount = unreadMessageCount(game.messages);
@@ -559,7 +556,7 @@ function InboxGrid({ game, onNavigate }: { game: GameState; onNavigate?: (view: 
   const offerRows: InboxItem[] = openOffers.slice(0, 2).map((application): InboxItem => ({
     icon: 'tag',
     title: `Offer 待回复：${displayContentName(application.jobId, contentRegistry.jobs, '工作机会')}`,
-    meta: application.offerExpiresDay !== undefined ? `第 ${application.offerExpiresDay} 天前回复 · 去职业页处理` : '去职业页处理',
+    meta: application.offerExpiresDay !== undefined ? `有效至第 ${application.offerExpiresDay} 天（含当天）· 去职业页处理` : '去职业页处理',
   })).concat(opportunities.slice(0, 2).map((opportunity): InboxItem => ({
     icon: 'tag',
     title: displayContentName(opportunity.jobId, contentRegistry.jobs, '职业机会'),
@@ -1232,7 +1229,7 @@ function OfferNoticeModal({ game, dispatch, onNavigate }: { game: GameState; dis
   const otherOffers = (game.applications ?? []).filter((entry) => entry.applicationId !== application.applicationId
     && entry.status === 'offer'
     && entry.offerExpiresDay !== undefined && entry.offerExpiresDay >= game.time.day);
-  return <div className="modal-backdrop"><PixelDialog className="event-modal" role="dialog" aria-modal="true" aria-labelledby="offer-notice-title"><span className="eyebrow">世界已暂停 · 收到新的 Offer</span><h2 id="offer-notice-title">{job?.name ?? '工作岗位'}</h2><p>{company?.name ?? '招聘方'}向你发出工作邀请：月薪约 {money(application.salaryRange[0])}–{money(application.salaryRange[1])}。Offer 在第 {application.offerExpiresDay} 天前有效，过期会自动关闭并进入该公司冷却。</p>{otherOffers.length > 0 && <p>同时还有 {otherOffers.length} 个 Offer 待回复：{otherOffers.map((entry) => `${contentRegistry.jobs.find((candidate) => candidate.id === entry.jobId)?.name ?? entry.jobId}（第 ${entry.offerExpiresDay} 天前有效）`).join('、')}。</p>}<div className="button-pair"><button className="primary-button" onClick={() => { dispatch({ type: 'dismiss_offer_notice' }); onNavigate('work'); }}>前往职业页处理</button><button className="secondary-button" onClick={() => dispatch({ type: 'dismiss_offer_notice' })}>稍后再说</button></div></PixelDialog></div>;
+  return <div className="modal-backdrop"><PixelDialog className="event-modal" role="dialog" aria-modal="true" aria-labelledby="offer-notice-title"><span className="eyebrow">世界已暂停 · 收到新的 Offer</span><h2 id="offer-notice-title">{job?.name ?? '工作岗位'}</h2><p>{company?.name ?? '招聘方'}向你发出工作邀请：月薪约 {money(application.salaryRange[0])}–{money(application.salaryRange[1])}。Offer 有效至第 {application.offerExpiresDay} 天（含当天），过期会自动关闭并进入该公司冷却。</p>{otherOffers.length > 0 && <p>同时还有 {otherOffers.length} 个 Offer 待回复：{otherOffers.map((entry) => `${contentRegistry.jobs.find((candidate) => candidate.id === entry.jobId)?.name ?? entry.jobId}（有效至第 ${entry.offerExpiresDay} 天，含当天）`).join('、')}。</p>}<div className="button-pair"><button className="primary-button" onClick={() => { dispatch({ type: 'dismiss_offer_notice' }); onNavigate('work'); }}>前往职业页处理</button><button className="secondary-button" onClick={() => dispatch({ type: 'dismiss_offer_notice' })}>稍后再说</button></div></PixelDialog></div>;
 }
 
 function ResignationModal({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) { const job = contentRegistry.jobs.find((entry) => entry.id === game.activeResignation?.jobId); const outcome = game.activeResignation?.stage === 'outcome'; return <div className="modal-backdrop"><PixelDialog className="event-modal" role="dialog" aria-modal="true" aria-labelledby="resignation-title"><span className="eyebrow">离职沟通</span><h2 id="resignation-title">{job?.name ?? '当前工作'}</h2>{!outcome ? <><p>主管看着你的安排：“你确定要离开吗？最近你的表现其实不错。”</p><div className="button-pair"><button className="primary-button" onClick={() => dispatch({ type: 'advance_resignation' })}>继续沟通</button></div></> : <><p>“如果待遇可以提高，我愿意替你争取一下。”你也可以选择换一个方向。</p><div className="button-pair"><button className="primary-button" onClick={() => dispatch({ type: 'choose_resignation', choice: 'stay' })}>留下来谈谈</button><button className="secondary-button" onClick={() => dispatch({ type: 'choose_resignation', choice: 'leave' })}>我想换个方向</button></div></>}</PixelDialog></div>; }

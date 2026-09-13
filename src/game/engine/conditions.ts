@@ -63,7 +63,18 @@ export function explainCondition(condition: ConditionDefinition, state: GameStat
   switch (condition.type) {
     case 'all': return condition.conditions.map((child) => explainCondition(child, state, content, balance)).join('；');
     case 'any': return condition.conditions.map((child) => explainCondition(child, state, content, balance)).join(' 或 ');
-    case 'not': return `不满足：${explainCondition(condition.condition, state, content, balance)}`;
+    case 'not': {
+      // `not` 的解释语义必须与 evaluateCondition(not) 的布尔结果完全一致：
+      // 条件满足时输出 ✓，不满足时输出 ✕。不能反过来拼"不满足：{子条件}"，
+      // 否则一次性商品在可购买时会显示成自相矛盾的"不满足：✕ 需要商品 X"。
+      const inner = condition.condition;
+      if (inner.type === 'owns_item') {
+        const itemName = content.items.find((entry) => entry.id === inner.itemId)?.name ?? inner.itemId;
+        const owned = (state.inventory[inner.itemId] ?? 0) >= (inner.quantity ?? 1);
+        return owned ? `✕ 已拥有${itemName}，不能重复购买` : `✓ 尚未拥有${itemName}，可购买`;
+      }
+      return evaluateCondition(condition, state, content, balance) ? '✓ 已满足条件' : '✕ 当前条件未满足';
+    }
     case 'attribute_at_least': {
       const current = getAttribute(state, condition.attribute);
       return current >= condition.amount ? `✓ ${attributeLabels[condition.attribute]} ≥ ${condition.amount}` : `✕ ${attributeLabels[condition.attribute]} ≥ ${condition.amount}（当前 ${current}，还需要 ${condition.amount - current}）`;

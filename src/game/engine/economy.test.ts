@@ -14,7 +14,7 @@ const state: GameState = {
 
 const content = {
   jobs: [], items: [{ id: 'item.collectible', contentStatus: 'seed', name: '收藏品', description: '测试', category: 'collectible', price: 200, consumable: false, sellable: true, resaleRatio: 0.5, lifestyleDelta: 2 }],
-  housing: [{ id: 'housing.room', contentStatus: 'seed', name: '房间', description: '测试', mode: 'both', rentPerDay: 10, price: 1000, valuation: 1200, lifestyleDelta: 5, furnitureCapacity: 2 }],
+  housing: [{ id: 'housing.room', contentStatus: 'seed', name: '房间', description: '测试', mode: 'both', rentPerDay: 10, price: 1000, valuation: 1000, lifestyleDelta: 5, furnitureCapacity: 2 }],
   businesses: [{ id: 'business.kiosk', contentStatus: 'seed', name: '小店', description: '测试', price: 1000, baseRevenue: 200, baseGoodsCost: 50, baseWage: 20, baseRent: 30, priceLevels: [1, 1.1, 1.2], wageLevels: [1, 1.1], inventoryLevels: [0.8, 1, 1.2] }],
   assets: [{ id: 'asset.fund', contentStatus: 'seed', name: '基金', description: '测试', kind: 'investment', price: 500, valuation: 500, dailyIncome: 10, volatility: 0 }], characters: [], events: [], eventChains: [], milestones: [], vocabulary: { capabilities: [], tags: [] },
 } as unknown as ContentRegistry;
@@ -28,7 +28,8 @@ describe('economy calculations', () => {
   });
 
   it('explains net worth from cash, housing, business, assets and sellable items', () => {
-    expect(calculateNetWorth(state, content, balanceConfig)).toBe(100 + 1200 + 650 + 550 + 100);
+    // 住房走 housingPrice（价格 × 发展加成，无发展 = 价格）；官方内容约定 valuation === price。
+    expect(calculateNetWorth(state, content, balanceConfig)).toBe(100 + 1000 + 650 + 550 + 100);
   });
 
   it('adds housing and owned item lifestyle without mutating state', () => {
@@ -58,7 +59,7 @@ describe('economy calculations', () => {
       publicBusinessEquities: { 'business.kiosk': { businessId: 'business.kiosk', percent: 10, investedAmount: 65, purchaseDay: 29 } },
     };
     expect(calculateDailyPublicBusinessDividend(listed, content)).toBe(15);
-    expect(calculateNetWorth(listed, content, balanceConfig)).toBe(Math.round(100 + 1200 + 650 * 0.65 + 65 + 550 + 100));
+    expect(calculateNetWorth(listed, content, balanceConfig)).toBe(Math.round(100 + 1000 + 650 * 0.65 + 65 + 550 + 100));
   });
 });
 

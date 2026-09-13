@@ -1,17 +1,12 @@
 import type { ContentRegistry, GameState, HousingDefinition, LocationDefinition } from '../content/contracts';
 import { modifierValue } from './effects';
+import { developmentLevel, housingPrice } from './housingValue';
 
-function developmentLevel(state: GameState, locationId?: string): number {
-  return locationId ? Math.min(5, Math.max(0, state.locationDevelopment?.[locationId] ?? 0)) : 0;
-}
+export { housingPrice };
 
 export function housingRentPerDay(state: GameState, home: HousingDefinition): number {
   const base = home.rentPerDay * (1 + developmentLevel(state, home.locationId) * 0.02);
   return Math.max(0, Math.round(modifierValue(state, 'housing_rent', base, ['housing'])));
-}
-
-export function housingPrice(state: GameState, home: HousingDefinition): number | undefined {
-  return home.price === undefined ? undefined : Math.round(home.price * (1 + developmentLevel(state, home.locationId) * 0.03));
 }
 
 export interface HousingMortgageTerms {

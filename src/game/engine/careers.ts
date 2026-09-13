@@ -457,7 +457,7 @@ export function advanceCareerLifecycle(state: GameState, day: number, content: C
       recordApplicationCooldown(state, application.jobId, application.companyId, application.nextEligibleDay);
       appendMessage(state, {
         title: 'Offer 已过期',
-        body: `${jobLabel(content, application)}的 Offer 没有在第 ${application.offerExpiresDay} 天前回复，这次招聘到此结束，短期内不能再次申请同一家公司。`,
+        body: `${jobLabel(content, application)}的 Offer 有效至第 ${application.offerExpiresDay} 天（含当天），没有及时回复，这次招聘到此结束，短期内不能再次申请同一家公司。`,
         sourceId: application.jobId,
       });
       continue;
@@ -472,7 +472,7 @@ export function advanceCareerLifecycle(state: GameState, day: number, content: C
         state.pendingOfferApplicationId = application.applicationId;
         appendMessage(state, {
           title: '收到新的 Offer',
-          body: `${jobLabel(content, application)}向你发出 Offer：月薪约 ${moneyRange(application.salaryRange)}，请在第 ${application.offerExpiresDay} 天前回复。`,
+          body: `${jobLabel(content, application)}向你发出 Offer：月薪约 ${moneyRange(application.salaryRange)}，请在第 ${application.offerExpiresDay} 天（含当天）内回复。`,
           sourceId: application.jobId,
         });
       } else {

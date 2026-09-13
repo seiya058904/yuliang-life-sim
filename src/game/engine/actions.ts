@@ -672,7 +672,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const price = housingPrice(state, home);
       if (price === undefined || state.cash - price < reserveRequired(state, content)) return fail(input, '现金不足以购买投资房并保留生活余量');
       state.cash -= price;
-      state.housingHoldings = { ...(state.housingHoldings ?? {}), [home.id]: { housingId: home.id, purchasePrice: price, currentValuation: home.valuation ?? price, occupancy: 'vacant' } };
+      state.housingHoldings = { ...(state.housingHoldings ?? {}), [home.id]: { housingId: home.id, purchasePrice: price, currentValuation: price, occupancy: 'vacant' } };
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'property_transfer', amount: price, label: `购买投资房 · ${home.name}`, sourceType: 'housing', sourceId: home.id });
       addLifeRecord(state, { category: 'housing', title: `买下投资房${home.name}`, detail: '当前为空置，可切换为出租', sourceId: home.id, amount: -price });
       effects.push({ type: 'cash', amount: -price, reason: '购买投资房' });
@@ -707,7 +707,8 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
     case 'sell_housing': {
       const currentHome = find(content.housing, state.housing.housingId);
       if (!currentHome || state.housing.mode !== 'owned' || !currentHome.price) return fail(input, '当前没有可出售的自有住房');
-      const saleValue = currentHome.valuation || currentHome.price;
+      // 出售价与买入价、净资产、财富页共用 housingPrice 当前市场价，地点发展加成不会被卖出时静默抹掉。
+      const saleValue = housingPrice(state, currentHome) ?? currentHome.valuation ?? currentHome.price ?? 0;
       const fallback = content.housing.find((home) => home.id === balance.startingHousingId && (home.mode === 'rent' || home.mode === 'both')) ?? content.housing.find((home) => home.mode === 'rent' || home.mode === 'both');
       if (!fallback) return fail(input, '出售后找不到可租住的住房');
       const mortgageBalance = state.mortgage?.housingId === currentHome.id ? state.mortgage.remainingPrincipal : 0;

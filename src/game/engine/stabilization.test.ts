@@ -516,7 +516,9 @@ describe('persistence safety', () => {
     localStorage.clear();
     localStorage.setItem('yuliang-save-v1', '{ this is not json');
     const outcome = loadGameStateWithReport(contentRegistry, balance);
-    expect(outcome.problem?.reason).toMatch(/无法解析/);
+    // 稳定中文结论；不得泄漏浏览器 JSON parser 的原始英文文案。
+    expect(outcome.problem?.reason).toBe('存档文件已损坏');
+    expect(outcome.problem?.reason).not.toMatch(/Expected|position|JSON|property|token/i);
     expect(outcome.problem?.raw).toBe('{ this is not json');
     expect(outcome.state.time.day).toBe(balanceConfig.initialDay);
   });

@@ -103,7 +103,10 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--ink); outli
 .requirement-box { display: grid; gap: 6px; padding: 12px 0; font-size: 11px; }
 .requirement-box strong { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; }
 .requirement-missing { color: var(--muted); }.requirement-ok { color: var(--ink); }
-.job-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+/* 岗位卡底部状态文字允许收缩省略，CTA 永不被覆盖；≥1181 的栅格变体继承同一语义。 */
+.job-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+.job-card-status { min-width: 0; flex: 1 1 auto; display: grid; gap: 2px; }
+.job-card-status strong, .job-card-status small { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .item-effect { min-height: 38px; padding: 12px 0; color: var(--muted); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); font-size: 11px; }
 .item-card-foot { margin-top: 14px; }.item-card-foot strong { font-size: 18px; }.item-card-foot .primary-button { padding: 8px 12px; }
 .investment-value { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 0; margin: 14px 0; border-block: 1px solid var(--line); color: var(--muted); font-size: 11px; }.investment-value strong { color: var(--ink); font-size: 21px; }

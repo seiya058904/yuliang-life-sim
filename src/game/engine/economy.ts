@@ -1,6 +1,7 @@
 import type { BalanceConfig } from '../balance/config';
 import type { AssetDefinition, BusinessDefinition, BusinessHolding, ContentRegistry, GameState, ItemDefinition } from '../content/contracts';
 import { modifierValue } from './effects';
+import { housingPrice } from './housingValue';
 
 export interface BusinessProfitBreakdown {
   revenue: number;
@@ -120,7 +121,8 @@ export function calculateLifestyle(state: GameState, content: ContentRegistry): 
 export function calculateNetWorth(state: GameState, content: ContentRegistry, balance: BalanceConfig): number {
   const cash = state.cash;
   const home = content.housing.find((housing) => housing.id === state.housing.housingId);
-  const housingValue = state.housing.mode === 'owned' ? (home?.valuation ?? 0) : 0;
+  // 自住房与财富页、出售价共用同一套当前市场价（housingPrice），地点发展加成后三处口径一致。
+  const housingValue = state.housing.mode === 'owned' && home ? (housingPrice(state, home) ?? home.valuation ?? 0) : 0;
   const itemValue = Object.entries(state.inventory).reduce((total, [itemId, quantity]) => {
     const item = findItem(content, itemId);
     return total + (item?.sellable ? (state.itemPurchasePrices[itemId] ?? item.price) * item.resaleRatio * quantity : 0);
@@ -138,6 +140,41 @@ export function calculateNetWorth(state: GameState, content: ContentRegistry, ba
   const housingHoldingValue = Object.values(state.housingHoldings ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
   const mortgageBalance = state.mortgage?.remainingPrincipal ?? 0;
   return roundMoney(cash + housingValue + housingHoldingValue + itemValue + businessValue + publicBusinessEquityValue + assetValue + investmentValue - mortgageBalance);
+}
+
+export interface WealthAllocationEntry {
+  key: 'cash' | 'own_home' | 'mortgage' | 'rental_housing' | 'investments' | 'business_equity' | 'public_business_equity' | 'vehicles_collectibles' | 'inventory_items';
+  value: number;
+}
+
+/**
+ * 财富页「财富配置」的唯一数据源。每个分项的估值规则与 `calculateNetWorth`
+ * 完全一致（自住房走 housingPrice、企业走 businessValuation×持股、资产带
+ * currentValuation 回退、贷款为负分项），因此分项合计与净资产只差末次取整。
+ */
+export function wealthAllocationBreakdown(state: GameState, content: ContentRegistry, balance: BalanceConfig): WealthAllocationEntry[] {
+  const home = content.housing.find((housing) => housing.id === state.housing.housingId);
+  const ownHomeValue = state.housing.mode === 'owned' && home ? (housingPrice(state, home) ?? home.valuation ?? 0) : 0;
+  return [
+    { key: 'cash', value: state.cash },
+    { key: 'own_home', value: ownHomeValue },
+    { key: 'mortgage', value: -(state.mortgage?.remainingPrincipal ?? 0) },
+    { key: 'rental_housing', value: Object.values(state.housingHoldings ?? {}).reduce((sum, holding) => sum + holding.currentValuation, 0) },
+    { key: 'investments', value: Object.values(state.investments ?? {}).reduce((sum, holding) => sum + holding.currentValuation, 0) },
+    { key: 'business_equity', value: Object.values(state.businesses).reduce((sum, holding) => sum + businessValuation(holding, balance) * ((holding.equityPercent ?? 100) / 100), 0) },
+    { key: 'public_business_equity', value: Object.entries(state.publicBusinessEquities ?? {}).reduce((sum, [businessId, holding]) => {
+      const business = state.businesses[businessId];
+      return sum + (business ? businessValuation(business, balance) * holding.percent / 100 : 0);
+    }, 0) },
+    { key: 'vehicles_collectibles', value: Object.entries(state.assets).reduce((total, [assetId, holding]) => {
+      const definition = content.assets.find((asset) => asset.id === assetId) as AssetDefinition | undefined;
+      return total + (holding.currentValuation || definition?.valuation || 0);
+    }, 0) },
+    { key: 'inventory_items', value: Object.entries(state.inventory).reduce((total, [itemId, quantity]) => {
+      const item = findItem(content, itemId);
+      return total + (item?.sellable ? (state.itemPurchasePrices[itemId] ?? item.price) * item.resaleRatio * quantity : 0);
+    }, 0) },
+  ];
 }
 
 export function calculateDailyPassiveIncome(state: GameState, content: ContentRegistry): BusinessProfitBreakdown & { assetIncome: number } {

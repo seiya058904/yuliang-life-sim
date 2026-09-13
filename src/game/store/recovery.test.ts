@@ -64,3 +64,40 @@ describe('recovery write ownership', () => {
     expect(store.getState().game.cash).toBe(cash);
   });
 });
+
+describe('recovery messaging', () => {
+  it('broken JSON shows a stable Chinese reason without raw parser text', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    localStorage.setItem(SAVE_KEY, '{ broken');
+    const recovery = createGameStore(contentRegistry, balanceConfig).getState().recovery!;
+    expect(recovery.kind).toBe('unreadable');
+    expect(recovery.raw).toBe('{ broken');
+    expect(recovery.reason).toBe('存档文件已损坏');
+    // 玩家界面不得泄漏浏览器 JSON parser 的原始英文文案。
+    expect(recovery.reason).not.toMatch(/Expected|position|JSON|property|token/i);
+  });
+
+  it('structurally invalid saves show a stable Chinese reason too', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    localStorage.setItem(SAVE_KEY, 'null');
+    const recovery = createGameStore(contentRegistry, balanceConfig).getState().recovery!;
+    expect(recovery.kind).toBe('unreadable');
+    expect(recovery.reason).toBe('存档内容无法识别');
+    expect(recovery.reason).not.toMatch(/Error|must be|throw/i);
+  });
+
+  it('remaps the pending offer notice when migration rebuilds application ids', () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    const vacancy = state.vacancies!.find((entry) => entry.jobId !== state.currentJobId)!;
+    state.applications = [{ applicationId: 'legacy-offer', vacancyId: vacancy.vacancyId, jobId: vacancy.jobId, companyId: vacancy.companyId, salaryRange: vacancy.salaryRange, route: 'market', submittedDay: 1, resultDay: 1, offerExpiresDay: 12, status: 'offer', competitivenessTier: 'competitive', probabilityBand: 80, willReceiveOffer: true, feedback: [] }];
+    state.pendingOfferApplicationId = 'legacy-offer';
+    state.simulationMode = 'paused';
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+    const loaded = createGameStore(contentRegistry, balanceConfig).getState().game;
+    // 迁移重建了 applicationId 之后，待确认通知必须跟着指向同一条申请。
+    const migrated = loaded.applications![0];
+    expect(migrated.applicationId).not.toBe('legacy-offer');
+    expect(loaded.pendingOfferApplicationId).toBe(migrated.applicationId);
+    expect(migrated.status).toBe('offer');
+  });
+});

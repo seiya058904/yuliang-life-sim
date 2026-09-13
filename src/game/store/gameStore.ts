@@ -224,14 +224,17 @@ export function loadGameStateWithReport(content: ContentRegistry, balance: Balan
   try {
     saved = localStorage.getItem(SAVE_KEY);
   } catch (error) {
-    return { state: createInitialState(content, balance), problem: { reason: `存档读取失败：${describeError(error)}`, raw: '' } };
+    console.error('[yuliang] 存档读取失败', error);
+    return { state: createInitialState(content, balance), problem: { reason: '存档读取失败', raw: '' } };
   }
   if (!saved) return { state: createInitialState(content, balance) };
   let parsed: unknown;
   try {
     parsed = JSON.parse(saved);
   } catch (error) {
-    return { state: createInitialState(content, balance), problem: { reason: `存档无法解析：${describeError(error)}`, raw: saved } };
+    // 玩家界面只给稳定的中文结论；原始解析器异常进控制台供调试。
+    console.error('[yuliang] 存档 JSON 解析失败', error);
+    return { state: createInitialState(content, balance), problem: { reason: '存档文件已损坏', raw: saved } };
   }
   try {
     const state = migrateGameState(parsed, content, balance);
@@ -243,7 +246,8 @@ export function loadGameStateWithReport(content: ContentRegistry, balance: Balan
     }
     return { state, recovery: reasons.length ? { raw: saved, reason: reasons.join('；'), writeProtected: true, noticeVisible: true, kind: 'compatibility' } : undefined };
   } catch (error) {
-    return { state: createInitialState(content, balance), problem: { reason: `存档迁移失败：${describeError(error)}`, raw: saved } };
+    console.error('[yuliang] 存档迁移失败', error);
+    return { state: createInitialState(content, balance), problem: { reason: '存档内容无法识别', raw: saved } };
   }
 }
 
@@ -486,21 +490,28 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   }
   candidate.applicationCooldowns = applicationCooldowns;
   const usedApplicationIds = new Set<string>();
+  const pendingOfferRemap = new Map<string, string>();
   let fallbackApplicationSequence = 0;
   candidate.applications = Array.isArray(candidate.applications)
     ? candidate.applications
       .filter((entry) => isRecord(entry) && jobIds.has(String(entry.jobId)))
       .map((entry) => {
         const application = entry as JobApplicationState;
+        const originalId = typeof application.applicationId === 'string' ? application.applicationId : '';
         let applicationId = typeof application.applicationId === 'string' && /^application\.\d+\.\d+$/.test(application.applicationId) ? application.applicationId : '';
         while (!applicationId || usedApplicationIds.has(applicationId)) applicationId = `application.${application.submittedDay ?? candidate.time.day}.${++fallbackApplicationSequence}`;
         usedApplicationIds.add(applicationId);
+        // 待确认 Offer 通知引用的是旧 id；迁移重建 id 后必须重映射，否则重载后通知静默消失。
+        if (originalId && originalId !== applicationId) pendingOfferRemap.set(originalId, applicationId);
         if (Number.isInteger(application.nextEligibleDay) && application.nextEligibleDay! > candidate.time.day) {
           recordApplicationCooldown(candidate, String(application.jobId), String(application.companyId), application.nextEligibleDay!);
         }
         return { ...application, applicationId };
       })
     : [];
+  if (candidate.pendingOfferApplicationId && pendingOfferRemap.has(candidate.pendingOfferApplicationId)) {
+    candidate.pendingOfferApplicationId = pendingOfferRemap.get(candidate.pendingOfferApplicationId);
+  }
   // A consumed special opportunity is never re-offered, even after it expired.
   candidate.consumedOpportunityIds = Array.isArray(candidate.consumedOpportunityIds)
     ? [...new Set(candidate.consumedOpportunityIds.filter((id) => typeof id === 'string'))]
