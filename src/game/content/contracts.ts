@@ -221,7 +221,35 @@ export interface AcquisitionHint {
 export type RequirementHint = AcquisitionHint;
 
 export interface AcquiredSideJobState { jobId: ContentId; acquiredDay: number; sourceApplicationId?: string; }
-export interface GigOpportunityState { id: ContentId; jobId: ContentId; validFromDay: number; expiresDay: number; executableDay: number; startMinute: number; endMinute: number; pay: number; source: string; }
+/**
+ * A one-off shift (零工).
+ *
+ * Being on the list is an **opportunity**: nothing is worked, and no hour is
+ * counted, until the player starts the shift. `startedMinute` (absolute) is that
+ * moment — the only state in which the clock may accumulate `workedMinutes`.
+ *
+ * `workedMinutes` therefore only ever means "hours banked behind a start". A save
+ * written before 开工 existed can carry hours with no start behind them (the old
+ * passive credit); those are never payable and are never inherited by a start made
+ * later, so the loader moves them to `unverifiedWorkedMinutes`, which is kept for
+ * traceability only and is read by nothing that pays out.
+ */
+export interface GigOpportunityState {
+  id: ContentId;
+  jobId: ContentId;
+  validFromDay: number;
+  expiresDay: number;
+  executableDay: number;
+  startMinute: number;
+  endMinute: number;
+  pay: number;
+  source: string;
+  workedMinutes?: number;
+  /** Absolute minute the player took the shift; absent while it is only offered. */
+  startedMinute?: number;
+  /** Hours migrated out of `workedMinutes` for having no start record; never settled. */
+  unverifiedWorkedMinutes?: number;
+}
 export interface EmploymentHistoryEntry { jobId: ContentId; companyId?: ContentId; startedDay?: number; endedDay?: number; finalPay: number; reason?: string; migrated?: boolean; }
 export interface MonthlyHighlight { id: string; kind: 'new_job' | 'new_contact' | 'side_job_acquired' | 'gig_completed' | 'major_purchase' | 'new_asset' | 'attribute_milestone' | 'storyline_completed'; day: number; label: string; sourceId?: ContentId; }
 export interface MessageState { id: string; day: number; characterId?: ContentId; title: string; body: string; sourceId?: ContentId; /** Player has handled it; it stays visible in recent messages. */ read: boolean; /** Player cleared it; it no longer appears in the main inbox. */ dismissed?: boolean; }
@@ -649,7 +677,28 @@ export interface BusinessHolding {
   priceLevel: number;
   wageLevel: number;
   inventoryLevel: number;
+  /**
+   * Price paid for the company at the moment of acquisition. For partial
+   * entries this is the pro-rata cash paid for that stake, not the value of the
+   * whole company, so it must never be used as a valuation base.
+   */
   purchasePrice: number;
+  /**
+   * Whole-company value the current holding is scaled against. Every entry
+   * path (outright purchase, minority stake, partnership, acquisition) records
+   * the same whole-company figure here, so valuation, net worth and later
+   * top-ups scale by real equity. Falls back to `purchasePrice` for legacy
+   * saves that predate the field.
+   */
+  companyValuationBasis?: number;
+  /**
+   * Why `companyValuationBasis` holds that figure. A legacy holding whose
+   * whole-company value could not be recovered from the save keeps its recorded
+   * price and is marked `unverified`, so the "needs review" state survives the
+   * migration, the save and any later re-migration instead of being erased by
+   * the first finite number written into the field above.
+   */
+  companyValuationBasisSource?: 'official-partnership' | 'recorded-price' | 'unverified';
   /** Cash invested into the business, separate from daily operating costs. */
   capitalInvested?: number;
   /** Player ownership after external funding; ordinary investments never use this field. */
@@ -741,10 +790,18 @@ export interface JobSchedule {
 export interface EmploymentState {
   jobId: ContentId;
   startedDay?: number;
+  /**
+   * Absolute minute (see `absoluteMinute`) at which this job's schedule starts
+   * applying. Accepting an Offer in the middle of a shift defers this to the
+   * next full shift, so a shift the player did not work is never paid out.
+   */
+  activeFromMinute?: number;
   schedule: JobSchedule;
   effectiveWeek: number;
   pendingJobId?: ContentId;
   pendingEffectiveDay?: number;
+  /** Absolute minute the pending job's schedule starts applying, when known. */
+  pendingActiveFromMinute?: number;
   pendingCompanyId?: ContentId;
   pendingBasePay?: number;
   companyId?: ContentId;
@@ -924,7 +981,13 @@ export interface GameState {
   completedBusinessProjects?: ContentId[];
   assets: Record<ContentId, AssetHolding>;
   investments?: Record<ContentId, InvestmentHolding>;
-  activeSubscriptions?: Record<ContentId, { subscriptionId: ContentId; startedDay: number }>;
+  activeSubscriptions?: Record<ContentId, { subscriptionId: ContentId; startedDay: number; billedUntilDay?: number }>;
+  /**
+   * Most recent cancelled subscription record. The paid period it already
+   * bought survives the cancellation, so re-enabling inside that period resumes
+   * it instead of buying another round of effects.
+   */
+  previousSubscriptions?: Record<ContentId, { subscriptionId: ContentId; startedDay: number; billedUntilDay?: number }>;
   completedEvents: ContentId[];
   completedMilestones: ContentId[];
   eventCooldowns: Record<ContentId, number>;
@@ -1055,4 +1118,10 @@ export interface GameResult {
   state: GameState;
   effects: GameEffect[];
   error?: string;
+  /**
+   * A committed state change the player must be told about even though the
+   * action succeeded (an expired record being cleaned up, for example). Unlike
+   * `error` it never cancels the state change.
+   */
+  notice?: string;
 }

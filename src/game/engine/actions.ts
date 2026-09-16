@@ -1,16 +1,15 @@
 import { known, amount, addAmount, subtractAmount, scaleAmount } from './knownAmount';
 import { enterRunning } from './running';
-import { recordBusinessFact, recentGiftCount, recentInteractionCount, retentionKey, factsFromHistory } from './businessFacts';
-import type { BalanceConfig } from '../balance/config';
+import { recentGiftCount, recentInteractionCount, retentionKey, factsFromHistory } from './businessFacts';import type { BalanceConfig } from '../balance/config';
 import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, InvestmentDefinition, InvestmentHolding, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity, PlanSlot, Weekday } from '../content/contracts';
 import { evaluateCondition, explainCondition } from './conditions';
-import { businessValuation, calculateDailyBusinessProfit, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity } from './economy';
+import { businessValuation, businessValuationBasis, calculateDailyBusinessProfit, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity } from './economy';
 import { applyContentEffects, applyReachedMilestones, cashEffectAmount, cloneGameState, itemCost, refreshUnlocks } from './effects';
 import { advanceSimulation } from './simulation';
 import { activityAtTime, defaultJobSchedule } from './schedule';
 import { activityCashCost, getActivityDefinition, getActivityOption } from './activities';
 import {
-  CURRENT_TIME_FROM, collectPlanIssues, courseAvailability, findNextSchedulableSlot, formatPlanIssues, planEditError, planRunError, reconcilePlanWithContent, reconcilePlanWithEmployment, reconcileStateWithEmployment, slotWithin, weekdayLabel,
+  CURRENT_TIME_FROM, collectPlanIssues, courseAvailability, employmentStartFor, findNextSchedulableSlot, formatPlanIssues, planEditError, planRunError, reconcilePlanWithContent, reconcilePlanWithEmployment, reconcileStateWithEmployment, slotWithin, weekdayLabel,
 } from './planning';
 import {
   APPLICATION_HISTORY_LIMIT, activeApplications, appendMessage, applicationCooldownKey, applicationCooldownRemaining, clearReadMessages, clearTerminalApplications, createApplicationId, dismissMessage, dismissTerminalApplication, markAllMessagesRead, markMessageRead, pruneApplicationHistory, pruneExpiredState, recordApplicationCooldown, visibleMessages,
@@ -19,15 +18,35 @@ import { groupForCategory, recordStateFinancialEntry, syncLegacyMonthlyLedger } 
 import { investmentUnitValue, PRIVATE_EQUITY_LOCK_DAYS } from './investments';
 import { applyAttributeDelta } from './attributes';
 import { deterministicApplicationDecision, employmentKind, evaluateApplicationCompetitiveness } from './careers';
-import { appendLifeRecord } from './lifeHistory';
+import { appendLifeRecord, addLifeRecord } from './lifeHistory';
 import { advanceStorylineStage, getStoryline, getStorylineStage } from './storylines';
 import { careerRequirementsSatisfied } from './careerProgression';
 import { applyCareerExperience } from './careerProgression';
 import { housingMortgageTerms, housingPrice, housingRentPerDay, recordLocationVisit } from './locations';
-import { absoluteMinute } from './time';
+import { absoluteMinute, formatClock } from './time';
+import { dropUnverifiedGigMinutes, gigIsWorking, gigShiftConflict, gigWorkConflict, gigWorkedMinutes, pruneGigRecords, promisedGigMinuteCount, settleGig } from './gigs';
+
+import { calendarForDay } from './calendar';
 import { serviceCooldownRemaining } from './services';
+import { SUBSCRIPTION_CYCLE_DAYS, subscriptionPeriodCovers, subscriptionPeriodEnd } from './monthlySettlement';
 
 const fail = (state: GameState, error: string): GameResult => ({ state, effects: [], error });
+
+/**
+ * Whole-company value a partial entry is valued against. Every entry path
+ * records the authored company price here: the partnership discount and the
+ * minority-stake price are deals on the same company, so the basis must not
+ * drift with what the player happened to pay for their share.
+ */
+function businessWholeCompanyValue(business: { price: number }): number {
+  return business.price;
+}
+
+/** The promised length of a gig, in minutes. */
+function pruneUnworkedGigsState(state: GameState, content: ContentRegistry, effects: GameEffect[]): { settled: number; notice?: string } {
+  return pruneGigRecords(state, content, effects);
+}
+
 const find = <T extends { id: string }>(entries: readonly T[], id: string): T | undefined => entries.find((entry) => entry.id === id);
 
 function hasRequirements(state: GameState, condition: Parameters<typeof evaluateCondition>[0] | undefined, content: ContentRegistry, balance: BalanceConfig): boolean {
@@ -63,22 +82,6 @@ function recruiterForJob(job: JobDefinition, content: ContentRegistry): ContentI
 function reserveRequired(state: GameState, content: ContentRegistry): number {
   const home = find(content.housing, state.housing.housingId);
   return state.housing.mode === 'rent' && home ? housingRentPerDay(state, home) : 0;
-}
-
-function addLifeRecord(state: GameState, record: Omit<LifeRecordEntry, 'id' | 'day'> & { id?: string; day?: number }): void {
-  const source = (record.sourceId ?? record.title).replace(/[^a-zA-Z0-9_.-]+/g, '-').replace(/^-|-$/g, '') || record.category;
-  state.nextLifeRecordSequence = (state.nextLifeRecordSequence ?? state.lifeHistory?.length ?? 0) + 1;
-  const nextRecord: LifeRecordEntry = {
-    id: record.id ?? `life.${record.category}.${source}.${record.day ?? state.time.day}.${state.nextLifeRecordSequence}`,
-    day: record.day ?? state.time.day,
-    category: record.category,
-    title: record.title,
-    detail: record.detail,
-    sourceId: record.sourceId,
-    amount: record.amount,
-  };
-  if (!(state.lifeHistory ?? []).some(entry => entry.id === nextRecord.id)) recordBusinessFact(state, nextRecord);
-  state.lifeHistory = appendLifeRecord(state.lifeHistory ?? [], nextRecord);
 }
 
 /**
@@ -371,9 +374,29 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (employmentKind(job) === 'gig') {
         state.gigs ??= [];
         if (state.gigs.some((gig) => gig.jobId === job.id && gig.expiresDay >= state.time.day)) return fail(input, '这项零工已经在你的安排中');
-        state.gigs.push({ id: `gig.${application.applicationId}`, jobId: job.id, validFromDay: state.time.day, expiresDay: state.time.day + 6, executableDay: state.time.day, startMinute: state.time.hour * 60, endMinute: state.time.hour * 60 + job.hours * 60, pay: application.salaryRange[0], source: application.companyId });
+        // A gig is a real work block with a deadline: the reserved window ends
+        // job.hours after acceptance, and the pay is proportional to the hours
+        // actually worked inside it. Waiting out the window cannot bank the fee:
+        // the hours only count once the player starts the shift, and the window
+        // stops being workable when it ends.
+        const gigStartMinute = absoluteMinute(state.time);
+        const gigEndMinute = gigStartMinute + job.hours * 60;
+        const shiftConflict = gigShiftConflict(state, gigStartMinute, gigEndMinute);
+        if (shiftConflict) return fail(input, shiftConflict);
+        state.gigs.push({
+          id: `gig.${application.applicationId}`,
+          jobId: job.id,
+          validFromDay: state.time.day,
+          expiresDay: state.time.day + 6,
+          executableDay: Math.floor(gigStartMinute / 1440) + 1,
+          startMinute: gigStartMinute,
+          endMinute: gigEndMinute,
+          pay: application.salaryRange[0],
+          source: application.companyId,
+          workedMinutes: 0,
+        });
         application.status = 'accepted';
-        addLifeRecord(state, { category: 'career', title: `接下${job.name}`, detail: '一次性零工已加入工作机会', sourceId: job.id });
+        addLifeRecord(state, { category: 'career', title: `接下${job.name}`, detail: `${job.hours} 小时零工已加入工作机会：${formatClock(Math.floor(gigStartMinute % 1440 / 60), gigStartMinute % 60)} 起可开工，开工后按时钟累计工时并按实际工时结算`, sourceId: job.id });
         break;
       }
       if (state.employment?.pendingJobId && !action.replacePending) return fail(input, '你已经准备加入另一份工作，请明确选择是否替换');
@@ -382,14 +405,19 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       }
       application.status = 'accepted';
       if (state.employment) {
+        const pendingSchedule = { ...state.employment.schedule, workDays: [...defaultJobSchedule(job).workDays], startMinute: defaultJobSchedule(job).startMinute, endMinute: defaultJobSchedule(job).endMinute };
+        const pendingStart = employmentStartFor(pendingSchedule, state.time);
         state.employment.pendingJobId = job.id;
-        state.employment.pendingEffectiveDay = state.time.day + 8 - state.calendar.weekday;
+        state.employment.pendingEffectiveDay = Math.max(state.time.day + 8 - state.calendar.weekday, pendingStart.startedDay);
         state.employment.pendingCompanyId = application.companyId;
         state.employment.pendingBasePay = application.salaryRange[0];
+        state.employment.pendingActiveFromMinute = pendingStart.activeFromMinute;
       }
       else {
+        const schedule = defaultJobSchedule(job);
+        const start = employmentStartFor(schedule, state.time);
         state.currentJobId = job.id;
-        state.employment = { jobId: job.id, startedDay: state.time.day, companyId: application.companyId, basePay: application.salaryRange[0], salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
+        state.employment = { jobId: job.id, startedDay: start.startedDay, activeFromMinute: start.activeFromMinute, companyId: application.companyId, basePay: application.salaryRange[0], salaryAdjustment: 0, negotiationStage: 0, schedule, effectiveWeek: calendarForDay(start.startedDay).week };
       }
       // The job takes over the workdays at the employment-schedule level; the
       // weekly plan must not keep an activity underneath those day slots.
@@ -427,8 +455,12 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
             ? { ...state.employment, pendingJobId: job.id, pendingEffectiveDay: state.time.day + 8 - state.calendar.weekday }
             : { jobId: state.currentJobId ?? job.id, startedDay: state.time.day, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week, pendingJobId: job.id, pendingEffectiveDay: state.time.day + 8 - state.calendar.weekday };
         } else {
+          // Planning happens outside a shift, so the job starts immediately and
+          // the schedule records exactly when it becomes payable.
+          const schedule = defaultJobSchedule(job);
+          const start = employmentStartFor(schedule, state.time);
           state.currentJobId = job.id;
-          state.employment = { jobId: job.id, startedDay: state.time.day, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
+          state.employment = { jobId: job.id, startedDay: start.startedDay, activeFromMinute: start.activeFromMinute, schedule, effectiveWeek: calendarForDay(start.startedDay).week };
         }
         reconcileStateWithEmployment(state);
       }
@@ -658,13 +690,34 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (action.enabled) {
         if (state.activeSubscriptions[subscription.id]) return fail(input, '这项订阅已经开通');
         if (!hasRequirements(state, subscription.requirements, content, balance)) return fail(input, '当前条件还不满足');
-        state.activeSubscriptions[subscription.id] = { subscriptionId: subscription.id, startedDay: state.time.day };
-        applyContentEffects(state, subscription.effects ?? [], content, balance, effects);
-        addLifeRecord(state, { category: 'service', title: `开通${subscription.name}`, detail: `每月 ¥${subscription.monthlyFee}`, sourceId: subscription.id });
-        effects.push({ type: 'message', text: `已开通${subscription.name}` });
+        // Effects belong to a paid period, never to the act of clicking 开通.
+        // The first period is bought here; later periods are charged by 月结.
+        // Reactivating inside a period that is already paid for resumes it, so
+        // repeated enable/disable cycles can no longer farm attributes. Once
+        // the period has run out, activating buys a new one and pays again.
+        const previous = state.previousSubscriptions?.[subscription.id];
+        const stillPaid = previous !== undefined && subscriptionPeriodCovers(previous, state.time.day);
+        if (stillPaid) {
+          state.activeSubscriptions[subscription.id] = { subscriptionId: subscription.id, startedDay: previous!.startedDay, billedUntilDay: previous!.billedUntilDay! };
+          addLifeRecord(state, { category: 'service', title: `恢复${subscription.name}`, detail: '本计费周期已付费，不再重复收费与发放福利', sourceId: subscription.id });
+          effects.push({ type: 'message', text: `已恢复${subscription.name}，本周期无需再次付费` });
+        } else {
+          if (state.cash < subscription.monthlyFee) return fail(input, '现金不足以开通这项订阅');
+          state.cash -= subscription.monthlyFee;
+          recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'service', amount: subscription.monthlyFee, label: `${subscription.name}首期订阅`, sourceType: 'subscription', sourceId: subscription.id });
+          state.activeSubscriptions[subscription.id] = { subscriptionId: subscription.id, startedDay: state.time.day, billedUntilDay: subscriptionPeriodEnd(state.time.day) };
+          applyContentEffects(state, subscription.effects ?? [], content, balance, effects);
+          addLifeRecord(state, { category: 'service', title: `开通${subscription.name}`, detail: `首期 ¥${subscription.monthlyFee}，之后每月自动续费`, sourceId: subscription.id, amount: -subscription.monthlyFee });
+          effects.push({ type: 'cash', amount: -subscription.monthlyFee, reason: `${subscription.name}首期订阅` });
+          effects.push({ type: 'message', text: `已开通${subscription.name}` });
+        }
       } else {
-        if (!state.activeSubscriptions[subscription.id]) return fail(input, '这项订阅尚未开通');
+        const holding = state.activeSubscriptions[subscription.id];
+        if (!holding) return fail(input, '这项订阅尚未开通');
         delete state.activeSubscriptions[subscription.id];
+        // The paid period outlives the cancellation: re-enabling it must not
+        // hand out another round of effects before the period is over.
+        state.previousSubscriptions = { ...(state.previousSubscriptions ?? {}), [subscription.id]: holding };
         addLifeRecord(state, { category: 'service', title: `取消${subscription.name}`, sourceId: subscription.id });
         effects.push({ type: 'message', text: `已取消${subscription.name}` });
       }
@@ -772,7 +825,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!hasRequirements(state, business.requirements, content, balance)) return fail(input, '经营条件还不满足');
       if (state.cash - business.price < reserveRequired(state, content)) return fail(input, '现金不足以购买这项生意');
       state.cash -= business.price;
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: known(business.price) };
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, companyValuationBasis: business.price, companyValuationBasisSource: 'recorded-price', capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: known(business.price) };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: business.price, label: `购买${business.name}`, sourceType: 'business', sourceId: business.id });
       addLifeRecord(state, { category: 'business', title: `买入${business.name}`, sourceId: business.id, amount: -business.price });
@@ -787,7 +840,10 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!hasRequirements(state, business.requirements, content, balance) || !hasRequirements(state, partnership.requirements, content, balance)) return fail(input, '当前合伙条件还不满足');
       if (state.cash - partnership.entryPrice < reserveRequired(state, content)) return fail(input, '现金不足以加入合伙');
       state.cash -= partnership.entryPrice;
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: partnership.entryPrice, capitalInvested: 0, equityPercent: partnership.playerEquityPercent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, partnerCharacterId: partnership.characterId, playerCostBasis: known(partnership.entryPrice) };
+      // The entry price buys only the player's share of the company, so it is
+      // the cost basis — never the value of the whole business. Valuation uses
+      // the same whole-company figure every other entry path records.
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: partnership.entryPrice, companyValuationBasis: businessWholeCompanyValue(business), companyValuationBasisSource: 'official-partnership', capitalInvested: 0, equityPercent: partnership.playerEquityPercent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, partnerCharacterId: partnership.characterId, playerCostBasis: known(partnership.entryPrice) };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       const partner = content.characters.find((character) => character.id === partnership.characterId);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: partnership.entryPrice, label: `加入${business.name}合伙`, sourceType: 'business', sourceId: business.id, cashDelta: -partnership.entryPrice });
@@ -805,7 +861,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!hasRequirements(state, business.requirements, content, balance)) return fail(input, '并购条件还不满足');
       if (state.cash - acquisitionPrice < reserveRequired(state, content)) return fail(input, '现金不足以完成并购');
       state.cash -= acquisitionPrice;
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: acquisitionPrice, capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, acquiredDay: state.time.day, acquiredFromBusinessId: parentBusinessId, playerCostBasis: known(acquisitionPrice) };
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: acquisitionPrice, companyValuationBasis: acquisitionPrice, companyValuationBasisSource: 'recorded-price', capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, acquiredDay: state.time.day, acquiredFromBusinessId: parentBusinessId, playerCostBasis: known(acquisitionPrice) };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: acquisitionPrice, label: `并购${business.name}`, sourceType: 'business', sourceId: business.id, cashDelta: -acquisitionPrice });
       addLifeRecord(state, { category: 'business', title: `并购${business.name}`, detail: `纳入${content.businesses.find((entry) => entry.id === parentBusinessId)?.name ?? parentBusinessId}企业组合`, sourceId: business.id, amount: -acquisitionPrice });
@@ -822,8 +878,9 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const stakeCost = Math.round(business.price * percent / 100);
       if (state.cash - stakeCost < reserveRequired(state, content)) return fail(input, '现金不足以完成入股');
       state.cash -= stakeCost;
-      // purchasePrice stays the whole-company fair value so valuation/net worth scale by real equity.
-      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: business.price, capitalInvested: 0, equityPercent: percent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: known(stakeCost) };
+      // purchasePrice keeps the pro-rata cash paid; companyValuationBasis keeps
+      // the whole-company fair value so valuation scales by real equity.
+      state.businesses[action.businessId] = { businessId: action.businessId, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: stakeCost, companyValuationBasis: business.price, companyValuationBasisSource: 'recorded-price', capitalInvested: 0, equityPercent: percent, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0, playerCostBasis: known(stakeCost) };
       if (business.locationId) recordLocationVisit(state, business.locationId, content);
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'transfer', category: 'business_transfer', amount: stakeCost, label: `入股${business.name} ${percent}%`, sourceType: 'business', sourceId: business.id, cashDelta: -stakeCost });
       addLifeRecord(state, { category: 'business', title: `入股${business.name}`, detail: `以少数股权投资者身份买入 ${percent}%，当前身份：${ownershipTierForEquity(percent).name}`, sourceId: business.id, amount: -stakeCost });
@@ -994,7 +1051,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!holding.listed) return fail(input, '企业尚未上市');
       if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
       if (!Number.isInteger(action.percent) || percent <= 0 || percent >= (holding.equityPercent ?? 100)) return fail(input, '出售股权比例无效');
-      const valuation = (holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio;
+      const valuation = businessValuationBasis(holding) * balance.businessValuationRatio;
       const saleValue = Math.max(0, Math.round(valuation * percent / 100));
       const previousEquity = holding.equityPercent ?? 100;
       const basisTotal = amount(holding.playerCostBasis);
@@ -1085,7 +1142,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       if (!holding || !business) return fail(input, '还没有这项生意');
       if (state.publicBusinessEquities?.[action.businessId]) return fail(input, '请先出售这项企业的公开股权');
       const equityPercent = Math.min(100, Math.max(0, holding.equityPercent ?? 100));
-      const saleValue = Math.max(0, Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio * equityPercent / 100));
+      const saleValue = Math.max(0, Math.round(businessValuationBasis(holding) * balance.businessValuationRatio * equityPercent / 100));
       const basis = amount(holding.playerCostBasis);
       delete state.businesses[action.businessId];
       state.cash += saleValue;
@@ -1252,15 +1309,108 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
     case 'execute_gig': {
       const gig = state.gigs?.find((entry) => entry.id === action.gigId);
       const job = gig ? find(content.jobs, gig.jobId) : undefined;
-      if (!gig || !job || state.time.day < gig.validFromDay || state.time.day > gig.expiresDay) return fail(input, '这项零工已过期');
-      state.cash += gig.pay;
-      applyCareerExperience(state, job.experienceTags ?? [], job.careerXp);
-      recordStateFinancialEntry(state, { day: state.time.day, direction: 'income', category: 'side_job', amount: gig.pay, label: `${job.name}结算`, sourceType: 'job', sourceId: job.id });
-      addLifeRecord(state, { category: 'career', title: `完成${job.name}`, detail: '一次性零工已结算', sourceId: job.id, amount: gig.pay });
-      state.monthlyHighlights = [...(state.monthlyHighlights ?? []), { id: `gig.completed.${gig.id}`, kind: 'gig_completed', day: state.time.day, label: `完成零工 · ${job.name}`, sourceId: job.id }];
-      state.gigs = (state.gigs ?? []).filter((entry) => entry.id !== gig.id);
-      effects.push({ type: 'cash', amount: gig.pay, reason: `${job.name}结算` });
-      break;
+      // A record that can no longer be worked is cleaned up as a committed state
+      // transition rather than an error the caller has to drop with its state:
+      // the work already on the record is settled, the card is removed, and the
+      // player is told to re-apply. Only an unknown id is a plain error.
+      if (!gig) return fail(input, '这项零工已过期');
+      const workable = job !== undefined && state.time.day >= gig.validFromDay && state.time.day <= gig.expiresDay;
+      if (!workable) {
+        const closed = cloneGameState(state);
+        const closedGig = (closed.gigs ?? []).find((entry) => entry.id === gig.id);
+        if (closedGig && job) settleGig(closed, closedGig, job, gigWorkedMinutes(closedGig), promisedGigMinuteCount(job), '这项零工已过期', effects);
+        else if (closedGig) closed.gigs = (closed.gigs ?? []).filter((entry) => entry.id !== gig.id);
+        pruneExpiredState(closed);
+        closed.currentActivity = activityAtTime(closed.time, closed.weeklyPlan, closed.employment, content, closed);
+        return { state: closed, effects, notice: '这项零工已过期，需要重新申请' };
+      }
+      const promisedMinutes = promisedGigMinuteCount(job);
+      const now = absoluteMinute(state.time);
+      const windowClosed = now >= gig.endMinute || state.time.day > gig.expiresDay;
+      const workFrom = Math.max(now, gig.startMinute);
+      // Only hours with a start behind them count — towards the quota and towards
+      // pay. An old passive-credit record carries hours with no start; they are
+      // moved aside by `dropUnverifiedGigMinutes` when the shift is started below,
+      // so they can neither fill the quota nor become wages later.
+      const workedBefore = gigIsWorking(gig) ? gigWorkedMinutes(gig) : 0;
+      const working = gigIsWorking(gig);
+      // The promised hours are a quota; the reserved window is what limits each
+      // stretch of work. Time the clock spent outside the window (a late arrival)
+      // is not work, and it must not eat the quota either — otherwise a shift that
+      // was started late could never reach its promised hours however long the
+      // player worked, and the remaining window is the only real limit.
+      const remaining = Math.min(promisedMinutes - workedBefore, Math.max(0, gig.endMinute - workFrom));
+      // Every reason the shift cannot be started is decided before anything is
+      // mutated, so a refused action never leaves a half-changed state behind. The
+      // clock enforces the same rule when it credits a minute, which is what stops
+      // a refused shift from being worked behind the player's back.
+      if (!working && !windowClosed && remaining > 0) {
+        const conflict = gigWorkConflict(state, content, gig.id, workFrom, gig.endMinute);
+        if (conflict) return fail(input, conflict);
+      }
+      // The promised hours are only ever earned by running the clock on a shift
+      // the player actually started; anything already worked stays on the record,
+      // so every way a shift ends settles it once instead of deleting the work
+      // with the record. This runs on the returned clone, never on the caller's
+      // state.
+      if (windowClosed || remaining <= 0) {
+        const closed = cloneGameState(state);
+        const closedGig = (closed.gigs ?? []).find((entry) => entry.id === gig.id)!;
+        settleGig(closed, closedGig, job, workedBefore, promisedMinutes, windowClosed ? '安排时间已经过去' : '窗口内没有留下可工作的工时', effects);
+        pruneExpiredState(closed);
+        closed.currentActivity = activityAtTime(closed.time, closed.weeklyPlan, closed.employment, content, closed);
+        return { state: closed, effects, notice: windowClosed ? '这项零工的安排时间已经过去，需要重新申请' : '这项零工的工时已经耗尽，需要重新申请' };
+      }
+      // 开工: the shift is now the player's, and only from here on may the clock
+      // bank its minutes. Starting it spends no time by itself, so it is also how
+      // a paused world takes a shift on — the hours are worked when the world runs
+      // and the window is open. Taking the shift on is also the moment old passive
+      // hours stop being part of the record's work: they move to the backup field,
+      // so the shift that starts now accrues only what is actually worked.
+      if (!working) {
+        dropUnverifiedGigMinutes(gig);
+        gig.startedMinute = now;
+      }
+      if (workFrom > now) {
+        effects.push({ type: 'message', text: `${job.name}已开工：窗口从第 ${Math.floor(workFrom / 1440) + 1} 天 ${formatClock(Math.floor(workFrom % 1440 / 60), workFrom % 60)} 开始` });
+        return { state, effects, notice: `已开始${job.name}：窗口开始后运行世界会按时钟累计工时` };
+      }
+      if (state.simulationMode !== 'running') {
+        effects.push({ type: 'message', text: `${job.name}已开工：开始运行世界后，这段窗口会按时钟累计工时` });
+        return { state, effects, notice: `已开始${job.name}：开始运行世界后会按时钟累计工时` };
+      }
+      const worked = Math.min(remaining, gig.endMinute - workFrom);
+      // `advanceSimulation` credits the clock's own minute-by-minute progress to
+      // every started gig, so the hours about to be spent land on the record as
+      // they happen and a window that ends exactly when this chunk does is settled
+      // by `settleDueGigs` inside the advance with its work already counted —
+      // instead of being closed as an unworked shift. The credit is read back from
+      // the returned state rather than assumed, because an event, an Offer or 月结
+      // can stop the clock before the whole chunk was worked.
+      const advanced = advanceSimulation(state, worked, content, balance);
+      if (advanced.error) return fail(input, advanced.error);
+      const finished = advanced.state;
+      effects.push(...advanced.effects);
+      const target = (finished.gigs ?? []).find((entry) => entry.id === gig.id);
+      if (!target) {
+        // Already settled by the clock reaching the end of the window.
+        pruneExpiredState(finished);
+        return { state: finished, effects };
+      }
+      const workedTotal = gigWorkedMinutes(target);
+      // The shift is over once the promised hours are on the record, even when an
+      // event, an Offer or 月结 paused the clock before the window itself ran
+      // out. Paying here (and not on the clock reaching the window end) is what
+      // keeps a mid-shift interruption from costing the player the hours.
+      if (workedTotal >= promisedMinutes) {
+        settleGig(finished, target, job, workedTotal, promisedMinutes, '工时已完成', effects);
+        pruneExpiredState(finished);
+        return { state: finished, effects };
+      }
+      // The window is still open with hours left: the player finishes the shift
+      // from wherever the clock stopped, and the accumulated work is kept.
+      finished.currentActivity = activityAtTime(finished.time, finished.weeklyPlan, finished.employment, content, finished);
+      return { state: finished, effects };
     }
     case 'work':
     case 'study':
@@ -1274,8 +1424,13 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
   }
   applyReachedMilestones(state, content, balance, effects);
   syncLegacyMonthlyLedger(state, content, balance);
+  // Expired records are cleaned up as part of the action itself, so the removal
+  // is a committed state transition rather than something the caller discards —
+  // including while the clock is paused, because the window closes in game time,
+  // not only while the world is running.
+  const gigLifecycle = pruneUnworkedGigsState(state, content, effects);
   pruneExpiredState(state);
-  return { state, effects };
+  return gigLifecycle.notice ? { state, effects, notice: gigLifecycle.notice } : { state, effects };
 }
 
 function describeRewardEffect(effect: EffectDefinition, content: ContentRegistry, balance: BalanceConfig): string {

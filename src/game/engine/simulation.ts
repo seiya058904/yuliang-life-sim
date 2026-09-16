@@ -7,11 +7,12 @@ import type { ContentRegistry, GameEffect, GameResult, GameState, MonthlySummary
 import { calculateDailyPassiveIncome, calculateDailyPublicBusinessDividend, calculateNetWorth } from './economy';
 import { calendarForDay } from './calendar';
 import { closeMonth } from './monthlySettlement';
+import { settleDueGigs } from './gigs';
 import { applyCareerExperience } from './careerProgression';
 import { recordLocationVisit } from './locations';
 import { applyContentEffects, applyReachedMilestones, chooseAmbientEvent, chooseWeightedEvent, cloneGameState } from './effects';
 import { activityAtTime } from './schedule';
-import { collectPlanIssues, planRunError, reconcilePlanWithContent, reconcileStateWithEmployment } from './planning';
+import { collectPlanIssues, employmentActiveFromDay, employmentActiveFromMinute, planRunError, reconcilePlanWithContent, reconcileStateWithEmployment } from './planning';
 import { advanceMinutes, absoluteMinute } from './time';
 import { evaluateCondition } from './conditions';
 import { applyAttributeDelta } from './attributes';
@@ -58,6 +59,14 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
       settleActivity(state, beforeActivity, content, balance, effects);
       if (state.longActivity && absoluteMinute(state.longActivity.activity.end) <= absoluteMinute(next)) state.longActivity = undefined;
     }
+
+    // A gig window is settled by the clock reaching its end, before any day/month
+    // gate can pause the run: work that was really done is paid even when the shift
+    // ends exactly on a 月结 boundary. The minute the clock just spent is credited to
+    // every shift **the player has taken on** (`startedMinute`) and to no other: an
+    // offered window is not worked by time passing, and a minute the plan or the
+    // formal shift already owns is not credited to it either.
+    settleDueGigs(state, content, effects, { from: absoluteMinute(beforeTime), to: absoluteMinute(next) });
 
     if (next.day !== beforeTime.day) {
       if (state.eventDay !== next.day) {
@@ -249,6 +258,16 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
   if (activity.kind !== 'work' && activity.kind !== 'side_job') return;
   const job = content.jobs.find((entry) => entry.id === activity.jobId);
   if (!job || !jobAvailable(state, job, content, balance)) return;
+  // A formal shift only pays for hours the player was actually employed for. A
+  // job accepted mid-shift starts with the next full shift, so the shift that
+  // was already running at hire time must never settle at its end.
+  const employment = activity.kind === 'work' && state.employment?.jobId === job.id ? state.employment : undefined;
+  if (employment) {
+    const activeFromDay = employmentActiveFromDay(employment);
+    if (activeFromDay !== undefined && activity.start.day < activeFromDay) return;
+    const activeFromMinute = employmentActiveFromMinute(employment);
+    if (activeFromMinute !== undefined && activeFromMinute > absoluteMinute(activity.start)) return;
+  }
   const pay = shiftPay(state, job, activity.kind === 'work');
   state.cash += pay;
   state.jobExperience[job.id] = (state.jobExperience[job.id] ?? 0) + job.careerXp;

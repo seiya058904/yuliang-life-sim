@@ -3,88 +3,87 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createGameStore, loadGameState, migrateGameState, saveGameState } from './gameStore';
+import { canonicalCommitCount, canonicalSaveRaw } from './canonicalSaveTestDouble';
 
 describe('game store persistence', () => {
   beforeEach(() => localStorage.clear());
 
-  it('opens a fresh game on the life dashboard', () => {
+  it('opens a fresh game on the life dashboard', async () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
 
     expect(store.getState().activeView).toBe('life');
   });
 
-  it('persists the exact minute and restores the current schedule activity', () => {
+  it('persists the exact minute and restores the current schedule activity', async () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const first = createGameStore(contentRegistry, balance, 1);
     first.getState().dispatch({ type: 'start_week' });
     first.getState().dispatch({ type: 'advance_simulation', minutes: 386 });
-    first.getState().flushSave();
-    const persisted = loadGameState(contentRegistry, balance);
+    await first.getState().flushSaveAsync();
+    const persisted = await loadGameState(contentRegistry, balance);
 
     expect(persisted.time).toEqual({ day: 1, hour: 14, minute: 26 });
     expect(persisted.currentActivity?.kind).toBe('work');
     expect(persisted.simulationMode).toBe('paused');
   });
 
-  it('throttles running-tick saves and flushes them explicitly', () => {
+  it('throttles running-tick saves and flushes them explicitly', async () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const store = createGameStore(contentRegistry, balance, 1);
     store.getState().dispatch({ type: 'start_week' });
 
     store.getState().dispatch({ type: 'advance_simulation', minutes: 60 });
-    const beforeFlush = loadGameState(contentRegistry, balance);
+    const beforeFlush = await loadGameState(contentRegistry, balance);
     expect(beforeFlush.time).toEqual({ day: 1, hour: 8, minute: 0 });
 
-    store.getState().flushSave();
-    const afterFlush = loadGameState(contentRegistry, balance);
+    await store.getState().flushSaveAsync();
+    const afterFlush = await loadGameState(contentRegistry, balance);
     expect(afterFlush.time).toEqual({ day: 1, hour: 9, minute: 0 });
 
     // Any non-tick action persists immediately, no explicit flush needed.
     store.getState().dispatch({ type: 'pause_simulation' });
-    const afterPause = loadGameState(contentRegistry, balance);
+    const afterPause = await loadGameState(contentRegistry, balance);
     expect(afterPause.simulationMode).toBe('paused');
   });
 
-  it('cancels the trailing autosave timer once an immediate save or flush happens', () => {
+  it('cancels the trailing autosave timer once an immediate save or flush happens', async () => {
     vi.useFakeTimers();
     try {
       const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
       const store = createGameStore(contentRegistry, balance, 1);
-      const setItem = vi.spyOn(Storage.prototype, 'setItem');
       store.getState().dispatch({ type: 'start_week' });
-      setItem.mockClear();
 
       // tick 挂起尾随定时器；随后的立即保存必须取消它，避免 2 秒后重复写旧状态
       store.getState().dispatch({ type: 'advance_simulation', minutes: 30 });
       store.getState().dispatch({ type: 'pause_simulation' });
-      expect(setItem.mock.calls.filter(([key]) => key === 'yuliang-save-v1').length).toBeGreaterThan(0);
-      setItem.mockClear();
+      const afterImmediateSave = canonicalCommitCount();
+      expect(afterImmediateSave).toBeGreaterThan(1);
       vi.advanceTimersByTime(5000);
-      expect(setItem.mock.calls.filter(([key]) => key === 'yuliang-save-v1')).toHaveLength(0);
+      expect(canonicalCommitCount()).toBe(afterImmediateSave);
 
       // flushSave 同样清空定时器
       store.getState().dispatch({ type: 'resume_simulation' });
       store.getState().dispatch({ type: 'advance_simulation', minutes: 10 });
       store.getState().flushSave();
-      setItem.mockClear();
+      const afterFlush = canonicalCommitCount();
       vi.advanceTimersByTime(5000);
-      expect(setItem.mock.calls.filter(([key]) => key === 'yuliang-save-v1')).toHaveLength(0);
+      expect(canonicalCommitCount()).toBe(afterFlush);
     } finally {
       vi.useRealTimers();
       vi.restoreAllMocks();
     }
   });
 
-  it('migrates an old hour-only save without losing the world state', () => {
+  it('migrates an old hour-only save without losing the world state', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 0, time: { day: 3, hour: 14 }, weeklyPlan: undefined, simulationMode: undefined }));
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
     expect(restored.time).toEqual({ day: 3, hour: 14, minute: 0 });
     expect(restored.calendar.week).toBe(1);
     expect(restored.weeklyPlan.days[3]).toBeDefined();
   });
 
-  it('persists activity and course plans while clearing unknown plan content during migration', () => {
+  it('persists activity and course plans while clearing unknown plan content during migration', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     const raw = {
       ...state,
@@ -105,13 +104,13 @@ describe('game store persistence', () => {
     expect(restored.weeklyPlan.days[7].day).toEqual({ kind: 'free' });
   });
 
-  it('migrates an old save without life history to the current version while preserving time and pausing', () => {
+  it('migrates an old save without life history to the current version while preserving time and pausing', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     const oldSave = { ...state, version: 1, time: { day: 9, hour: 17, minute: 42 }, simulationMode: 'running' };
     delete (oldSave as Partial<typeof oldSave>).lifeHistory;
     localStorage.setItem('yuliang-save-v1', JSON.stringify(oldSave));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.version).toBe(balanceConfig.saveVersion);
     expect(restored.time).toEqual({ day: 9, hour: 17, minute: 42 });
@@ -119,17 +118,17 @@ describe('game store persistence', () => {
     expect(restored.lifeHistory).toEqual([]);
   });
 
-  it('migrates tagged career progress and removes unknown progression ids', () => {
+  it('migrates tagged career progress and removes unknown progression ids', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 1, time: { day: 11, hour: 9, minute: 17 }, simulationMode: 'running', careerExperience: { office: 21, hacked: 999 }, qualifications: ['office_basics', 'unknown'] }));
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
     expect(restored.time).toEqual({ day: 11, hour: 9, minute: 17 });
     expect(restored.simulationMode).toBe('paused');
     expect(restored.careerExperience).toEqual({ office: 21 });
     expect(restored.qualifications).toEqual(['office_basics']);
   });
 
-  it('preserves qualifications issued by official courses while removing unknown ids', () => {
+  it('preserves qualifications issued by official courses while removing unknown ids', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({
       ...state,
@@ -137,38 +136,38 @@ describe('game store persistence', () => {
       qualifications: ['qualification.workplace-basics', 'qualification.unknown'],
     }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.qualifications).toEqual(['qualification.workplace-basics']);
   });
 
-  it('migrates subscription records and removes subscriptions from unknown content', () => {
+  it('migrates subscription records and removes subscriptions from unknown content', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 3, activeSubscriptions: {
       'subscription.mobile-basic': { subscriptionId: 'subscription.mobile-basic', startedDay: 6 },
       'subscription.unknown': { subscriptionId: 'subscription.unknown', startedDay: 6 },
     } }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.version).toBe(balanceConfig.saveVersion);
     expect(restored.activeSubscriptions).toEqual({ 'subscription.mobile-basic': { subscriptionId: 'subscription.mobile-basic', startedDay: 6 } });
   });
 
-  it('migrates wishlist ids and removes goals for unknown items', () => {
+  it('migrates wishlist ids and removes goals for unknown items', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 3, wishlist: ['item.seed-phone', 'item.unknown'] }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.wishlist).toEqual(['item.seed-phone']);
   });
 
-  it('adds newly official vehicles to the discoverable asset list when loading an old save', () => {
+  it('adds newly official vehicles to the discoverable asset list when loading an old save', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 1, unlockedAssetIds: ['asset.unknown'] }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.unlockedAssetIds).toEqual([
       'asset.used-compact',
@@ -180,28 +179,28 @@ describe('game store persistence', () => {
     ]);
   });
 
-  it('migrates old business holdings with independent capital and equity defaults', () => {
+  it('migrates old business holdings with independent capital and equity defaults', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, businesses: {
       'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200 },
     } }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.businesses['business.seed-kiosk']).toMatchObject({ capitalInvested: 0, equityPercent: 100, publicFloatPercent: 0, fundingRaised: 0, fundingRound: 0 });
 
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, businesses: {
       'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 65, partnerCharacterId: 'character.seed-zhou', listed: true, listedDay: 8 },
     } }));
-    expect(loadGameState(contentRegistry, balanceConfig).businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 65, publicFloatPercent: 35, partnerCharacterId: 'character.seed-zhou', listed: true, listedDay: 8 });
+    expect((await loadGameState(contentRegistry, balanceConfig)).businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 65, publicFloatPercent: 35, partnerCharacterId: 'character.seed-zhou', listed: true, listedDay: 8 });
 
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, businesses: {
       'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, partnerCharacterId: 'character.unknown' },
     } }));
-    expect(loadGameState(contentRegistry, balanceConfig).businesses['business.seed-kiosk'].partnerCharacterId).toBeUndefined();
+    expect((await loadGameState(contentRegistry, balanceConfig)).businesses['business.seed-kiosk'].partnerCharacterId).toBeUndefined();
   });
 
-  it('migrates control-era business fields without guessing legacy cost basis', () => {
+  it('migrates control-era business fields without guessing legacy cost basis', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 7, businesses: {
       // Legacy stake-style holding without any control-era fields.
@@ -210,7 +209,7 @@ describe('game store persistence', () => {
       'business.online-store': { businessId: 'business.online-store', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 7800, equityPercent: 60, playerCostBasis: known(5200), operatingBonusPercent: 40, relocatedLocationId: 'location.nowhere', acquiredDay: 12, acquiredFromBusinessId: 'business.unknown' },
     } }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.businesses['business.seed-kiosk']).toMatchObject({ playerCostBasis: { kind: 'unknown' }, equityPercent: 30 });
     expect(restored.businesses['business.online-store']).toMatchObject({ playerCostBasis: { kind: 'unknown' }, operatingBonusPercent: 25, acquiredDay: 12 });
@@ -219,7 +218,7 @@ describe('game store persistence', () => {
     expect(restored.version).toBe(balanceConfig.saveVersion);
   });
 
-  it('migrates and filters separate public business equity holdings', () => {
+  it('migrates and filters separate public business equity holdings', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 6, businesses: {
       'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, equityPercent: 65, publicFloatPercent: 35, listed: true, listedDay: 8 },
@@ -228,34 +227,34 @@ describe('game store persistence', () => {
       'business.unknown': { businessId: 'business.unknown', percent: 10, investedAmount: 100, purchaseDay: 40 },
     } }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.publicBusinessEquities).toEqual({ 'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, purchaseDay: 40 } });
     expect(restored.version).toBe(balanceConfig.saveVersion);
   });
 
-  it('filters completed business projects against current activity content', () => {
+  it('filters completed business projects against current activity content', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, completedBusinessProjects: ['activity.brand-film-project.contract', 'activity.unknown.contract'] }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.completedBusinessProjects).toEqual(['activity.brand-film-project.contract']);
   });
 
-  it('keeps valid annual records while dropping malformed entries during migration', () => {
+  it('keeps valid annual records while dropping malformed entries during migration', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, annualHistory: [
       { year: 1, cashStart: known(1000), cashEnd: known(1200), netWorthStart: known(1000), netWorthEnd: known(1400), totalIncome: known(500), totalConsumption: known(300), months: 12 },
       { year: 2, cashStart: 'invalid' },
     ] }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.annualHistory).toEqual([{ year: 1, cashStart: known(1000), cashEnd: known(1200), netWorthStart: known(1000), netWorthEnd: known(1400), totalIncome: known(500), totalConsumption: known(300), months: 12 }]);
   });
 
-  it('filters malformed financial entries while preserving ledger anchors', () => {
+  it('filters malformed financial entries while preserving ledger anchors', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     const valid = { id: 'financial:1:1', day: 1, direction: 'income', group: 'income', category: 'wage', amount: 100, cashDelta: 100, label: '工资' };
     const restored = migrateGameState({ ...state, financialLedger: { month: 1, nextSequence: 4, cashStart: known(321), netWorthStart: known(654), entries: [valid, null, { invalid: true }] } }, contentRegistry, balanceConfig);
@@ -264,7 +263,7 @@ describe('game store persistence', () => {
     expect(restored.financialLedger?.entries).toEqual([valid]);
   });
 
-  it('reports storage read failures instead of throwing during load', () => {
+  it('reports storage read failures instead of throwing during load', async () => {
     const getItem = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('storage blocked'); });
     try {
       const outcome = createGameStore(contentRegistry, balanceConfig);
@@ -275,19 +274,19 @@ describe('game store persistence', () => {
     }
   });
 
-  it('migrates and filters public business equity snapshots inside world history', () => {
+  it('migrates and filters public business equity snapshots inside world history', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 7, worldHistory: [{ year: 1, day: 337, netWorth: 12000, businessCount: 1, relationshipCount: 0, visitedLocationCount: 0, publicBusinessEquities: {
       'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, currentValue: 220 },
       'business.unknown': { businessId: 'business.unknown', percent: 10, investedAmount: 100, currentValue: 100 },
     } }] }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.worldHistory?.[0]?.publicBusinessEquities).toEqual({ 'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, currentValue: 220 } });
   });
 
-  it('keeps valid wealth milestones and removes malformed or unknown tiers during migration', () => {
+  it('keeps valid wealth milestones and removes malformed or unknown tiers during migration', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 4, wealthMilestones: [
       { id: 'savings', day: 28, netWorth: 12000 },
@@ -296,22 +295,22 @@ describe('game store persistence', () => {
       { id: 'abundant', day: 337, netWorth: 'invalid' },
     ] }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.wealthMilestones).toEqual([{ id: 'savings', day: 28, netWorth: 12000 }]);
   });
 
-  it('keeps a valid mortgage only for the owned current home and removes stale debt', () => {
+  it('keeps a valid mortgage only for the owned current home and removes stale debt', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     const validMortgage = { housingId: 'housing.seed-room', remainingPrincipal: 4350, monthlyPayment: 199, totalMonths: 24, paidMonths: 2 };
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, housing: { housingId: 'housing.seed-room', mode: 'owned' }, mortgage: validMortgage }));
-    expect(loadGameState(contentRegistry, balanceConfig).mortgage).toEqual(validMortgage);
+    expect((await loadGameState(contentRegistry, balanceConfig)).mortgage).toEqual(validMortgage);
 
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, mortgage: { ...validMortgage, housingId: 'housing.unknown' } }));
-    expect(loadGameState(contentRegistry, balanceConfig).mortgage).toBeUndefined();
+    expect((await loadGameState(contentRegistry, balanceConfig)).mortgage).toBeUndefined();
   });
 
-  it('migrates known housing holdings and drops current or unknown properties', () => {
+  it('migrates known housing holdings and drops current or unknown properties', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 6, housingHoldings: {
       'housing.seed-room': { housingId: 'housing.seed-room', purchasePrice: 5800, currentValuation: 5900, occupancy: 'rented' },
@@ -319,12 +318,12 @@ describe('game store persistence', () => {
       'housing.unknown': { housingId: 'housing.unknown', purchasePrice: 100, currentValuation: 100, occupancy: 'rented' },
     } }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.housingHoldings).toEqual({ 'housing.seed-room': { housingId: 'housing.seed-room', purchasePrice: 5800, currentValuation: 5900, occupancy: 'rented' } });
   });
 
-  it('keeps valid world snapshots and removes malformed or unknown-job entries during migration', () => {
+  it('keeps valid world snapshots and removes malformed or unknown-job entries during migration', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, worldHistory: [
       { year: 1, day: 337, netWorth: 12000, businessCount: 1, listedBusinessCount: 1, publicFloatPercent: 35, relationshipCount: 2, visitedLocationCount: 3, relationshipValues: { 'character.seed-zhou': 42, 'character.unknown': 9, 'character.seed-lin': -1 }, characterCareerStates: { 'character.seed-lin': '远望零售 · 门店员工', 'character.unknown': '不应保留' }, companyStates: { 'company.yuanwang': '持续经营', 'company.unknown': '不应保留' }, locationDevelopment: { 'location.central': 2, 'location.unknown': 4, 'location.riverside': 9 }, currentJobId: 'job.seed-shop-clerk' },
@@ -332,31 +331,31 @@ describe('game store persistence', () => {
       { year: 3, day: 1000, netWorth: 20000, businessCount: 2, relationshipCount: 1, visitedLocationCount: 2, currentJobId: 'job.unknown' },
     ] }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.worldHistory).toEqual([{ year: 1, day: 337, netWorth: 12000, businessCount: 1, listedBusinessCount: 1, publicFloatPercent: 35, relationshipCount: 2, visitedLocationCount: 3, relationshipValues: { 'character.seed-zhou': 42 }, characterCareerStates: { 'character.seed-lin': '远望零售 · 门店员工' }, companyStates: { 'company.yuanwang': '持续经营' }, locationDevelopment: { 'location.central': 2 }, currentJobId: 'job.seed-shop-clerk' }]);
   });
 
-  it('keeps known location visits and removes unknown location ids during migration', () => {
+  it('keeps known location visits and removes unknown location ids during migration', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, locationVisits: { 'location.central': 2, 'location.unknown': 4, 'location.riverside': 0 }, locationDevelopment: { 'location.central': 3, 'location.unknown': 7, 'location.riverside': -1 } }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.locationVisits).toEqual({ 'location.central': 2 });
     expect(restored.locationDevelopment).toEqual({ 'location.central': 3 });
   });
 
-  it('keeps bounded interest familiarity during migration', () => {
+  it('keeps bounded interest familiarity during migration', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, interestFamiliarity: { film: 2, photography: 4, '': -1 } }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.interestFamiliarity).toEqual({ film: 2 });
   });
 
-  it('keeps valid storyline stages and removes unknown storyline state during migration', () => {
+  it('keeps valid storyline stages and removes unknown storyline state during migration', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, storylineStages: {
       'storyline.seed-career': 'consider',
@@ -365,15 +364,15 @@ describe('game store persistence', () => {
       'storyline.remote-connection-bad': 'follow-up',
     } }));
 
-    const restored = loadGameState(contentRegistry, balanceConfig);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
 
     expect(restored.storylineStages).toEqual({ 'storyline.seed-career': 'consider', 'storyline.remote-connection': 'follow-up' });
   });
 
-  it('does not persist animation-only effect data as authoritative state', () => {
+  it('does not persist animation-only effect data as authoritative state', async () => {
     const store = createGameStore(contentRegistry, balanceConfig, 1);
     const state = store.getState().game;
-    saveGameState(state);
-    expect(localStorage.getItem('yuliang-save-v1')).not.toContain('progress');
+    await saveGameState(state);
+    expect(canonicalSaveRaw()).not.toContain('progress');
   });
 });

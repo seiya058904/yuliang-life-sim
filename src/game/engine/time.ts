@@ -37,6 +37,13 @@ export function absoluteMinute(time: GameTime): number {
   return (time.day - 1) * 24 * 60 + time.hour * 60 + time.minute;
 }
 
+/** Inverse of `absoluteMinute`. */
+export function timeFromAbsoluteMinute(minutes: number): GameTime {
+  const day = Math.floor(minutes / (24 * 60)) + 1;
+  const minuteOfDay = minutes % (24 * 60);
+  return { day, hour: Math.floor(minuteOfDay / 60), minute: minuteOfDay % 60 };
+}
+
 export function formatClock(hour: number, minute = 0): string {
   if (!Number.isInteger(hour) || hour < 0 || hour > 23) {
     throw new Error('时钟小时必须在 0 到 23 之间');

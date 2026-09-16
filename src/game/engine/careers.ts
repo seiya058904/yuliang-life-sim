@@ -4,6 +4,10 @@ import { getAttribute } from './attributes';
 import { currentMonthlySalary, evaluateCondition, getPlayerStage } from './conditions';
 import { careerRequirementsSatisfied, requirementForJob } from './careerProgression';
 import { pruneApplicationHistory, recordApplicationCooldown, appendMessage } from './lifecycle';
+import { absoluteMinute } from './time';
+
+/** The hour the daily market shift opens at. */
+const MARKET_GIG_START_MINUTE = 18 * 60;
 
 export interface CompetitivenessResult {
   tier: 'minimum' | 'competitive' | 'strong' | 'exceptional';
@@ -492,17 +496,44 @@ export function advanceCareerLifecycle(state: GameState, day: number, content: C
   // a submitted application already carries job/company/salary/route, so a
   // terminal application must never pin an expired opportunity in runtime state.
   state.opportunities = (state.opportunities ?? []).filter((opportunity) => opportunity.expiresDay >= day);
-  state.gigs = (state.gigs ?? []).filter((gig) => gig.expiresDay >= day);
+  // A gig window is stored in absolute minutes (`(day - 1) * 1440 + minute of
+  // day`), exactly like the acceptance path, so a window may cross midnight and
+  // the same reader (execution, card copy) never has to guess which it is.
+  // Live records are not pruned here: `pruneGigRecords` owns that lifecycle and
+  // settles the hours on a record before removing it, so this step must not
+  // delete work that has not been paid yet.
+  const liveGigs = (state.gigs ?? []).filter((gig) => gig.expiresDay >= state.time.day);
   pruneApplicationHistory(state);
-  if (!(state.gigs ?? []).length) {
+  if (!liveGigs.length) {
     const gigJob = content.jobs.find((job) => employmentKind(job) === 'gig'
       && (job.abilityRequired ?? 0) <= state.ability
       && (job.reputationRequired ?? 0) <= state.reputation
       && (!job.requirements || evaluateCondition(job.requirements, state, content, balance))
       && (job.requiredItems ?? []).every((itemId) => (state.inventory[itemId] ?? 0) > 0)
       && (job.requiredCapabilities ?? []).every((capability) => state.unlockedCapabilities.includes(capability)));
-    if (gigJob) state.gigs = [{ id: `gig.offer.${gigJob.id}.${day}`, jobId: gigJob.id, validFromDay: day, expiresDay: day + 6, executableDay: day, startMinute: 18 * 60, endMinute: 18 * 60 + gigJob.hours * 60, pay: gigJob.basePay, source: '工作市场' }];
+    if (gigJob) {
+      const windowDay = nextMarketGigDay(state.time);
+      const startMinute = (windowDay - 1) * 1440 + MARKET_GIG_START_MINUTE;
+      state.gigs = [{ id: `gig.offer.${gigJob.id}.${windowDay}`, jobId: gigJob.id, validFromDay: windowDay, expiresDay: windowDay + 6, executableDay: windowDay, startMinute, endMinute: startMinute + gigJob.hours * 60, pay: gigJob.basePay, source: '工作市场', workedMinutes: 0 }];
+    }
   }
+}
+
+/**
+ * The day the market publishes its next shift on.
+ *
+ * `day` in the lifecycle step is the day that just **closed**: the simulation
+ * crosses midnight first and then settles the day it left, so anchoring a new
+ * opportunity to it handed the player a window that had already ended (a 第 39 天
+ * 18:00–22:00 shift published at 第 40 天 00:00, pruned a minute later as 错过).
+ * A published opportunity is therefore anchored to the clock, never to the
+ * settled day: the next 18:00 that has not started yet.
+ */
+function nextMarketGigDay(time: GameState['time']): number {
+  const now = absoluteMinute(time);
+  let day = time.day;
+  while ((day - 1) * 1440 + MARKET_GIG_START_MINUTE <= now) day += 1;
+  return day;
 }
 
 function vacancyFromTemplate(template: VacancyTemplate, month: number, content: ContentRegistry, balance: BalanceConfig): VacancyState {

@@ -2,9 +2,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { balanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createGameStore, SAVE_KEY, saveGameState } from './gameStore';
+import { canonicalSaveDouble, canonicalSaveRaw, failNextCanonicalCommit, settleCanonicalSave } from './canonicalSaveTestDouble';
+
+/**
+ * Every test here seeds the *legacy* `localStorage` payload, so each one starts
+ * from a world with no canonical record: the save a window boots from is the
+ * payload the test just wrote.
+ */
+beforeEach(() => {
+  vi.restoreAllMocks();
+  localStorage.clear();
+});
 
 describe('recovery write ownership', () => {
-  beforeEach(() => { vi.restoreAllMocks(); localStorage.clear(); });
   it.each(['{ broken', 'null'])('retains original payload even after hiding the notice: %s', raw => {
     localStorage.setItem(SAVE_KEY, raw);
     const store = createGameStore(contentRegistry, balanceConfig);
@@ -15,43 +25,64 @@ describe('recovery write ownership', () => {
     expect(JSON.stringify(store.getState().game)).not.toContain('writeProtected');
     store.getState().acceptRecovery();
     expect(store.getState().recovery).toBeUndefined();
-    expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).simulationSpeed).toBe(2);
+    expect(JSON.parse(canonicalSaveRaw()!).simulationSpeed).toBe(2);
   });
-  it('keeps ownership protected when explicit replacement fails', () => {
+  it('keeps ownership protected when explicit replacement fails', async () => {
     localStorage.setItem(SAVE_KEY, '{broken');
     const store = createGameStore(contentRegistry, balanceConfig);
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('quota'); });
+    failNextCanonicalCommit('quota exceeded');
     store.getState().acceptRecovery();
     expect(store.getState().recovery?.writeProtected).toBe(true);
     expect(localStorage.getItem(SAVE_KEY)).toBe('{broken');
+    // The failed write left no canonical record behind either.
+    expect(canonicalSaveRaw()).toBeNull();
   });
-  it('distinguishes compressed persistence from failure', () => {
+  it('keeps recovery ownership until the queued commit actually settles', async () => {
+    // The canonical write is held open, so "queued" can be observed as its own
+    // state: scheduling a write is not the same as a successful one.
+    canonicalSaveDouble().hold();
+    try {
+      localStorage.setItem(SAVE_KEY, '{broken');
+      const store = createGameStore(contentRegistry, balanceConfig);
+      expect(store.getState().recovery?.writeProtected).toBe(true);
+      failNextCanonicalCommit('quota exceeded');
+      store.getState().acceptRecovery();
+      expect(store.getState().recovery?.writeProtected).toBe(true);
+      await settleCanonicalSave();
+      expect(store.getState().recovery?.writeProtected).toBe(true);
+      expect(store.getState().saveError).toBeDefined();
+      expect(canonicalSaveRaw()).toBeNull();
+
+      // Once storage recovers, the same confirmation lands and releases it.
+      store.getState().acceptRecovery();
+      await settleCanonicalSave();
+      expect(store.getState().recovery).toBeUndefined();
+      expect(JSON.parse(canonicalSaveRaw()!).simulationSpeed).toBeDefined();
+    } finally {
+      canonicalSaveDouble().release();
+    }
+  });
+  it('distinguishes compressed persistence from failure', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     state.lifeHistory = Array.from({ length: 210 }, (_, i) => ({ id: String(i), day: 1, category: 'service' as const, sourceId: 'service.fitness-assessment', title: '记录' }));
-    const setItem = Storage.prototype.setItem;
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function(key, value) {
-      if (JSON.parse(value).lifeHistory.length > 200) throw new Error('quota');
-      setItem.call(localStorage, key, value);
-    });
-    expect(saveGameState(state).status).toBe('compressed');
+    failNextCanonicalCommit('QuotaExceededError: quota exceeded', true);
+    const outcome = await saveGameState(state);
+    expect(outcome.status).toBe('compressed');
+    expect(JSON.parse(canonicalSaveRaw()!).lifeHistory).toHaveLength(200);
   });
-  it('releases recovery ownership when the replacement was compressed successfully', () => {
+  it('releases recovery ownership when the replacement was compressed successfully', async () => {
     localStorage.setItem(SAVE_KEY, '{broken');
     const store = createGameStore(contentRegistry, balanceConfig);
     const game = structuredClone(store.getState().game);
     game.lifeHistory = Array.from({ length: 210 }, (_, i) => ({ id: String(i), day: 1, category: 'career' as const, title: '记录' }));
     store.setState({ game });
-    const setItem = Storage.prototype.setItem;
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
-      if (JSON.parse(value).lifeHistory.length > 200) throw new Error('quota');
-      setItem.call(localStorage, key, value);
-    });
+    failNextCanonicalCommit('QuotaExceededError: quota exceeded', true);
     store.getState().acceptRecovery();
     expect(store.getState().recovery).toBeUndefined();
     expect(store.getState().saveError).toContain('已压缩历史后保存');
-    expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).lifeHistory).toHaveLength(200);
+    expect(JSON.parse(canonicalSaveRaw()!).lifeHistory).toHaveLength(200);
   });
-  it('recovers a removed next event into reward without applying it again', () => {
+  it('recovers a removed next event into reward without applying it again', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     state.pendingEventId = 'event.deleted';
     state.pendingReward = { eventId: 'event.old', lines: ['已应用'] };
@@ -66,7 +97,7 @@ describe('recovery write ownership', () => {
 });
 
 describe('recovery messaging', () => {
-  it('broken JSON shows a stable Chinese reason without raw parser text', () => {
+  it('broken JSON shows a stable Chinese reason without raw parser text', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     localStorage.setItem(SAVE_KEY, '{ broken');
     const recovery = createGameStore(contentRegistry, balanceConfig).getState().recovery!;
@@ -77,7 +108,7 @@ describe('recovery messaging', () => {
     expect(recovery.reason).not.toMatch(/Expected|position|JSON|property|token/i);
   });
 
-  it('structurally invalid saves show a stable Chinese reason too', () => {
+  it('structurally invalid saves show a stable Chinese reason too', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     localStorage.setItem(SAVE_KEY, 'null');
     const recovery = createGameStore(contentRegistry, balanceConfig).getState().recovery!;
@@ -86,7 +117,7 @@ describe('recovery messaging', () => {
     expect(recovery.reason).not.toMatch(/Error|must be|throw/i);
   });
 
-  it('remaps the pending offer notice when migration rebuilds application ids', () => {
+  it('remaps the pending offer notice when migration rebuilds application ids', async () => {
     const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
     const vacancy = state.vacancies!.find((entry) => entry.jobId !== state.currentJobId)!;
     state.applications = [{ applicationId: 'legacy-offer', vacancyId: vacancy.vacancyId, jobId: vacancy.jobId, companyId: vacancy.companyId, salaryRange: vacancy.salaryRange, route: 'market', submittedDay: 1, resultDay: 1, offerExpiresDay: 12, status: 'offer', competitivenessTier: 'competitive', probabilityBand: 80, willReceiveOffer: true, feedback: [] }];

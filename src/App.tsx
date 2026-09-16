@@ -5,12 +5,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { balanceConfig } from './game/balance/config';
 import { contentRegistry } from './game/content/registry';
 import type { ActivityOption, AttributeId, CharacterDefinition, ContentId, EffectDefinition, GameAction, GameState, JobDefinition, MonthlyHighlight, PlannedActivity, PlanSlot, StatName, ViewId, Weekday } from './game/content/contracts';
-import { businessValuation, calculateDailyBusinessProfit, calculateLifestyle, calculateNetWorth, canDirectBusinessOperations, effectiveBusinessLocationId, ownershipTierForEquity, ownershipTierForHolding, wealthAllocationBreakdown, wealthTierForNetWorth } from './game/engine/economy';
+import { businessValuation, businessValuationBasisIsUnverified, calculateDailyBusinessProfit, calculateLifestyle, calculateNetWorth, canDirectBusinessOperations, effectiveBusinessLocationId, ownershipTierForEquity, ownershipTierForHolding, wealthAllocationBreakdown, wealthTierForNetWorth } from './game/engine/economy';
 import { activityAtTime, deriveActivityProgress, defaultJobSchedule, getDailyActivities } from './game/engine/schedule';
 import { formatClock, formatDate, absoluteMinute } from './game/engine/time';
 import { calendarForDay, weekdayLabel } from './game/engine/calendar';
 import { findNextPlanOption, getItemCost } from './game/engine/actions';
-import { createGameStore, EXTERNAL_SAVE_CONFLICT_MESSAGE } from './game/store/gameStore';
+import { createGameStore, EXTERNAL_SAVE_CONFLICT_MESSAGE, type PersistenceTestHooks } from './game/store/gameStore';
 import { explainCondition, evaluateCondition } from './game/engine/conditions';
 import { getAttribute } from './game/engine/attributes';
 import { investmentUnitValue } from './game/engine/investments';
@@ -42,24 +42,36 @@ import './game/ui/pixel/console-system.css';
 import './game/ui/life.css';
 import './game/ui/shop.css';
 
-export const appStore = createGameStore(contentRegistry, balanceConfig);
+/**
+ * Test-only persistence seams, empty in production. The debug bridge exposes
+ * this object so the release gate can suspend or abort a commit at a precise
+ * point inside the live transaction (see `e2e/save-concurrency.spec.ts`).
+ */
+const saveHooks: PersistenceTestHooks = {};
+export const appStore = createGameStore(contentRegistry, balanceConfig, undefined, saveHooks);
 const gameStore = appStore;
 // Opt-in debug bridge for browser long-run verification (activated by the test suite via localStorage).
 declare global {
   interface Window {
-    __yuliang?: { store: typeof appStore; eventChoices: Record<string, readonly string[]> };
+    __yuliang?: { store: typeof appStore; eventChoices: Record<string, readonly string[]>; saveHooks: PersistenceTestHooks };
   }
 }
 // The bridge is optional: browsers configured to block storage make any
 // localStorage access throw, and that must never break the app's startup
 // (the save loader already degrades on its own; this read is not required).
+//
+// It appears only once the canonical save has been read, so a test that waits
+// for `window.__yuliang` is waiting for the real world rather than for a
+// placeholder that is about to be replaced.
 try {
   if (typeof window !== 'undefined' && window.localStorage.getItem('yuliang-e2e-hook') === '1') {
     const eventChoices: Record<string, readonly string[]> = {};
     for (const event of contentRegistry.events) {
       eventChoices[event.id] = event.choices.map((choice) => choice.id);
     }
-    (window as unknown as { __yuliang?: unknown }).__yuliang = { store: appStore, eventChoices };
+    const expose = () => { (window as unknown as { __yuliang?: unknown }).__yuliang = { store: appStore, eventChoices, saveHooks }; };
+    if (appStore.getState().canonical.status === 'loading') void appStore.getState().ready.then(expose);
+    else expose();
   }
 } catch {
   // Storage denied: skip the optional debug bridge and keep rendering.
@@ -155,6 +167,7 @@ function App() {
   const activeView = gameStore((store) => store.activeView);
   const effects = gameStore((store) => store.effects);
   const lastError = gameStore((store) => store.lastError);
+  const lastNotice = gameStore((store) => store.lastNotice);
   const dispatch = gameStore((store) => store.dispatch);
   const setView = gameStore((store) => store.setView);
   const consumeEffects = gameStore((store) => store.consumeEffects);
@@ -166,6 +179,7 @@ function App() {
   const acceptRecovery = gameStore((store) => store.acceptRecovery);
   const showRecovery = gameStore((store) => store.showRecovery);
   const dismissLoadProblem = gameStore((store) => store.dismissLoadProblem);
+  const bootStatus = gameStore((store) => store.canonical.status);
   const [resetOpen, setResetOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shopTab, setShopTab] = useState('goods');
@@ -231,6 +245,24 @@ function App() {
   const activeRecruitment = game.activeRecruitment ? contentRegistry.jobs.find((job) => job.id === game.activeRecruitment?.jobId) : undefined;
   const shellMode = game.pendingMonthlySummary ? 'monthly_summary' : game.simulationMode;
 
+  // The canonical save lives in IndexedDB, so reading it takes a moment. Until
+  // that read settles the store holds a placeholder world: showing it would
+  // flash one game and then replace it, and every action taken on it would be
+  // refused, so the shell waits for the real save instead.
+  if (bootStatus === 'loading') {
+    return (
+      <div className="app-shell mode-loading">
+        <div className="outer-frame" aria-hidden="true" />
+        <main className="main-content">
+          <section className="section-heading" aria-label="存档读取">
+            <div><span className="eyebrow">载入中</span><h1>余量</h1></div>
+            <p role="status">正在读取存档…</p>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className={`app-shell mode-${shellMode} view-${activeView}`}>
       <div className="outer-frame" aria-hidden="true" />
@@ -258,6 +290,7 @@ function App() {
           <Metric label="生活水平" value={lifestyle} /><Metric label="能力" value={game.ability} /><Metric label="声誉" value={game.reputation} /><Metric label="关系" value={Object.values(game.relationships).reduce((sum, value) => sum + value, 0)} />
         </section>
         {lastError && <div className="notice error" role="alert">{lastError}</div>}
+        {lastNotice && !lastError && <div className="notice" role="status" aria-label="操作结果">{lastNotice}</div>}
         {saveError && <div className="notice error" role="alert">{saveError}</div>}
         {externalSaveConflict && <div className="notice error" role="alert"><span>{EXTERNAL_SAVE_CONFLICT_MESSAGE}</span><div className="button-pair"><button className="secondary-button" onClick={() => window.location.reload()}>加载最新存档</button></div></div>}
         {recovery && (recovery.noticeVisible ? <div className="notice error" role="alert"><span>{recovery.reason}。原始存档尚未被替换，自动保存已暂停。{game.businessFacts?.history === 'partial' ? '旧历史仅恢复现存证据。' : ''}</span><div className="button-pair"><button className="text-button" onClick={acceptRecovery}>{recovery.kind === 'compatibility' ? '确认恢复并继续' : '继续使用当前临时存档'}</button><button className="text-button" onClick={() => reset()}>确认重置存档</button><button className="text-button" onClick={() => { const url = URL.createObjectURL(new Blob([recovery.raw], { type: 'text/plain;charset=utf-8' })); const link = document.createElement('a'); link.href = url; link.download = 'yuliang-original-save.txt'; link.click(); URL.revokeObjectURL(url); }}>导出原始存档</button><button className="text-button" onClick={dismissLoadProblem}>暂时隐藏</button></div></div> : <button onClick={showRecovery}>存档恢复待确认 · 自动保存已暂停</button>)}
@@ -566,7 +599,9 @@ function InboxGrid({ game, onNavigate }: { game: GameState; onNavigate?: (view: 
   }))).concat(gigs.slice(0, 1).map((gig): InboxItem => ({
     icon: 'cash',
     title: displayContentName(gig.jobId, contentRegistry.jobs, '一次性机会'),
-    meta: `一次性 Gig · 结算 ${money(gig.pay)}`,
+    // A gig on this list is an opportunity until it is taken on: the row says which
+    // of the two it is instead of promising the fee.
+    meta: Number.isFinite(gig.startedMinute) ? `一次性 Gig · 进行中 · 满勤 ${money(gig.pay)}` : `一次性 Gig · 未开工 · 满勤 ${money(gig.pay)}`,
   })));
   if (!offerRows.length) {
     const eligibleCount = (game.vacancies ?? []).filter((vacancy) => {
@@ -673,7 +708,7 @@ function ShopRailEmptyState({ illustration, title, hint }: { illustration: Pixel
 }
 
 function ServiceMarket({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
-  return <section className="detail-panel" aria-label="服务与订阅"><div className="section-heading compact"><div><span className="eyebrow">日常生活</span><h2>服务与订阅</h2></div><p>一次性服务立即结算；订阅在每月结算时自动扣费，可随时取消。</p></div><div className="item-list">{(contentRegistry.services ?? []).map((service) => { const available = !service.requirements || evaluateCondition(service.requirements, game, contentRegistry, balanceConfig); const cooldown = serviceCooldownRemaining(game, service); const usable = available && cooldown === 0 && game.cash >= service.price; return <div className="item-row" key={service.id}><div><span className="job-kind">一次性服务</span><h2>{service.name}</h2><p>{service.description}</p>{cooldown > 0 ? <span className="requirement-missing">冷却中 · 还需 {cooldown} 天</span> : service.requirements && <span className={available ? 'requirement-ok' : 'requirement-missing'}>{explainCondition(service.requirements, game, contentRegistry, balanceConfig)}</span>}</div><div className="row-meta"><strong>{money(service.price)}</strong><button className="text-button" disabled={!usable} onClick={() => dispatch({ type: 'use_service', serviceId: service.id })}>{cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '使用服务'}</button></div></div>; })}</div><div className="item-list">{(contentRegistry.subscriptions ?? []).map((subscription) => { const active = Boolean(game.activeSubscriptions?.[subscription.id]); return <div className="item-row" key={subscription.id}><div><span className="job-kind">月度订阅</span><h2>{subscription.name}</h2><p>{subscription.description}</p></div><div className="row-meta"><strong>{money(subscription.monthlyFee)} /月</strong><button className="text-button" onClick={() => dispatch({ type: 'manage_subscription', subscriptionId: subscription.id, enabled: !active })}>{active ? '取消订阅' : '开通订阅'}</button></div></div>; })}</div><ServiceHistoryView game={game} /></section>;
+  return <section className="detail-panel" aria-label="服务与订阅"><div className="section-heading compact"><div><span className="eyebrow">日常生活</span><h2>服务与订阅</h2></div><p>一次性服务立即结算；订阅开通即付一期（28 天），之后在月结时续费，每次续费覆盖此后的 28 天。可随时取消：取消后不再续费，也不会补收已过的时间。现金不足时订阅暂停，不发放下一期福利。</p></div><div className="item-list">{(contentRegistry.services ?? []).map((service) => { const available = !service.requirements || evaluateCondition(service.requirements, game, contentRegistry, balanceConfig); const cooldown = serviceCooldownRemaining(game, service); const usable = available && cooldown === 0 && game.cash >= service.price; return <div className="item-row" key={service.id}><div><span className="job-kind">一次性服务</span><h2>{service.name}</h2><p>{service.description}</p>{cooldown > 0 ? <span className="requirement-missing">冷却中 · 还需 {cooldown} 天</span> : service.requirements && <span className={available ? 'requirement-ok' : 'requirement-missing'}>{explainCondition(service.requirements, game, contentRegistry, balanceConfig)}</span>}</div><div className="row-meta"><strong>{money(service.price)}</strong><button className="text-button" disabled={!usable} onClick={() => dispatch({ type: 'use_service', serviceId: service.id })}>{cooldown > 0 ? `冷却中 · 还需 ${cooldown} 天` : '使用服务'}</button></div></div>; })}</div><div className="item-list">{(contentRegistry.subscriptions ?? []).map((subscription) => { const active = Boolean(game.activeSubscriptions?.[subscription.id]); return <div className="item-row" key={subscription.id}><div><span className="job-kind">月度订阅</span><h2>{subscription.name}</h2><p>{subscription.description}</p></div><div className="row-meta"><strong>{money(subscription.monthlyFee)} /月</strong><button className="text-button" onClick={() => dispatch({ type: 'manage_subscription', subscriptionId: subscription.id, enabled: !active })}>{active ? '取消订阅' : '开通订阅'}</button></div></div>; })}</div><ServiceHistoryView game={game} /></section>;
 }
 
 function ServiceHistoryView({ game }: { game: GameState }) {
@@ -1110,7 +1145,7 @@ function BusinessGroupView({ game, dispatch }: { game: GameState; dispatch: (act
     groupProfit += profitShare;
     return { holding, business, tier, valuation, profitShare };
   });
-  return <section className="detail-panel" aria-label="企业组合"><div className="section-heading compact"><div><span className="eyebrow">控股与持股 · 董事会决策 · 世界记录归档</span><h2>企业组合</h2></div><p>全资、控股、战略持股和少数股权投资汇总在这里；控股及以上可以对单家企业做出一次性董事会调整。</p></div><div className="profile-grid"><div className="info-panel"><span>组合成员</span><strong>{members.length} 家</strong></div><div className="info-panel"><span>控股 / 全资</span><strong>{tierCount.controlling + tierCount.wholly_owned} 家</strong></div><div className="info-panel"><span>战略 / 少数股权</span><strong>{tierCount.strategic + tierCount.minority} 家</strong></div><div className="info-panel"><span>组合归母估值</span><strong>{money(groupValuation)}</strong></div><div className="info-panel"><span>组合日均归属利润</span><strong>{groupProfit >= 0 ? '+' : ''}{money(groupProfit)}</strong></div></div><div className="item-list">{members.map(({ holding, business, tier, valuation, profitShare }) => { const equityNow = holding.equityPercent ?? 100; const directable = canDirectBusinessOperations(holding); const streamlineUsed = Boolean(game.flags[`${business.id}.decision.streamline`]); const relocateUsed = Boolean(game.flags[`${business.id}.decision.relocate`]); const streamlineCost = Math.max(2000, Math.round(calculateDailyBusinessProfit(holding, business).wage * 6)); const currentLocationId = effectiveBusinessLocationId(holding, business); const relocationTargets = (contentRegistry.locations ?? []).filter((location) => location.id !== currentLocationId); return <div className="item-row" key={business.id}><div><h3>{business.name}</h3><p className="muted">{tier.name} · 持股 {equityNow}% · 归属估值 {money(valuation)} · 日均归属利润 {money(profitShare)}{holding.operatingBonusPercent ? ` · 重组效率 +${holding.operatingBonusPercent}%` : ''}</p>{directable && (!streamlineUsed || !relocateUsed) && <span className="muted">董事会可执行的一次性调整：</span>}{!directable && equityNow < 50 && <span className="muted">增持到至少 50% 后，可以接管这家企业的董事会。</span>}</div>{directable && (!streamlineUsed || !relocateUsed) ? <div className="button-pair">{!streamlineUsed && <button className="text-button" disabled={game.cash - streamlineCost < 0} onClick={() => dispatch({ type: 'make_control_decision', businessId: business.id, decisionId: 'streamline_operations' })}>精简组织 {money(streamlineCost)}</button>}{!relocateUsed && relocationTargets.slice(0, 3).map((location) => <button className="text-button" key={location.id} disabled={game.cash - 2000 < 0} onClick={() => dispatch({ type: 'make_control_decision', businessId: business.id, decisionId: 'relocate_operations', targetLocationId: location.id })}>迁入{location.name} ¥2,000</button>)}</div> : <span className="current-label">{tier.name}</span>}</div>; })}</div></section>;
+  return <section className="detail-panel" aria-label="企业组合"><div className="section-heading compact"><div><span className="eyebrow">控股与持股 · 董事会决策 · 世界记录归档</span><h2>企业组合</h2></div><p>全资、控股、战略持股和少数股权投资汇总在这里；控股及以上可以对单家企业做出一次性董事会调整。</p></div><div className="profile-grid"><div className="info-panel"><span>组合成员</span><strong>{members.length} 家</strong></div><div className="info-panel"><span>控股 / 全资</span><strong>{tierCount.controlling + tierCount.wholly_owned} 家</strong></div><div className="info-panel"><span>战略 / 少数股权</span><strong>{tierCount.strategic + tierCount.minority} 家</strong></div><div className="info-panel"><span>组合归母估值</span><strong>{money(groupValuation)}</strong></div><div className="info-panel"><span>组合日均归属利润</span><strong>{groupProfit >= 0 ? '+' : ''}{money(groupProfit)}</strong></div></div><div className="item-list">{members.map(({ holding, business, tier, valuation, profitShare }) => { const equityNow = holding.equityPercent ?? 100; const directable = canDirectBusinessOperations(holding); const streamlineUsed = Boolean(game.flags[`${business.id}.decision.streamline`]); const relocateUsed = Boolean(game.flags[`${business.id}.decision.relocate`]); const streamlineCost = Math.max(2000, Math.round(calculateDailyBusinessProfit(holding, business).wage * 6)); const currentLocationId = effectiveBusinessLocationId(holding, business); const relocationTargets = (contentRegistry.locations ?? []).filter((location) => location.id !== currentLocationId); return <div className="item-row" key={business.id}><div><h3>{business.name}</h3><p className="muted">{tier.name} · 持股 {equityNow}% · 归属估值 {money(valuation)} · 日均归属利润 {money(profitShare)}{holding.operatingBonusPercent ? ` · 重组效率 +${holding.operatingBonusPercent}%` : ''}</p>{businessValuationBasisIsUnverified(holding) && <span className="muted">这家企业的整企估值无法从旧存档还原，当前按当年记录的金额计算，等待复核。</span>}{directable && (!streamlineUsed || !relocateUsed) && <span className="muted">董事会可执行的一次性调整：</span>}{!directable && equityNow < 50 && <span className="muted">增持到至少 50% 后，可以接管这家企业的董事会。</span>}</div>{directable && (!streamlineUsed || !relocateUsed) ? <div className="button-pair">{!streamlineUsed && <button className="text-button" disabled={game.cash - streamlineCost < 0} onClick={() => dispatch({ type: 'make_control_decision', businessId: business.id, decisionId: 'streamline_operations' })}>精简组织 {money(streamlineCost)}</button>}{!relocateUsed && relocationTargets.slice(0, 3).map((location) => <button className="text-button" key={location.id} disabled={game.cash - 2000 < 0} onClick={() => dispatch({ type: 'make_control_decision', businessId: business.id, decisionId: 'relocate_operations', targetLocationId: location.id })}>迁入{location.name} ¥2,000</button>)}</div> : <span className="current-label">{tier.name}</span>}</div>; })}</div></section>;
 }
 
 function BusinessOperationsView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {

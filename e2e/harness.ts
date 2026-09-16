@@ -4,6 +4,13 @@ import { e2eAppPath } from '../playwright.config';
 export const MAIN_CONTENT = 'main.main-content';
 export const PERSISTENT_STATUS = '.persistent-status';
 
+/** Canonical save location, mirrored from `src/game/store/canonicalSave.ts`. */
+export const CANONICAL_DB = 'yuliang-save';
+export const CANONICAL_STORE = 'saves';
+export const CANONICAL_SLOT = 'main';
+/** The legacy `localStorage` key: a migration source, never written by the app. */
+export const LEGACY_SAVE_KEY = 'yuliang-save-v1';
+
 export const navigate = (page: Page, name: string) =>
   page.getByRole('navigation', { name: '主导航', exact: true }).getByRole('button', { name, exact: true }).click();
 
@@ -13,9 +20,267 @@ export async function gotoAppRoot(page: Page) {
   expect(new URL(page.url()).pathname, '应用必须落在配置的 base 路径上').toBe(e2eAppPath);
 }
 
+/**
+ * Wait for the canonical save to have been read. The shell renders a loading
+ * state until then, because acting on the placeholder would be refused.
+ */
+export async function awaitAppReady(page: Page, timeout = 10_000): Promise<void> {
+  await page.waitForFunction(() => {
+    const bridge = (window as unknown as { __yuliang?: { store?: { getState?: () => { canonical?: { status?: string } } } } }).__yuliang;
+    const status = bridge?.store?.getState?.().canonical?.status;
+    return status === 'ready' || status === 'unavailable';
+  }, undefined, { timeout });
+}
+
 export async function openApp(page: Page) {
   await gotoAppRoot(page);
   await page.waitForFunction(() => Boolean(window.__yuliang));
+  await awaitAppReady(page);
+}
+
+/**
+ * Boot the app with the debug bridge enabled and a clean save. Every
+ * persistence test uses this so it starts from a known, isolated origin state:
+ * both the canonical IndexedDB record and the legacy `localStorage` payload are
+ * removed, because the app reads the record first and would otherwise ignore a
+ * fixture written to the legacy key.
+ *
+ * The reload is awaited: without that, a caller can read `window.__yuliang`
+ * from the *previous* document and seed or drive the wrong instance.
+ */
+export async function bootWithBridge(page: Page): Promise<void> {
+  await gotoAppRoot(page);
+  await wipeSave(page);
+  await page.evaluate(() => localStorage.setItem('yuliang-e2e-hook', '1'));
+  await page.reload({ waitUntil: 'load' });
+  await page.waitForFunction(() => typeof (window as unknown as { __yuliang?: { store?: { getState?: unknown } } }).__yuliang?.store?.getState === 'function');
+  await awaitAppReady(page);
+}
+
+export interface CanonicalRecordSnapshot { generation: string; revision: number; payload: string }
+
+/**
+ * Everything passed to `page.evaluate` runs in the browser, where module-scope
+ * constants are not visible: each evaluated function repeats the schema
+ * literals on purpose (`e2e/` is not typechecked by `tsc -b`).
+ */
+const readRecordInPage = (slot: string) => new Promise<CanonicalRecordSnapshot | null>((resolve) => {
+  const request = indexedDB.open('yuliang-save', 1);
+  request.onerror = () => resolve(null);
+  request.onsuccess = () => {
+    const db = request.result;
+    if (!db.objectStoreNames.contains('saves')) { db.close(); resolve(null); return; }
+    const transaction = db.transaction('saves', 'readonly');
+    const read = transaction.objectStore('saves').get(slot);
+    read.onsuccess = () => {
+      const stored = read.result as CanonicalRecordSnapshot | undefined;
+      resolve(stored ? { generation: stored.generation, revision: stored.revision, payload: stored.payload } : null);
+    };
+    read.onerror = () => resolve(null);
+    transaction.oncomplete = () => db.close();
+    transaction.onabort = () => { db.close(); resolve(null); };
+  };
+});
+
+/**
+ * Read the canonical record straight out of IndexedDB — the same record the
+ * app's boot reads, observed from outside the application.
+ */
+export async function readCanonicalRecord(page: Page): Promise<CanonicalRecordSnapshot | null> {
+  return page.evaluate(readRecordInPage, CANONICAL_SLOT) as Promise<CanonicalRecordSnapshot | null>;
+}
+
+/** The persisted game state, or `{}` when no record exists yet. */
+export async function readCanonicalState(page: Page): Promise<Record<string, unknown>> {
+  const record = await readCanonicalRecord(page);
+  if (!record) return {};
+  try {
+    return JSON.parse(record.payload) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Replace the canonical payload in place, keeping the stored version, so a
+ * fixture behaves like the save it is standing in for. Used to seed a world;
+ * the app must be reloaded afterwards, because a running window keeps its own
+ * state and version.
+ */
+/**
+ * Replace the canonical payload with a seeded world. Like every fixture write it
+ * starts a new generation, so a window that was still running against the
+ * previous one cannot re-commit over the seed and its unload candidate is pruned
+ * rather than adopted.
+ */
+export async function writeCanonicalState(page: Page, state: unknown): Promise<void> {
+  await page.evaluate(({ slot, payload }: { slot: string; payload: string }) => new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open('yuliang-save', 1);
+    request.onerror = () => reject(new Error('无法打开存档数据库'));
+    request.onsuccess = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('saves')) db.createObjectStore('saves', { keyPath: 'slot' });
+      const transaction = db.transaction('saves', 'readwrite');
+      const generation = `fixture-${Date.now().toString(36)}.${Math.random().toString(36).slice(2, 8)}`;
+      transaction.objectStore('saves').put({ slot, generation, revision: 1, payload });
+      transaction.oncomplete = () => { db.close(); resolve(); };
+      transaction.onabort = () => { db.close(); reject(new Error('写入存档记录失败')); };
+    };
+  }), { slot: CANONICAL_SLOT, payload: JSON.stringify(state) });
+}
+
+/** The canonical record's generation and revision, or `null` when absent. */
+export async function canonicalHead(page: Page): Promise<{ generation: string; revision: number } | null> {
+  const record = await readCanonicalRecord(page);
+  return record ? { generation: record.generation, revision: record.revision } : null;
+}
+
+/**
+ * The persisted save, after giving this window's own pending commit a moment to
+ * land. A save is now a database transaction, so reading immediately after a UI
+ * action can observe the previous version; waiting for the record to match the
+ * live state is what makes "act, then read the save" mean what it says. When
+ * the window cannot write at all (frozen, or a write-protected recovery) the
+ * short wait expires and the record is returned as it is.
+ *
+ * When no canonical record exists yet, the legacy `localStorage` payload is
+ * returned instead: that is the world a seeded fixture booted from, because the
+ * application never writes that key. A canonical record always wins, so this
+ * cannot hide a save the app made.
+ */
+export async function readPersistedState(page: Page, settleMs = 2_000): Promise<Record<string, unknown>> {
+  await page.waitForFunction((slot: string) => new Promise<boolean>((resolve) => {
+    const request = indexedDB.open('yuliang-save', 1);
+    request.onerror = () => resolve(false);
+    request.onsuccess = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('saves')) { db.close(); resolve(false); return; }
+      const read = db.transaction('saves', 'readonly').objectStore('saves').get(slot);
+      read.onsuccess = () => {
+        const stored = read.result as CanonicalRecordSnapshot | undefined;
+        db.close();
+        const bridge = (window as unknown as { __yuliang?: { store?: { getState?: () => { game?: unknown } } } }).__yuliang;
+        const live = bridge?.store?.getState?.().game;
+        resolve(Boolean(stored) && Boolean(live) && stored!.payload === JSON.stringify(live));
+      };
+      read.onerror = () => { db.close(); resolve(false); };
+    };
+  }), CANONICAL_SLOT, { timeout: settleMs }).catch(() => undefined);
+  const record = await readCanonicalRecord(page);
+  if (record) {
+    try { return JSON.parse(record.payload) as Record<string, unknown>; } catch { return {}; }
+  }
+  const legacy = await page.evaluate((key) => localStorage.getItem(key), LEGACY_SAVE_KEY);
+  if (!legacy) return {};
+  try { return JSON.parse(legacy) as Record<string, unknown>; } catch { return {}; }
+}
+
+/**
+ * Install a page-side save bridge (`window.__e2eSave`) that reads and writes the
+ * canonical record with raw IndexedDB, so a fixture that used to read and
+ * rewrite `localStorage` keeps its shape while the save lives in the database.
+ * Install it before the navigation whose document needs it.
+ */
+export async function installSaveBridge(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const open = () => new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('yuliang-save', 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains('saves')) db.createObjectStore('saves', { keyPath: 'slot' });
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error ?? new Error('无法打开存档数据库'));
+    });
+    const withStore = async <T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => IDBRequest<T> | undefined): Promise<T | undefined> => {
+      const db = await open();
+      return new Promise<T | undefined>((resolve, reject) => {
+        const transaction = db.transaction('saves', mode);
+        const result = run(transaction.objectStore('saves'));
+        let value: T | undefined;
+        if (result) result.onsuccess = () => { value = result.result; };
+        transaction.oncomplete = () => { db.close(); resolve(value); };
+        transaction.onabort = () => { db.close(); reject(transaction.error ?? new Error('存档事务被中止')); };
+      });
+    };
+    (window as unknown as { __e2eSave?: unknown }).__e2eSave = {
+      /** The persisted game state, or `{}` when nothing was saved yet. */
+      read: async () => {
+        const stored = await withStore<{ payload: string }>('readonly', (store) => store.get('main'));
+        if (!stored) return {};
+        try { return JSON.parse(stored.payload); } catch { return {}; }
+      },
+      /** Replace the persisted payload with a fresh version, as a seed would. */
+      write: async (state: unknown) => {
+        // A fixture replaces the world, so it starts a new generation: a window
+        // that was still running against the previous one must not be able to
+        // re-commit over the fixture, and its unload candidate (which descends
+        // from the old generation) is pruned at the next boot instead of
+        // overriding the seeded payload.
+        const generation = `fixture-${Date.now().toString(36)}.${Math.random().toString(36).slice(2, 8)}`;
+        await withStore('readwrite', (store) => {
+          store.put({ slot: 'main', generation, revision: 1, payload: JSON.stringify(state) });
+          return undefined;
+        });
+      },
+    };
+  });
+}
+
+/** Remove the canonical record and every `localStorage` save artefact. */
+export async function wipeSave(page: Page): Promise<void> {
+  await page.evaluate((slot: string) => new Promise<void>((resolve) => {
+    const keys = Object.keys(localStorage).filter((key) => key.startsWith('yuliang-') && key !== 'yuliang-e2e-hook');
+    for (const key of keys) localStorage.removeItem(key);
+    const request = indexedDB.open('yuliang-save', 1);
+    request.onerror = () => resolve();
+    request.onsuccess = () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains('saves')) { db.close(); resolve(); return; }
+      const transaction = db.transaction('saves', 'readwrite');
+      transaction.objectStore('saves').delete(slot);
+      transaction.oncomplete = () => { db.close(); resolve(); };
+      transaction.onabort = () => { db.close(); resolve(); };
+    };
+  }), CANONICAL_SLOT);
+}
+
+/** Wait until the canonical record matches the live in-memory game state. */
+export async function awaitCanonicalSynced(page: Page, timeout = 5_000): Promise<void> {
+  await page.waitForFunction(async (slot: string) => {
+    const record = await new Promise<{ payload?: string } | null>((resolve) => {
+      const request = indexedDB.open('yuliang-save', 1);
+      request.onerror = () => resolve(null);
+      request.onsuccess = () => {
+        const db = request.result;
+        const read = db.transaction('saves', 'readonly').objectStore('saves').get(slot);
+        read.onsuccess = () => { resolve((read.result as { payload?: string } | undefined) ?? null); db.close(); };
+        read.onerror = () => { db.close(); resolve(null); };
+      };
+    });
+    const live = (window as unknown as { __yuliang: { store: { getState: () => { game: unknown } } } }).__yuliang.store.getState().game;
+    return Boolean(record) && record!.payload === JSON.stringify(live);
+  }, CANONICAL_SLOT, { timeout });
+}
+
+/** The canonical save's revision counter, or 0 when it was never written. */
+export async function saveRevision(page: Page): Promise<number> {
+  return (await canonicalHead(page))?.revision ?? 0;
+}
+
+/**
+ * Open a Career sub-page by its navigation label. The career surface collapses
+ * its sections behind a menu button at some viewports, so both shapes are
+ * handled instead of assuming one layout.
+ */
+export async function openCareerPage(page: Page, label: string): Promise<void> {
+  const pageMenu = page.getByRole('button', { name: /^职业页面/ });
+  if (await pageMenu.count()) {
+    await pageMenu.click();
+    await page.getByRole('navigation', { name: '职业页面导航' }).getByRole('button', { name: label, exact: true }).click();
+    return;
+  }
+  await page.getByRole('button', { name: label, exact: true }).click();
 }
 
 export interface MainMetrics {

@@ -2,14 +2,83 @@ import { mortgagePayment, subscriptionFee } from './settlementMath';
 import { amount, known, unknown, addAmount } from './knownAmount';
 import type { BalanceConfig } from '../balance/config';
 import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary, WorldSnapshot } from '../content/contracts';
-import { businessValuation, calculateNetWorth, ownershipTierForEquity, wealthTierForNetWorth } from './economy';
+import { businessValuation, calculateNetWorth, effectiveBusinessLocationId, ownershipTierForEquity, wealthTierForNetWorth } from './economy';
 import { characterCareerAt, companyStageAt, makeWorldBranchEvaluator } from './worldEvolution';
 import { emptyFinancialLedger, projectLegacyMonthlyLedger, recordStateFinancialEntry, summarizeFinancialLedger } from './financialLedger';
 import { appendLifeRecord } from './lifeHistory';
 import { housingPrice, housingRentPerDay } from './locations';
+import { applyContentEffects } from './effects';
 
 export function emptyMonthlyLedger(netWorthStart: import('../content/contracts').KnownAmount | number): MonthlyLedger {
   return { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: amount(netWorthStart), netWorthEnd: amount(netWorthStart) };
+}
+
+/** Billing period length in game days (a month is 28 days). */
+export const SUBSCRIPTION_CYCLE_DAYS = 28;
+
+/**
+ * Safety bound for a single billing: an anchor that is many periods behind (a
+ * save that was not played for months) is advanced period by period, never in an
+ * unbounded loop and never into an unpayable one-off charge.
+ */
+const MAX_SUBSCRIPTION_PERIODS_PER_BILLING = 12;
+
+/**
+ * Day the next subscription period falls due. A subscription buys a period of
+ * `SUBSCRIPTION_CYCLE_DAYS` days from the day it was (re)activated, and 月结 is
+ * the only place that bills, so the anchor is read **as recorded**: the first
+ * close on or after it bills exactly one period and
+ * `subscriptionRenewalDay` moves it on by one period per period elapsed, which
+ * is what keeps the billed periods contiguous. Clamping the anchor up to the
+ * current day here (the earlier behaviour) made the anchor unable to ever be
+ * behind the clock, so renewal could not see that a period had run out.
+ *
+ * A legacy record without an anchor holds an unpaid open period, so the close
+ * that reads it starts and bills the first period.
+ */
+export function subscriptionDueDay(holding: { billedUntilDay?: number }, day: number): number {
+  return Number.isInteger(holding.billedUntilDay) ? Number(holding.billedUntilDay) : day;
+}
+
+/** Whether `day` still falls inside the period a subscription already paid for. */
+export function subscriptionPeriodCovers(holding: { billedUntilDay?: number } | undefined, day: number): boolean {
+  if (!holding || !Number.isInteger(holding.billedUntilDay)) return false;
+  return day <= Number(holding.billedUntilDay);
+}
+
+/**
+ * The end of the period a charge on `day` buys: the next `SUBSCRIPTION_CYCLE_DAYS`
+ * days from the day the money is actually taken. Every charge therefore starts a
+ * fresh, fully prepaid period, and no charge can cover a stretch that was already
+ * paid for.
+ */
+export function subscriptionPeriodEnd(day: number): number {
+  return day + SUBSCRIPTION_CYCLE_DAYS;
+}
+
+/**
+ * Day the next subscription period falls due for billing at `day`.
+ *
+ * A period that has run out is billed by the next 月结 (the only place that
+ * bills), and that charge buys the cycle starting on the billing day. If several
+ * periods elapsed — a save that was not played for months, or a legacy record
+ * many periods behind — they are settled one period at a time under a bound, so
+ * a stale anchor can never produce a single unpayable lump sum.
+ *
+ * What happens to the stretch between the end of a paid period and the close
+ * that bills the next one is stated rather than implied: it is a **lapse**. No
+ * service benefit is granted for it (benefits are only applied when a period is
+ * charged), it is never billed retroactively, and it accrues no debt — the game
+ * has no arrears or credit concept, and this round did not add one.
+ */
+export function subscriptionRenewalDay(holding: { billedUntilDay?: number }, day: number): number {
+  let due = subscriptionDueDay(holding, day);
+  let periods = 0;
+  while (due <= day && periods < MAX_SUBSCRIPTION_PERIODS_PER_BILLING) {
+    periods += 1;
+    due = day + periods * SUBSCRIPTION_CYCLE_DAYS;
+  }
+  return due;
 }
 
 export function closeMonth(state: GameState, month: number, content: ContentRegistry, balance: BalanceConfig, output: GameEffect[]): MonthlySummary {
@@ -19,6 +88,14 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       delete state.activeSubscriptions![subscriptionId];
       continue;
     }
+    // Period billing: a subscription is charged (and grants its effects) once
+    // per 28-day period, billed by the first 月结 on or after the period's due
+    // day. Reactivating inside a paid period resumes that period instead of
+    // buying a second one, so toggling can never farm attributes, and because a
+    // new period always starts at the due day of the old one there is no stretch
+    // of active-but-unpaid subscription either.
+    const due = subscriptionDueDay(holding, state.time.day);
+    if (state.time.day < due) continue;
     const fee = subscriptionFee(content, subscription.id);
     if (state.cash < fee) {
       delete state.activeSubscriptions![subscriptionId];
@@ -27,7 +104,9 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
       continue;
     }
     state.cash -= fee;
+    holding.billedUntilDay = subscriptionRenewalDay(holding, state.time.day);
     recordSubscriptionFee(state, subscription.id, subscription.name, fee);
+    if (subscription.effects?.length) applyContentEffects(state, subscription.effects, content, balance, output);
     state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.service.subscription-fee.${subscription.id}.${month}`, day: state.time.day, category: 'service', title: `${subscription.name}月度扣费`, sourceId: subscription.id, amount: -fee });
   }
   const mortgage = state.mortgage;
@@ -96,10 +175,21 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
     };
     state.annualHistory = [...(state.annualHistory ?? []).filter((entry) => entry.year !== annual.year), annual].slice(-10);
     const development = { ...(state.locationDevelopment ?? {}) };
+    // Businesses count toward the city they actually operate in: a paid
+    // relocation must move the growth, not leave it on the former address.
+    const businessesByLocation = new Map<string, number>();
+    for (const holding of Object.values(state.businesses)) {
+      const definition = content.businesses.find((business) => business.id === holding.businessId);
+      if (!definition) continue;
+      const locationId = effectiveBusinessLocationId(holding, definition);
+      if (!locationId) continue;
+      businessesByLocation.set(locationId, (businessesByLocation.get(locationId) ?? 0) + 1);
+    }
     for (const location of content.locations ?? []) {
       const visits = state.locationVisits?.[location.id] ?? 0;
-      const businesses = Object.values(state.businesses).filter((holding) => content.businesses.find((business) => business.id === holding.businessId)?.locationId === location.id).length;
+      const businesses = businessesByLocation.get(location.id) ?? 0;
       const growth = (businesses > 0 ? 1 : 0) + (visits >= 3 ? 1 : 0);
+      if (!growth) continue;
       development[location.id] = Math.min(5, Math.max(0, development[location.id] ?? 0) + growth);
     }
     state.locationDevelopment = development;

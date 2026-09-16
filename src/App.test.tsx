@@ -30,6 +30,10 @@ describe('余量 app flow', () => {
     });
     try {
       vi.resetModules();
+      // The module graph is re-created, so the test backend the fresh store will
+      // use has to be installed again before `App` builds it.
+      const { installCanonicalSaveDouble } = await import('./game/store/canonicalSaveTestDouble');
+      installCanonicalSaveDouble();
       const { default: FreshApp } = await import('./App');
       render(<FreshApp />);
       expect(screen.getByRole('heading', { name: '余量' })).toBeInTheDocument();
@@ -821,6 +825,31 @@ describe('余量 app flow', () => {
     expect(screen.getByText('已访问 0 次')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: '调整定价' }));
     expect(screen.getByText(/定价 3/)).toBeInTheDocument();
+  });
+
+  it('tells the player when a holding\u2019s whole-company valuation could not be restored', async () => {
+    // A migrated holding whose basis could not be proven keeps its recorded price
+    // and is marked `unverified`; the player is told the figure is not a verified
+    // company value instead of being shown a confident number.
+    const user = userEvent.setup();
+    const game = appStore.getState().game;
+    appStore.setState({ game: {
+      ...game,
+      businesses: { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 4999, companyValuationBasis: 4999, companyValuationBasisSource: 'unverified' } },
+    } });
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '财富' }));
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '经营' }));
+    expect(screen.getByText(/整企估值无法从旧存档还原/)).toBeInTheDocument();
+
+    // A verified holding never shows that note.
+    appStore.setState({ game: {
+      ...game,
+      businesses: { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3200, companyValuationBasis: 3200, companyValuationBasisSource: 'recorded-price' } },
+    } });
+    await user.click(within(screen.getByRole('navigation', { name: '财富分区' })).getByRole('button', { name: '经营' }));
+    expect(screen.queryByText(/整企估值无法从旧存档还原/)).not.toBeInTheDocument();
   });
 
   it('exposes an acquisition action for another unlocked business', async () => {

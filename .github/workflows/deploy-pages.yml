@@ -34,9 +34,16 @@ jobs:
       - name: Prepare Chrome for Playwright
         run: npx playwright install --with-deps chrome
       - name: Release browser acceptance (production preview)
-        # Runs the key layout/wheel-reachability specs against the built dist
-        # via `vite preview`; a failure here must stop the Pages upload.
-        run: npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts --project=desktop
+        # Runs against the built dist via `vite preview`; a failure here stops
+        # the Pages upload.
+        #  - `save-concurrency.spec.ts`: the save-persistence gate. It exercises
+        #    the production IndexedDB compare-and-commit protocol across
+        #    same-origin documents, including conflict, unload recovery and
+        #    transaction rollback, so an autosave/recovery regression cannot ship
+        #    unnoticed.
+        #  - `lifecycle-acceptance.spec.ts`: the R04–R06 gate (subscription
+        #    billing, gig UI contract, shift-boundary hiring) through the real UI.
+        run: npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts --project=desktop
         env:
           YULIANG_E2E_SERVER: preview
       - name: Upload test diagnostics

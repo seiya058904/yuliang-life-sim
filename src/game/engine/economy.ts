@@ -93,8 +93,28 @@ export function calculateDailyBusinessProfit(holding: BusinessHolding, definitio
   return { revenue, goodsCost, wage, rent, profit };
 }
 
+/**
+ * Whole-company money the holding is valued against. `companyValuationBasis`
+ * is the single field every entry path writes; legacy saves without it fall
+ * back to the historical `purchasePrice + capitalInvested + fundingRaised`.
+ */
+export function businessValuationBasis(holding: BusinessHolding): number {
+  const base = Number.isFinite(holding.companyValuationBasis) ? Number(holding.companyValuationBasis) : Number(holding.purchasePrice) || 0;
+  return Math.max(0, base) + Math.max(0, holding.capitalInvested ?? 0) + Math.max(0, holding.fundingRaised ?? 0);
+}
+
 export function businessValuation(holding: BusinessHolding, balance: BalanceConfig): number {
-  return Math.max(0, Math.round((holding.purchasePrice + (holding.capitalInvested ?? 0) + (holding.fundingRaised ?? 0)) * balance.businessValuationRatio));
+  return Math.max(0, Math.round(businessValuationBasis(holding) * balance.businessValuationRatio));
+}
+
+/**
+ * Whether the whole-company value behind a holding could not be recovered when
+ * the save was migrated, so the number on screen is the recorded price rather
+ * than a verified company value. The player is told instead of being shown a
+ * confident figure that the migration could not prove.
+ */
+export function businessValuationBasisIsUnverified(holding: Pick<BusinessHolding, 'companyValuationBasisSource'>): boolean {
+  return holding.companyValuationBasisSource === 'unverified';
 }
 
 export function calculateDailyPublicBusinessDividend(state: GameState, content: ContentRegistry): number {

@@ -10,7 +10,23 @@ export function applyDueEmployment(state: GameState, content: ContentRegistry): 
   if (!job) return;
   state.employmentHistory = [...(state.employmentHistory ?? []), { jobId: previous.jobId, companyId: previous.companyId, startedDay: previous.startedDay, endedDay: previous.pendingEffectiveDay - 1, finalPay: (previous.basePay ?? 0) + (previous.salaryAdjustment ?? 0), reason: '换岗' }];
   state.currentJobId = job.id;
-  state.employment = { jobId: job.id, startedDay: previous.pendingEffectiveDay, companyId: previous.pendingCompanyId, basePay: previous.pendingBasePay ?? job.basePay, salaryAdjustment: 0, negotiationStage: 0, schedule: defaultJobSchedule(job), effectiveWeek: state.calendar.week };
+  const schedule = defaultJobSchedule(job);
+  // Pending switches are scheduled at a week boundary; the recorded contract
+  // day decides the first shift that may actually be paid.
+  const startedDay = previous.pendingEffectiveDay;
+  state.employment = {
+    jobId: job.id,
+    startedDay,
+    activeFromMinute: Number.isInteger(previous.pendingActiveFromMinute)
+      ? Number(previous.pendingActiveFromMinute)
+      : (startedDay - 1) * 1440 + schedule.startMinute,
+    companyId: previous.pendingCompanyId,
+    basePay: previous.pendingBasePay ?? job.basePay,
+    salaryAdjustment: 0,
+    negotiationStage: 0,
+    schedule,
+    effectiveWeek: state.calendar.week,
+  };
   reconcileStateWithEmployment(state);
 }
 

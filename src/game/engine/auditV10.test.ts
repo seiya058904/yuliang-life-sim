@@ -14,6 +14,7 @@ import { known, amount, unknown } from './knownAmount';
 import { closeMonth } from './monthlySettlement';
 import { emptyFinancialLedger, summarizeFinancialLedger } from './financialLedger';
 import { createGameStore, loadGameStateWithReport, migrateGameState, saveGameState, SAVE_KEY } from '../store/gameStore';
+import { canonicalSaveRaw, failNextCanonicalCommit } from '../store/canonicalSaveTestDouble';
 import { forecastWeeklyPlan } from './forecast';
 import { dailyCosts, fixedMonthBudget, shiftPay, studyRewards } from './settlementMath';
 
@@ -42,7 +43,7 @@ function run(state: GameState, action: GameAction): GameState {
 describe('v10 audit regressions', () => {
   beforeEach(() => { vi.restoreAllMocks(); localStorage.clear(); });
 
-  it('rejects reverse-order cooldown insertion and preserves canonical participants', () => {
+  it('rejects reverse-order cooldown insertion and preserves canonical participants', async () => {
     let state = fresh();
     state = run(state, { type: 'set_plan', weekday: 5, slot: 'evening', activity: { kind: 'activity', activityId: 'activity.weekend-getaway', optionId: 'standard' } });
     state = run(run(state, { type: 'start_week' }), { type: 'pause_simulation' });
@@ -60,7 +61,7 @@ describe('v10 audit regressions', () => {
     expect(advanced.lifeHistory.filter(r => r.sourceId === 'activity.weekend-getaway')).toHaveLength(1);
   });
 
-  it('never creates a previous-week trip from a new Sunday plan', () => {
+  it('never creates a previous-week trip from a new Sunday plan', async () => {
     let state = fresh(8);
     state = run(state, { type: 'set_plan', weekday: 7, slot: 'day', activity: { kind: 'activity', activityId: 'activity.premium-weekend', optionId: 'premium-stay' } });
     expect(activityAtTime(state.time, state.weeklyPlan, undefined, content, state).kind).not.toBe('activity');
@@ -74,7 +75,7 @@ describe('v10 audit regressions', () => {
     ['activity.premium-weekend', 'premium-stay', 2],
     ['activity.domestic-standard', 'explore', 3],
     ['activity.luxury-vacation', 'resort', 5],
-  ] as const)('persists %s across weeks and settles once after reload', (activityId, optionId, days) => {
+  ] as const)('persists %s across weeks and settles once after reload', async (activityId, optionId, days) => {
     let state = fresh(7);
     state.weeklyPlan.days[7].day = { kind: 'activity', activityId, optionId };
     state.autoRepeatPlan = true;
@@ -82,8 +83,8 @@ describe('v10 audit regressions', () => {
     state = run(state, { type: 'start_week' });
     state = advanceSimulation(state, 70, content, balance).state;
     expect(state.longActivity?.activity.start).toEqual({ day: 7, hour: 9, minute: 0 });
-    expect(saveGameState(state).status).toBe('full');
-    state = loadGameStateWithReport(content, balance).state;
+    expect((await saveGameState(state)).status).toBe('full');
+    state = (await loadGameStateWithReport(content, balance)).state;
     state = run(state, { type: 'resume_simulation' });
     // Editing the future template cannot remove the started instance.
     state.weeklyPlan.days[7].day = { kind: 'free' };
@@ -91,12 +92,12 @@ describe('v10 audit regressions', () => {
     expect(state.time).toEqual({ day: 7 + days, hour: 9, minute: 0 });
     expect(state.longActivity).toBeUndefined();
     expect(state.lifeHistory.filter(r => r.sourceId === activityId)).toHaveLength(1);
-    saveGameState(state);
-    const again = run(loadGameStateWithReport(content, balance).state, { type: 'resume_simulation' });
+    await saveGameState(state);
+    const again = run((await loadGameStateWithReport(content, balance)).state, { type: 'resume_simulation' });
     expect(advanceSimulation(again, 1, content, balance).state.lifeHistory.filter(r => r.sourceId === activityId)).toHaveLength(1);
   });
 
-  it('keeps v9 projected long activity untrusted and asks for recovery', () => {
+  it('keeps v9 projected long activity untrusted and asks for recovery', async () => {
     const state = fresh(8);
     state.version = 9;
     state.currentActivity = { kind: 'activity', activityId: 'activity.premium-weekend', optionId: 'premium-stay', start: { day: 7, hour: 9, minute: 0 }, end: { day: 9, hour: 9, minute: 0 } };
@@ -109,7 +110,7 @@ describe('v10 audit regressions', () => {
     expect(store.getState().game.lifeHistory).toEqual(state.lifeHistory);
   });
 
-  it('preserves service, course, activity and interaction facts through successful quota compression', () => {
+  it('preserves service, course, activity and interaction facts through successful quota compression', async () => {
     const state = fresh(2);
     const course = content.courses!.find(c => c.cooldownDays)!;
     state.lifeHistory = [
@@ -121,13 +122,12 @@ describe('v10 audit regressions', () => {
       ...Array.from({ length: 210 }, (_, i) => ({ id: `other.${i}`, day: 2, category: 'career' as const, title: '其他记录' })),
     ];
     state.businessFacts = factsFromHistory(state.lifeHistory, state.time.day);
-    const realSet = Storage.prototype.setItem;
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
-      if (JSON.parse(value).lifeHistory.length > 200) throw new Error('quota');
-      realSet.call(localStorage, key, value);
-    });
-    expect(saveGameState(state).status).toBe('compressed');
-    const restored = loadGameStateWithReport(content, balance).state;
+    // The storage reports itself full for the full payload: the write must fall
+    // back to a trimmed history instead of failing or losing the last save.
+    failNextCanonicalCommit('QuotaExceededError: quota exceeded', true);
+    expect((await saveGameState(state)).status).toBe('compressed');
+    expect(JSON.parse(canonicalSaveRaw()!).lifeHistory.length).toBeLessThanOrEqual(200);
+    const restored = (await loadGameStateWithReport(content, balance)).state;
     const service = content.services!.find(s => s.id === 'service.fitness-assessment')!;
     expect(serviceCooldownRemaining(restored, service)).toBe(59);
     expect(courseCooldownRemaining(restored, course)).toBe(courseCooldownRemaining(state, course));
@@ -138,7 +138,7 @@ describe('v10 audit regressions', () => {
     expect(migrateGameState(restored, content, balance)).toEqual(restored);
   });
 
-  it('preserves independent financial fields and propagates unknown through month close', () => {
+  it('preserves independent financial fields and propagates unknown through month close', async () => {
     const state = fresh(20);
     state.financialLedger = emptyFinancialLedger(1, 10000, 50000);
     const restored = migrateGameState(JSON.parse(JSON.stringify(state)), content, balance);
@@ -158,7 +158,7 @@ describe('v10 audit regressions', () => {
     expect(amount(state.financialLedger.cashStart).kind).toBe('known');
   });
 
-  it('records the actual total enterprise investment on injection and whole exit', () => {
+  it('records the actual total enterprise investment on injection and whole exit', async () => {
     let state = fresh();
     state.unlockedBusinessIds.push('business.seed-kiosk');
     state.unlockedCapabilities.push('business_license');
@@ -173,7 +173,7 @@ describe('v10 audit regressions', () => {
     expect(entries.filter(e => e.category === 'realized_gain')).toHaveLength(0);
   });
 
-  it('never washes unknown enterprise basis through injection or partial sale', () => {
+  it('never washes unknown enterprise basis through injection or partial sale', async () => {
     let state = fresh();
     state.businesses['business.seed-kiosk'] = { businessId: 'business.seed-kiosk', purchasePrice: 3200, priceLevel: 1, wageLevel: 1, inventoryLevel: 1, equityPercent: 100, playerCostBasis: unknown() };
     state = run(state, { type: 'inject_business_capital', businessId: 'business.seed-kiosk', amount: 1000 });
@@ -183,7 +183,7 @@ describe('v10 audit regressions', () => {
     expect(state.financialLedger!.entries.some(e => e.category === 'realized_gain' || e.category === 'realized_loss')).toBe(false);
   });
 
-  it('shares known wage/study/commute calculations and owned-home budgeting', () => {
+  it('shares known wage/study/commute calculations and owned-home budgeting', async () => {
     const state = fresh();
     state.housing.mode = 'owned';
     expect(fixedMonthBudget(state, content, balance).rent).toBe(0);
@@ -194,7 +194,7 @@ describe('v10 audit regressions', () => {
     expect(shiftPay(state, content.jobs[0], false)).toBe(Math.round(content.jobs[0].basePay));
   });
 
-  it('keeps actual modified study and side-job rewards equal to the forecast', () => {
+  it('keeps actual modified study and side-job rewards equal to the forecast', async () => {
     let state = fresh();
     state.unlockedCapabilities.push('remote_work');
     for (const key of Object.keys(state.attributes!) as Array<keyof NonNullable<GameState['attributes']>>) state.attributes![key] = 100;
@@ -212,7 +212,7 @@ describe('v10 audit regressions', () => {
     expect(state.financialLedger!.entries.filter(e => e.category === 'side_job').reduce((sum, e) => sum + e.amount, 0)).toBe(forecast.income);
   });
 
-  it('does not activate a pending replacement early and preserves its absolute date through migration', () => {
+  it('does not activate a pending replacement early and preserves its absolute date through migration', async () => {
     let state = createInitialState(content, balance, 1);
     state.cash = 100000;
     state.time = { day: 3, hour: 8, minute: 0 };
@@ -236,7 +236,7 @@ describe('v10 audit regressions', () => {
     expect(migrateGameState(state, content, balance)).toEqual(state);
   });
 
-  it('allows immediate acceptance when unemployed and retains both legitimate salary stages', () => {
+  it('allows immediate acceptance when unemployed and retains both legitimate salary stages', async () => {
     let state = fresh();
     state.activeRecruitment = { jobId: 'job.seed-shop-clerk', stage: 'offer' };
     state = run(state, { type: 'accept_job_offer', jobId: 'job.seed-shop-clerk' });
@@ -261,7 +261,7 @@ describe('v10 audit regressions', () => {
     expect(rejoined.employment!.negotiationStage).toBe(2);
   });
 
-  it('gates reward and monthly continuations on the same remaining-plan rules', () => {
+  it('gates reward and monthly continuations on the same remaining-plan rules', async () => {
     const state = fresh();
     state.weeklyPlan.days[2].evening = { kind: 'side_job', jobId: 'missing', durationMinutes: 120 };
     state.simulationMode = 'reward';
@@ -277,7 +277,7 @@ describe('v10 audit regressions', () => {
     expect(acknowledged.simulationMode).toBe('planning');
   });
 
-  it('keeps an unknown annual cash baseline independent from known income and net worth', () => {
+  it('keeps an unknown annual cash baseline independent from known income and net worth', async () => {
     const state = fresh(337);
     const sample = summarizeFinancialLedger(emptyFinancialLedger(1, unknown(), known(1000)), unknown(), 1200, known(1000), 1400);
     state.financialHistory = Array.from({ length: 11 }, (_, i) => ({ ...structuredClone(sample), month: i + 1 }));

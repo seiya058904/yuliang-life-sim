@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { PixelIcon, type PixelIconName } from './pixel/PixelIcon';
 
-import type { GameAction, GameState, JobApplicationState, JobDefinition, ViewId } from '../content/contracts';
+import type { GameAction, GameState, GigOpportunityState, JobApplicationState, JobDefinition, ViewId } from '../content/contracts';
 import { employmentKind, isJobEligible, requirementHints } from '../engine/careers';
 import { contentRegistry } from '../content/registry';
 import { balanceConfig } from '../balance/config';
@@ -252,11 +252,42 @@ function VacancyDetail({ game, vacancy, job, dispatch }: { game: GameState; vaca
   return <><span className="job-kind">岗位详情</span><div className="career-detail-visual" aria-hidden="true"><PixelIllustration name={jobArtFor(job)} size={72} /><span>{job.category ?? '岗位'} · 岗位画像</span></div><div className="career-detail-title">{job.name}</div><p>{companyName(vacancy.companyId)}</p><div className="detail-facts"><span>薪资</span><strong>{money(vacancy.salaryRange[0])}–{money(vacancy.salaryRange[1])}</strong><span>类型</span><strong>{employmentKind(job) === 'full_time' ? '正式岗位' : employmentKind(job) === 'gig' ? 'Gig' : '长期兼职'}</strong><span>截止</span><strong>第 {vacancy.expiresDay} 天</strong></div><section><h3>任职要求</h3>{hints.length ? hints.map((hint) => <div className="requirement-line" key={hint.requirementId}><span>{hint.label}</span><strong>{hint.currentValue !== undefined ? `${hint.currentValue}/${hint.requiredValue}` : '未满足'}</strong></div>) : <p className="requirement-ok">当前条件已满足</p>}</section><section><h3>当前条件</h3><div className="career-condition-meter"><span>能力</span><SegmentMeter value={Math.min(game.ability, abilityTarget ?? 1)} max={abilityTarget ?? 1} segments={8} label="能力当前条件" /><strong>{conditionReading(game.ability, abilityTarget)}</strong></div><div className="career-condition-meter"><span>声誉</span><SegmentMeter value={Math.min(game.reputation, reputationTarget ?? 1)} max={reputationTarget ?? 1} segments={8} label="声誉当前条件" /><strong>{conditionReading(game.reputation, reputationTarget)}</strong></div><div className="requirement-line"><span>招聘路径</span><strong>{routeLabel}</strong></div></section><section className="career-detail-recruitment"><div className="career-recruiter"><div className="career-recruiter-art"><PixelIllustration name="career-market" size={44} /></div><div><span className="job-kind">招聘人</span><strong>{recruiter?.name ?? '招聘团队'}</strong><small>{recruiter?.identity ?? '用人方'} · 负责这份机会</small></div></div><div className="career-flow"><h3>招聘流程</h3><div className="career-flow-track"><span>投递</span><i><PixelIcon name="arrow-right" size={10} /></i><span>筛选</span><i><PixelIcon name="arrow-right" size={10} /></i><span>面试</span><i><PixelIcon name="arrow-right" size={10} /></i><span>Offer</span></div><small>{job.recruitment?.offerText ?? '符合条件后，会进入真实的申请与反馈流程。'}</small></div></section><div className="career-detail-apply-bar"><div className="career-detail-match"><div><span>匹配度</span><strong>{matchPercent}%</strong><div className="meter"><i style={{ width: `${matchPercent}%` }} /></div></div><p>{currentJobHere ? '这就是你当前的工作，无需再次申请。' : pendingJobHere ? '这份岗位已接受，等待入职生效。' : application ? `当前状态：${displayMappedLabel(application.status, offerStatusLabels)}` : eligible ? '基本符合，建议投递并进入招聘流程。' : '还有准备空间；先完成上方提示，匹配度会继续提高。'}</p></div><button className="primary-button full" disabled={!eligible || Boolean(application) || currentJobHere || pendingJobHere} onClick={() => dispatch({ type: 'submit_application', vacancyId: vacancy.vacancyId })}>{currentJobHere ? '现任职于此' : pendingJobHere ? '已接受待入职' : application ? `申请状态：${displayMappedLabel(application.status, offerStatusLabels)}` : '申请岗位'}</button></div></>;
 }
 
+/** 零工是一段真实占用时间的班次，卡片必须写明开始到结束的具体时段。 */
+function gigWindowLabel(gig: { startMinute: number; endMinute: number }): string {
+  const clock = (minute: number) => `${String(Math.floor(minute / 60)).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`;
+  // Absolute minutes: the window may cross midnight, so only the absolute value
+  // knows which day each end belongs to.
+  const startDay = Math.floor(gig.startMinute / 1440) + 1;
+  const endDay = Math.floor(gig.endMinute / 1440) + 1;
+  const start = clock(gig.startMinute % 1440);
+  const end = clock(gig.endMinute % 1440);
+  return endDay === startDay ? `第 ${startDay} 天 ${start}–${end}` : `第 ${startDay} 天 ${start}–第 ${endDay} 天 ${end}`;
+}
+
+/**
+ * What a gig card says and offers.
+ *
+ * The card is an **opportunity** until the player starts the shift: only then is
+ * the window worked, and only worked minutes are paid. The three states are
+ * therefore distinct on screen — 未开工 / 进行中 / 窗口已结束 — instead of the
+ * card claiming that the window is worked just because the clock reaches it.
+ */
+function gigShiftState(gig: GigOpportunityState, nowMinute: number): { working: boolean; windowClosed: boolean; button: string; status: string } {
+  const working = Number.isFinite(gig.startedMinute);
+  const windowClosed = nowMinute >= gig.endMinute;
+  const windowOpen = nowMinute >= gig.startMinute;
+  if (windowClosed) return { working, windowClosed, button: '窗口已结束，等待结算', status: '窗口已结束，按已工作的工时结算' };
+  if (!working) return { working, windowClosed, button: '开始这段零工', status: '未开工：开工后这段时间会被占用，开始运行世界才会按时钟累计工时' };
+  return { working, windowClosed, button: '继续这段零工', status: windowOpen ? '进行中：运行世界会继续按时钟累计工时' : '已开工：窗口开始后，运行世界会按时钟累计工时' };
+}
+
 function OpportunityList({ game, jobs, dispatch }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void }) {
   const opportunities = game.opportunities ?? [];
   const gigs = game.gigs ?? [];
+  // Absolute minutes on both sides: the window may cross midnight.
+  const gigNow = (game.time.day - 1) * 1440 + game.time.hour * 60 + game.time.minute;
   if (!opportunities.length && !gigs.length) return <p className="muted">目前没有特殊工作机会。人物推荐、内部转岗、猎头和剧情机会会在这里出现。</p>;
-  return <div className="job-grid">{gigs.map((gig) => { const job = jobs.find((entry) => entry.id === gig.jobId); return <article className="job-card" key={gig.id}><span className="job-kind">一次性 Gig · {gig.source}</span><h2>{job?.name ?? humanizeContentId(gig.jobId)}</h2><p>执行期限：第 {gig.validFromDay}–{gig.expiresDay} 天 · 结算 {money(gig.pay)}</p><button className="primary-button" onClick={() => dispatch({ type: 'execute_gig', gigId: gig.id })}>执行一次</button></article>; })}{opportunities.map((opportunity) => { const job = jobs.find((entry) => entry.id === opportunity.jobId); return <article className="job-card" key={opportunity.id}><span className="job-kind">{opportunity.source}</span><h2>{job?.name ?? humanizeContentId(opportunity.jobId)}</h2><p>限时至第 {opportunity.expiresDay} 天</p><button className="primary-button" onClick={() => dispatch({ type: 'submit_application', opportunityId: opportunity.id })}>申请机会</button></article>; })}</div>;
+  return <div className="job-grid">{gigs.map((gig) => { const job = jobs.find((entry) => entry.id === gig.jobId); const promised = Math.max(1, Math.round((job?.hours ?? 4) * 60)); const done = Math.max(0, Math.round(gig.workedMinutes ?? 0)); const shift = gigShiftState(gig, gigNow); return <article className="job-card" key={gig.id}><span className="job-kind">一次性 Gig · {gig.source}</span><h2>{job?.name ?? humanizeContentId(gig.jobId)}</h2><p>工作时段：{gigWindowLabel(gig)} · 满勤结算 {money(gig.pay)}</p><p>已工作 {Math.round(done / 6) / 10} / {Math.round(promised / 6) / 10} 小时。{shift.status}；窗口结束时未满勤只按已工作时间比例结算，同一时段不会同时计入本周计划。</p><button className="primary-button" disabled={shift.windowClosed} onClick={() => dispatch({ type: 'execute_gig', gigId: gig.id })}>{shift.button}</button></article>; })}{opportunities.map((opportunity) => { const job = jobs.find((entry) => entry.id === opportunity.jobId); return <article className="job-card" key={opportunity.id}><span className="job-kind">{opportunity.source}</span><h2>{job?.name ?? humanizeContentId(opportunity.jobId)}</h2><p>限时至第 {opportunity.expiresDay} 天</p><button className="primary-button" onClick={() => dispatch({ type: 'submit_application', opportunityId: opportunity.id })}>申请机会</button></article>; })}</div>;
 }
 
 /**

@@ -4,6 +4,7 @@ import type { GameAction } from '../content/contracts';
 import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createInitialState } from './initialState';
+import { calendarForDay } from './calendar';
 import { dispatchGameAction, findNextPlanOption } from './actions';
 
 describe('game action dispatcher', () => {
@@ -792,14 +793,52 @@ describe('game action dispatcher', () => {
     expect(failed.state.lifeHistory).toHaveLength(beforeFailureCount);
   });
 
-  it('executes an offered gig once and records its income and career progress', () => {
+  it('executes an offered gig only across its reserved window and records its income and career progress', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 9);
-    state.gigs = [{ id: 'gig.test', jobId: 'job.delivery-shift', validFromDay: 1, expiresDay: 7, executableDay: 1, startMinute: 1080, endMinute: 1320, pay: 76, source: '测试市场' }];
+    state.time = { day: 1, hour: 9, minute: 0 };
+    state.calendar = calendarForDay(1);
+    // 零工是一段时间工作，执行者不会同时有正式班次。
+    state.currentJobId = undefined;
+    state.employment = undefined;
+    // 零工通过正常时间推进完成，所以必须在运行状态下执行。
+    state.simulationMode = 'running';
+    state.gigs = [{ id: 'gig.test', jobId: 'job.delivery-shift', validFromDay: 1, expiresDay: 7, executableDay: 1, startMinute: 9 * 60, endMinute: 13 * 60, pay: 76, source: '测试市场', workedMinutes: 0 }];
     const result = dispatchGameAction(state, { type: 'execute_gig', gigId: 'gig.test' }, contentRegistry, balanceConfig);
     expect(result.error).toBeUndefined();
+    // The declared four-hour gig consumes four hours of simulation time.
+    expect(result.state.time).toMatchObject({ day: 1, hour: 13, minute: 0 });
     expect(result.state.cash).toBe(balanceConfig.initialCash + 76);
     expect(result.state.gigs).toEqual([]);
     expect(result.state.lifeHistory.at(-1)).toMatchObject({ category: 'career', title: '完成同城配送', amount: 76 });
+  });
+
+  it('takes a gig on without spending its hours while the world is paused, and settles a closed window unworked', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 9);
+    state.currentJobId = undefined;
+    state.employment = undefined;
+    state.gigs = [{ id: 'gig.test', jobId: 'job.delivery-shift', validFromDay: 1, expiresDay: 7, executableDay: 1, startMinute: 9 * 60, endMinute: 13 * 60, pay: 76, source: '测试市场', workedMinutes: 0 }];
+
+    // A paused world cannot spend the gig's hours, but the shift can be taken on:
+    // 开工 is a committed state change that spends no time and pays nothing by
+    // itself. Only a shift taken on here is ever credited by the running clock.
+    const paused = dispatchGameAction(state, { type: 'execute_gig', gigId: 'gig.test' }, contentRegistry, balanceConfig);
+    expect(paused.error).toBeUndefined();
+    expect(paused.notice).toContain('已开始');
+    expect(paused.state.cash).toBe(balanceConfig.initialCash);
+    expect(paused.state.time).toEqual(state.time);
+    expect(paused.state.gigs?.[0]?.startedMinute).toBeDefined();
+    expect(paused.state.gigs?.[0]?.workedMinutes).toBe(0);
+
+    // Arriving after the window closed settles the record — an unworked window
+    // pays nothing — and the player is told to re-apply. The removal is a
+    // committed state change reported as a notice, not an error the store would
+    // have to discard together with the state.
+    const late = { ...state, simulationMode: 'running' as const, time: { day: 1, hour: 14, minute: 0 }, calendar: calendarForDay(1) };
+    const missed = dispatchGameAction(late, { type: 'execute_gig', gigId: 'gig.test' }, contentRegistry, balanceConfig);
+    expect(missed.error).toBeUndefined();
+    expect(missed.notice).toContain('已经过去');
+    expect(missed.state.cash).toBe(balanceConfig.initialCash);
+    expect(missed.state.gigs).toEqual([]);
   });
 
   it('starts an official storyline and settles a chosen relationship branch', () => {
@@ -897,7 +936,7 @@ describe('enterprise control and holding group', () => {
   it('enters an unlocked business as a minority stakeholder without operational control', () => {
     const staked = dispatchGameAction(stakeableState(), { type: 'buy_business_stake', businessId: 'business.seed-kiosk', percent: 30 }, contentRegistry, balanceConfig);
     expect(staked.error).toBeUndefined();
-    expect(staked.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 30, purchasePrice: 3200, playerCostBasis: known(960) });
+    expect(staked.state.businesses['business.seed-kiosk']).toMatchObject({ equityPercent: 30, purchasePrice: 960, companyValuationBasis: 3200, playerCostBasis: known(960) });
     expect(staked.state.cash).toBe(20000 - 960);
     expect(staked.state.locationVisits?.['location.central']).toBe(1);
     expect(staked.state.financialLedger?.entries.at(-1)).toMatchObject({ category: 'business_transfer', amount: 960, cashDelta: -960 });

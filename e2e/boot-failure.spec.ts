@@ -38,3 +38,36 @@ test('boots the game and navigates when the browser denies localStorage reads', 
 
   expect(pageErrors, `出现未捕获的启动异常：${pageErrors.join(' | ')}`).toEqual([]);
 });
+
+// The canonical save lives in IndexedDB, so denying it must be reported rather
+// than silently degrading to the multi-window `localStorage` write the
+// transaction replaced: the player keeps playing, and the game says out loud
+// that nothing is being stored.
+test('reports unsaved progress instead of silently degrading when IndexedDB is unavailable', async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'indexedDB', {
+      configurable: true,
+      get() {
+        throw new DOMException('Access is denied for this document.', 'SecurityError');
+      },
+    });
+  });
+  await gotoAppRoot(page);
+
+  // The shell and real game content render instead of a blank #root.
+  await expect(page.getByRole('navigation', { name: '主导航', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '余量' })).toBeVisible();
+
+  const alert = page.getByRole('alert');
+  await expect(alert).toBeVisible();
+  await expect(alert).toContainText('本次进度不会被保存');
+
+  // Playing still works, and the game keeps saying the progress is not stored.
+  await page.getByRole('navigation', { name: '主导航' }).getByRole('button', { name: '城市', exact: true }).click();
+  await expect(page.getByRole('navigation', { name: '城市地区' })).toBeVisible();
+
+  expect(pageErrors, `出现未捕获的启动异常：${pageErrors.join(' | ')}`).toEqual([]);
+});

@@ -6,6 +6,7 @@ import { createInitialState } from './initialState';
 import { dispatchGameAction } from './actions';
 import { absoluteMinute } from './time';
 import { migrateGameState, saveGameState } from '../store/gameStore';
+import { canonicalSaveRaw } from '../store/canonicalSaveTestDouble';
 
 const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
 const content = contentRegistry;
@@ -45,7 +46,7 @@ function sellError(state: GameState): string | undefined {
 }
 
 describe('private equity lock (lockUntilDay)', () => {
-  it('creates the holding via a real buy and locks it for 90 days from the purchase day', () => {
+  it('creates the holding via a real buy and locks it for 90 days from the purchase day', async () => {
     let state = buyer();
     state = run(state, { type: 'buy_investment', investmentId: PE, units: 1 });
     const holding = state.investments?.[PE];
@@ -53,7 +54,7 @@ describe('private equity lock (lockUntilDay)', () => {
     expect(holding!.lockUntilDay).toBe(state.time.day + 90);
   });
 
-  it('keeps the sell blocked before lockUntilDay and allows it on the day itself', () => {
+  it('keeps the sell blocked before lockUntilDay and allows it on the day itself', async () => {
     let state = buyer();
     state = run(state, { type: 'buy_investment', investmentId: PE, units: 1 });
     const lockUntilDay = state.investments![PE].lockUntilDay!;
@@ -67,7 +68,7 @@ describe('private equity lock (lockUntilDay)', () => {
     expect(sold.state.investments?.[PE]).toBeUndefined();
   });
 
-  it('does not extend the lock when daily valuation refreshes rewrite lastValuationDay', () => {
+  it('does not extend the lock when daily valuation refreshes rewrite lastValuationDay', async () => {
     let state = buyer();
     state = run(state, { type: 'buy_investment', investmentId: PE, units: 1 });
     const lockUntilDay = state.investments![PE].lockUntilDay!;
@@ -76,7 +77,7 @@ describe('private equity lock (lockUntilDay)', () => {
     expect(state.investments![PE].lockUntilDay).toBe(lockUntilDay);
   });
 
-  it('extends the holding-level lock when more units are bought during or after the lock', () => {
+  it('extends the holding-level lock when more units are bought during or after the lock', async () => {
     let state = buyer();
     state = run(state, { type: 'buy_investment', investmentId: PE, units: 1 });
     state = advanceDays(state, 29);
@@ -90,7 +91,7 @@ describe('private equity lock (lockUntilDay)', () => {
     expect(sellError(state)).toBeUndefined();
   });
 
-  it('leaves non private-equity investments unlocked', () => {
+  it('leaves non private-equity investments unlocked', async () => {
     let state = buyer();
     state = run(state, { type: 'buy_investment', investmentId: 'investment.seed-index', units: 2 });
     expect(state.investments!['investment.seed-index'].lockUntilDay).toBeUndefined();
@@ -124,7 +125,7 @@ describe('private equity lock migration', () => {
     }));
   }
 
-  it('derives the lock from the latest real purchase record instead of punishing old holdings', () => {
+  it('derives the lock from the latest real purchase record instead of punishing old holdings', async () => {
     const migrated = migrateGameState(rawSave({ day: 200, purchaseRecordDay: 40 }), content, balance);
     expect(migrated.investments![PE].lockUntilDay).toBe(130);
     // Day 200 >= 130: the long-held position must be sellable right away.
@@ -132,32 +133,33 @@ describe('private equity lock migration', () => {
     expect(result.error).toBeUndefined();
   });
 
-  it('keeps part of the original lock when the purchase is recent', () => {
+  it('keeps part of the original lock when the purchase is recent', async () => {
     const migrated = migrateGameState(rawSave({ day: 200, purchaseRecordDay: 150 }), content, balance);
     expect(migrated.investments![PE].lockUntilDay).toBe(240);
     const result = dispatchGameAction(migrated, { type: 'sell_investment', investmentId: PE, units: 1 }, content, balance);
     expect(result.error).toContain('锁定期');
   });
 
-  it('defaults to unlocked when no reliable purchase fact exists', () => {
+  it('defaults to unlocked when no reliable purchase fact exists', async () => {
     const migrated = migrateGameState(rawSave({ day: 200 }), content, balance);
     expect(migrated.investments![PE].lockUntilDay).toBe(200);
     const result = dispatchGameAction(migrated, { type: 'sell_investment', investmentId: PE, units: 1 }, content, balance);
     expect(result.error).toBeUndefined();
   });
 
-  it('never rewrites an explicit lockUntilDay from the save', () => {
+  it('never rewrites an explicit lockUntilDay from the save', async () => {
     const migrated = migrateGameState(rawSave({ day: 200, lockUntilDay: 300 }), content, balance);
     expect(migrated.investments![PE].lockUntilDay).toBe(300);
   });
 
-  it('roundtrips lockUntilDay through a real saved payload', () => {
+  it('roundtrips lockUntilDay through a real saved payload', async () => {
     const migrated = migrateGameState(rawSave({ day: 200, purchaseRecordDay: 150 }), content, balance);
-    const outcome = saveGameState(migrated);
+    const outcome = await saveGameState(migrated);
     expect(outcome.ok).toBe(true);
     const raw = outcome.status === 'full' || outcome.status === 'compressed' ? (() => {
-      // saveGameState writes localStorage; read the same payload back through the exported key.
-      return localStorage.getItem('yuliang-save-v1');
+      // The save is stored in the canonical record; read the same payload back
+      // from it, exactly as the next window's boot does.
+      return canonicalSaveRaw();
     })() : null;
     expect(raw).toBeTruthy();
     const reloaded = migrateGameState(JSON.parse(raw!), content, balance);

@@ -10,6 +10,7 @@ import { forecastWeeklyPlan } from './forecast';
 import { candidateSchedulingError, collectPlanIssues, findNextSchedulableSlot, NO_SLOT_REASON, planEditError, planRunError, reconcilePlanWithEmployment } from './planning';
 import { activeApplications, applicationCooldownRemaining, appendMessage, clearReadMessages, clearTerminalApplications, dismissTerminalApplication, markAllMessagesRead, pruneApplicationHistory, pruneExpiredState, terminalApplications, unreadMessageCount, visibleMessages } from './lifecycle';
 import { migrateGameState, saveGameState, loadGameStateWithReport } from '../store/gameStore';
+import { canonicalSaveRaw, failNextCanonicalCommit } from '../store/canonicalSaveTestDouble';
 import { calendarForDay } from './calendar';
 
 const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
@@ -29,7 +30,7 @@ function run(state: GameState, action: GameAction): GameState {
 }
 
 describe('planning domain consistency', () => {
-  it('repairs two invalid weekly slots one at a time instead of deadlocking', () => {
+  it('repairs two invalid weekly slots one at a time instead of deadlocking', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     // Two different unresolved problems in one week: an unacquired side job and
     // a course requiring more knowledge than the player has. Both broken cells
@@ -57,13 +58,13 @@ describe('planning domain consistency', () => {
     expect(dispatchGameAction(fixedB.state, { type: 'start_week' }, contentRegistry, balance).error).toBeUndefined();
   });
 
-  it('still refuses an edit that introduces a new problem', () => {
+  it('still refuses an edit that introduces a new problem', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     const result = dispatchGameAction(state, { type: 'set_plan', weekday: 1, slot: 'evening', activity: { kind: 'side_job', jobId: 'job.course-teaching-assistant', durationMinutes: 240 } }, contentRegistry, balance);
     expect(result.error).toMatch(/兼职资格/);
   });
 
-  it('reconciles the underlying day plan when a full-time job is accepted', () => {
+  it('reconciles the underlying day plan when a full-time job is accepted', async () => {
     // Start from a job-free state so a day slot is legitimately editable, and
     // grade the offer deterministically instead of waiting out the recruitment clock.
     const base = createInitialState(contentRegistry, balance, 1);
@@ -84,7 +85,7 @@ describe('planning domain consistency', () => {
     expect(planRunError(accepted, accepted.weeklyPlan, contentRegistry, balance)).toBeUndefined();
   });
 
-  it('keeps a pending job from becoming a hidden conflict when the next week starts', () => {
+  it('keeps a pending job from becoming a hidden conflict when the next week starts', async () => {
     const state = plan({ kind: 'study', durationMinutes: 240 }, 3, 'day');
     state.employment = { ...state.employment!, pendingJobId: 'job.seed-warehouse', pendingEffectiveDay: 1, pendingCompanyId: 'company.xinghe', pendingBasePay: 128 };
     state.weeklyPlan = { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 2: { day: { kind: 'study', durationMinutes: 240 }, evening: { kind: 'free' } } } };
@@ -94,7 +95,7 @@ describe('planning domain consistency', () => {
     expect(planRunError(started, started.weeklyPlan, contentRegistry, balance)).toBeUndefined();
   });
 
-  it('locks slots that already passed when planning resumes midweek', () => {
+  it('locks slots that already passed when planning resumes midweek', async () => {
     const state = at(createInitialState(contentRegistry, balance, 1), 10);
     const past = dispatchGameAction(state, { type: 'set_plan', weekday: 2, slot: 'evening', activity: { kind: 'study', durationMinutes: 60 } }, contentRegistry, balance);
     expect(past.error).toMatch(/已经过去/);
@@ -102,7 +103,7 @@ describe('planning domain consistency', () => {
     expect(today.error).toBeUndefined();
   });
 
-  it('uses one shared future scheduler for courses, activities and side jobs', () => {
+  it('uses one shared future scheduler for courses, activities and side jobs', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     state.weeklyPlan = { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 1: { day: { kind: 'free' }, evening: { kind: 'free' } } } };
     state.acquiredSideJobs = { 'job.course-teaching-assistant': { jobId: 'job.course-teaching-assistant', acquiredDay: 1 } };
@@ -115,14 +116,14 @@ describe('planning domain consistency', () => {
     expect(sideJob.result?.weekday).toBe(1);
   });
 
-  it('never schedules into a past slot when the current weekday is late in the week', () => {
+  it('never schedules into a past slot when the current weekday is late in the week', async () => {
     const state = at(createInitialState(contentRegistry, balance, 1), 6);
     const outcome = findNextSchedulableSlot({ weekday: 1, slot: 'evening', activity: { kind: 'activity', activityId: 'activity.old-town-culture', optionId: 'exhibition' } }, state, contentRegistry, balance, { from: 'current' });
     expect(outcome.found).toBe(true);
     expect(outcome.result!.weekday).toBeGreaterThanOrEqual(state.calendar.weekday);
   });
 
-  it('reports a clear reason instead of silently doing nothing when no future slot is free', () => {
+  it('reports a clear reason instead of silently doing nothing when no future slot is free', async () => {
     // Work days lock the day slot; filling the weekend and every evening leaves
     // no legal future placement.
     const state = createInitialState(contentRegistry, balance, 1);
@@ -134,7 +135,7 @@ describe('planning domain consistency', () => {
     expect(outcome.reason).toBe(NO_SLOT_REASON);
   });
 
-  it('auto-clears impossible repeats and falls back to planning when a conflict cannot be cleared', () => {
+  it('auto-clears impossible repeats and falls back to planning when a conflict cannot be cleared', async () => {
     const base = createInitialState(contentRegistry, balance, 1);
     const trip = { kind: 'activity' as const, activityId: 'activity.riverside-park-ride', optionId: 'ride' };
     const withEvening = (weekdays: readonly Weekday[], activity: PlannedActivity): GameState['weeklyPlan']['days'] =>
@@ -172,7 +173,7 @@ describe('planning domain consistency', () => {
     expect(blocked.effects.some((effect) => effect.type === 'message' && effect.text.includes('本周计划需要调整'))).toBe(true);
   });
 
-  it('prevents staging the same cooldown activity twice in one week', () => {
+  it('prevents staging the same cooldown activity twice in one week', async () => {
     const activity = { kind: 'activity' as const, activityId: 'activity.riverside-park-ride', optionId: 'ride' };
     const state = plan(activity);
     const stacked: GameState = { ...state, weeklyPlan: { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 3: { day: { kind: 'free' }, evening: activity } } } };
@@ -203,7 +204,7 @@ describe('planning domain consistency', () => {
     expect(planEditError(late, late.weeklyPlan, contentRegistry, balance, [{ weekday: 3, position: 'evening' }])).toBeUndefined();
   });
 
-  it('keeps course planning and course execution on the same eligibility rules', () => {
+  it('keeps course planning and course execution on the same eligibility rules', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     // A completed course is blocked at planning time...
     state.courseProgress = { 'course.office-tools': 1 };
@@ -220,7 +221,7 @@ describe('planning domain consistency', () => {
 });
 
 describe('forecast and execution agreement', () => {
-  it('matches a legal plan week forecast with what the simulation actually charges and pays', () => {
+  it('matches a legal plan week forecast with what the simulation actually charges and pays', async () => {
     const base = createInitialState(contentRegistry, balance, 1);
     const emptyDays = Object.fromEntries(([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => [weekday, { day: { kind: 'free' as const }, evening: { kind: 'free' as const } }])) as GameState['weeklyPlan']['days'];
     const plain: GameState = { ...base, weeklyPlan: { days: emptyDays, autoRepeat: true }, previousWeeklyPlan: { days: structuredClone(emptyDays), autoRepeat: true } };
@@ -232,7 +233,7 @@ describe('forecast and execution agreement', () => {
     expect(settled.state.cash - plain.cash).toBe(forecast.netCash);
   });
 
-  it('does not count a blocked slot as certain income or expense', () => {
+  it('does not count a blocked slot as certain income or expense', async () => {
     const base = createInitialState(contentRegistry, balance, 1);
     const emptyDays = Object.fromEntries(([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => [weekday, { day: { kind: 'free' as const }, evening: { kind: 'free' as const } }])) as GameState['weeklyPlan']['days'];
     const plain: GameState = { ...base, weeklyPlan: { days: emptyDays, autoRepeat: true } };
@@ -247,7 +248,7 @@ describe('forecast and execution agreement', () => {
     expect(forecast.netCash).toBe(baseline.netCash);
   });
 
-  it('relies on the canonical duration list so a 180-minute legacy plan stays legal', () => {
+  it('relies on the canonical duration list so a 180-minute legacy plan stays legal', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     state.weeklyPlan = { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 1: { day: { kind: 'free' }, evening: { kind: 'study', durationMinutes: 180 } } } };
     expect(planRunError(state, state.weeklyPlan, contentRegistry, balance)).toBeUndefined();
@@ -257,7 +258,7 @@ describe('forecast and execution agreement', () => {
 });
 
 describe('application lifecycle', () => {
-  it('lets a terminal application be cleared while its cooldown still applies', () => {
+  it('lets a terminal application be cleared while its cooldown still applies', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     const vacancy = (state.vacancies ?? []).find((entry) => entry.jobId === 'job.seed-warehouse')!;
     // Applications normally resolve over a few days; the terminal rejection and
@@ -279,7 +280,7 @@ describe('application lifecycle', () => {
     expect(retry.error).toMatch(/还需等待/);
   });
 
-  it('counts only active applications for the badge and keeps history bounded', () => {
+  it('counts only active applications for the badge and keeps history bounded', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     const vacancy = (state.vacancies ?? []).find((entry) => entry.jobId === 'job.seed-warehouse')!;
     const applied = run(state, { type: 'submit_application', vacancyId: vacancy.vacancyId });
@@ -291,7 +292,7 @@ describe('application lifecycle', () => {
     expect(many.applications).toHaveLength(60);
   });
 
-  it('never pins an expired special opportunity through a terminal application', () => {
+  it('never pins an expired special opportunity through a terminal application', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     state.opportunities = [{ id: 'opportunity.test', jobId: 'job.seed-warehouse', companyId: 'company.xinghe', route: 'referral', source: '人物推荐', expiresDay: 2, salaryRange: [130, 150] }];
     const applied = run(state, { type: 'submit_application', opportunityId: 'opportunity.test' });
@@ -306,7 +307,7 @@ describe('application lifecycle', () => {
     expect(again.error).toBe('这项招聘已经结束');
   });
 
-  it('hard-blocks a course when its cash cost is unaffordable', () => {
+  it('hard-blocks a course when its cash cost is unaffordable', async () => {
     const course = contentRegistry.courses!.find((entry) => entry.cashCost > 0)!;
     const state = createInitialState(contentRegistry, balance, 1);
     const planned = { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 1: { ...state.weeklyPlan.days[1], evening: { kind: 'course' as const, courseId: course.id } } } };
@@ -318,7 +319,7 @@ describe('application lifecycle', () => {
     expect(planRunError(affordable, planned, contentRegistry, balance) ?? '').not.toMatch(/现金不足/);
   });
 
-  it('hard-blocks a week when the planned course costs exceed total cash', () => {
+  it('hard-blocks a week when the planned course costs exceed total cash', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     const [first, second] = contentRegistry.courses!;
     const planned = { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 6: { ...state.weeklyPlan.days[6], day: { kind: 'course' as const, courseId: first.id }, evening: { kind: 'course' as const, courseId: second.id } } } };
@@ -327,7 +328,7 @@ describe('application lifecycle', () => {
     expect(planRunError({ ...state, cash }, planned, contentRegistry, balance)).toMatch(/课程总费用/);
   });
 
-  it('rejects the 61st active application without mutating application state', () => {
+  it('rejects the 61st active application without mutating application state', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     const vacancy = state.vacancies![0];
     const applications = Array.from({ length: 60 }, (_, index) => ({
@@ -350,7 +351,7 @@ describe('application lifecycle', () => {
     expect(result.state.applications).toEqual(applications);
   });
 
-  it('surfaces an open Offer on the life page so a dated offer cannot be missed', () => {
+  it('surfaces an open Offer on the life page so a dated offer cannot be missed', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     const basic = contentRegistry.jobs.find((entry) => entry.id === 'job.seed-warehouse')!;
     const vacancy = (state.vacancies ?? []).find((entry) => entry.jobId === basic.id)!;
@@ -366,7 +367,7 @@ describe('application lifecycle', () => {
 });
 
 describe('message lifecycle', () => {
-  it('reports zero unread after bulk reading and removes read rows when cleared', () => {
+  it('reports zero unread after bulk reading and removes read rows when cleared', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     appendMessage(state, { title: 'A', body: 'a', characterId: 'character.seed-lin' });
     appendMessage(state, { title: 'B', body: 'b', characterId: 'character.seed-zhou' });
@@ -379,7 +380,7 @@ describe('message lifecycle', () => {
     expect(state.messages).toHaveLength(2);
   });
 
-  it('keeps message ids unique across a long interaction history', () => {
+  it('keeps message ids unique across a long interaction history', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     for (let index = 0; index < 300; index += 1) {
       state.time = { ...state.time, day: 1 + index };
@@ -390,7 +391,7 @@ describe('message lifecycle', () => {
     expect(state.messages!.length).toBeLessThanOrEqual(30);
   });
 
-  it('keeps unread messages and prune-stable state across a two-year recruitment and inbox stress run', () => {
+  it('keeps unread messages and prune-stable state across a two-year recruitment and inbox stress run', async () => {
     let state = createInitialState(contentRegistry, balance, 7);
     state = { ...state, simulationMode: 'running', autoRepeatPlan: true, weeklyPlan: { ...state.weeklyPlan, autoRepeat: true } };
     for (let month = 0; month < 24; month += 1) {
@@ -416,7 +417,7 @@ describe('message lifecycle', () => {
 });
 
 describe('long-run soak', () => {
-  it('runs three deterministic years without planner deadlock, duplicate ids or unbounded state', { timeout: 120_000 }, () => {
+  it('runs three deterministic years without planner deadlock, duplicate ids or unbounded state', { timeout: 120_000 }, async () => {
     const base = createInitialState(contentRegistry, balance, 2024);
     base.cash = 30_000;
     const job = contentRegistry.jobs.find((entry) => entry.id === 'job.course-teaching-assistant')!;
@@ -478,14 +479,14 @@ describe('long-run soak', () => {
 
     // The long save still serializes, loads and stays inside a sane size.
     localStorage.clear();
-    const outcome = saveGameState(state);
+    const outcome = await saveGameState(state);
     expect(outcome.ok).toBe(true);
-    const serialized = localStorage.getItem('yuliang-save-v1')!;
+    const serialized = canonicalSaveRaw()!;
     const report = { days: state.time.day, bytes: serialized.length, lifeRecords: state.lifeHistory.length, financialEntries: state.financialLedger?.entries.length ?? 0 };
     console.log('SOAK_SAVE_SIZE', JSON.stringify(report));
     expect(report.bytes).toBeGreaterThan(0);
     expect(report.bytes).toBeLessThan(3_000_000);
-    const reloaded = loadGameStateWithReport(contentRegistry, balance);
+    const reloaded = await loadGameStateWithReport(contentRegistry, balance);
     expect(reloaded.problem).toBeUndefined();
     expect(reloaded.state.time.day).toBe(state.time.day);
     expect(reloaded.state.lifeHistory.length).toBe(state.lifeHistory.length);
@@ -494,28 +495,24 @@ describe('long-run soak', () => {
 });
 
 describe('persistence safety', () => {
-  it('reports a save failure without breaking dispatch or clobbering the last good save', () => {
+  it('reports a save failure without breaking dispatch or clobbering the last good save', async () => {
     localStorage.clear();
     const state = createInitialState(contentRegistry, balance, 1);
-    expect(saveGameState(state).ok).toBe(true);
-    const good = localStorage.getItem('yuliang-save-v1');
+    expect((await saveGameState(state)).ok).toBe(true);
+    const good = canonicalSaveRaw();
 
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = () => { throw new DOMException('QuotaExceededError', 'QuotaExceededError'); };
-    try {
-      const outcome = saveGameState({ ...state, cash: 1 });
-      expect(outcome.ok).toBe(false);
-      expect(outcome.error).toMatch(/保存失败|存储空间不足/);
-      expect(localStorage.getItem('yuliang-save-v1')).toBe(good);
-    } finally {
-      Storage.prototype.setItem = original;
-    }
+    // The storage rejects the write: the payload that is stored must not change.
+    failNextCanonicalCommit('QuotaExceededError: storage quota exceeded', true);
+    const outcome = await saveGameState({ ...state, cash: 1 });
+    expect(outcome.ok).toBe(false);
+    expect(outcome.error).toMatch(/保存失败|存储空间不足/);
+    expect(canonicalSaveRaw()).toBe(good);
   });
 
-  it('keeps the raw payload and reports a problem instead of silently starting over', () => {
+  it('keeps the raw payload and reports a problem instead of silently starting over', async () => {
     localStorage.clear();
     localStorage.setItem('yuliang-save-v1', '{ this is not json');
-    const outcome = loadGameStateWithReport(contentRegistry, balance);
+    const outcome = await loadGameStateWithReport(contentRegistry, balance);
     // 稳定中文结论；不得泄漏浏览器 JSON parser 的原始英文文案。
     expect(outcome.problem?.reason).toBe('存档文件已损坏');
     expect(outcome.problem?.reason).not.toMatch(/Expected|position|JSON|property|token/i);
@@ -523,7 +520,7 @@ describe('persistence safety', () => {
     expect(outcome.state.time.day).toBe(balanceConfig.initialDay);
   });
 
-  it('repairs hidden workday conflicts, stacked modifiers and stale transients during migration', () => {
+  it('repairs hidden workday conflicts, stacked modifiers and stale transients during migration', async () => {
     const base = createInitialState(contentRegistry, balance, 1);
     const state: GameState = { ...base, time: { ...base.time, day: 30 } };
     const raw = {
@@ -552,7 +549,7 @@ describe('persistence safety', () => {
     expect(planRunError(migrated, migrated.weeklyPlan, contentRegistry, balance)).toBeUndefined();
   });
 
-  it('repairs duplicate and invalid message/application ids without dropping records', () => {
+  it('repairs duplicate and invalid message/application ids without dropping records', async () => {
     const base = createInitialState(contentRegistry, balance, 1);
     const job = contentRegistry.jobs.find((entry) => entry.id === 'job.course-teaching-assistant')!;
     const raw = {
@@ -576,7 +573,7 @@ describe('persistence safety', () => {
     expect(migrated.applications).toHaveLength(2);
   });
 
-  it('keeps the reconcile helper idempotent and evening-safe', () => {
+  it('keeps the reconcile helper idempotent and evening-safe', async () => {
     const state = createInitialState(contentRegistry, balance, 1);
     const planWithDayWork: GameState['weeklyPlan'] = { ...state.weeklyPlan, days: { ...state.weeklyPlan.days, 2: { day: { kind: 'study', durationMinutes: 60 }, evening: { kind: 'free' } } } };
     const once = reconcilePlanWithEmployment(planWithDayWork, state.employment);
@@ -590,7 +587,7 @@ describe('persistence safety', () => {
 });
 
 describe('modifier effectiveness', () => {
-  it('applies every permanent modifier target the content can grant', () => {
+  it('applies every permanent modifier target the content can grant', async () => {
     const base = createInitialState(contentRegistry, balance, 1);
     const withMods: GameState = { ...base, modifiers: [
       { target: 'work_pay', mode: 'multiply', value: 1.1 },

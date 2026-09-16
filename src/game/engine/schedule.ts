@@ -3,6 +3,7 @@ import type {
 } from '../content/contracts';
 import { calendarForDay } from './calendar';
 import { employmentWorkWindow } from './effects';
+import { employmentActiveOn } from './planning';
 import { absoluteMinute, type GameTime } from './time';
 import { getActivityDefinition, getActivityOption } from './activities';
 
@@ -43,7 +44,7 @@ export function getDailyActivities(day: number, plan: WeeklyPlan, employment: Em
     activity(day, EVENING_START, EVENING_END, 'free'),
     activity(day, EVENING_END, 24 * 60, 'sleep'),
   ];
-  const schedule = employment && employment.effectiveWeek <= calendarForDay(day).week ? employment.schedule : undefined;
+  const schedule = employment && employment.effectiveWeek <= calendarForDay(day).week && employmentActiveOn(employment, day) ? employment.schedule : undefined;
   if (schedule?.workDays.includes(weekday)) {
     const job = content.jobs.find((entry) => entry.id === employment?.jobId);
     if (job) {
@@ -109,6 +110,28 @@ function findLongActivity(day: number, plan: WeeklyPlan, content: ContentRegistr
     }
   }
   return undefined;
+}
+
+/** Whether this activity's absolute range covers the minute. */
+function coversMinute(activity: ActivityState | undefined, minute: number): boolean {
+  return activity !== undefined && absoluteMinute(activity.start) <= minute && minute < absoluteMinute(activity.end);
+}
+
+/**
+ * The long activity whose range covers this absolute minute: the one that is really
+ * running, or the planned one the scheduler would run there.
+ *
+ * A multi-day activity is **not** in the weekly plan for the days it runs over —
+ * the plan is per weekday, and the activity that started yesterday owns today's
+ * minutes through 长活动 state. A caller that only reads today's plan cells
+ * therefore cannot tell that the player is still away, which is how a shift could
+ * be started in the middle of a two-day trip.
+ */
+export function longActivityAtMinute(state: GameState, content: ContentRegistry, minute: number): ActivityState | undefined {
+  const running = state.longActivity?.activity;
+  if (coversMinute(running, minute)) return running;
+  const planned = findLongActivity(Math.floor(minute / 1440) + 1, state.weeklyPlan, content, state);
+  return coversMinute(planned, minute) ? planned : undefined;
 }
 
 function overlayLongActivity(activities: ActivityState[], longActivity: ActivityState): ActivityState[] {

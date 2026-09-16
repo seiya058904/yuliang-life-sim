@@ -12,9 +12,10 @@ import { lastCompletedDay } from './businessFacts';
  */
 import type { BalanceConfig } from '../balance/config';
 import type {
-  ActivityDuration, ActivityOption, ContentId, ContentRegistry, CourseDefinition, GameState, PlanSlot, PlannedActivity, Weekday, WeeklyPlan,
+  ActivityDuration, ActivityOption, ContentId, ContentRegistry, CourseDefinition, EmploymentState, GameState, JobSchedule, PlanSlot, PlannedActivity, Weekday, WeeklyPlan,
 } from '../content/contracts';
 import { getActivityDefinition, getActivityOption } from './activities';
+import { calendarForDay } from './calendar';
 import { evaluateCondition, explainCondition } from './conditions';
 import { employmentWorkWindow, studyGain } from './effects';
 import { absoluteMinute, type GameTime } from './time';
@@ -28,6 +29,59 @@ export const LONG_ACTIVITY_MIN_DURATION = 2880;
 
 /** Canonical study/side-job durations. Legacy saves may still carry 180. */
 export const CANONICAL_DURATIONS: readonly ActivityDuration[] = [60, 120, 180, 240];
+
+/**
+ * First day on which this employment's schedule may produce work. A job whose
+ * contract starts mid-shift begins with the next full shift instead, and the
+ * day it is accepted must never pay out a shift that was not worked.
+ */
+export function employmentActiveFromDay(employment: Pick<EmploymentState, 'activeFromMinute'> & { startedDay?: number }): number | undefined {
+  if (Number.isInteger(employment.activeFromMinute)) return Math.floor(Number(employment.activeFromMinute) / MINUTES_PER_DAY) + 1;
+  return employment.startedDay;
+}
+
+/** True when the job's schedule applies on `day` at all. */
+export function employmentActiveOn(employment: Pick<EmploymentState, 'activeFromMinute'> & { startedDay?: number }, day: number): boolean {
+  const from = employmentActiveFromDay(employment);
+  return from === undefined || day >= from;
+}
+
+/** Absolute minute this employment becomes active, when one is recorded. */
+export function employmentActiveFromMinute(employment: Pick<EmploymentState, 'activeFromMinute'> & { startedDay?: number }): number | undefined {
+  if (Number.isInteger(employment.activeFromMinute)) return Number(employment.activeFromMinute);
+  return employment.startedDay === undefined ? undefined : (employment.startedDay - 1) * MINUTES_PER_DAY;
+}
+
+/**
+ * The day a newly accepted job becomes effective, plus the absolute minute the
+ * shift schedule starts applying. Accepting inside a shift the player has not
+ * worked defers everything to the next day on which that job actually works a
+ * shift, so the first paid shift is always a full one.
+ */
+export function employmentStartFor(schedule: JobSchedule, now: GameTime): { startedDay: number; activeFromMinute: number } {
+  const weekday = calendarForDay(now.day).weekday as Weekday;
+  const startMinute = Number.isInteger(schedule.startMinute) ? schedule.startMinute : DAY_START;
+  const endMinute = Number.isInteger(schedule.endMinute) ? schedule.endMinute : startMinute;
+  const current = now.hour * 60 + now.minute;
+  const insideShift = schedule.workDays.includes(weekday) && current >= startMinute && current < endMinute;
+  let startedDay = insideShift ? nextWorkingDay(schedule, now.day + 1) : now.day;
+  // A start day that is not a working day would leave the contract live but
+  // unpaid until the following week, so it is also advanced.
+  if (!insideShift) startedDay = nextWorkingDay(schedule, startedDay);
+  return { startedDay, activeFromMinute: (startedDay - 1) * MINUTES_PER_DAY + startMinute };
+}
+
+/**
+ * The first day on or after `from` whose weekday is a working day for this
+ * schedule. A schedule without working days keeps `from` unchanged.
+ */
+export function nextWorkingDay(schedule: Pick<JobSchedule, 'workDays'>, from: number): number {
+  if (!schedule.workDays.length) return from;
+  for (let day = from; day < from + 7; day += 1) {
+    if (schedule.workDays.includes(calendarForDay(day).weekday as Weekday)) return day;
+  }
+  return from;
+}
 
 /** `from` sentinel meaning "the whole week is still editable" (validation, migration). */
 export const WEEK_START_FROM = { kind: 'week_start' } as const;

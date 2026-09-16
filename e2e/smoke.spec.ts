@@ -1,8 +1,14 @@
 import { expect, test } from '@playwright/test';
+import { awaitCanonicalSynced, installSaveBridge, readPersistedState, wipeSave } from './harness';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./');
+  // The fixture bridge must exist in the document that the fixtures run in, so
+  // it is installed before the reload that starts the test.
+  await installSaveBridge(page);
   await page.evaluate(() => localStorage.clear());
+  // `localStorage.clear()` no longer clears the save: the canonical record does.
+  await wipeSave(page);
   await page.reload();
 });
 
@@ -21,6 +27,13 @@ async function runLongPeriod(page: import('@playwright/test').Page, months: 1 | 
   await page.getByRole('button', { name: `运行 ${months} 个月` }).click();
 }
 
+/** 「我的 → 经历与历史」：确认历史分区可以打开。 */
+async function openLifeHistoryGigSection(page: import('@playwright/test').Page) {
+  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await page.getByRole('button', { name: '经历与历史', exact: true }).click();
+  await expect(page.getByRole('region', { name: '人生记录' })).toBeVisible();
+}
+
 async function openCareerTools(page: import('@playwright/test').Page) {
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
   const pageMenu = page.getByRole('button', { name: /^职业页面/ });
@@ -34,15 +47,7 @@ async function closeCareerTools(page: import('@playwright/test').Page) {
   await expect(page.getByRole('dialog', { name: '职业工具' })).toHaveCount(0);
 }
 
-async function openCareerPage(page: import('@playwright/test').Page, label: string) {
-  const pageMenu = page.getByRole('button', { name: /^职业页面/ });
-  if (await pageMenu.count()) {
-    await pageMenu.click();
-    await page.getByRole('navigation', { name: '职业页面导航' }).getByRole('button', { name: label, exact: true }).click();
-    return;
-  }
-  await page.getByRole('button', { name: label, exact: true }).click();
-}
+import { openCareerPage } from './harness';
 
 test('discovers a named city venue and reaches its activity entry', async ({ page }) => {
   await page.getByRole('button', { name: '城市', exact: true }).click();
@@ -452,11 +457,11 @@ test('keeps populated Shop inventory as an actionable pixel strip', async ({ pag
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'populated inventory strip targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.inventory = { 'item.seed-coffee': 1, 'item.seed-phone': 1 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -494,11 +499,11 @@ test('keeps populated Shop wishlist as light action rows under a dark header', a
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'populated wishlist surface targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.wishlist = ['item.seed-phone'];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -1151,8 +1156,8 @@ test('keeps a four-row Life inbox inside its fixed panel frame', async ({ page }
     sourceId: 'interaction.seed-lin-meal',
     read: index % 2 === 0,
   }));
-  await page.evaluate((nextMessages) => {
-    localStorage.setItem('yuliang-save-v1', JSON.stringify({ messages: nextMessages }));
+  await page.evaluate(async (nextMessages) => {
+    await window.__e2eSave.write({ messages: nextMessages });
   }, messages);
   await page.reload();
   await page.getByRole('button', { name: '生活', exact: true }).click();
@@ -1186,8 +1191,8 @@ test('keeps a four-row Life inbox inside its low-height panel frame', async ({ p
     sourceId: 'interaction.seed-lin-meal',
     read: false,
   }));
-  await page.evaluate((nextMessages) => {
-    localStorage.setItem('yuliang-save-v1', JSON.stringify({ messages: nextMessages }));
+  await page.evaluate(async (nextMessages) => {
+    await window.__e2eSave.write({ messages: nextMessages });
   }, messages);
   await page.reload();
   await page.getByRole('button', { name: '生活', exact: true }).click();
@@ -2088,8 +2093,8 @@ test('uses light inverse surfaces for populated Career support rows', async ({ p
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'populated Career support surfaces are desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.applications = [{
       applicationId: 'application.visual-career',
       vacancyId: 'vacancy.visual-career',
@@ -2108,7 +2113,7 @@ test('uses light inverse surfaces for populated Career support rows', async ({ p
     }];
     state.employmentHistory = [{ jobId: 'job.seed-warehouse', companyId: 'company.yuanwang', startedDay: 1, endedDay: 4, finalPay: 130 }];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
   await page.getByRole('button', { name: '职业', exact: true }).click();
@@ -2604,11 +2609,11 @@ test('keeps Shop product CTAs across the full card frame', async ({ page }) => {
 test('shows the pending settlement mode in the top status while the ceremony is open', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -2645,11 +2650,11 @@ test('keeps the tall Settlement board separated from its compact HUD', async ({ 
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall Settlement frame geometry targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -2703,11 +2708,11 @@ test('lets the tall Settlement frame use the reference bottom edge', async ({ pa
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall Settlement frame footprint targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -2723,11 +2728,11 @@ test('gives the Settlement net-worth Hero value a primary reading tier', async (
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'Settlement Hero typography targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -2756,11 +2761,11 @@ test('keeps tall Settlement ledger totals on the heading register', async ({ pag
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall Settlement ledger anatomy targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -2788,11 +2793,11 @@ test('keeps visible Settlement copy free of internal identifiers', async ({ page
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement copy audit targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -2974,11 +2979,11 @@ test('keeps the weekly planner utility row compact without removing its controls
 
 test('keeps settlement achievement copy inside cards at low-height desktop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3003,11 +3008,11 @@ test('keeps the low-height settlement highlights row free of a dead band', async
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height settlement framing targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1280, height: 720 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3038,11 +3043,11 @@ test('keeps settlement footer attributes in one readable desktop row', async ({ 
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'footer row assertion targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3065,11 +3070,11 @@ test('keeps the tall Settlement footer above the micro-copy tier', async ({ page
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall settlement footer typography targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3096,11 +3101,11 @@ test('keeps tall settlement ledger rows in the readable reference tier', async (
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall settlement ledger typography targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3127,11 +3132,11 @@ test('keeps the Settlement advance CTA in the reference arrow-label anatomy', as
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall settlement CTA anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3162,11 +3167,11 @@ test('keeps the Settlement footer summary and attribute rail stacked beside the 
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'footer anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3205,11 +3210,11 @@ test('keeps settlement financial panels in the reference proportion', async ({ p
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement panel proportions target the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3229,11 +3234,11 @@ test('keeps settlement totals as outlined readouts on black panels', async ({ pa
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement total contrast targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1280, height: 720 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3255,11 +3260,11 @@ test('keeps settlement NEW ribbons as stepped corner flags at low height', async
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement achievement flags target the supported desktop landscape surface');
   await page.setViewportSize({ width: 1280, height: 720 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3281,11 +3286,11 @@ test('keeps settlement allocation meters legible on the black board', async ({ p
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement allocation contrast targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3315,11 +3320,11 @@ test('keeps Settlement allocation meters on the readable segment tier', async ({
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement allocation meter tier targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3348,11 +3353,11 @@ test('keeps the Settlement allocation illustration visible as a lower-right anch
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement illustration anchor targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3390,11 +3395,11 @@ test('gives sparse Settlement ledger panels a readable character-and-note anchor
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'sparse settlement composition targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3424,8 +3429,8 @@ test('gives empty settlement ledgers a framed neutral status lane', async ({ pag
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'empty settlement anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.pendingMonthlySummary = {
       month: 1,
@@ -3433,7 +3438,7 @@ test('gives empty settlement ledgers a framed neutral status lane', async ({ pag
       summary: { month: 1, ledger: { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: 500, netWorthEnd: 500 } },
       highlights: [],
     };
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3463,11 +3468,11 @@ test('gives settlement financial panels a shared pixel-corner frame', async ({ p
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement frame assertion targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3487,11 +3492,11 @@ test('gives the settlement Hero a full-width title divider', async ({ page }) =>
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero assertion targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3513,11 +3518,11 @@ test('frames the Settlement net-worth Hero with distributed reference rays', asy
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero burst targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3568,11 +3573,11 @@ test('keeps the Settlement Hero secondary spark field dense enough for the refer
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero spark density targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3594,11 +3599,11 @@ test('keeps a compact Settlement Hero motif visible at low desktop height', asyn
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height Settlement Hero targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1280, height: 720 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3643,11 +3648,11 @@ test('keeps the settlement Hero character near the burst origin', async ({ page 
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement Hero composition targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3674,11 +3679,11 @@ test('keeps the settlement title on the reference three-spark rhythm', async ({ 
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement title decoration targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3698,11 +3703,11 @@ test('keeps the settlement Hero character at the reference character tier', asyn
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement character assertion targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3723,11 +3728,11 @@ test('gives populated settlement achievements a title-body-meta hierarchy', asyn
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'achievement anatomy targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3770,11 +3775,11 @@ test('keeps populated settlement achievement copy above the tiny metadata tier',
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'achievement typography targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3797,11 +3802,11 @@ test('keeps populated settlement achievement art open on the black board', async
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'achievement art treatment targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3823,11 +3828,11 @@ test('gives populated settlement achievements a deliberate closing baseline', as
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'achievement footer treatment targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3857,11 +3862,11 @@ test('keeps the Settlement review card on the shared visual anchor tier', async 
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement review anchor targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3906,11 +3911,11 @@ test('keeps the tall Settlement achievement row on the reference width rhythm', 
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall settlement achievement rhythm targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3947,11 +3952,11 @@ test('keeps the tall Settlement footer attached to the achievement row', async (
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall settlement footer rhythm targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -3983,11 +3988,11 @@ test('opens the settlement stage without revealing the underlying page', async (
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement stage opacity targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -4016,11 +4021,11 @@ test('fills the low-height settlement frame without a trailing dead band', async
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height settlement framing is desktop-only');
   await page.setViewportSize({ width: 1280, height: 720 });
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.simulationMode = 'paused';
     state.majorEventsThisMonth = 3;
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -4426,13 +4431,13 @@ test('lets the tall Life inbox strip use the board height before the footer', as
 
 test('discovers and applies to the official education operations route', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.attributes = { ...(state.attributes ?? {}), knowledge: 20, communication: 20, appearance: 12 };
     state.ability = 20;
     state.reputation = 10;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4452,8 +4457,8 @@ test('discovers and applies to the official education operations route', async (
 
 test('turns the education course qualification into a persistent teaching assistant side job', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 2_000;
     state.attributes = { ...(state.attributes ?? {}), professional: 14, knowledge: 14, communication: 14, fitness: 14 };
     state.ability = 14;
@@ -4462,7 +4467,7 @@ test('turns the education course qualification into a persistent teaching assist
     state.rng = { ...(state.rng ?? {}), seed: 24, cursor: 0 };
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4494,13 +4499,13 @@ test('turns the education course qualification into a persistent teaching assist
 
 test('discovers the consulting research route and shows its real acquisition gate', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.attributes = { ...(state.attributes ?? {}), professional: 26, knowledge: 26, communication: 26, fitness: 26 };
     state.ability = 26;
     state.reputation = 8;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4518,14 +4523,14 @@ test('discovers the consulting research route and shows its real acquisition gat
 
 test('discovers the travel product assistant route in the public market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.attributes = { ...(state.attributes ?? {}), professional: 18, knowledge: 18, communication: 18, fitness: 18 };
     state.ability = 18;
     state.reputation = 5;
     state.rng = { ...(state.rng ?? {}), seed: 1, cursor: 0 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4541,14 +4546,14 @@ test('discovers the travel product assistant route in the public market', async 
 
 test('discovers the low-barrier ecommerce operations route in the public market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.attributes = { ...(state.attributes ?? {}), professional: 12, knowledge: 12, communication: 12, fitness: 12 };
     state.ability = 12;
     state.reputation = 2;
     state.rng = { ...(state.rng ?? {}), seed: 37, cursor: 0 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4564,14 +4569,14 @@ test('discovers the low-barrier ecommerce operations route in the public market'
 
 test('discovers the neworder automotive service route in the public market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.attributes = { ...(state.attributes ?? {}), professional: 12, knowledge: 12, communication: 10, fitness: 12, appearance: 8, network: 4 };
     state.ability = 12;
     state.reputation = 2;
     state.rng = { ...(state.rng ?? {}), seed: 17, cursor: 0 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4587,14 +4592,14 @@ test('discovers the neworder automotive service route in the public market', asy
 
 test('discovers the frame media production route in the public market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.attributes = { ...(state.attributes ?? {}), professional: 12, knowledge: 12, communication: 12, fitness: 12, appearance: 10, network: 4 };
     state.ability = 12;
     state.reputation = 2;
     state.rng = { ...(state.rng ?? {}), seed: 100, cursor: 0 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4610,14 +4615,14 @@ test('discovers the frame media production route in the public market', async ({
 
 test('discovers the isle lifestyle customer experience route in the public market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.attributes = { ...(state.attributes ?? {}), professional: 12, knowledge: 12, communication: 12, fitness: 12, appearance: 10, network: 4 };
     state.ability = 12;
     state.reputation = 2;
     state.rng = { ...(state.rng ?? {}), seed: 15, cursor: 0 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4633,12 +4638,12 @@ test('discovers the isle lifestyle customer experience route in the public marke
 
 test('enforces the persisted travel cooldown in the activity market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.time = { day: 15, hour: 8, minute: 0 };
     state.lifeHistory = [{ id: 'life.activity.last-trip', day: 10, category: 'activity', title: '周末短途旅行 · 慢慢走走', sourceId: 'activity.weekend-getaway' }];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4651,11 +4656,11 @@ test('enforces the persisted travel cooldown in the activity market', async ({ p
 
 test('shows the persisted service history beside the service market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 500;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4685,10 +4690,10 @@ test('applies and persists a cooldown after using a repeatable service', async (
 
 test('discovers the expanded daily services and subscriptions', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const state = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const state = await readPersistedState(page);
   state.cash = 1000;
   state.simulationMode = 'paused';
-  await page.evaluate(({ key, nextState }) => localStorage.setItem(key, JSON.stringify(nextState)), { key: saveKey, nextState: state });
+  await page.evaluate((nextState) => window.__e2eSave.write(nextState), state);
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '服务', exact: true }).click();
@@ -4719,11 +4724,11 @@ test('shows locked wealth requirements with an actionable acquisition route', as
 
 test('negotiates salary and persists a voluntary departure in career history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.jobExperience = { ...(state.jobExperience ?? {}), 'job.seed-shop-clerk': 20 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4732,7 +4737,7 @@ test('negotiates salary and persists a voluntary departure in career history', a
   await page.getByRole('button', { name: '离开当前工作' }).click();
   await page.getByRole('dialog').getByRole('button', { name: '继续沟通' }).click();
   await page.getByRole('dialog').getByRole('button', { name: '留下来谈谈' }).click();
-  const negotiated = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const negotiated = await readPersistedState(page);
   expect(negotiated.employment.salaryAdjustment).toBe(5);
   expect(negotiated.employment.negotiationStage).toBe(1);
 
@@ -4752,12 +4757,12 @@ test('negotiates salary and persists a voluntary departure in career history', a
 
 test('charges and cancels a monthly subscription with persisted history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 1_000;
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4770,23 +4775,30 @@ test('charges and cancels a monthly subscription with persisted history', async 
   await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toContainText('第 1 月', { timeout: 15_000 });
   await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
-  const chargedState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const chargedState = await readPersistedState(page);
   expect(chargedState.activeSubscriptions['subscription.mobile-basic']).toBeDefined();
   expect(chargedState.lifeHistory).toContainEqual(expect.objectContaining({ title: '基础通信套餐月度扣费', amount: -39 }));
-  expect(chargedState.financialHistory).toContainEqual(expect.objectContaining({ consumption: expect.objectContaining({ categories: expect.objectContaining({ service: 39 }) }) }));
+  // 开通当期先付一次，周期在月结时到期再续一次：一个月正好两笔 39，不多不少。
+  expect(chargedState.financialHistory).toContainEqual(expect.objectContaining({ consumption: expect.objectContaining({ categories: expect.objectContaining({ service: 78 }) }) }));
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '服务', exact: true }).click();
   await page.getByRole('heading', { name: '基础通信套餐' }).locator('..').locator('..').getByRole('button', { name: '取消订阅' }).click();
   await expect(subscription.getByRole('button', { name: '开通订阅' })).toBeVisible();
   await page.getByRole('button', { name: '我的', exact: true }).click();
-  await expect(page.getByText('开通基础通信套餐')).toBeVisible();
-  await expect(page.getByText('取消基础通信套餐')).toBeVisible();
+  await page.getByRole('button', { name: '经历与历史', exact: true }).click();
+  const serviceHistory = page.getByRole('region', { name: '人生记录' });
+  await serviceHistory.getByRole('button', { name: '服务', exact: true }).click();
+  await expect(serviceHistory.getByText('开通基础通信套餐')).toBeVisible();
+  await expect(serviceHistory.getByText('取消基础通信套餐')).toBeVisible();
 
   await page.reload();
   await page.getByRole('button', { name: '我的', exact: true }).click();
-  await expect(page.getByText('基础通信套餐月度扣费')).toBeVisible();
-  await expect(page.getByText('取消基础通信套餐')).toBeVisible();
+  await page.getByRole('button', { name: '经历与历史', exact: true }).click();
+  const serviceHistoryAfterReload = page.getByRole('region', { name: '人生记录' });
+  await serviceHistoryAfterReload.getByRole('button', { name: '服务', exact: true }).click();
+  await expect(serviceHistoryAfterReload.getByText('基础通信套餐月度扣费')).toBeVisible();
+  await expect(serviceHistoryAfterReload.getByText('取消基础通信套餐')).toBeVisible();
 });
 
 test('uses the basic fitness assessment service and keeps its history', async ({ page }) => {
@@ -4847,11 +4859,11 @@ test('discovers the expanded home, cinema, and fitness activities', async ({ pag
 
 test('discovers the expanded travel tiers and schedules a premium weekend', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const initial = await readPersistedState(page);
   initial.currentJobId = null;
   initial.employment = null;
   initial.cash = 5000;
-  await page.evaluate(({ key, nextState }) => localStorage.setItem(key, JSON.stringify(nextState)), { key: saveKey, nextState: initial });
+  await page.evaluate((nextState) => window.__e2eSave.write(nextState), initial);
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '旅行', exact: true }).click();
@@ -4885,11 +4897,11 @@ test('discovers a contact-specific activity and schedules it with its relationsh
 
 test('acquires camping gear and unlocks the weekend camping plan', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 3_000;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4908,14 +4920,14 @@ test('acquires camping gear and unlocks the weekend camping plan', async ({ page
 
 test('trades a listed business equity slice from the wealth flow', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 10_000;
     state.time = { ...state.time, day: 29 };
     state.businesses = { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3_200, equityPercent: 80, listed: true, listedDay: 1 } };
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4940,15 +4952,15 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
 
 test('runs a business from purchase through funding, listing, daily profit and persistence', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 50_000;
     state.unlockedCapabilities = [...new Set([...(state.unlockedCapabilities ?? []), 'business_license'])];
     state.unlockedBusinessIds = ['business.seed-kiosk'];
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
     state.rng = { ...(state.rng ?? {}), seed: 41, cursor: 0 };
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4975,8 +4987,8 @@ test('runs a business from purchase through funding, listing, daily profit and p
 
 test('acquires an unlocked business and persists the holding history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 15_000;
     state.ability = 18;
     state.attributes = { ...(state.attributes ?? {}), professional: 18, knowledge: 18, communication: 18, fitness: 18, appearance: 10, network: 0, mood: 50 };
@@ -4984,7 +4996,7 @@ test('acquires an unlocked business and persists the holding history', async ({ 
     state.unlockedBusinessIds = ['business.seed-kiosk', 'business.online-store'];
     state.businesses = { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 3_200, equityPercent: 100 } };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -4992,7 +5004,7 @@ test('acquires an unlocked business and persists the holding history', async ({ 
   await expect(page.getByRole('heading', { name: '可并购企业' })).toBeVisible();
   await page.getByRole('button', { name: '并购 ¥8,580' }).click();
   await expect(page.getByRole('heading', { name: '线上小店' }).last()).toBeVisible();
-  const acquiredState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const acquiredState = await readPersistedState(page);
   expect(acquiredState.businesses['business.online-store']).toBeDefined();
   expect(acquiredState.lifeHistory).toContainEqual(expect.objectContaining({ title: '并购线上小店' }));
   await page.getByRole('button', { name: '我的', exact: true }).click();
@@ -5005,8 +5017,8 @@ test('acquires an unlocked business and persists the holding history', async ({ 
 
 test('joins a relationship-gated business partnership and persists the partial holding', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 10_000;
     state.ability = 18;
     state.attributes = { ...(state.attributes ?? {}), professional: 18, knowledge: 18, communication: 18, fitness: 18, appearance: 10, network: 0, mood: 50 };
@@ -5014,7 +5026,7 @@ test('joins a relationship-gated business partnership and persists the partial h
     state.unlockedCapabilities = ['business_license', 'remote_work'];
     state.unlockedBusinessIds = ['business.online-store'];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5034,8 +5046,8 @@ test('joins a relationship-gated business partnership and persists the partial h
 
 test('joins and settles the official consulting studio partnership through the business loop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 30_000;
     state.ability = 28;
     state.reputation = 20;
@@ -5047,7 +5059,7 @@ test('joins and settles the official consulting studio partnership through the b
     state.businesses = {};
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5061,7 +5073,7 @@ test('joins and settles the official consulting studio partnership through the b
   await page.getByRole('button', { name: '进入下个月' }).click();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByText('加入咨询工作室合伙')).toBeVisible();
-  const settledState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const settledState = await readPersistedState(page);
   expect(settledState.financialHistory?.length).toBeGreaterThan(0);
   expect(settledState.financialHistory.at(-1).income.categories.business_income).toBeGreaterThan(0);
 
@@ -5074,11 +5086,11 @@ test('joins and settles the official consulting studio partnership through the b
 
 test('completes a wishlist purchase goal and persists its history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 2_000;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5097,45 +5109,64 @@ test('completes a wishlist purchase goal and persists its history', async ({ pag
   await expect(page.getByText('愿望清单完成：新款手机')).toBeVisible();
 });
 
-test('executes an offered gig and persists its income and career history', async ({ page }) => {
+test('offers a gig with its reserved window and never pays it without the hours', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 2_000;
-    const day = state.time?.day ?? 1;
-    state.gigs = [{ id: 'gig.e2e-delivery', jobId: 'job.delivery-shift', validFromDay: day, expiresDay: day + 6, executableDay: day, startMinute: 1080, endMinute: 1320, pay: 76, source: '公开市场' }];
+    // 零工是一段真实工时：窗口覆盖当前时刻，只有时间真的走完才结算。
+    state.time = { day: 1, hour: 9, minute: 0 };
+    state.calendar = { week: 1, weekday: 1, month: 1, weekOfMonth: 1 };
+    // 空字符串是迁移认可的“没有工作”标记：用 undefined 会被 JSON 丢掉，读档时
+    // 初始岗位又回来了，零工窗口就会和 09:00–17:00 的班次冲突。
+    state.currentJobId = '';
+    state.employment = undefined;
+    state.majorEventsThisMonth = 3;
+    state.gigs = [{ id: 'gig.e2e-delivery', jobId: 'job.delivery-shift', validFromDay: 1, expiresDay: 7, executableDay: 1, startMinute: 9 * 60, endMinute: 13 * 60, pay: 76, source: '公开市场', workedMinutes: 0 }];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
   await openCareerPage(page, '工作机会');
   const gig = page.getByRole('heading', { name: '同城配送' }).locator('xpath=ancestor::article[1]');
-  await expect(gig).toContainText('结算 ¥76');
-  await gig.getByRole('button', { name: '执行一次' }).click();
-  await expect(page.getByText('+¥76')).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '完成同城配送' })).toBeVisible();
+  await expect(gig).toContainText('满勤结算 ¥76');
+  await expect(gig).toContainText('第 1 天 09:00–13:00');
+  await expect(gig).toContainText('已工作 0 / 4 小时');
 
+  // 时间没有走完，零工不能结算：点一次只把这段零工接成自己的班，不发钱，也不推进时钟。
+  await gig.getByRole('button', { name: '开始这段零工' }).click();
+  await expect(page.getByRole('status', { name: '操作结果' })).toContainText('已开始同城配送');
+  await expect(page.getByTestId('cash-value')).toContainText('2,000');
+  await expect(page.getByTestId('clock-value')).toContainText('09:00');
+  // 卡片状态跟着走：这段窗口已经是玩家的班次，只剩继续工作。
+  await expect(gig).toContainText('已工作 0 / 4 小时');
+  await expect(gig.getByRole('button', { name: '继续这段零工' })).toBeVisible();
+
+  // 零工仍然留在工作机会里，等待真正的时间投入；开工状态本身也随存档保留。
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '完成同城配送' })).toBeVisible();
+  await openLifeHistoryGigSection(page);
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
   await openCareerPage(page, '工作机会');
-  await expect(page.getByRole('heading', { name: '同城配送' })).not.toBeVisible();
+  await expect(page.getByRole('heading', { name: '同城配送' })).toBeVisible();
+  const persisted = await readPersistedState(page);
+  expect(persisted.cash).toBe(2_000);
+  expect((persisted.gigs ?? []).map((entry: { id: string }) => entry.id)).toEqual(['gig.e2e-delivery']);
+  expect((persisted.gigs ?? [])[0].startedMinute).toBe(9 * 60);
+  expect((persisted.gigs ?? [])[0].workedMinutes).toBe(0);
 });
 
 test('buys and persists the Isle lifestyle technology smart-home set', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 10_000;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
-  const beforePurchase = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const beforePurchase = await readPersistedState(page);
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
@@ -5144,7 +5175,7 @@ test('buys and persists the Isle lifestyle technology smart-home set', async ({ 
   await item.getByRole('button', { name: '加入购物袋：智能家居套装' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
   await expect(page.getByRole('heading', { name: '智能家居套装' }).first()).toBeVisible();
-  const settled = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const settled = await readPersistedState(page);
   expect(settled.cash).toBe(4_001);
   expect(settled.lifestyle - (beforePurchase.lifestyle ?? 10)).toBe(6);
   await page.getByRole('button', { name: '我的', exact: true }).click();
@@ -5157,13 +5188,13 @@ test('buys and persists the Isle lifestyle technology smart-home set', async ({ 
 
 test('settles a business operating risk event with persisted financial history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 1_000;
     state.businesses = { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', priceLevel: 1, wageLevel: 1, inventoryLevel: 1, purchasePrice: 2_000, equityPercent: 100, publicFloatPercent: 0 } };
     state.pendingEventId = 'event.business-equipment-failure';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5174,7 +5205,7 @@ test('settles a business operating risk event with persisted financial history',
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByText('设备今天不太配合')).toBeVisible();
-  const settled = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const settled = await readPersistedState(page);
   expect(settled.cash).toBe(700);
   expect(settled.reputation).toBe((initial.reputation ?? 0) + 1);
 
@@ -5185,12 +5216,12 @@ test('settles a business operating risk event with persisted financial history',
 
 test('applies the industrial hub city event and persists its development', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.time = { ...state.time, day: 180 };
     state.pendingEventId = 'event.industrial-hub-upgrade';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5220,11 +5251,11 @@ test('reads and persists the official storyline dialogue', async ({ page }) => {
 
 test('completes the first fund investment storyline after entering the market', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.investments = { ...(state.investments ?? {}), 'investment.broad-market-index': { investmentId: 'investment.broad-market-index', units: 1, averageCost: 108, currentValuation: 108, lastValuationDay: 1 } };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5243,13 +5274,13 @@ test('completes the first fund investment storyline after entering the market', 
 
 test('unlocks the warehouse-to-office career storyline opportunity', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.currentJobId = 'job.huanliu-warehouse-assistant';
     state.employment = { ...(state.employment ?? {}), jobId: 'job.huanliu-warehouse-assistant', companyId: 'company.huanliu', startedDay: 1 };
     state.careerExperience = { ...(state.careerExperience ?? {}), logistics: 22 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5271,12 +5302,12 @@ test('unlocks the warehouse-to-office career storyline opportunity', async ({ pa
 
 test('completes the first real consulting project storyline with a persisted outcome', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.currentJobId = 'job.research-assistant';
     state.employment = { ...(state.employment ?? {}), jobId: 'job.research-assistant', companyId: 'company.clearview-consulting', startedDay: 1 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5295,12 +5326,12 @@ test('completes the first real consulting project storyline with a persisted out
 
 test('completes the ecommerce big-promotion storyline with a persisted career reward', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.currentJobId = 'job.order-operations-assistant';
     state.employment = { ...(state.employment ?? {}), jobId: 'job.order-operations-assistant', companyId: 'company.starbridge-ecommerce', startedDay: 1 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5318,12 +5349,12 @@ test('completes the ecommerce big-promotion storyline with a persisted career re
 
 test('turns a client poaching storyline into a persisted referral opportunity', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.currentJobId = 'job.business-analyst';
     state.employment = { ...(state.employment ?? {}), jobId: 'job.business-analyst', companyId: 'company.clearview-consulting', startedDay: 1 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5342,14 +5373,14 @@ test('turns a client poaching storyline into a persisted referral opportunity', 
 
 test('uses the employee purchase plan to buy a discounted smart-home set', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 5_000;
     state.reputation = 12;
     state.currentJobId = 'job.customer-experience-assistant';
     state.employment = { ...(state.employment ?? {}), jobId: 'job.customer-experience-assistant', companyId: 'company.isle-lifestyle', startedDay: 1 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5370,12 +5401,12 @@ test('uses the employee purchase plan to buy a discounted smart-home set', async
 
 test('uses and persists the vehicle annual service from the shop', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 1000;
     state.assets = { ...(state.assets ?? {}), 'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 35000, purchaseDay: 1, currentValuation: 35000 } };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5393,13 +5424,13 @@ test('uses and persists the vehicle annual service from the shop', async ({ page
 
 test('shows persisted vehicle maintenance history in wealth', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 50000;
     state.assets = { 'asset.used-compact': { assetId: 'asset.used-compact', purchasePrice: 35000, purchaseDay: 1, currentValuation: 34900 } };
     state.financialLedger = { month: 2, nextSequence: 2, entries: [{ id: 'ledger.vehicle.1', day: 28, direction: 'expense', group: 'consumption', category: 'maintenance', amount: 300, cashDelta: -300, sourceType: 'vehicle', sourceId: 'asset.used-compact', label: '实用二手小车车辆成本' }], cashStart: 50000, netWorthStart: 50000 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5409,11 +5440,11 @@ test('shows persisted vehicle maintenance history in wealth', async ({ page }) =
 
 test('shows persisted ambient city sightings in the city view', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.ambientLog = [{ day: 12, text: '中央区的夜间公交延长了运营时间。' }];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5423,12 +5454,12 @@ test('shows persisted ambient city sightings in the city view', async ({ page })
 
 test('discovers and plans the friend-specific cafe activity', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 500;
     state.relationships = { ...(state.relationships ?? {}), 'character.chenyu': 4 };
     state.simulationMode = 'planning';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5445,12 +5476,12 @@ test('discovers and plans the friend-specific cafe activity', async ({ page }) =
 
 test('discovers and plans the relationship-gated cinema outing with Zhou', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 1000;
     state.relationships = { ...(state.relationships ?? {}), 'character.seed-zhou': 6 };
     state.simulationMode = 'planning';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5483,11 +5514,11 @@ test('discovers and plans the riverside park ride', async ({ page }) => {
 
 test('buys and gives a preference-matching gift with persisted social history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 1000;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5507,14 +5538,14 @@ test('buys and gives a preference-matching gift with persisted social history', 
 
 test('settles a city development event and keeps the location change after reload', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.time = { ...state.time, day: 90 };
     state.calendar = { ...state.calendar, month: 4 };
     state.pendingEventId = 'event.city-transit-upgrade';
     state.simulationMode = 'event';
     state.locationDevelopment = { ...(state.locationDevelopment ?? {}), 'location.riverside': 0 };
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5532,22 +5563,22 @@ test('settles a city development event and keeps the location change after reloa
 
 test('turns a company expansion event into a visible internal career opportunity', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.time = { ...state.time, day: 1 };
     state.currentJobId = 'job.category-operations-expert';
     state.employment = { ...(state.employment ?? {}), jobId: 'job.category-operations-expert', companyId: 'company.xinghe', basePay: 720, salaryAdjustment: 0 };
     state.reputation = 28;
     state.pendingEventId = 'event.xinghe-expansion';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
   await expect(page.getByRole('dialog')).toContainText('星河科技的业务扩展');
   await page.getByRole('dialog').getByRole('button', { name: /参与前期项目/ }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
-  const changedState = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
+  const changedState = await readPersistedState(page);
   expect(changedState.flags?.xinghe_service_line_launched).toBe(true);
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
   await openCareerPage(page, '工作机会');
@@ -5557,11 +5588,11 @@ test('turns a company expansion event into a visible internal career opportunity
 
 test('shows the player-triggered company state in annual world history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.worldHistory = [{ year: 1, day: 337, netWorth: 18_000, businessCount: 0, relationshipCount: 1, visitedLocationCount: 1, companyStates: { 'company.xinghe': '企业服务线提前启动（玩家参与）' } }];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5576,14 +5607,14 @@ test('shows the player-triggered company state in annual world history', async (
 
 test('turns a qualifying manager state into a persisted headhunter opportunity', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.currentJobId = 'job.regional-operations-manager';
     state.employment = { ...(state.employment ?? {}), jobId: 'job.regional-operations-manager', companyId: 'company.yuanwang', basePay: 620, salaryAdjustment: 0 };
     state.reputation = 30;
     state.pendingEventId = 'event.headhunter-contact';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5603,15 +5634,15 @@ test('turns a qualifying manager state into a persisted headhunter opportunity',
 
 test('unlocks and trades the high-value collectible through the wealth flow', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.time = { ...state.time, day: 6 };
     state.calendar = { ...state.calendar, month: 1 };
     state.ability = 14;
     state.cash = 50_000;
     state.pendingEventId = 'event.investment-note';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5633,11 +5664,11 @@ test('unlocks and trades the high-value collectible through the wealth flow', as
 
 test('buys and resells the official diamond pendant with persisted purchase history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 20_000;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5658,8 +5689,8 @@ test('buys and resells the official diamond pendant with persisted purchase hist
 
 test('shows persisted wealth milestones in the profile on desktop and mobile', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 200_000;
     state.wealthMilestones = [
       { id: 'savings', day: 28, netWorth: 12_000 },
@@ -5668,7 +5699,7 @@ test('shows persisted wealth milestones in the profile on desktop and mobile', a
     state.annualHistory = [{ year: 1, cashStart: 1_000, cashEnd: 1_400, netWorthStart: 1_000, netWorthEnd: 1_800, totalIncome: 900, totalConsumption: 500, months: 12 }];
     state.worldHistory = [{ year: 1, day: 337, netWorth: 1_800, businessCount: 0, relationshipCount: 2, companyStates: { 'company.yuanwang': '门店与社区零售' }, visitedLocationCount: 1 }];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5688,12 +5719,12 @@ test('shows persisted wealth milestones in the profile on desktop and mobile', a
 
 test('archives and restores annual public equity history in the profile', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.annualHistory = [{ year: 1, cashStart: 10_000, cashEnd: 40_000, netWorthStart: 10_000, netWorthEnd: 42_000, totalIncome: 35_000, totalConsumption: 5_000, months: 12 }];
     state.worldHistory = [{ year: 1, day: 337, netWorth: 42_000, businessCount: 1, relationshipCount: 2, relationshipValues: { 'character.seed-zhou': 42 }, characterCareerStates: { 'character.seed-lin': '远望零售 · 门店员工' }, companyStates: { 'company.yuanwang': '门店与社区零售' }, visitedLocationCount: 3, listedBusinessCount: 1, publicFloatPercent: 35, publicBusinessEquities: { 'business.seed-kiosk': { businessId: 'business.seed-kiosk', percent: 10, investedAmount: 208, currentValue: 220 } } }];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5719,14 +5750,14 @@ test('archives and restores annual public equity history in the profile', async 
 
 test('finances a home and restores the mortgage state after reload', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 10_000;
     state.unlockedHousingIds = [...new Set([...(state.unlockedHousingIds ?? []), 'housing.seed-room'])];
     state.housing = { housingId: 'housing.shared-room', mode: 'rent' };
     state.mortgage = undefined;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5746,15 +5777,15 @@ test('finances a home and restores the mortgage state after reload', async ({ pa
 
 test('buys and rents a second home with persisted portfolio controls', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 20_000;
     state.unlockedHousingIds = [...new Set([...(state.unlockedHousingIds ?? []), 'housing.seed-room'])];
     state.housing = { housingId: 'housing.shared-room', mode: 'rent' };
     state.housingHoldings = {};
     state.mortgage = undefined;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -5772,14 +5803,14 @@ test('buys and rents a second home with persisted portfolio controls', async ({ 
 
 test('unlocks and persists a private-equity opportunity from a relationship event', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.time = { ...state.time, day: 30 };
     state.relationships = { ...(state.relationships ?? {}), 'character.xuke': 40 };
     state.cash = 20_000;
     state.pendingEventId = 'event.private-equity-introduction';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -5805,14 +5836,11 @@ test('unlocks and persists a private-equity opportunity from a relationship even
 });
 
 /**
- * Wait until the store's deferred (Web Locks critical section) save has landed
- * in storage, so a following reload or direct storage read observes it.
+ * Wait until the store's canonical save has landed in the database, so a
+ * following reload or direct record read observes it.
  */
 async function awaitSaveSynced(page: import('@playwright/test').Page) {
-  await page.waitForFunction(() => {
-    const raw = localStorage.getItem('yuliang-save-v1');
-    return raw !== null && raw === JSON.stringify(window.__yuliang.store.getState().game);
-  }, undefined, { timeout: 5000 });
+  await awaitCanonicalSynced(page);
 }
 
 /**
@@ -5872,14 +5900,14 @@ test('settles the authored private-equity exit opportunity', async ({ page }) =>
   // Story-gate fixture only: eligibility and the intro event. The holding is
   // created by a real buy on the wealth page, then aged by real engine days so
   // daily settlement runs over the whole lock window.
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.time = { ...state.time, day: 30 };
     state.cash = 20_000;
     state.flags = { ...(state.flags ?? {}), private_equity_access: true };
     state.pendingEventId = 'event.private-equity-introduction';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -5897,12 +5925,12 @@ test('settles the authored private-equity exit opportunity', async ({ page }) =>
 
   // The authored buyout arrives; accepting it must liquidate the whole holding
   // through the same accounting path as a manual sale.
-  await page.evaluate(({ key }) => {
-    const state = JSON.parse(localStorage.getItem(key) ?? '{}');
+  await page.evaluate(async () => {
+    const state = await window.__e2eSave.read();
     state.pendingEventId = 'event.private-equity-exit-offer';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
-  }, { key: saveKey });
+    await window.__e2eSave.write(state);
+  });
   await page.reload();
   await expect(page.getByRole('dialog')).toContainText('有人愿意接手这部分股权');
   await page.getByRole('dialog').getByRole('button', { name: '接受收购报价' }).click();
@@ -5917,14 +5945,14 @@ test('settles the authored private-equity exit opportunity', async ({ page }) =>
 
 test('unlocks and trades the authored local restaurant investment opportunity', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.time = { ...state.time, day: 60 };
     state.relationships = { ...(state.relationships ?? {}), 'character.seed-zhou': 40 };
     state.cash = 10_000;
     state.pendingEventId = 'event.local-restaurant-investment';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -5941,13 +5969,13 @@ test('unlocks and trades the authored local restaurant investment opportunity', 
   await expect(page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..')).toContainText('持有 1 份');
   await awaitSaveSynced(page);
 
-  await page.evaluate(({ key }) => {
-    const state = JSON.parse(localStorage.getItem(key) ?? '{}');
+  await page.evaluate(async () => {
+    const state = await window.__e2eSave.read();
     state.time = { ...state.time, day: 150 };
     state.pendingEventId = 'event.local-restaurant-exit-offer';
     state.simulationMode = 'event';
-    localStorage.setItem(key, JSON.stringify(state));
-  }, { key: saveKey });
+    await window.__e2eSave.write(state);
+  });
   await page.reload();
   await expect(page.getByRole('dialog')).toContainText('这份合伙份额可以退出了');
   await page.getByRole('dialog').getByRole('button', { name: '接受退出报价' }).click();
@@ -5964,12 +5992,12 @@ test('unlocks and trades the authored local restaurant investment opportunity', 
 
 test('keeps a fresh private-equity holding locked for 90 days and unlocks selling in the UI', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 20_000;
     state.flags = { ...(state.flags ?? {}), private_equity_access: true };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
     localStorage.setItem('yuliang-e2e-hook', '1');
   }, { key: saveKey, state: initial });
   await page.reload();
@@ -6005,11 +6033,11 @@ test('keeps a fresh private-equity holding locked for 90 days and unlocks sellin
 
 test('buys and sells independent public company equity with persisted history', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 10_000;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6036,8 +6064,8 @@ test('buys and sells independent public company equity with persisted history', 
 
 test('shows the persisted wealth portfolio summary across the wealth flow', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.housing = { housingId: 'housing.seed-room', mode: 'owned' };
     state.cash = 7_650;
     state.mortgage = { housingId: 'housing.seed-room', remainingPrincipal: 4_350, monthlyPayment: 199, totalMonths: 24, paidMonths: 1 };
@@ -6087,7 +6115,7 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
       },
     ];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6123,11 +6151,11 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
 
 test('records and shows a reached milestone in the profile', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 10_000;
     state.simulationMode = 'planning';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6145,15 +6173,15 @@ test('records and shows a reached milestone in the profile', async ({ page }) =>
 
 test('records the first investment dividend as a milestone after monthly settlement', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 50_000;
     state.investments = {
       'investment.qiming-equity': { investmentId: 'investment.qiming-equity', units: 1_000, averageCost: 220, currentValuation: 220_000, lastValuationDay: 1 },
     };
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6170,12 +6198,12 @@ test('records the first investment dividend as a milestone after monthly settlem
 
 test('completes and persists an official course through the weekly plan', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 2_000;
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6199,11 +6227,11 @@ test('completes and persists an official course through the weekly plan', async 
 
 test('settles Zhou business interaction and persists the follow-up message', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 500;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6227,11 +6255,11 @@ test('settles Zhou business interaction and persists the follow-up message', asy
 
 test('settles Guqing consulting review interaction with preference feedback', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 500;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6250,8 +6278,8 @@ test('settles Guqing consulting review interaction with preference feedback', as
 
 test('builds a controlling stake through staged entry and persists board decisions', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 30000;
     state.ability = 18;
     state.attributes = { ...(state.attributes ?? {}), professional: 18, knowledge: 18, communication: 18, fitness: 18, appearance: 10, network: 0, mood: 50 };
@@ -6259,7 +6287,7 @@ test('builds a controlling stake through staged entry and persists board decisio
     state.unlockedBusinessIds = ['business.seed-kiosk'];
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6289,15 +6317,15 @@ test('builds a controlling stake through staged entry and persists board decisio
 });
 test('evolves NPC and company timelines from world state and archives them', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 20_000;
     state.time = { day: 1300, hour: 9, minute: 0 };
     state.completedEvents = ['event.industrial-hub-upgrade', 'event.city-transit-upgrade'];
     state.flags = { ...(state.flags ?? {}), xinghe_service_line_launched: true };
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6310,13 +6338,13 @@ test('evolves NPC and company timelines from world state and archives them', asy
   await expect(xukeCard).toContainText('星河企业服务线 · 技术合伙人');
 
   // Archived evolution: a completed annual snapshot renders its branched company and NPC states after reload.
-  const seeded = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const seeded = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.worldHistory = [{ year: 4, day: 1344, netWorth: 24_000, businessCount: 0, relationshipCount: 1, visitedLocationCount: 1, listedBusinessCount: 0, controlledBusinessCount: 1,
       characterCareerStates: { 'character.seed-lin': '临江内容工作室 · 联合创始人' },
       companyStates: { 'company.greenfield-education': '北部转岗培训中心', 'company.xinghe': '企业服务线并购整合' } }];
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: seeded });
   await page.reload();
   await page.getByRole('button', { name: '我的', exact: true }).click();
@@ -6332,8 +6360,8 @@ test('evolves NPC and company timelines from world state and archives them', asy
 });
 test('shows cross-industry mobility distance and a senior expert ladder', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 20_000;
     state.ability = 45;
     state.careerExperience = { retail: 60, customer_service: 40, operations: 30, data: 152, office: 138, project: 58 };
@@ -6346,7 +6374,7 @@ test('shows cross-industry mobility distance and a senior expert ladder', async 
     state.lastSettledDay = 24;
     state.majorEventsThisMonth = 3;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6378,13 +6406,13 @@ test('shows cross-industry mobility distance and a senior expert ladder', async 
 });
 test('starts the old-photo storyline with song-yuran and persists its branch', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 5_000;
     state.time = { day: 90, hour: 10, minute: 0 };
     state.relationships = { ...(state.relationships ?? {}), 'character.song-yuran': 30 };
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6407,11 +6435,11 @@ test('starts the old-photo storyline with song-yuran and persists its branch', a
 });
 test('discovers the new districts and reaches their venue activities', async ({ page }) => {
   const saveKey = 'yuliang-save-v1';
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 5_000;
     state.simulationMode = 'paused';
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
@@ -6428,13 +6456,13 @@ test('runs a multi-year life in the real browser and keeps annual records consis
   const saveKey = 'yuliang-save-v1';
   await page.goto('/');
   await page.evaluate(() => localStorage.setItem('yuliang-e2e-hook', '1'));
-  const initial = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? '{}'), saveKey);
-  await page.evaluate(({ key, state }) => {
+  const initial = await readPersistedState(page);
+  await page.evaluate(async ({ key, state }) => {
     state.cash = 6_000;
     state.ability = 30;
     state.simulationMode = 'paused';
     state.rng = { ...(state.rng ?? {}), seed: 7, cursor: 0 };
-    localStorage.setItem(key, JSON.stringify(state));
+    await window.__e2eSave.write(state);
   }, { key: saveKey, state: initial });
   await page.reload();
 
