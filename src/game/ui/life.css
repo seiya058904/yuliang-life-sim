@@ -80,3 +80,9 @@
   .hero-activity h2 { font-size: 22px; }
   .hero-clock { --pixel-clock-unit: 5px; }
 }
+@media (max-width: 700px) {
+  /* 窄屏（含移动横屏之外的兜底）：两列互相挤压会让 .hero-controls 的控制行
+     溢出时间台列、压到预测面板下面（×4 点不到）。窄屏改为纵向堆叠，控制行留在本列内。 */
+  .life-hero-dashboard { grid-template-columns: minmax(0, 1fr); }
+  .hero-cols { grid-template-columns: minmax(150px, .8fr) minmax(0, 1fr); }
+}

@@ -16,7 +16,14 @@ export const officialJobs = [
     "basePay": 96,
     "careerXp": 1,
     "experienceTags": ["retail", "customer_service"],
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 1000,
+      "dialogue": [
+        { "speakerName": "店长", "text": "你排班一直没出过问题，夜班也顶得住。" },
+        { "speakerName": "店长", "text": "这边能加的空间有限，但我可以帮你把班表调顺一点。" },
+      ]
+    }
   },
   {
     "id": "job.seed-warehouse",
@@ -34,7 +41,14 @@ export const officialJobs = [
     "abilityRequired": 10,
     "careerXp": 2,
     "experienceTags": ["logistics"],
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 1300,
+      "dialogue": [
+        { "speakerName": "组长", "text": "这个月盘点全靠你，换个人得重新带一遍。" },
+        { "speakerName": "组长", "text": "留下来我可以把你换到白班。" },
+      ]
+    }
   },
   {
     "id": "job.delivery-shift",
@@ -77,7 +91,14 @@ export const officialJobs = [
         "amount": 1
       }
     ],
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 1100,
+      "dialogue": [
+        { "speakerName": "店长", "text": "熟客都认得你，换人他们会有感觉。" },
+        { "speakerName": "店长", "text": "如果只是时间不合适，班表还可以再谈。" },
+      ]
+    }
   },
   {
     "id": "job.seed-office",
@@ -97,7 +118,14 @@ export const officialJobs = [
     "reputationRequired": 3,
     "careerXp": 3,
     "experienceTags": ["office", "operations"],
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 1700,
+      "dialogue": [
+        { "speakerName": "主管", "text": "你手里的流程还没人接得住。" },
+        { "speakerName": "主管", "text": "薪资这次调不了太多，但职位名称可以改。" },
+      ]
+    }
   },
   {
     "id": "job.customer-service",
@@ -124,7 +152,14 @@ export const officialJobs = [
         "amount": 1
       }
     ],
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 2000,
+      "dialogue": [
+        { "speakerName": "组长", "text": "投诉单你处理得最干净，我不想换人。" },
+        { "speakerName": "组长", "text": "我可以替你申请一次内部转岗。" },
+      ]
+    }
   },
   {
     "id": "job.data-entry",
@@ -189,7 +224,14 @@ export const officialJobs = [
     "experienceTags": ["operations", "office"],
     "experienceRequired": { "operations": 21 },
     "qualificationRequired": ["operations_foundation"],
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 2500,
+      "dialogue": [
+        { "speakerName": "主管", "text": "你带的这条线刚跑顺，现在走成本很高。" },
+        { "speakerName": "主管", "text": "留下的话，下一次季度评估我会把你写进名单。" },
+      ]
+    }
   },
   {
     "id": "job.remote-operator",
@@ -231,7 +273,14 @@ export const officialJobs = [
     "abilityRequired": 27,
     "reputationRequired": 18,
     "careerXp": 5,
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 3200,
+      "dialogue": [
+        { "speakerName": "项目负责人", "text": "三个项目都在你手上，交接至少要一个月。" },
+        { "speakerName": "项目负责人", "text": "我可以把项目奖金提前谈下来。" },
+      ]
+    }
   },
   {
     "id": "job.independent-consultant",
@@ -254,7 +303,13 @@ export const officialJobs = [
       "remote_work",
       "market_insight"
     ],
-    "isLongTerm": false
+    "isLongTerm": false,
+    "resignation": {
+      "dialogue": [
+        { "speakerName": "客户", "text": "这次项目周期短，我就不留你了。" },
+        { "speakerName": "客户", "text": "下次有新方向，我还找你。" },
+      ]
+    }
   },
   {
     "id": "job.regional-operations-manager",
@@ -273,7 +328,14 @@ export const officialJobs = [
     "experienceRequired": { "operations": 61, "management": 1 },
     "qualificationRequired": ["people_management_basics"],
     "category": "management",
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 6200,
+      "dialogue": [
+        { "speakerName": "区域总监", "text": "区域指标刚稳住，这个时间点换人风险太大。" },
+        { "speakerName": "区域总监", "text": "你的年度包可以重新算一次。" },
+      ]
+    }
   },
   {
     "id": "job.category-operations-expert",
@@ -482,7 +544,14 @@ export const officialJobs = [
       { "type": "attribute_at_least", "attribute": "knowledge", "amount": 42 },
       { "type": "attribute_at_least", "attribute": "communication", "amount": 30 }
     ] },
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 4400,
+      "dialogue": [
+        { "speakerName": "合伙人", "text": "客户点名要你继续跟这轮研究。" },
+        { "speakerName": "合伙人", "text": "薪资空间是有的，只是要走一次评估流程。" },
+      ]
+    }
   },
   {
     "id": "job.travel-product-assistant",
@@ -588,7 +657,14 @@ export const officialJobs = [
       { "type": "attribute_at_least", "attribute": "knowledge", "amount": 36 },
       { "type": "attribute_at_least", "attribute": "communication", "amount": 30 }
     ] },
-    "isLongTerm": true
+    "isLongTerm": true,
+    "resignation": {
+      "retentionBonus": 4500,
+      "dialogue": [
+        { "speakerName": "负责人", "text": "投放模型是你搭的，你走了它就要停。" },
+        { "speakerName": "负责人", "text": "我可以给你一个独立负责的模块。" },
+      ]
+    }
   },
   {
     "id": "job.auto-service-assistant",
@@ -944,6 +1020,13 @@ export const officialJobs = [
     "careerXp": 8,
     "qualificationRequired": ["people_management_basics"],
     "experienceTags": ["operations", "management", "data"],
-    "experienceRequired": { "operations": 180, "management": 45, "data": 70 }
+    "experienceRequired": { "operations": 180, "management": 45, "data": 70 },
+    "resignation": {
+      "retentionBonus": 9000,
+      "dialogue": [
+        { "speakerName": "创始人", "text": "增长盘子是你定的，我不能在这个时候换掉定盘的人。" },
+        { "speakerName": "创始人", "text": "股权的事情，我们可以坐下来重新谈。" },
+      ]
+    }
   }
 ] satisfies readonly JobDefinition[];

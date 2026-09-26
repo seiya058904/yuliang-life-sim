@@ -260,9 +260,12 @@ describe('automatic simulation', () => {
     const result = advanceSimulation({ ...initial, simulationMode: 'running' as const }, 24 * 60, contentRegistry, balance);
 
     expect(result.state.financialLedger?.entries).toEqual(expect.arrayContaining([
-      expect.objectContaining({ category: 'investment_dividend', sourceType: 'business_equity', amount: 15 }),
+      // 默认经营参数下早餐与咖啡档日净利 ¥27，公开流通份额 10% → round(27 * 0.1) = 3。
+      expect.objectContaining({ category: 'investment_dividend', sourceType: 'business_equity', amount: 3, cashDelta: 3, direction: 'income' }),
     ]));
-    expect(result.state.cash).toBeGreaterThan(initial.cash);
+    // 同一天还有固定生活开支，所以不能只比较现金总量：直接验证账本现金变动与现金余额一致。
+    const cashDeltaTotal = result.state.financialLedger?.entries.reduce((total, entry) => total + (entry.cashDelta ?? 0), 0) ?? 0;
+    expect(result.state.cash).toBe(initial.cash + cashDeltaTotal);
   });
 
   it('applies gentle vehicle depreciation and a monthly vehicle cost without treating depreciation as consumption', () => {

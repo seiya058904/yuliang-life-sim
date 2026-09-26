@@ -30,7 +30,7 @@ const seedCharacters: ContentRegistry['characters'] = [
 ];
 
 const seedBusinesses: ContentRegistry['businesses'] = [
-  { id: 'business.seed-kiosk', contentStatus: 'seed', name: '街角小店', description: '一项简单、容易理解的小生意。', tags: ['business'], price: 2000, baseRevenue: 220, baseGoodsCost: 60, baseWage: 25, baseRent: 35, priceLevels: [0.9, 1, 1.12], wageLevels: [0.9, 1, 1.12], inventoryLevels: [0.8, 1, 1.2], requirements: { type: 'has_capability', capability: 'business_license' } },
+  { id: 'business.seed-kiosk', contentStatus: 'seed', name: '街角小店', description: '一项简单、容易理解的小生意。', tags: ['business'], price: 2000, baseRevenue: 137, baseGoodsCost: 60, baseWage: 25, baseRent: 35, priceLevels: [0.9, 1, 1.12], wageLevels: [0.9, 1, 1.12], inventoryLevels: [0.8, 1, 1.2], requirements: { type: 'has_capability', capability: 'business_license' } },
 ];
 
 const seedAssets: ContentRegistry['assets'] = [

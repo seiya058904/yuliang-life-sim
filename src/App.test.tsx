@@ -1501,8 +1501,13 @@ describe('余量 app flow', () => {
     expect(venue).toHaveTextContent('周末逛书店');
     await user.click(within(venue).getByRole('button', { name: '去安排活动' }));
     expect(within(document.querySelector('.activity-grid') as HTMLElement).getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '周末逛书店 · 和周妍一起逛' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeInTheDocument();
+    // 活动市场是分页的：内容变多后，书店的后两个变体可能落在后面的页上。
+    for (const title of ['周末逛书店 · 和周妍一起逛', '周末逛书店 · 和林晨一起逛']) {
+      for (let page = 0; page < 12 && !screen.queryAllByRole('heading', { name: title }).length; page++) {
+        await user.click(screen.getByRole('button', { name: '下一页活动' }));
+      }
+      expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
+    }
   });
 
   it('discovers the vinyl venue and its music activity', async () => {

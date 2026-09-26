@@ -76,6 +76,20 @@ try {
       await page.screenshot({ path: `${OUT}${prefix}-shop-ent-${tag}.png` });
     }
 
+    // 次级页面（财富 / 社交 / 城市 / 我的）是精修重点，逐页截图并记录横向溢出。
+    for (const [view, label] of [['wealth', '财富'], ['relations', '社交'], ['city', '城市'], ['profile', '我的']]) {
+      await clickNav(page, label);
+      await page.screenshot({ path: `${OUT}${prefix}-${view}-${tag}.png` });
+      const metrics = await page.evaluate(() => ({
+        docW: document.documentElement.scrollWidth,
+        innerW: window.innerWidth,
+        docH: document.documentElement.scrollHeight,
+        innerH: window.innerHeight,
+        overflowX: document.documentElement.scrollWidth > window.innerWidth,
+      }));
+      results.push({ page: view, tag, ...metrics });
+    }
+
     // settlement via real run
     await clickNav(page, '生活');
     const openDetails = page.getByRole('button', { name: '查看生活详情' });

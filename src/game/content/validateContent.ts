@@ -200,6 +200,14 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     if (job.recruiterCharacterId && !known.characters.has(job.recruiterCharacterId)) errors.push(`工作 ${job.id} 引用了未知招聘人物: ${job.recruiterCharacterId}`);
     if (job.recruitment?.dialogueId && !known.dialogues.has(job.recruitment.dialogueId)) errors.push(`工作 ${job.id} 引用了未知招聘对白: ${job.recruitment.dialogueId}`);
     if (job.recruitment?.recruiterCharacterId && !known.characters.has(job.recruitment.recruiterCharacterId)) errors.push(`工作 ${job.id} 引用了未知招聘人物: ${job.recruitment.recruiterCharacterId}`);
+    // 离职内容是可选的：写了就必须能真的显示（对白有内容），留任奖金不能为负。
+    if (job.resignation) {
+      if (job.resignation.dialogueId && !known.dialogues.has(job.resignation.dialogueId)) errors.push(`工作 ${job.id} 引用了未知离职对白: ${job.resignation.dialogueId}`);
+      if (job.resignation.retentionBonus !== undefined && job.resignation.retentionBonus < 0) errors.push(`工作 ${job.id} 的留任奖金无效`);
+      job.resignation.dialogue?.forEach((line) => {
+        if (!line.text.trim()) errors.push(`工作 ${job.id} 的离职对白缺少文字`);
+      });
+    }
     checkCondition(job.requirements, `工作 ${job.id}`);
     job.requiredItems?.forEach((id) => { if (!known.items.has(id)) errors.push(`工作 ${job.id} 引用了未知商品: ${id}`); });
     job.requiredCapabilities?.forEach((id) => { if (!registry.vocabulary.capabilities.includes(id)) errors.push(`工作 ${job.id} 引用了未知 Capability: ${id}`); });
@@ -358,6 +366,23 @@ export function validateContent(registry: ContentRegistry): ContentValidationRes
     };
     walk(storyline.initialStageId);
     storyline.stages.forEach((stage) => { if (!visited.has(stage.id)) warnings.push(`剧情 ${storyline.id} 的阶段 ${stage.id} 从初始阶段静态不可达`); });
+  }
+
+  // 世界主动消息：主体三选一、文案非空、冷却与权重为正、引用必须存在。
+  for (const message of registry.worldMessages ?? []) {
+    if (!idPattern.test(message.id)) errors.push(`世界消息 ID 无效: ${message.id}`);
+    if (ids.has(message.id)) errors.push(`重复 ID: ${message.id}（${ids.get(message.id)} 与世界消息）`);
+    ids.set(message.id, '世界消息');
+    if (!message.title.trim()) errors.push(`世界消息 ${message.id} 缺少标题`);
+    if (!message.body.trim()) errors.push(`世界消息 ${message.id} 缺少正文`);
+    const subjects = [message.characterId, message.companyId, message.locationId].filter(Boolean);
+    if (subjects.length !== 1) errors.push(`世界消息 ${message.id} 必须且只能指定一个主体（人物 / 公司 / 地点）`);
+    if (message.cooldownDays <= 0) errors.push(`世界消息 ${message.id} 的冷却天数必须为正`);
+    if (message.weight <= 0) errors.push(`世界消息 ${message.id} 的权重必须为正`);
+    if (message.characterId && !known.characters.has(message.characterId)) errors.push(`世界消息 ${message.id} 引用了未知人物: ${message.characterId}`);
+    if (message.companyId && !known.companies.has(message.companyId)) errors.push(`世界消息 ${message.id} 引用了未知公司: ${message.companyId}`);
+    checkLocation(message.locationId, `世界消息 ${message.id}`);
+    checkCondition(message.condition, `世界消息 ${message.id}`);
   }
 
   return warnings.length ? { valid: errors.length === 0, errors, warnings } : { valid: errors.length === 0, errors };

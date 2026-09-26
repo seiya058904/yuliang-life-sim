@@ -5033,13 +5033,13 @@ test('joins a relationship-gated business partnership and persists the partial h
   await page.getByRole('button', { name: '财富', exact: true }).click();
   await expect(page.getByText('合伙方案：与周妍共同经营 · 你持股 50%')).toBeVisible();
   await page.getByRole('button', { name: '加入合伙 ¥4,200' }).click();
-  await expect(page.getByText('预计净利润 ¥330 /天 · 持股 50%', { exact: true })).toBeVisible();
+  await expect(page.getByText('预计净利润 ¥65 /天 · 持股 50%', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByText('加入线上小店合伙')).toBeVisible();
 
   await page.reload();
   await page.getByRole('button', { name: '财富', exact: true }).click();
-  await expect(page.getByText('预计净利润 ¥330 /天 · 持股 50%', { exact: true })).toBeVisible();
+  await expect(page.getByText('预计净利润 ¥65 /天 · 持股 50%', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '我的', exact: true }).click();
   await expect(page.getByText('加入线上小店合伙')).toBeVisible();
 });

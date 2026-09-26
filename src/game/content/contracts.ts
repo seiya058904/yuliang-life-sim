@@ -502,6 +502,37 @@ export interface CharacterCareerEntry {
   branchCondition?: ConditionDefinition;
 }
 
+/**
+ * NPC / 世界主动消息。
+ *
+ * 这是"世界反馈"层，不是任务系统：它不发奖励、不推进剧情、不改任何数值，
+ * 只在条件真的成立时，把**已经发生的事**告诉玩家。因此它天然克制 —— 一条
+ * 消息出不出现只取决于世界状态，而不是"该给玩家一点正反馈了"。
+ *
+ * 主体三选一（人物 / 公司 / 地点），引擎按主体分别处理"只对认识的人开口"和
+ * 冷却记账，作者只需要写条件与文案。
+ */
+export interface WorldMessageDefinition {
+  id: ContentId;
+  contentStatus: ContentStatus;
+  /** 消息主体：认识的人物。 */
+  characterId?: ContentId;
+  /** 消息主体：公司演化。 */
+  companyId?: ContentId;
+  /** 消息主体：城市变化。 */
+  locationId?: ContentId;
+  /** 触发条件；不写表示"冷却到了就可能出现"。 */
+  condition?: ConditionDefinition;
+  /** 同一来源两条消息之间的最小间隔（天）。 */
+  cooldownDays: number;
+  /** 一次性节点消息：发出后不再重复。 */
+  once?: boolean;
+  /** 相对权重，同一次候选中数值越大越优先。 */
+  weight: number;
+  title: string;
+  body: string;
+}
+
 export interface EventOpportunityDefinition {
   jobId: ContentId;
   companyId: ContentId;
@@ -668,6 +699,7 @@ export interface ContentRegistry {
   storylines?: readonly StorylineDefinition[];
   locations?: readonly LocationDefinition[];
   venues?: readonly VenueDefinition[];
+  worldMessages?: readonly WorldMessageDefinition[];
   vacancyTemplates?: readonly VacancyTemplate[];
   packs?: readonly { packId: string; version: number; contentStatus: ContentStatus }[];
 }
@@ -999,6 +1031,10 @@ export interface GameState {
   pendingEventId?: ContentId;
   /** A fresh Offer is waiting for the player's decision; time may not pass until it is dismissed. */
   pendingOfferApplicationId?: string;
+  /** 主动消息记账：定义 id → 上次发出的那一天（缺省视为从未发送）。 */
+  worldMessageLog?: Record<string, number>;
+  /** 已经发出过的"一次性"世界消息 id，保证跨年节点只说一次。 */
+  worldMessagesSeen?: ContentId[];
   eventMeter: number;
   eventDay: number;
   eventsToday: number;

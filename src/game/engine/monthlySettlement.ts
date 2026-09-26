@@ -8,6 +8,7 @@ import { emptyFinancialLedger, projectLegacyMonthlyLedger, recordStateFinancialE
 import { appendLifeRecord } from './lifeHistory';
 import { housingPrice, housingRentPerDay } from './locations';
 import { applyContentEffects } from './effects';
+import { deliverWorldMessages } from './worldMessages';
 
 export function emptyMonthlyLedger(netWorthStart: import('../content/contracts').KnownAmount | number): MonthlyLedger {
   return { wageIncome: 0, sideJobIncome: 0, businessIncome: 0, assetIncome: 0, rentExpense: 0, purchaseExpense: 0, livingExpense: 0, netWorthStart: amount(netWorthStart), netWorthEnd: amount(netWorthStart) };
@@ -226,6 +227,9 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
     };
     state.worldHistory = [...(state.worldHistory ?? []).filter((entry) => entry.year !== snapshot.year), snapshot].slice(-10);
   }
+  // 世界主动消息：放在年度快照写完之后，条件读到的就是当月最新的世界状态。
+  // 它是纯选择器（不改数值、不推进剧情），所以放在月结末尾最安全。
+  deliverWorldMessages(state, content, balance, output);
   state.financialLedger = emptyFinancialLedger(state.calendar.month, state.cash, netWorthEnd);
   state.monthlyLedger = emptyMonthlyLedger(ledger.netWorthEnd);
   output.push({ type: 'month', summary });

@@ -114,13 +114,23 @@ export function advanceSimulation(input: GameState, minutes: number, content: Co
         } else {
           if (runError) {
             const issues = collectPlanIssues(state.weeklyPlan, state, { content, balance, employment: state.employment, from: { day: state.time.day, hour: 0, minute: 0 } });
-            state.simulationMode = 'planning';
             state.planIssues = issues.map((issue) => ({ code: issue.code, weekday: issue.weekday, slot: issue.slot, message: issue.message }));
             state.planNotice = '本周计划需要调整';
             effects.push({ type: 'message', text: `本周计划需要调整：${runError}` });
+          }
+          // A week boundary always falls on the same day as a month boundary
+          // (a month is exactly four weeks), so this branch runs while 月结 is
+          // still unacknowledged. The monthly summary is the more blocking
+          // gate — every action except `acknowledge_monthly_summary` is
+          // rejected while it is up, and the store already normalises
+          // `pendingMonthlySummary` back to `monthly_summary` on load — so the
+          // weekly transition must not downgrade it to `planning`; otherwise
+          // the planner would accept edits before the month is acknowledged.
+          if (state.pendingMonthlySummary) {
+            state.simulationMode = 'monthly_summary';
           } else {
             state.simulationMode = 'planning';
-            effects.push({ type: 'message', text: `第 ${state.calendar.week - 1} 周结束，可以安排下一周了` });
+            if (!runError) effects.push({ type: 'message', text: `第 ${state.calendar.week - 1} 周结束，可以安排下一周了` });
           }
         }
         state.currentActivity = activityAtTime(state.time, state.weeklyPlan, state.employment, content, state);

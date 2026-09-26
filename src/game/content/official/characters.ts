@@ -65,7 +65,8 @@ export const officialCharacters = [
       { "startYear": 1, "title": "社区运营专员", "companyId": "company.yuanwang" },
       { "startYear": 4, "title": "城市生活项目负责人", "companyId": "company.yuanwang" },
       { "startYear": 4, "title": "临江买手店主理人", "branchCondition": { "type": "completed_event", "eventId": "event.city-transit-upgrade" } },
-      { "startYear": 8, "title": "独立生活顾问" }
+      { "startYear": 8, "title": "独立生活顾问" },
+      { "startYear": 10, "title": "生活顾问工作室开始接城市项目" }
     ],
     "locationId": "location.riverside",
     "stages": [
@@ -148,7 +149,8 @@ export const officialCharacters = [
       { "startYear": 1, "title": "技术支持", "companyId": "company.xinghe" },
       { "startYear": 4, "title": "数码店主" },
       { "startYear": 4, "title": "星河企业服务线 · 技术合伙人", "branchCondition": { "type": "flag", "flag": "xinghe_service_line_launched" } },
-      { "startYear": 8, "title": "远程项目合伙人" }
+      { "startYear": 8, "title": "远程项目合伙人" },
+      { "startYear": 10, "title": "远程项目合伙人转为独立技术顾问" }
     ],
     "locationId": "location.central",
     "stages": [
@@ -191,7 +193,9 @@ export const officialCharacters = [
     "initialRelationship": 0,
     "careerHistory": [
       { "startYear": 1, "title": "房产顾问", "companyId": "company.yuanwang" },
-      { "startYear": 5, "title": "独立房产经纪" }
+      { "startYear": 5, "title": "独立房产经纪" },
+      { "startYear": 5, "title": "连锁门店房产顾问主管", "branchCondition": { "type": "completed_event", "eventId": "event.city-transit-upgrade" } },
+      { "startYear": 9, "title": "小团队房产经纪" }
     ],
     "locationId": "location.riverside",
     "stages": [
@@ -231,7 +235,8 @@ export const officialCharacters = [
     "careerHistory": [
       { "startYear": 1, "title": "招聘顾问", "companyId": "company.clearview-consulting" },
       { "startYear": 7, "title": "资深猎头" },
-      { "startYear": 7, "title": "自营高管寻访工作室", "branchCondition": { "type": "flag", "flag": "xinghe_service_line_launched" } }
+      { "startYear": 7, "title": "自营高管寻访工作室", "branchCondition": { "type": "flag", "flag": "xinghe_service_line_launched" } },
+      { "startYear": 10, "title": "高管寻访工作室稳定运营" }
     ],
     "locationId": "location.central",
     "stages": [

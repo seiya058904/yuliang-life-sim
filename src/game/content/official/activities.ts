@@ -51,7 +51,7 @@ export const officialActivities = [
     category: 'nightlife',
     financialCategory: 'entertainment',
     locationId: 'location.riverside',
-    options: [{ id: 'market', label: '逛一圈', durationMinutes: 120, cashCost: 96, effects: [{ type: 'attribute', attribute: 'mood', amount: 4 }, { type: 'attribute', attribute: 'network', amount: 1 }] }],
+    options: [{ id: 'market', label: '逛一圈', durationMinutes: 120, cashCost: 96, effects: [{ type: 'attribute', attribute: 'mood', amount: 4 }, { type: 'attribute', attribute: 'network', amount: 1 }] }, { id: 'market-regular', label: '摊主已经认识你了', durationMinutes: 120, cashCost: 62, requirements: { type: 'attribute_at_least', attribute: 'network', amount: 8 }, effects: [{ type: 'attribute', attribute: 'mood', amount: 3 }, { type: 'attribute', attribute: 'network', amount: 2 }] }],
   },
   {
     id: 'activity.industrial-design-exhibition',
@@ -88,7 +88,7 @@ export const officialActivities = [
     category: 'culture',
     financialCategory: 'travel',
     locationId: 'location.old-town',
-    options: [{ id: 'exhibition', label: '看一场展览', durationMinutes: 240, cashCost: 220, effects: [] }],
+    options: [{ id: 'exhibition', label: '看一场展览', durationMinutes: 240, cashCost: 220, effects: [] }, { id: 'old-town-ramble', label: '不跟讲解，自己走一圈', durationMinutes: 180, cashCost: 90, effects: [{ type: 'attribute', attribute: 'mood', amount: 3 }, { type: 'attribute', attribute: 'knowledge', amount: 1 }] }],
   },
   {
     id: 'activity.riverside-park-ride',
@@ -123,7 +123,7 @@ export const officialActivities = [
     financialCategory: 'entertainment',
     locationId: 'location.central',
     familiarityTags: ['photography'],
-    options: [{ id: 'walk', label: '街区取景', durationMinutes: 120, cashCost: 40, requirements: { type: 'owns_item', itemId: 'item.vintage-camera' }, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] }],
+    options: [{ id: 'walk', label: '街区取景', durationMinutes: 120, cashCost: 40, requirements: { type: 'owns_item', itemId: 'item.vintage-camera' }, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }] }, { id: 'photo-with-lin', label: '和林晨一起拍', durationMinutes: 180, cashCost: 70, requiredCharacterId: 'character.seed-lin', tags: ['photography', 'social'], requirements: { type: 'all', conditions: [{ type: 'owns_item', itemId: 'item.vintage-camera' }, { type: 'relationship_at_least', characterId: 'character.seed-lin', amount: 10 }] }, effects: [{ type: 'relation', characterId: 'character.seed-lin', amount: 2 }, { type: 'attribute', attribute: 'knowledge', amount: 1 }] }],
   },
   {
     id: 'activity.weekend-camping',
@@ -179,7 +179,7 @@ export const officialActivities = [
     category: 'hobby',
     financialCategory: 'social',
     locationId: 'location.riverside',
-    options: [{ id: 'tasting', label: '慢慢喝一杯', durationMinutes: 120, cashCost: 68, effects: [{ type: 'attribute', attribute: 'mood', amount: 4 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] }],
+    options: [{ id: 'tasting', label: '慢慢喝一杯', durationMinutes: 120, cashCost: 68, effects: [{ type: 'attribute', attribute: 'mood', amount: 4 }, { type: 'stat', stat: 'lifestyle', amount: 1 }] }, { id: 'cafe-focus', label: '带电脑坐一下午', durationMinutes: 240, cashCost: 110, requirements: { type: 'attribute_at_least', attribute: 'professional', amount: 20 }, effects: [{ type: 'attribute', attribute: 'professional', amount: 1 }, { type: 'attribute', attribute: 'mood', amount: 2 }] }],
   },
   {
     id: 'activity.home-gaming',
@@ -412,7 +412,7 @@ export const officialActivities = [
     category: 'fitness',
     financialCategory: 'entertainment',
     locationId: 'location.south-residential',
-    options: [{ id: 'morning', label: '完成一组拉伸', durationMinutes: 60, cashCost: 0, effects: [{ type: 'attribute', attribute: 'fitness', amount: 1 }, { type: 'attribute', attribute: 'mood', amount: 1 }] }],
+    options: [{ id: 'morning', label: '完成一组拉伸', durationMinutes: 60, cashCost: 0, effects: [{ type: 'attribute', attribute: 'fitness', amount: 1 }, { type: 'attribute', attribute: 'mood', amount: 1 }] }, { id: 'stretch-evening', label: '下班后再来一组', durationMinutes: 60, cashCost: 0, requirements: { type: 'attribute_at_least', attribute: 'fitness', amount: 15 }, effects: [{ type: 'attribute', attribute: 'fitness', amount: 1 }, { type: 'attribute', attribute: 'mood', amount: 2 }] }],
   },
   {
     id: 'activity.park-open-class',
@@ -423,6 +423,6 @@ export const officialActivities = [
     category: 'hobby',
     financialCategory: 'education',
     locationId: 'location.tech-park',
-    options: [{ id: 'attend', label: '旁听一场分享', durationMinutes: 120, cashCost: 25, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }, { type: 'attribute', attribute: 'professional', amount: 1 }] }],
+    options: [{ id: 'attend', label: '旁听一场分享', durationMinutes: 120, cashCost: 25, effects: [{ type: 'attribute', attribute: 'knowledge', amount: 1 }, { type: 'attribute', attribute: 'professional', amount: 1 }] }, { id: 'class-followup', label: '课后留下来问问题', durationMinutes: 180, cashCost: 60, requirements: { type: 'reputation_at_least', amount: 10 }, effects: [{ type: 'attribute', attribute: 'communication', amount: 2 }, { type: 'stat', stat: 'reputation', amount: 1 }] }],
   },
 ] satisfies readonly ActivityDefinition[];
