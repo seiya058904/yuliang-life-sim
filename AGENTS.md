@@ -53,6 +53,11 @@ npm run e2e                  # Playwright desktop and mobile projects
 - Before claiming completion, inspect the final diff, run `git diff --check`, and report checks that were run or skipped.
 - Generated/local-only paths include `node_modules/`, `dist/`, `test-results/`, `.playwright-cli/`, `.impeccable/`, `artifacts/`, and `.codebase-memory/`. Do not add them to feature commits unless the task explicitly requests a shareable artifact.
 
+## Releases and deployment
+
+- Delivery is GitHub Pages: pushing `main` runs `deploy-pages.yml`, and a green deployment is the release. Verify the workflow result before claiming a version is live.
+- Do not create GitHub Releases for new versions; mark versions with annotated git tags instead (for example `v1.0.0`). The existing `v1.0.0-rc1` (audit-report assets) and `v1.0.0` releases stay as historical archives.
+
 ## Codebase memory
 
 - The indexed project name is `yuliang-life-sim`, rooted at this repository. The graph is useful for structural discovery, not a substitute for reading current source.
