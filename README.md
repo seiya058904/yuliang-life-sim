@@ -1,5 +1,10 @@
 # 《余量》 · Yuliang Life Sim
 
+
+<img width="1672" height="941" alt="ChatGPT 图像 2026年9月27日 22_37_51" src="https://github.com/user-attachments/assets/f4bd2de9-fc86-4538-a7d7-e1716ea171d4" />
+
+
+
 **在线游玩：<https://seiya058904.github.io/yuliang-life-sim/>**
 
 React + TypeScript + Vite + Zustand 的**人生模拟游戏**（desktop-first，横屏优先，黑白像素控制台风格）。
