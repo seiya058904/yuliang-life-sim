@@ -730,6 +730,27 @@ test.describe('fault injection (not reachable from the UI)', () => {
     expect(await persistedVouchers(page)).toBe(6);
   });
 
+  test('failed saves stay visible during real ticks until an explicit retry commits', async ({ page }) => {
+    await bootWithBridge(page);
+    await page.evaluate(() => { window.__yuliang.saveHooks.afterPutBeforeComplete = () => 'abort'; });
+    await page.evaluate(() => window.__yuliang.store.getState().dispatch({ type: 'start_week' }));
+    await expect.poll(() => saveError(page)).toContain('未被替换');
+    await page.getByRole('button', { name: '设置', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: '设置', exact: true });
+    await expect(dialog).not.toContainText('自动保存：正常');
+    await page.evaluate(() => {
+      for (let tick = 0; tick < 3; tick++) window.__yuliang.store.getState().dispatch({ type: 'advance_simulation', minutes: 1 });
+    });
+    await expect(dialog).toContainText('未被替换');
+    await suspendCommits(page);
+    await page.evaluate(() => { void window.__yuliang.store.getState().flushSaveAsync(); });
+    await expect(dialog).not.toContainText('自动保存：正常');
+    await page.evaluate(() => { delete window.__yuliang.saveHooks.afterPutBeforeComplete; });
+    await releaseSuspendedCommits(page);
+    await expect.poll(() => saveError(page)).toBeNull();
+    await expect(dialog).toContainText('自动保存：正常');
+  });
+
   test('a suspended commit writes nothing until it settles, then commits once', async ({ page }) => {
     await bootWithBridge(page);
     await countCanonicalWrites(page);
