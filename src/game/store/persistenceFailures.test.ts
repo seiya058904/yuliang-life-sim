@@ -65,6 +65,7 @@ describe('persistence failure ownership', () => {
     const flushed = store.getState().flushSaveAsync();
     await settleCanonicalSave();
     await flushed;
+    expect(store.getState().lastError).toBeUndefined();
     if (fail) {
       expect(store.getState().recovery?.writeProtected).toBe(true);
       expect(localStorage.getItem(SAVE_KEY)).toBe('{broken');

@@ -1362,16 +1362,21 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
     // Only the explicit replacement window is busy; protected exploration before
     // confirmation remains available. Flush must not enqueue a second replacement.
     let recoveryCommit: Promise<void> | undefined;
+    const recoveryBusyMessage = '正在确认恢复存档，请稍候再行动。';
     const recoveryBusy = (): boolean => {
       if (!recoveryCommit) return false;
-      set({ lastError: '正在确认恢复存档，请稍候再行动。' });
+      set({ lastError: recoveryBusyMessage });
       return true;
     };
     const trackRecoveryCommit = (result: PersistResult): void => {
       if (!get().recovery?.writeProtected || result.status !== 'scheduled') return;
       const pending = result.completion.then(() => undefined, () => undefined);
       recoveryCommit = pending;
-      void pending.then(() => { if (recoveryCommit === pending) recoveryCommit = undefined; });
+      void pending.then(() => {
+        if (recoveryCommit !== pending) return;
+        recoveryCommit = undefined;
+        if (get().lastError === recoveryBusyMessage) set({ lastError: undefined });
+      });
     };
     const reportSaveFailure = (error: string, attempt: number): void => {
       if (attempt !== saveAttempt) return;
