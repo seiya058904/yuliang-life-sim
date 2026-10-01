@@ -1359,6 +1359,25 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
      * overwrite the state of the request that came after it.
      */
     let saveAttempt = 0;
+    // Only the explicit replacement window is busy; protected exploration before
+    // confirmation remains available. Flush must not enqueue a second replacement.
+    let recoveryCommit: Promise<void> | undefined;
+    const recoveryBusyMessage = '正在确认恢复存档，请稍候再行动。';
+    const recoveryBusy = (): boolean => {
+      if (!recoveryCommit) return false;
+      set({ lastError: recoveryBusyMessage });
+      return true;
+    };
+    const trackRecoveryCommit = (result: PersistResult): void => {
+      if (!get().recovery?.writeProtected || result.status !== 'scheduled') return;
+      const pending = result.completion.then(() => undefined, () => undefined);
+      recoveryCommit = pending;
+      void pending.then(() => {
+        if (recoveryCommit !== pending) return;
+        recoveryCommit = undefined;
+        if (get().lastError === recoveryBusyMessage) set({ lastError: undefined });
+      });
+    };
     const reportSaveFailure = (error: string, attempt: number): void => {
       if (attempt !== saveAttempt) return;
       if (get().saveError === error) return;
@@ -1403,18 +1422,18 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
      */
     const applyCommitOutcome = (attempted: WriteAttempt, state: GameState, attempt: number): PersistResult => {
       const { outcome, save } = attempted;
-      if (dirtyState === state) dirtyState = undefined;
       if (outcome.status === 'committed') {
         if (!save) {
           const error = '存档事务已完成但没有产生载荷';
           reportSaveFailure(error, attempt);
           return { status: 'failed', error };
         }
+        if (dirtyState === state) dirtyState = undefined;
         confirmedHead = outcome.head;
         canonicalCommits += 1;
         set({
           canonical: { status: 'ready', head: outcome.head, commits: canonicalCommits },
-          saveError: save.error,
+          ...(attempt === saveAttempt ? { saveError: save.error } : {}),
           // The recovered state is the stored one now: protection is released by
           // the write that landed, not by a caller remembering to clear it.
           recovery: undefined,
@@ -1467,6 +1486,7 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
       }
       const rotate = options?.rotate === true;
       const attempt = ++saveAttempt;
+      dirtyState = state;
       if (answersSynchronously()) {
         const immediate = commitState(state, rotate);
         if (!isThenable(immediate)) return applyCommitOutcome(immediate, state, attempt);
@@ -1515,7 +1535,7 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
      */
     const flushSave = () => {
       const hadTimer = pendingSaveTimer !== undefined;
-      if (hadTimer) pendingSaveTimer = undefined;
+      if (hadTimer) { clearTimeout(pendingSaveTimer); pendingSaveTimer = undefined; }
       if (!hadTimer && dirtyState === undefined) return;
       if (externalSaveConflict || canonicalStatus !== 'ready') return;
       writeEmergencySave(get().game);
@@ -1527,8 +1547,12 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
      * emergency candidate.
      */
     const flushSaveAsync = (): Promise<void> => {
+      if (recoveryCommit) return recoveryCommit;
+      // A failed confirmation still requires explicit consent to replace the
+      // protected save; ordinary flushes must not silently retry it.
+      if (get().recovery?.writeProtected) return Promise.resolve();
       const hadTimer = pendingSaveTimer !== undefined;
-      if (hadTimer) pendingSaveTimer = undefined;
+      if (hadTimer) { clearTimeout(pendingSaveTimer); pendingSaveTimer = undefined; }
       if (!hadTimer && dirtyState === undefined) return Promise.resolve();
       if (externalSaveConflict) return Promise.resolve();
       const result = persistGame(get().game);
@@ -1618,7 +1642,7 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
       }
       // Nothing may be dispatched onto the placeholder: the real save has not
       // been read yet, so an action now would be applied to the wrong world.
-      if (!booted) return false;
+      if (!booted || recoveryBusy()) return false;
       const result = dispatchGameAction(get().game, action, content, balance);
       if (result.error) { set({ lastError: result.error, effects: [] }); return false; }
       let outcome: SaveOutcome | undefined;
@@ -1629,6 +1653,7 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
           // other action; only the unload path may use the emergency candidate,
           // otherwise a normally running game keeps reporting "progress was not
           // written" on the next boot.
+          dirtyState = result.state;
           if (pendingSaveTimer === undefined) pendingSaveTimer = setTimeout(() => { void flushSaveAsync(); }, AUTOSAVE_THROTTLE_MS);
         } else {
           if (pendingSaveTimer !== undefined) { clearTimeout(pendingSaveTimer); pendingSaveTimer = undefined; }
@@ -1659,7 +1684,7 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
         set({ effects: [] });
         return false;
       }
-      set({ game: result.state, effects: result.effects, lastError: undefined, lastNotice: result.notice, saveError: outcome?.error });
+      set({ game: result.state, effects: result.effects, lastError: undefined, lastNotice: result.notice, ...(outcome ? { saveError: outcome.error } : {}) });
       return true;
     },
     flushSave,
@@ -1669,7 +1694,7 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
     dismissLoadProblem: () => set({ loadProblem: undefined, recovery: get().recovery ? { ...get().recovery!, noticeVisible: false } : undefined }),
     showRecovery: () => set({ recovery: get().recovery ? { ...get().recovery!, noticeVisible: true } : undefined }),
     acceptRecovery: () => {
-      if (get().externalSaveConflict) return;
+      if (get().externalSaveConflict || recoveryBusy()) return;
       const game = structuredClone(get().game);
       if (get().recovery?.kind === 'compatibility') {
         if (game.pendingEventId && !content.events.some(event => event.id === game.pendingEventId)) game.pendingEventId = undefined;
@@ -1683,11 +1708,12 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
       // runs) keeps the protection, so the unsaved bad payload is never silently
       // treated as replaced.
       const result = persistGame(game);
+      trackRecoveryCommit(result);
       const landedNow = result.status === 'persisted';
       const attempt = saveAttempt;
       set({
         game,
-        saveError: saveOutcomeOf(result)?.error,
+        ...(saveOutcomeOf(result) ? { saveError: saveOutcomeOf(result)!.error } : {}),
         lastError: undefined,
         lastNotice: undefined,
         ...(landedNow ? { recovery: undefined, loadProblem: undefined } : {}),
@@ -1700,17 +1726,18 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
       }
     },
     reset: (nextSeed = Date.now()) => {
-      if (get().externalSaveConflict) return;
+      if (get().externalSaveConflict || recoveryBusy()) return;
       const game = createInitialState(content, balance, nextSeed);
       // Same coordination as acceptRecovery: the reset commits through the shared
       // path with a rotated generation, so an older queued write can neither be
       // re-qualified nor replay the generation it was based on.
       const result = persistGame(game, { rotate: true });
+      trackRecoveryCommit(result);
       const landedNow = result.status === 'persisted';
       const attempt = saveAttempt;
       set({
         game, effects: [], lastError: undefined, lastNotice: undefined,
-        saveError: saveOutcomeOf(result)?.error,
+        ...(saveOutcomeOf(result) ? { saveError: saveOutcomeOf(result)!.error } : {}),
         ...(landedNow ? { recovery: undefined, loadProblem: undefined } : {}),
       });
       if (result.status === 'scheduled') {
