@@ -145,6 +145,7 @@ describe('career market', () => {
 
   it('migrates legacy freelance unlocks into permanent side-job qualifications', () => {
     const legacy = createInitialState(contentRegistry, balanceConfig, 1);
+    legacy.version = 9;
     legacy.unlockedJobIds.push('job.seed-remote');
     delete legacy.acquiredSideJobs;
     delete legacy.vacancies;

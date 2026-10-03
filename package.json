@@ -8,6 +8,7 @@
     "build": "npm run content:validate && tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:ci": "vitest run --no-file-parallelism",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "e2e": "playwright test",

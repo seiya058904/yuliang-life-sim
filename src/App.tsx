@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { balanceConfig } from './game/balance/config';
 import { contentRegistry } from './game/content/registry';
 import type { ActivityOption, AttributeId, CharacterDefinition, ContentId, EffectDefinition, GameAction, GameState, JobDefinition, MonthlyHighlight, PlannedActivity, PlanSlot, StatName, ViewId, Weekday } from './game/content/contracts';
-import { businessValuation, businessValuationBasisIsUnverified, calculateDailyBusinessProfit, calculateLifestyle, calculateNetWorth, canDirectBusinessOperations, effectiveBusinessLocationId, ownershipTierForEquity, ownershipTierForHolding, wealthAllocationBreakdown, wealthTierForNetWorth } from './game/engine/economy';
+import { businessListingLockUntilDay, businessValuation, businessValuationBasisIsUnverified, calculateDailyBusinessProfit, calculateLifestyle, calculateNetWorth, canDirectBusinessOperations, effectiveBusinessLocationId, ownershipTierForEquity, ownershipTierForHolding, wealthAllocationBreakdown, wealthTierForNetWorth } from './game/engine/economy';
 import { activityAtTime, deriveActivityProgress, defaultJobSchedule, getDailyActivities } from './game/engine/schedule';
 import { formatClock, formatDate, absoluteMinute } from './game/engine/time';
 import { calendarForDay, weekdayLabel } from './game/engine/calendar';
@@ -1160,7 +1160,8 @@ function BusinessOperationsView({ game, dispatch }: { game: GameState; dispatch:
     const directable = canDirectBusinessOperations(holding);
     const update = (key: 'priceLevel' | 'wageLevel' | 'inventoryLevel', max: number) => dispatch({ type: 'update_business', businessId: business.id, priceLevel: key === 'priceLevel' ? (holding.priceLevel + 1) % max : holding.priceLevel, wageLevel: key === 'wageLevel' ? (holding.wageLevel + 1) % max : holding.wageLevel, inventoryLevel: key === 'inventoryLevel' ? (holding.inventoryLevel + 1) % max : holding.inventoryLevel });
     const fundingRound = holding.fundingRound ?? 0;
-    const listingLocked = Boolean(holding.listedDay && game.time.day < holding.listedDay + 28);
+    const lockUntilDay = businessListingLockUntilDay(holding);
+    const listingLocked = game.time.day < lockUntilDay;
     const publicFloat = holding.publicFloatPercent ?? (100 - (holding.equityPercent ?? 100));
     const equity = holding.equityPercent ?? 100;
     const impliedValue = businessValuation(holding, balanceConfig);
@@ -1172,15 +1173,15 @@ function BusinessOperationsView({ game, dispatch }: { game: GameState; dispatch:
       <button className="text-button" disabled={game.cash - 1000 < 0} onClick={() => dispatch({ type: 'inject_business_capital', businessId: business.id, amount: 1000 })}>投入 ¥1,000</button>
       <button className="text-button" disabled={fundingRound >= 3} onClick={() => dispatch({ type: 'raise_business_funding', businessId: business.id })}>{fundingRound >= 3 ? '融资轮次已达上限' : fundingRound ? '继续融资' : '发起融资'}</button>
       <button className="text-button" disabled={Boolean(holding.listed) || fundingRound < 2} onClick={() => dispatch({ type: 'list_business', businessId: business.id })}>{holding.listed ? '已上市' : fundingRound < 2 ? '两轮融资后上市' : '申请上市'}</button>
-      {holding.listed && publicFloat >= 10 && <button className="text-button" disabled={listingLocked || game.cash - 520 < 0} onClick={() => dispatch({ type: 'buy_business_equity', businessId: business.id, percent: 10 })}>{listingLocked ? `锁定至第 ${holding.listedDay! + 28} 天` : '回购 10% 股权'}</button>}
-      {holding.listed && equity > 10 && <button className="text-button" disabled={listingLocked} onClick={() => dispatch({ type: 'sell_business_equity', businessId: business.id, percent: 10 })}>{listingLocked ? `锁定至第 ${holding.listedDay! + 28} 天` : '出售 10% 股权'}</button>}
+      {holding.listed && publicFloat >= 10 && <button className="text-button" disabled={listingLocked || game.cash - 520 < 0} onClick={() => dispatch({ type: 'buy_business_equity', businessId: business.id, percent: 10 })}>{listingLocked ? `锁定至第 ${lockUntilDay} 天` : '回购 10% 股权'}</button>}
+      {holding.listed && equity > 10 && <button className="text-button" disabled={listingLocked} onClick={() => dispatch({ type: 'sell_business_equity', businessId: business.id, percent: 10 })}>{listingLocked ? `锁定至第 ${lockUntilDay} 天` : '出售 10% 股权'}</button>}
         </> : <>
       {!holding.listed && equity <= 90 && <button className="text-button" disabled={game.cash - increaseCost < 0} onClick={() => dispatch({ type: 'increase_business_stake', businessId: business.id, percent: 10 })}>增持 10%（含战略溢价 {money(increaseCost)}）</button>}
       {!holding.listed && equity > 10 && <button className="text-button" onClick={() => dispatch({ type: 'sell_business_stake', businessId: business.id, percent: 10 })}>减持 10% {money(Math.round(impliedValue * 0.1))}</button>}
       {equity < 50 && <span className="muted">需要增持到至少 50% 才能接管董事会决策</span>}
-      {holding.listed && publicFloat >= 10 && listingLocked && <span className="muted">公开回购需等锁定期结束（第 {(holding.listedDay ?? 0) + 28} 天后）</span>}
+      {holding.listed && publicFloat >= 10 && listingLocked && <span className="muted">公开回购需等锁定期结束（第 {lockUntilDay} 天后）</span>}
       {holding.listed && publicFloat >= 10 && !listingLocked && <button className="text-button" disabled={game.cash - 520 < 0} onClick={() => dispatch({ type: 'buy_public_business_equity', businessId: business.id, percent: 10 })}>买入公开流通股 ¥520</button>}
-    </>}<button className="text-button" onClick={() => dispatch({ type: 'sell_business', businessId: business.id })}>退出企业</button></div></div>;
+    </>}<button className="text-button" disabled={listingLocked || Boolean(game.publicBusinessEquities?.[business.id])} onClick={() => dispatch({ type: 'sell_business', businessId: business.id })}>{listingLocked ? `退出企业（锁定至第 ${lockUntilDay} 天）` : game.publicBusinessEquities?.[business.id] ? '先出售公开股权' : '退出企业'}</button></div></div>;
   })}</div></section>;
 }
 

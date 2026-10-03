@@ -1,6 +1,12 @@
 name: Verify pull request
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      compare_scheduling:
+        description: Run three alternating full-suite parallel/serial pairs
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -13,9 +19,42 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test -- --no-file-parallelism
+      - run: npm run test:ci
       - run: npm run build
       - run: npx playwright install --with-deps chrome
       - run: npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts --project=desktop
         env:
           YULIANG_E2E_SERVER: preview
+  compare-scheduling:
+    if: github.event_name == 'workflow_dispatch' && inputs.compare_scheduling
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Alternate unchanged full suites on one runner
+        shell: bash
+        run: |
+          mkdir -p scheduling-results
+          status=0
+          for sample in 1 2 3; do
+            for mode in parallel serial; do
+              args=()
+              if [ "$mode" = serial ]; then args+=(--no-file-parallelism); fi
+              if npm test -- "${args[@]}" --reporter=json --outputFile="scheduling-results/$sample-$mode.json"; then
+                echo "$sample $mode passed"
+              else
+                status=1
+                echo "::error::$sample $mode failed; inspect the full result"
+              fi
+            done
+          done
+          exit "$status"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-scheduling-results
+          path: scheduling-results/

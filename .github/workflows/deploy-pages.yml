@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      validation_only:
+        description: Run all release gates without publishing Pages
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -11,7 +16,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: ${{ inputs.validation_only && format('pages-validation-{0}', github.ref) || 'pages' }}
   cancel-in-progress: true
 
 jobs:
@@ -28,7 +33,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Unit tests
-        run: npm test
+        run: npm run test:ci
       - name: Build
         run: npm run build
       - name: Prepare Chrome for Playwright
@@ -54,14 +59,17 @@ jobs:
           path: test-results/
           retention-days: 7
       - name: Configure Pages
+        if: inputs.validation_only != true
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
+        if: inputs.validation_only != true
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
   deploy:
     needs: build
+    if: inputs.validation_only != true
     runs-on: ubuntu-latest
     environment:
       name: github-pages
