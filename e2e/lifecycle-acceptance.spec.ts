@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { bootWithBridge, navigate, openCareerPage, readPersistedState } from './harness';
+import { bootWithBridge, navigate, openCareerPage, readPersistedState, writeCanonicalState, awaitAppReady } from './harness';
 
 /**
  * R04–R06 acceptance through the **real UI** of the production build.
@@ -64,6 +64,50 @@ function setClock(state: any, day: number, hour: number, minute: number): void {
 
 const readState = (page: Page) => readPersistedState(page) as Promise<Record<string, any>>;
 const readGame = (page: Page) => page.evaluate(() => window.__yuliang.store.getState().game);
+
+test('current laptop owner keeps empty side-job qualifications after IndexedDB reload (#16)', async ({ page }) => {
+  await bootWithState(page, { cash: 5000, ability: 20, attributes: { professional: 20, knowledge: 20, communication: 20, fitness: 20, mood: 20 }, simulationMode: 'paused', acquiredSideJobs: {} });
+  expect(await page.evaluate(() => window.__yuliang.store.getState().dispatch({ type: 'purchase_items', items: { 'item.seed-laptop': 1 } }))).toBe(true);
+  const before = await readState(page);
+  expect(before.unlockedJobIds).toEqual(expect.arrayContaining(['job.seed-remote', 'job.data-entry']));
+  expect(before.acquiredSideJobs).toEqual({});
+  await page.reload();
+  await awaitAppReady(page);
+  await navigate(page, '职业');
+  await openCareerPage(page, '我的兼职');
+  await expect(page.getByRole('button', { name: '安排到本周', exact: true })).toHaveCount(0);
+  expect((await readGame(page)).acquiredSideJobs).toEqual({});
+  expect(await page.evaluate(() => window.__yuliang.store.getState().dispatch({ type: 'set_plan', weekday: 7, slot: 'evening', activity: { kind: 'side_job', jobId: 'job.seed-remote', durationMinutes: 60 } }))).toBe(false);
+  expect((await readState(page)).acquiredSideJobs).toEqual({});
+});
+
+for (const day of [1, 28, 29]) test(`listed founder exit and partial sale share UI lock on day ${day} (#17)`, async ({ page }) => {
+  await bootWithState(page, { cash: 10000, simulationMode: 'paused', unlockedCapabilities: ['business_license'], unlockedBusinessIds: ['business.seed-kiosk'] });
+  expect(await page.evaluate(() => ['buy_business', 'raise_business_funding', 'raise_business_funding', 'list_business'].every(type => window.__yuliang.store.getState().dispatch({ type, businessId: 'business.seed-kiosk' })))).toBe(true);
+  const state = await readState(page);
+  setClock(state, day, 8, 0);
+  await writeCanonicalState(page, state);
+  await page.reload();
+  await awaitAppReady(page);
+  await navigate(page, '财富');
+  await page.getByRole('navigation', { name: '财富分区' }).getByRole('button', { name: '经营', exact: true }).click();
+  const exit = page.getByRole('button', { name: /^退出企业/ });
+  if (day < 29) {
+    await expect(exit).toBeDisabled();
+    await expect(exit).toContainText('锁定至第 29 天');
+    const holding = page.locator('.item-row').filter({ has: exit });
+    await expect(holding.getByRole('button', { name: '锁定至第 29 天', exact: true })).toHaveCount(2);
+    expect((await readGame(page)).cash).toBe(state.cash);
+  } else {
+    await expect(page.getByRole('button', { name: '出售 10% 股权', exact: true })).toBeEnabled();
+    await expect(exit).toBeEnabled();
+    await exit.click();
+    expect((await readState(page)).businesses['business.seed-kiosk']).toBeUndefined();
+    await page.reload();
+    await awaitAppReady(page);
+    expect((await readGame(page)).businesses['business.seed-kiosk']).toBeUndefined();
+  }
+});
 
 /** Start the week through the UI and wait until the world is really running. */
 async function startWorldViaUi(page: Page): Promise<void> {

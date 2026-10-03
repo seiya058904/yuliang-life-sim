@@ -71,6 +71,11 @@ export function canDirectBusinessOperations(holding: Pick<BusinessHolding, 'equi
   return tier === 'controlling' || tier === 'wholly_owned';
 }
 
+/** Founder shares unlock 28 days after listing; unlisted holdings have no lock. */
+export function businessListingLockUntilDay(holding: Pick<BusinessHolding, 'listed' | 'listedDay'>): number {
+  return holding.listed && holding.listedDay ? holding.listedDay + 28 : 0;
+}
+
 /** Location that should receive visits and city context for this holding. */
 export function effectiveBusinessLocationId(holding: Pick<BusinessHolding, 'relocatedLocationId'>, definition: Pick<BusinessDefinition, 'locationId'>): string | undefined {
   return holding.relocatedLocationId ?? definition.locationId;

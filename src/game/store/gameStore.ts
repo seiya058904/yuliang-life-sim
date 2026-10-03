@@ -1111,12 +1111,17 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.ambientLog = Array.isArray(candidate.ambientLog) ? candidate.ambientLog.slice(-20) : [];
   const storylines = new Map((content.storylines ?? []).map((storyline) => [storyline.id, new Set(storyline.stages.map((stage) => stage.id))]));
   candidate.storylineStages = Object.fromEntries(Object.entries(candidate.storylineStages ?? {}).filter(([id, stage]) => storylines.get(id)?.has(stage as string)));
-  const legacyUnlockedJobs = [...candidate.unlockedJobIds];
-  candidate.acquiredSideJobs = candidate.acquiredSideJobs ?? {};
-  for (const jobId of legacyUnlockedJobs) {
-    const job = content.jobs.find((entry) => entry.id === jobId);
-    if (job && employmentKind(job) === 'repeatable_side_job') {
-      candidate.acquiredSideJobs[jobId] ??= { jobId, acquiredDay: candidate.time.day };
+  const hasQualifications = Object.prototype.hasOwnProperty.call(raw, 'acquiredSideJobs');
+  if (hasQualifications && (!isRecord(raw.acquiredSideJobs) || Array.isArray(raw.acquiredSideJobs))) throw new Error('兼职资格记录无效');
+  candidate.acquiredSideJobs ??= {};
+  // Only a missing legacy field represents the old unlock-as-qualification model.
+  // Explicit empty/partial tables are authoritative, including on older saves.
+  if (!hasQualifications && Number(raw.version) < 10) {
+    for (const jobId of candidate.unlockedJobIds) {
+      const job = content.jobs.find((entry) => entry.id === jobId);
+      if (job && employmentKind(job) === 'repeatable_side_job') {
+        candidate.acquiredSideJobs[jobId] = { jobId, acquiredDay: candidate.time.day };
+      }
     }
   }
   // --- application lifecycle (v9) -----------------------------------------

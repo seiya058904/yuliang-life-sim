@@ -3,7 +3,7 @@ import { enterRunning } from './running';
 import { recentGiftCount, recentInteractionCount, retentionKey, factsFromHistory } from './businessFacts';import type { BalanceConfig } from '../balance/config';
 import type { AttributeId, ContentId, ContentRegistry, EffectDefinition, GameAction, GameEffect, GameResult, GameState, InvestmentDefinition, InvestmentHolding, ItemDefinition, JobDefinition, LifeRecordEntry, PlannedActivity, PlanSlot, Weekday } from '../content/contracts';
 import { evaluateCondition, explainCondition } from './conditions';
-import { businessValuation, businessValuationBasis, calculateDailyBusinessProfit, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity } from './economy';
+import { businessListingLockUntilDay, businessValuation, businessValuationBasis, calculateDailyBusinessProfit, calculateNetWorth, canDirectBusinessOperations, ownershipTierForEquity } from './economy';
 import { applyContentEffects, applyReachedMilestones, cashEffectAmount, cloneGameState, itemCost, refreshUnlocks } from './effects';
 import { advanceSimulation } from './simulation';
 import { activityAtTime, defaultJobSchedule } from './schedule';
@@ -1049,7 +1049,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const percent = Math.round(action.percent);
       if (!holding || !business) return fail(input, '还没有这项生意');
       if (!holding.listed) return fail(input, '企业尚未上市');
-      if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
+      if (state.time.day < businessListingLockUntilDay(holding)) return fail(input, '上市股权仍在锁定期内');
       if (!Number.isInteger(action.percent) || percent <= 0 || percent >= (holding.equityPercent ?? 100)) return fail(input, '出售股权比例无效');
       const valuation = businessValuationBasis(holding) * balance.businessValuationRatio;
       const saleValue = Math.max(0, Math.round(valuation * percent / 100));
@@ -1077,7 +1077,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const publicHolding = state.publicBusinessEquities?.[action.businessId];
       if (!holding || !business) return fail(input, '还没有这项生意');
       if (!holding.listed) return fail(input, '企业尚未上市');
-      if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
+      if (state.time.day < businessListingLockUntilDay(holding)) return fail(input, '上市股权仍在锁定期内');
       if (!Number.isInteger(action.percent) || percent <= 0 || percent > publicFloat - (publicHolding?.percent ?? 0)) return fail(input, '可回购的流通股不足');
       const valuation = businessValuation(holding, balance);
       const purchaseValue = Math.max(0, Math.round(valuation * percent / 100));
@@ -1099,7 +1099,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const existing = state.publicBusinessEquities?.[action.businessId];
       if (!holding || !business) return fail(input, '还没有这项企业');
       if (!holding.listed) return fail(input, '企业尚未上市');
-      if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
+      if (state.time.day < businessListingLockUntilDay(holding)) return fail(input, '上市股权仍在锁定期内');
       if (!Number.isInteger(action.percent) || percent <= 0 || percent > publicFloat - (existing?.percent ?? 0)) return fail(input, '可购买的公开流通股不足');
       const purchaseValue = Math.max(1, Math.round(businessValuation(holding, balance) * percent / 100));
       if (state.cash - purchaseValue < reserveRequired(state, content)) return fail(input, '现金不足以购买公开股权');
@@ -1120,7 +1120,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const percent = Math.round(action.percent);
       if (!holding || !business || !publicHolding) return fail(input, '还没有这项公开股权');
       if (!holding.listed) return fail(input, '企业尚未上市');
-      if (holding.listedDay && state.time.day < holding.listedDay + 28) return fail(input, '上市股权仍在锁定期内');
+      if (state.time.day < businessListingLockUntilDay(holding)) return fail(input, '上市股权仍在锁定期内');
       if (!Number.isInteger(action.percent) || percent <= 0 || percent > publicHolding.percent) return fail(input, '出售公开股权比例无效');
       const saleValue = Math.max(1, Math.round(businessValuation(holding, balance) * percent / 100));
       const costBasis = Math.round(publicHolding.investedAmount * percent / publicHolding.percent);
@@ -1140,6 +1140,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const holding = state.businesses[action.businessId];
       const business = find(content.businesses, action.businessId);
       if (!holding || !business) return fail(input, '还没有这项生意');
+      if (state.time.day < businessListingLockUntilDay(holding)) return fail(input, '上市股权仍在锁定期内');
       if (state.publicBusinessEquities?.[action.businessId]) return fail(input, '请先出售这项企业的公开股权');
       const equityPercent = Math.min(100, Math.max(0, holding.equityPercent ?? 100));
       const saleValue = Math.max(0, Math.round(businessValuationBasis(holding) * balance.businessValuationRatio * equityPercent / 100));
