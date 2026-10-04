@@ -586,6 +586,12 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
         if (!item) return fail(input, '购物清单中有未知商品');
         if (!Number.isInteger(quantity)) return fail(input, '商品数量必须是整数');
         if (!hasRequirements(state, item.requirements, content, balance)) return fail(input, `${item.name}暂时无法购买`);
+        // Validate the final unit against the inventory the preceding units
+        // would leave. Ownership requirements apply within this cart too;
+        // keep this prospective state separate until the whole cart is valid.
+        if (quantity > 1 && item.requirements && !hasRequirements({ ...state, inventory: { ...state.inventory, [itemId]: (state.inventory[itemId] ?? 0) + quantity - 1 } }, item.requirements, content, balance)) {
+          return fail(input, `${item.name}暂时无法购买`);
+        }
         total += itemCost(state, item) * quantity;
       }
       if (state.cash - total < reserveRequired(state, content)) return fail(input, '请先预留下一次住房费用');

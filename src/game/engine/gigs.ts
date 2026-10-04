@@ -2,6 +2,7 @@ import type { ContentRegistry, GameEffect, GameState, GigOpportunityState, JobDe
 import { getActivityDefinition } from './activities';
 import { calendarForDay } from './calendar';
 import { applyCareerExperience } from './careerProgression';
+import { employmentWorkWindow } from './effects';
 import { recordStateFinancialEntry } from './financialLedger';
 import { addLifeRecord } from './lifeHistory';
 import { DAY_START, EVENING_START, employmentActiveOn } from './planning';
@@ -104,8 +105,9 @@ function shiftCoversMinute(state: GameState, minute: number): boolean {
   const day = Math.floor(minute / 1440) + 1;
   if (!employmentActiveOn(employment, day)) return false;
   if (!employment.schedule.workDays.includes(calendarForDay(day).weekday)) return false;
-  const shiftFrom = (day - 1) * 1440 + employment.schedule.startMinute;
-  const shiftTo = (day - 1) * 1440 + employment.schedule.endMinute;
+  const window = employmentWorkWindow(state, employment.schedule);
+  const shiftFrom = (day - 1) * 1440 + window.startMinute;
+  const shiftTo = (day - 1) * 1440 + window.endMinute;
   return minute >= shiftFrom && minute < shiftTo;
 }
 
