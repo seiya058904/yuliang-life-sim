@@ -1,0 +1,1797 @@
+{
+  "sourceHead": "64283bca15a551d7df72e4d4aad6bcc983c36b67",
+  "sourceHashes": {
+    "src/App.test.tsx": "885ef9404e4729ac649353c1947de227bf86ad9c66e519fd713212eedcc60bb7",
+    "src/App.tsx": "7aab213a95bbe92ff2607abc8cdf4af0e38bcffcb8fcfc5aeefca3e62fb0dc4b",
+    "src/game/balance/config.ts": "bfd9f7dbcbf1d166f47bab766a74df3e2d3cdfcac67e7c11ea181666fbc90951",
+    "src/game/content/capabilityDoc.test.ts": "af290f408854354372f9b08857c7663182a5329d09a9d61b9af81649e060bf3a",
+    "src/game/content/contracts.ts": "fbfa734b5509861d6edc7162ef1d9fd1737bc3a2d191f5524472957720240d1d",
+    "src/game/content/official/activities.ts": "f6a8d5dde5d9b3af20c1c5a61a62fc9bce2086867677520c6efc833c45241cd0",
+    "src/game/content/official/assets.ts": "643c120edd71970019c0d063581d75e3b26a645cff76139196b5cc77765fe4ae",
+    "src/game/content/official/businesses.ts": "6b314ee9cc53a2df6b3775b639707e6e8089fc52a0718af2ac4245cf4f8b692a",
+    "src/game/content/official/characters.ts": "bfd2c90ecd9d87d1b1b8e74b01b59b392d19a7811193cca191b6c209acd4e7df",
+    "src/game/content/official/companies.ts": "ba100ec31e41c1c8089ff1c08833692ece2499eae8d2f8080da43fce0326a44e",
+    "src/game/content/official/courses.ts": "60fcdd6b2b7b29470b566f08624c1843621fbec259c8dd18b269a60ba0b557d7",
+    "src/game/content/official/dialogues.ts": "4e00a86fb925012247eeaa88b926f30fe1ea8621796b1eaf7b7fec1237c97e6b",
+    "src/game/content/official/eventChains.ts": "d035b7be38b433073f26e0a5ee57f34584b5171b2b98c931f956d7c45aa4810d",
+    "src/game/content/official/events.ts": "feb5b47c82cbbc7e371b2b8e7997a06644b8150055af733731bf7fb27cf6b5c7",
+    "src/game/content/official/housing.ts": "400eb1f7112bf0c4a56b19c7c0030e64ecea3e6707dd982fe834662ef9215c65",
+    "src/game/content/official/investments.ts": "2b028f41fbf93e776f8092501069b605f9f434068d54f07709ebc2f610cded84",
+    "src/game/content/official/items.ts": "10ec3460e2a930fe20bc60b13d40f0e431f1d6be2daaa3630d6f2045ebade15e",
+    "src/game/content/official/jobs.ts": "eac0ace224d0ce9fe4f539668c46618e2eac96b61b438e0707f85a5b244f0cde",
+    "src/game/content/official/locations.ts": "7d44551be89b3cacc2d81f058c20193e46984652f923ebad7cf93ee27f623e0a",
+    "src/game/content/official/milestones.ts": "6935aef633c1fe76ec94defc91ba8a496b9ff8c36a85680df280368f1ab6ae94",
+    "src/game/content/official/relationshipInteractions.ts": "414bbf5d0e1438b0841c884667fb22cdb657f8071b9b685f14e5b91f24ea55fb",
+    "src/game/content/official/services.ts": "ac41f1dd5f2cb8b31afa0d675ce187a3a557b9fa1bce44952bbc60c5637816cf",
+    "src/game/content/official/storylines.ts": "23d57bf1d3a2822b4df8d954adfeb0aaf8c8fe966e89d5510e2ec16524265037",
+    "src/game/content/official/vacancies.ts": "75b19e938e0b22617fa7676570b9f44ce63c15090fd01ede54b2814e7df45243",
+    "src/game/content/official/vehicles.ts": "6298bdb9147909c1b930a0b236fe8728beb9485b18e82d68254f7f511b6b3227",
+    "src/game/content/official/venues.ts": "c863f169abefad7f524bb6a3e4fb2096643368643e63228a3769319eb5963844",
+    "src/game/content/official/worldMessages.ts": "6bf11f1e5a7f507261d4f8a1bd6246bc194c47a4531d6369cc96b56c42659039",
+    "src/game/content/official.ts": "3704983968d328c763f282bf3bc190c7431c7b2d43aa4e1c9dfd8b9242533909",
+    "src/game/content/registry.ts": "0b35fd95e139065d606e8b5381d03f01a9a5b80614bde6116a557be0f2bf073e",
+    "src/game/content/seed.ts": "6c42239db8ba0942d91264560f9c325bf3941a694a47e8b6200bd0ab7301ff4a",
+    "src/game/content/seedContent.test.ts": "147d842500ce292c2bb023bdea5d226d57cc57300f7b1d3a057dc3a5009ed582",
+    "src/game/content/validateContent.test.ts": "cdef3a4b04e680c925c4c2482d8a5afd72a3284cf25d5352f6975c88f0789104",
+    "src/game/content/validateContent.ts": "02cf001e9d1dab0d0877275095fca6d3ca2031d2212d8af43cc7ddaee1ae0329",
+    "src/game/content/vocabulary.ts": "dd6127b61db198e6a113aa5cb1bb49339aab65b20cdd9478bf6e834f564dd5cf",
+    "src/game/engine/actions.test.ts": "dc92b1ec2e4dfd5044f5a34135d603dbc1b5d26d54447365d1418358309b2cec",
+    "src/game/engine/actions.ts": "9b69885dc590f9571e4fd10c222963c4ee49240bb622c1ea95aa4e982c0a05ad",
+    "src/game/engine/activities.ts": "8def3638e8fbafebe34973c535953734d5e0bfb860428359183af9272c1ecc50",
+    "src/game/engine/advancePeriod.test.ts": "6ebca60de29389ea0532a6fa586439a3f9be5cf40dd078c3e6cc4a82ca064c4a",
+    "src/game/engine/attributes.ts": "a2bc2a2e6d39de3d3cda50bb741a458a259b9772fbb9b81e64fb306d12ddf6e4",
+    "src/game/engine/auditV10.test.ts": "2ed68da276c370f55a4472578633f3e0223ecb2f9c52b25d380d86098fc2ef75",
+    "src/game/engine/businessFacts.ts": "96fbce6aa6d97d01048d1addd61b6126104a5af4ea850384ac1d4f197a757e0d",
+    "src/game/engine/calendar.test.ts": "51659692eaf021b93380ae66a3336dcaa3eb513e8a1b9e59314398ccde5de59c",
+    "src/game/engine/calendar.ts": "42f2aca5c6a7c9f0a67c74465543877be985f3983c70dee15297c87126673d03",
+    "src/game/engine/careerProgression.test.ts": "118cd34628eb7d5c8eab8e49433be351fa4f99954aa2c87e374edb6c64227f96",
+    "src/game/engine/careerProgression.ts": "ba98401d026e7aa96b52497e544adb6fb1eb8342d538221d2cca53e9ab10cf35",
+    "src/game/engine/careers.test.ts": "fd535e01b18fe6065df88b4db0f82d396a06587496403930d0fe9216f0071118",
+    "src/game/engine/careers.ts": "ea5f580fb07898b78da85fb84f336156a510eae78e9fcc5e6252580080d65eda",
+    "src/game/engine/conditions.test.ts": "394cf335ba7469e3c2ccb301a37f86bbb5b0fafee9ec6b64ff6e8337d9d069fa",
+    "src/game/engine/conditions.ts": "e0bcee0c23ee6078c24d0d18dee60b2ddbbc05adb41ade57f076bf02e2922075",
+    "src/game/engine/dialogue.ts": "2c4efc7c82569c31b14785f51c2fc5277a1b7dd9efbe01fabc12b310c36f7900",
+    "src/game/engine/economy.test.ts": "4af67a58bbb11e8464c5dfbb6786509bccedc8fd4c9c4fddec4c6e2fc5a1f45b",
+    "src/game/engine/economy.ts": "9291f4b22a3acfeeb578487f6dba8aaf95542b8931459dddb81b38b6afaedf9a",
+    "src/game/engine/effects-feedback.test.ts": "57b913ef29e72f055b71b7832ed967fda16336e5bf4c9ccefcaf09bf0a2fa4fe",
+    "src/game/engine/effects.ts": "1fc0dd0eb329e30cc5318ebf0be5932c96bfcf55c01b27057afe5601c9b453e7",
+    "src/game/engine/financialLedger.ts": "02a1e810e7d883677e6730a7d7cba1c10c7e04bd39805a1ca51550a02aa070c3",
+    "src/game/engine/forecast.test.ts": "04b8cf66884fd0ae2106a266c4a0f907f639225ab587b069afec9fbdc37c70c1",
+    "src/game/engine/forecast.ts": "7fd5383038b0ce9f7100d995fc44b3e63b695a005da06c16e5bb229c7ba8c956",
+    "src/game/engine/gigs.ts": "f983ec42703e43d048c0bdcb7d319c56bc2ba42f7f6fa967e4c0f5073e52d8dc",
+    "src/game/engine/housingGuard.test.ts": "f082bf373e5f98aff22063d62b88a78ef0bb816e8b058a2e0b012700c5631ebb",
+    "src/game/engine/housingValue.ts": "5e12f50468f003b4ef9b83df88b8e416bb6ae3e2469aeac80ecc954dcd018696",
+    "src/game/engine/initialState.ts": "bbdcd92f6c80a1c01efaff075b6cc1daddd7c373560803453b4eb5fda5975915",
+    "src/game/engine/investmentLock.test.ts": "7dab0954b9110321e10373b5a90dc0ad25a292f7bcd853b69fe607e1abac52dc",
+    "src/game/engine/investments.ts": "291f02cd51e1dba0ddf441b3892fa05450c356920e5d0d066a352f0885f9d5cd",
+    "src/game/engine/issue16and17.test.ts": "2fb2f6d144ca0047c2edff39ebd86ecaaf6a0ba8228fae751c5447cbfb0f3172",
+    "src/game/engine/knownAmount.ts": "499da97bcfac14b4c432a86ce2b07543b035524c9061c5a8ec338704bf149890",
+    "src/game/engine/lifecycle.ts": "7e1437821918801c176deb6c9bd6ca6b592035bc3e0d5025a09ca5a5dc46f892",
+    "src/game/engine/lifeHistory.test.ts": "a2df37bf120da16aed71acd2347892afe8fe5433b880563b32f650f5836d0ca9",
+    "src/game/engine/lifeHistory.ts": "207a0348ba098642e033e26efd384d3d26e2d9fcc4a83cb45538d8a7539e7fab",
+    "src/game/engine/locations.test.ts": "d5cbd2c505c273a314b32b7d2fc7121bd89b7d4a9fd84141307709aa93379680",
+    "src/game/engine/locations.ts": "4c6f8aee79b7fe82ff54c829cae6e8ee76f3ce671cebb1d2b22ee6c404bacb40",
+    "src/game/engine/mobility.test.ts": "0e8e483d163b62c39438fd47c5bb4cafe70b9f29c0e2c048ffe819253d5c11b6",
+    "src/game/engine/mobility.ts": "b5d0f067c816d969f7da2eeff13305d844ea16911e631caaa6ad1a3d42b7b0c2",
+    "src/game/engine/monthlySettlement.test.ts": "af8db5fd1f7ed7a775eb61b5d7d8c6fd27571474b30567957ebf9ac45ae76748",
+    "src/game/engine/monthlySettlement.ts": "b1ee722dfa0f889fde3cc66369488b5ac6dbb8d584d7b94f9aa5ac65ceff5827",
+    "src/game/engine/phase3.test.ts": "9f1ce773e298a3333dc0623478fb5817424a4b3e03e51875fd27f715e3bde470",
+    "src/game/engine/planning.ts": "795e235300a3704145379856ee935389e1ff75b1177a965ca754dba182e1e65c",
+    "src/game/engine/purchaseAndGigBoundaries.test.ts": "491db6022d52dd501fd83e6fdc586aebc1bdd402cb05d6c1bc165e2bff66491b",
+    "src/game/engine/regression5e41586.test.ts": "5de018a3efe64c6067eb48f1c65367220a3ad17547b3fa5741aee045141742a0",
+    "src/game/engine/rng.test.ts": "dc3594e11bbfdbf17d8daecba0d4c51471b53d6768f026de233faa66b5377ceb",
+    "src/game/engine/rng.ts": "1e5becc95fe6d740ec8636e94e25c2949df20305a6ba1ff6d656cd909026748a",
+    "src/game/engine/running.ts": "5820657a22dc7a81a3ef03f9d2c1c24d526d6274946dce66dc71adae34fd1984",
+    "src/game/engine/schedule.test.ts": "4e5f900dd5d0af3bae36f31012e10aa6a82b63f71385f0ce2c0a923866c95320",
+    "src/game/engine/schedule.ts": "888055e3cde8301905d28331109cf198aa60008e07fa561e5a211d48e5892b24",
+    "src/game/engine/services.ts": "33cb1c6bf93a2efafb2cd7c05795d1d05da9505e6c4810d6b26281486c1bb90e",
+    "src/game/engine/settlementMath.ts": "bd55b579b64bea4d64daf3e670582dcdb8bbac894fccec2498b4d704292b212a",
+    "src/game/engine/simulation.test.ts": "b696cc87f02a0e9b957dc23b99ad0b52b45270c3666412f1bf1c7955a9a8b58d",
+    "src/game/engine/simulation.ts": "3bf97324e0d797e899de72071942dd08d076afcc45c00ca185521fd4c129f9fc",
+    "src/game/engine/stabilization.test.ts": "2a47151c8ce2e3ff9f50af0a27496d5bba064a423edb8e58aa667039781bcbee",
+    "src/game/engine/storylines.ts": "6ab872055ba176a58e5409dcfa8f5e0d835f28f533ff299998422d3dd9d722c6",
+    "src/game/engine/time.test.ts": "5a1c2eefc6501b97f2decda2b23e4250e6db64a1f0f9c521cbb71fec1b853681",
+    "src/game/engine/time.ts": "ad06ed1b7cb480effb70f325b90b90199188a239a5956323735b27a5563c2623",
+    "src/game/engine/wealthConsistency.test.ts": "7d2df0d864d3c10053e6d90325d0860d075ef8c9ca8b416085379d171811bcd6",
+    "src/game/engine/worldEvolution.test.ts": "34a4298fcd90f997d10805a7591feea0e74195a8abac53f99cef38eb51e72d6b",
+    "src/game/engine/worldEvolution.ts": "5266e0054788a2d871f5f1645df3cefa8e2b2d47b547477c9f27794b6e64c97a",
+    "src/game/engine/worldMessages.test.ts": "572b029e5ab3f28ea907a2cf866ce66d0c0f839de615da5f0d1dce4c0b38665f",
+    "src/game/engine/worldMessages.ts": "269bc58c494df153e8b1bf298eadac8e2bb0df0a0b759664fd519965a3e82556",
+    "src/game/store/canonicalSave.ts": "72c54b4ab5c72740ff531a4d27d64920ad4b24a6166667ed1805a57d43a689ce",
+    "src/game/store/canonicalSaveTestDouble.ts": "a16adfb216ebea1e6d24a693569fffde4451539e34b7e7a8df92518635fbc13a",
+    "src/game/store/describeError.ts": "b3d99022169d5dbd628f1ce0a308e30189981e8d0789b9b58d304bdf230bf938",
+    "src/game/store/gameStore.test.ts": "6fd3425e6bfbe49a620a9b555257bd38ad9f45cc24d04920ea378e432b34d68c",
+    "src/game/store/gameStore.ts": "028e8d4b2de1c1f5212340e301149fdc9fe314d37b4912c82adfc67828ace4b5",
+    "src/game/store/legacyPartnership.test.ts": "f59b0c3b1b6d6cb04ab4c0af1b9892a502d2aac371b1aaa248ae8985f1c67d40",
+    "src/game/store/lockTestDouble.test.ts": "04c3942376e2c944a1d558d49101074eccf69febb6278368ce19adb3665dc355",
+    "src/game/store/lockTestDouble.ts": "c902d78f96ec5b86e341317213e5a5237c2152afd499914fb195bb84e6772998",
+    "src/game/store/persistenceFailures.test.ts": "5d26c013a6337096892f89600a79f1c5978ccede7be9aab5639a364fe6dce594",
+    "src/game/store/recovery.test.ts": "761055f293dc5eeb2e18c622915d29668b32e8c043b61ffa9187116446bdcac7",
+    "src/game/store/saveConflict.test.ts": "fc7235db8ffa708c9200edf06bd89b834807724cacf2a826b0cb91f14ac916d5",
+    "src/game/ui/CareerView.test.tsx": "ea4c18652c7946e87b4651f299a874fd128be0bc43abbd91b43e513453d1aa4f",
+    "src/game/ui/CareerView.tsx": "16cbd41adc877029a8b308d68c832800b3ad9af4f0b276a952cd8e7a667235d5",
+    "src/game/ui/CityView.tsx": "fae6cd8fa01d74c7240d69be534a0de9973afdc617bca1f324b1ae0049336c96",
+    "src/game/ui/life.css": "c25b9bce193700563ca22ecd2beff17e5ea6e6fc531e875b0cfe56c2b4f4024e",
+    "src/game/ui/LifeHistoryList.tsx": "54668862b1e91bddf3ef89ccd5256a2be78e64c5114855c5e4bfa5088d4f8bf6",
+    "src/game/ui/pixel/ActionFeedback.test.tsx": "e141c443b6713c26ffb8ef82e11f40e78b4f850fdfa4ba26e68ba1f0d221f3f7",
+    "src/game/ui/pixel/ActionFeedback.tsx": "4eb206375a7ac95131243bb6a86aa5f08222d4816668febb29d2931d19296390",
+    "src/game/ui/pixel/console-system.css": "89b7a663d8448609af99175cd098d2e0730a76f37cad8aaec86f28263ce25f60",
+    "src/game/ui/pixel/displayNames.test.ts": "5cdb46872c9d4e8e1d2dff8f3fa71eea4c16f9962825557c8c76ef6af4685253",
+    "src/game/ui/pixel/displayNames.ts": "7a1b2952a9df92909aee2eb46437e914226d0266f9370afc858066cbf8de7d41",
+    "src/game/ui/pixel/PageHeading.tsx": "f0dbc282d6bb0613c4cad506da2cf52a64f794c0bfba7865c614a9c6604ec40c",
+    "src/game/ui/pixel/PageSections.tsx": "93dfd69f7b4b181c31b6a9cb81cbc04e9adc40bce2f89afe1418c3fcb197e355",
+    "src/game/ui/pixel/PersistentStatusBar.tsx": "636c493518a8c267196fb0678acc4f2464b0160b653ded564e250cd552d6240b",
+    "src/game/ui/pixel/PixelDialog.tsx": "76d2d321f999f60a901ae8f94b50e77c19197750f4be795c6f16e36a9c23c296",
+    "src/game/ui/pixel/PixelIcon.tsx": "94de4fd71afbf5f01a062d1ead6cd26e2aa84a57c43882c2efd8be328ee4d971",
+    "src/game/ui/pixel/PixelIllustration.tsx": "e3e1af4b72520e57d36e646f54300c97c77bde029825aabb6fc7abf3306692a5",
+    "src/game/ui/pixel/PixelScene.tsx": "20c88eaf77517359fe5d59298a985dcc36e5130ed192c4436cff50922599a5c6",
+    "src/game/ui/pixel/PixelUI.test.tsx": "7c39344a9cdd5f4b141656360eff7cd3db4ed15dd20cc27aed302ba545aa3268",
+    "src/game/ui/pixel/PixelUI.tsx": "9051297af015a0c0717194117a563b5795c588b5ee30357bd08208d84d8b1d65",
+    "src/game/ui/pixel/ViewMemory.tsx": "8c2855a667538bab1b0f1dc9a528d7132bc69810b3f7f4dcb1635117d3a30242",
+    "src/game/ui/shop.css": "c7a184a1150d98f3443cafe1a0f6b3bc7364cb70daff431e5bb22821efaf27ef",
+    "src/game/ui/weekScheduler.test.ts": "7eb076e9bb20b19851729aae91af2b04d6ee8df1df7580aaffc2bd7e82b7de9d",
+    "src/game/ui/weekScheduler.ts": "4a3b1db39ef0439aa437e2097f5b5353f024cb93d57be2cda40ac348babec8b4",
+    "src/main.tsx": "88cf8d18a5df23f222fb84c80f5b53e5858db634bd5c0400a932cf4226855a0a",
+    "src/styles.css": "5ba6523ebe9c85b344783f67186fc74e8d58134f6f903a6f90758ff29b31b6e2",
+    "src/test/ci-resource-policy.test.ts": "089901832da88fae8872227046206db7979604f767fedbdf9f35740a7ac16900",
+    "src/test/setup.ts": "6220fc7f7af6181e264275a531cef62593e31f364deaf46b797bee37d300a621",
+    "src/vite-env.d.ts": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+    "dist/assets/index-B3KOZdjw.js": "71e25efeae9a9c0e6f155522dc3dfc084bcd48bcb36e5c97fbf2a8938758600a",
+    "dist/assets/index-dqRAs1IK.css": "5e0fda4aff86f0bb7bc90a3a3fc9e90d4db899917b8508b39ecc0e5f22f47fe6",
+    "dist/index.html": "95e4dcb7ac4406f1f3503e8d9292de519747338937099381276f79d74452a108",
+    "scripts/ui-acceptance-baseline.mjs": "a657a4b32e350870e9b42e30e741a30714798c54d1cd880d11ccd69f8dbad433",
+    "e2e/harness.ts": "0176c5c15ce96772e263b48911ed7cd1b0430e410f40c9b24abf1c9c78a2dce1",
+    "playwright.config.ts": "2d7e7cdc3d31157387b9c2618429d955a71c2662b611d4511902f6aa098b93fb"
+  },
+  "fixtureHash": "0812a7de73e190b6a692f5dc6d7d208c53169fff41282d2c63d6926d4a3aeb76",
+  "seed": 20260825,
+  "platform": "win32",
+  "harnessTranspiler": "esbuild 0.28.2",
+  "base": "http://127.0.0.1:4187/yuliang-life-sim/",
+  "locale": "zh-CN",
+  "timezone": "Asia/Shanghai",
+  "reducedMotion": "reduce",
+  "generatedAt": "2026-10-04T13:00:11.042Z",
+  "records": [
+    {
+      "scene": "life",
+      "surface": "1440",
+      "fixture": "initial",
+      "file": "life-1440.png",
+      "sha256": "0401e0d01cf032a116d16cb77457d516398d9eb374141fcceaae64e2d3c4c855",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "本周计划"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 4
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "career",
+      "surface": "1440",
+      "fixture": "initial",
+      "file": "career-1440.png",
+      "sha256": "212f3ebef579372c9f5489005cd0b8b2b88874aefc7cd4ae5bf7a4571af8353e",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "职业"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "shop",
+      "surface": "1440",
+      "fixture": "initial",
+      "file": "shop-1440.png",
+      "sha256": "e3274fa07a65ae27aa28f696ccc8be60dd404b333dd80653a0f2ad4614a6445d",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "商品"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "wealth",
+      "surface": "1440",
+      "fixture": "initial",
+      "file": "wealth-1440.png",
+      "sha256": "5dcfbfb2b2eeebeb2bde22c91ee23338890214cf44fe2b0f12f907fe882e4776",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "财富"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "social",
+      "surface": "1440",
+      "fixture": "initial",
+      "file": "social-1440.png",
+      "sha256": "014ae5b63b8976cf18f41c81b0dff91bb99026deefe196b17dd696e1e1962728",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "社交"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "city",
+      "surface": "1440",
+      "fixture": "initial",
+      "file": "city-1440.png",
+      "sha256": "53e860de36604e97daa26cdb0d6cf75ab06ae4cb3ecf05046b7c4c010f5a0dd5",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "城市与地点"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 5
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "profile",
+      "surface": "1440",
+      "fixture": "initial",
+      "file": "profile-1440.png",
+      "sha256": "c28890e8747e4ce5cb1d5a0fca05613bc389d33701f850a58d503f467744a28a",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "我的"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "shop-activities",
+      "surface": "1440",
+      "fixture": "initial",
+      "file": "shop-activities-1440.png",
+      "sha256": "48e4d136f087dcf69658477236e31a08109652e6451dcb5f58599c3e3ef15854",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "商品"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "shop-populated",
+      "surface": "1440",
+      "fixture": "populated",
+      "file": "shop-populated-1440.png",
+      "sha256": "351a858641de3e21b02d0e04b0d716cf16c3bc92edc90b39e5014c37a6beb0ce",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 301,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "商品"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "life-four-messages",
+      "surface": "1440",
+      "fixture": "populated",
+      "file": "life-four-messages-1440.png",
+      "sha256": "ba7f146f4a411ec161c3d9fa7fe99fb7b45da83ef75ecd0b0b903322b7b9f874",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "本周计划"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 4
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "career-support",
+      "surface": "1440",
+      "fixture": "initial",
+      "file": "career-support-1440.png",
+      "sha256": "927a6a235799567babd724bd89c66ed7eb1002664d2942773132ee2ea6df3215",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 211,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "职业"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "career-populated",
+      "surface": "1440",
+      "fixture": "career",
+      "file": "career-populated-1440.png",
+      "sha256": "7872680c6d0b1387ed99cab955bbca182928c0318979717a5644f62de181d5dd",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 211,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "职业"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "life-long-activity",
+      "surface": "1440",
+      "fixture": "longActivity",
+      "file": "life-long-activity-1440.png",
+      "sha256": "6b0147ace75379a1dc56a499abddd2ad42910445fefa384e28190d65ee5ee7e9",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 6,
+          "hour": 10,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "本周计划"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 4
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "monthly-summary",
+      "surface": "1440",
+      "fixture": "initial + real UI advance/decisions",
+      "file": "monthly-summary-1440.png",
+      "sha256": "8db9dfcf13657abc00ea171ca5ad418a9828c2f0709db63208a1d98730a63ad1",
+      "metrics": {
+        "width": 1440,
+        "height": 1080,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 120,
+        "time": {
+          "day": 29,
+          "hour": 0,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "本周计划",
+          "住房"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 4
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "life",
+      "surface": "1280",
+      "fixture": "initial",
+      "file": "life-1280.png",
+      "sha256": "e17fd642854b8eaceba1ac6cbf0104f02833f1a8f6339d79d79034307f63e2a8",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "本周计划"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 4
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "career",
+      "surface": "1280",
+      "fixture": "initial",
+      "file": "career-1280.png",
+      "sha256": "8c94710c4edbe7a95d2a7b6a6e144168c00b59982d8e436d7a4507607d955dca",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "职业"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "shop",
+      "surface": "1280",
+      "fixture": "initial",
+      "file": "shop-1280.png",
+      "sha256": "f571bc6a9faf8e6e8da00e397cc238e85917c6374df8fe7640f7478c4e11a0fd",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "商品"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "wealth",
+      "surface": "1280",
+      "fixture": "initial",
+      "file": "wealth-1280.png",
+      "sha256": "dde8168ebaf49cc0848bc677f4f719a4eb4f3080b3706056bf7341b858cfff8d",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "财富"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "social",
+      "surface": "1280",
+      "fixture": "initial",
+      "file": "social-1280.png",
+      "sha256": "f898682130df7fd19a1f65f31bb1db79607701890639b9d9f30d3b102a285417",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "社交"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "city",
+      "surface": "1280",
+      "fixture": "initial",
+      "file": "city-1280.png",
+      "sha256": "d3c1e4c0970928c8e9aaadb1fd620f6bdc54d54f06e2c115e781c3a316fb724b",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "城市与地点"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 5
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "profile",
+      "surface": "1280",
+      "fixture": "initial",
+      "file": "profile-1280.png",
+      "sha256": "ca38bc8c65402e2a542f5e7d8cf614ca26c9323d1bb076477628e02bea9aff81",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "我的"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "shop-activities",
+      "surface": "1280",
+      "fixture": "initial",
+      "file": "shop-activities-1280.png",
+      "sha256": "9cab1b716833d0749045b017e480367c1ae5cb8cea843a0137a14d42230614e3",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "商品"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "shop-populated",
+      "surface": "1280",
+      "fixture": "populated",
+      "file": "shop-populated-1280.png",
+      "sha256": "08f2bc58b4290ae569b6fc71a53ce6e46e30d42d3db328e4fbddb9115db8d8d6",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 614,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "商品"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "life-four-messages",
+      "surface": "1280",
+      "fixture": "populated",
+      "file": "life-four-messages-1280.png",
+      "sha256": "d493719f0a707b654662a6b30627f163380313b832e834b83da80f83e3e0c0dd",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 269,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "本周计划"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 4
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "career-support",
+      "surface": "1280",
+      "fixture": "initial",
+      "file": "career-support-1280.png",
+      "sha256": "760b9cd70f2fe6d1425b0c72be430793a0955abbcd0f7687a48314866951f0a4",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 556,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "职业"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "career-populated",
+      "surface": "1280",
+      "fixture": "career",
+      "file": "career-populated-1280.png",
+      "sha256": "157a07f48c8dcf164488ca8f13549c870c5dca6da8e1da18ae282e9e1367b67c",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 527,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "职业"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "life-long-activity",
+      "surface": "1280",
+      "fixture": "longActivity",
+      "file": "life-long-activity-1280.png",
+      "sha256": "458a2c2a3f050f791e12e0eb8968c3c2c946d65267992c4d8cb6618d58d23334",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 6,
+          "hour": 10,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "本周计划"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 4
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "monthly-summary",
+      "surface": "1280",
+      "fixture": "initial + real UI advance/decisions",
+      "file": "monthly-summary-1280.png",
+      "sha256": "556ad4bd4c314ff35b3fd1f4350fd6c6df5f294563f2ce04de7bb3789fb13495",
+      "metrics": {
+        "width": 1280,
+        "height": 720,
+        "dpr": 1,
+        "overflowX": false,
+        "mainScrollTop": 374,
+        "time": {
+          "day": 29,
+          "hour": 0,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "本周计划",
+          "住房"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 4
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI",
+              "isCustomFont": false,
+              "glyphCount": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "scene": "life",
+      "surface": "landscape",
+      "fixture": "initial",
+      "file": "life-landscape.png",
+      "sha256": "018aa3fec34e0197eddb3aabe7864ba40fe7640f84244e6e1ea28d3573248368",
+      "metrics": {
+        "width": 863,
+        "height": 360,
+        "dpr": 2.625,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "本周计划"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 4
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": []
+        }
+      ]
+    },
+    {
+      "scene": "career",
+      "surface": "landscape",
+      "fixture": "initial",
+      "file": "career-landscape.png",
+      "sha256": "54444f44442c39c2573a566a35c2dcf7d13a12789fccbca00991ea9ad93f1c33",
+      "metrics": {
+        "width": 863,
+        "height": 360,
+        "dpr": 2.625,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "职业"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": []
+        }
+      ]
+    },
+    {
+      "scene": "shop",
+      "surface": "landscape",
+      "fixture": "initial",
+      "file": "shop-landscape.png",
+      "sha256": "51c3976751834dd3424a33a2c6712c9fc86d0195aa1306d7a0de02c08f620587",
+      "metrics": {
+        "width": 863,
+        "height": 360,
+        "dpr": 2.625,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "商品"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": []
+        }
+      ]
+    },
+    {
+      "scene": "wealth",
+      "surface": "landscape",
+      "fixture": "initial",
+      "file": "wealth-landscape.png",
+      "sha256": "462628e6d08c3d41fa3a1d61080bdd7339f37fdac7929acdcee107db95e153e6",
+      "metrics": {
+        "width": 863,
+        "height": 360,
+        "dpr": 2.625,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "财富"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": []
+        }
+      ]
+    },
+    {
+      "scene": "social",
+      "surface": "landscape",
+      "fixture": "initial",
+      "file": "social-landscape.png",
+      "sha256": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1",
+      "metrics": {
+        "width": 863,
+        "height": 360,
+        "dpr": 2.625,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "社交"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": []
+        }
+      ]
+    },
+    {
+      "scene": "city",
+      "surface": "landscape",
+      "fixture": "initial",
+      "file": "city-landscape.png",
+      "sha256": "5cec759e73b360736ae1962f819aa1ab10d73e91a4c9255043bc061fca5062a6",
+      "metrics": {
+        "width": 863,
+        "height": 360,
+        "dpr": 2.625,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "城市与地点"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 5
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": []
+        }
+      ]
+    },
+    {
+      "scene": "profile",
+      "surface": "landscape",
+      "fixture": "initial",
+      "file": "profile-landscape.png",
+      "sha256": "f2b1a4343fdce35da27ecf880f89c1219518d5e22013e09a67df6f2efdc558cc",
+      "metrics": {
+        "width": 863,
+        "height": 360,
+        "dpr": 2.625,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "我的"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": []
+        }
+      ]
+    },
+    {
+      "scene": "shop-activities",
+      "surface": "landscape",
+      "fixture": "initial",
+      "file": "shop-activities-landscape.png",
+      "sha256": "565c1549a96485f3a3e8dea75a269781c74d0ef623fbdd88d802c610e3c264ac",
+      "metrics": {
+        "width": 863,
+        "height": 360,
+        "dpr": 2.625,
+        "overflowX": false,
+        "mainScrollTop": 0,
+        "time": {
+          "day": 1,
+          "hour": 8,
+          "minute": 0
+        },
+        "dialog": null,
+        "h1": [
+          "商品"
+        ]
+      },
+      "fonts": [
+        {
+          "selector": "main h1",
+          "fonts": [
+            {
+              "familyName": "Microsoft YaHei UI",
+              "postScriptName": "MicrosoftYaHeiUI-Bold",
+              "isCustomFont": false,
+              "glyphCount": 2
+            }
+          ]
+        },
+        {
+          "selector": ".brand-subtitle",
+          "fonts": []
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "browser": "154.0.8037.95"
+}

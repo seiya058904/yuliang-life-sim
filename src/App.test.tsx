@@ -292,12 +292,16 @@ describe('余量 app flow', () => {
 
     const identity = screen.getByRole('region', { name: '招聘市场布局' }).querySelector('.career-market-identity') as HTMLElement;
     const mark = identity.querySelector('.career-market-identity-mark');
-    const title = identity.querySelector('h1');
+    const title = identity.querySelector('h2');
 
     expect(mark).not.toBeNull();
     expect(mark).toHaveClass('pixel-illustration', 'il-career-market');
     expect(mark).toHaveAttribute('aria-hidden', 'true');
     expect(title).not.toBeNull();
+    const main = within(screen.getByRole('main'));
+    expect(main.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(main.getByRole('heading', { name: '职业', level: 1 })).toBeVisible();
+    expect(main.getByRole('heading', { name: '招聘市场', level: 2 })).toBe(title);
     expect(mark!.compareDocumentPosition(title!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -693,13 +697,14 @@ describe('余量 app flow', () => {
     expect(sort).toHaveValue('price-asc');
     await user.selectOptions(sort, 'price-desc');
     expect(sort).toHaveValue('price-desc');
-    expect(within(shop).getAllByRole('heading', { level: 2 })[0]).toHaveTextContent('小型钻石吊坠');
+    const catalog = shop.querySelector('.item-grid') as HTMLElement;
+    expect(within(catalog).getAllByRole('heading', { level: 2 })[0]).toHaveTextContent('小型钻石吊坠');
 
     const filterToggle = within(shop).getByRole('button', { name: /^筛选/ });
     await user.click(filterToggle);
     expect(shop.querySelector('.shop-category-filters')).toHaveClass('is-open');
     await user.click(within(shop).getByRole('button', { name: '休闲用品' }));
-    expect(within(shop).getByRole('heading', { name: '一束花' })).toBeInTheDocument();
+    expect(within(catalog).getByRole('heading', { name: '一束花' })).toBeInTheDocument();
   });
 
   it('keeps the shop rail in explicit header, content, and action modules', async () => {

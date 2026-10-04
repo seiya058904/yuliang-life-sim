@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
-import { awaitCanonicalSynced, installSaveBridge, readPersistedState, wipeSave } from './harness';
+import { balanceConfig } from '../src/game/balance/config';
+import { contentRegistry } from '../src/game/content/registry';
+import { createInitialState } from '../src/game/engine/initialState';
+import { awaitCanonicalSynced, findCatalogEntry, installSaveBridge, openProfilePage, openWealthPage, readPersistedState, wipeSave } from './harness';
+import { targetVisibility, wheelMainToBottom, wheelMainUntilVisible, wheelToAndClick } from './harness';
+import { CONSOLE_INK, CONSOLE_PANEL, expectReadableCatalog, expectReadableContrast, expectSelectionFrame, expectSquarePixelSurfaces } from './visual-contract';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./');
@@ -55,7 +60,7 @@ test('discovers a named city venue and reaches its activity entry', async ({ pag
   await expect(venue).toContainText('去咖啡馆坐一会');
   await venue.getByRole('button', { name: '去安排活动' }).click();
   await expect(page.getByRole('heading', { name: '娱乐与生活活动' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '已选活动详情' }).getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeVisible();
 });
 
 test('discovers the bookstore venue and reaches its knowledge activity', async ({ page }) => {
@@ -63,9 +68,11 @@ test('discovers the bookstore venue and reaches its knowledge activity', async (
   const venue = page.getByRole('heading', { name: '叶脉书店' }).locator('..');
   await expect(venue).toContainText('周末逛书店');
   await venue.getByRole('button', { name: '去安排活动' }).click();
-  await expect(page.getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '周末逛书店 · 和周妍一起逛' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '已选活动详情' }).getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeVisible();
+  const zhouActivity = await findCatalogEntry(page, '周末逛书店 · 和周妍一起逛', '活动');
+  await expect(zhouActivity.getByRole('heading', { name: '周末逛书店 · 和周妍一起逛' })).toBeVisible();
+  const linActivity = await findCatalogEntry(page, '周末逛书店 · 和林晨一起逛', '活动');
+  await expect(linActivity.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeVisible();
 });
 
 test('discovers the vinyl venue and reaches its music activity', async ({ page }) => {
@@ -74,7 +81,7 @@ test('discovers the vinyl venue and reaches its music activity', async ({ page }
   await expect(venue).toContainText('演唱会');
   await expect(venue).not.toContainText('周末逛书店');
   await venue.getByRole('button', { name: '去安排活动' }).click();
-  await expect(page.getByRole('heading', { name: '演唱会 · 去现场' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '已选活动详情' }).getByRole('heading', { name: '演唱会 · 去现场' })).toBeVisible();
 });
 
 test('discovers the riverside night market venue and reaches its activity entry', async ({ page }) => {
@@ -82,7 +89,7 @@ test('discovers the riverside night market venue and reaches its activity entry'
   const venue = page.getByRole('heading', { name: '临江夜市' }).locator('..');
   await expect(venue).toContainText('河畔夜市');
   await venue.getByRole('button', { name: '去安排活动' }).click();
-  await expect(page.getByRole('heading', { name: '河畔夜市 · 逛一圈' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '已选活动详情' }).getByRole('heading', { name: '河畔夜市 · 逛一圈' })).toBeVisible();
 });
 
 test('uses the public market, plans a week, pauses for shopping, and restores the save', async ({ page }) => {
@@ -245,25 +252,20 @@ test('keeps Shop product facts above the purchase rail', async ({ page }) => {
     };
   }));
 
-  expect(cards.length).toBe(12);
-  expect(cards.every(({ factsBottom, footTop, factFontSize, factRowHeight }) => factsBottom <= footTop && factFontSize >= 10 && factRowHeight >= 13)).toBe(true);
+  // Six natural-height entries replace the historical twelve-card matrix.
+  expect(cards.length).toBe(6);
+  expect(cards.every(({ factsBottom, footTop, factFontSize, factRowHeight }) => factsBottom <= footTop && factFontSize >= 12 && factRowHeight >= 18)).toBe(true);
 });
 
-test('keeps Shop catalog cards on the shared stepped pixel corners', async ({ page }) => {
+test('keeps Shop catalog cards on square bordered pixel surfaces', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop card frame geometry targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
 
-  const frames = await page.locator('.view-shop .shop-main .item-card, .view-shop .shop-main .activity-card').evaluateAll((cards) => cards.map((card) => {
-    const style = getComputedStyle(card);
-    return { clipPath: style.clipPath, borderWidth: style.borderTopWidth };
-  }));
-
-  expect(frames.length).toBeGreaterThanOrEqual(12);
-  expect(frames.every(({ clipPath, borderWidth }) => clipPath !== 'none' && borderWidth === '1px')).toBe(true);
+  await expectSquarePixelSurfaces(page.locator('.view-shop .shop-main .item-card'), 6);
 });
 
-test('keeps the shop utility rail on the stepped header-row-footer surfaces', async ({ page }) => {
+test('keeps the Shop utility rail readable on the shared dark surface', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'inverse Rail assertion targets the supported desktop landscape surface');
   await page.getByRole('button', { name: '商店', exact: true }).click();
 
@@ -272,22 +274,19 @@ test('keeps the shop utility rail on the stepped header-row-footer surfaces', as
 
   const cart = page.locator('.shop-rail .rail-cart');
   const schedule = page.locator('.shop-rail .rail-schedule');
-  await expect(cart).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(cart.locator('header')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(cart.locator('.rail-rows li').first()).toHaveCSS('background-color', 'rgb(241, 241, 241)');
+  await expect(cart).toHaveCSS('background-color', CONSOLE_PANEL);
+  await expectReadableContrast(cart.locator('header strong, .rail-rows li > span'));
   await expect(cart.locator('.rail-rows li .pixel-illustration')).toHaveCount(1);
-  await expect(cart.getByRole('button', { name: '一次购买' })).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(schedule).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(schedule.locator('header')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(schedule.locator('.rail-rows li').first()).toHaveCSS('background-color', 'rgb(241, 241, 241)');
+  await expectReadableContrast(cart.getByRole('button', { name: '一次购买' }));
+  await expect(schedule).toHaveCSS('background-color', CONSOLE_PANEL);
+  await expectReadableContrast(schedule.locator('header strong, .rail-rows li > span'));
   await expect(schedule.locator('.rail-rows li .pixel-icon')).toHaveCount(6);
-  await expect(schedule.getByRole('button', { name: '查看完整安排' })).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(page.locator('.shop-rail .rail-inventory')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
+  await expectReadableContrast(schedule.getByRole('button', { name: '查看完整安排' }));
+  await expect(page.locator('.shop-rail .rail-inventory')).toHaveCSS('background-color', CONSOLE_PANEL);
 
   for (const moduleSelector of ['.rail-inventory', '.rail-wishlist']) {
     const heading = page.locator(`.shop-rail ${moduleSelector} .section-heading`);
-    await expect(heading).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-    await expect(heading.getByRole('heading')).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await expectReadableContrast(heading.getByRole('heading'));
   }
 });
 
@@ -321,32 +320,24 @@ test('keeps the Shop catalog and utility rail in the reference proportion', asyn
     };
   });
 
-  expect(layout.width).toBeGreaterThanOrEqual(1298);
-  expect(layout.width).toBeLessThanOrEqual(1312);
-  expect(layout.mainWidth).toBeGreaterThanOrEqual(1000);
-  expect(layout.mainWidth).toBeLessThanOrEqual(1030);
-  expect(layout.railWidth).toBeGreaterThanOrEqual(270);
-  expect(layout.railWidth).toBeLessThanOrEqual(290);
-  expect(layout.gap).toBeGreaterThanOrEqual(10);
-  expect(layout.gap).toBeLessThanOrEqual(20);
-  // Reference anatomy: the utility rail starts ~15px above the tab-bar line
-  // so the cart module tops out beside the shop header strip.
-  expect(layout.tabsTop - layout.railTop).toBeGreaterThanOrEqual(12);
-  expect(layout.tabsTop - layout.railTop).toBeLessThanOrEqual(18);
+  const available = await page.locator('.shop-layout').evaluate(element => {
+    const parent = element.parentElement!;
+    const style = getComputedStyle(parent);
+    return parent.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+  });
+  expect(layout.width).toBe(available);
+  expect(layout.mainWidth).toBeGreaterThan(layout.railWidth * 3);
+  expect(layout.railWidth).toBe(280);
+  expect(layout.gap).toBe(16);
+  expect(Math.abs(layout.tabsTop - layout.railTop)).toBeLessThanOrEqual(1);
   expect(layout.tabWidths).toHaveLength(6);
-  expect(layout.tabWidths.every((width) => width >= 94 && width <= 106)).toBe(true);
-  expect(layout.tabGaps.every((gap) => gap >= 14 && gap <= 24)).toBe(true);
-  expect(layout.tabLeftInset).toBeGreaterThanOrEqual(12);
-  expect(layout.tabLeftInset).toBeLessThanOrEqual(20);
-  expect(layout.tabToToolbarGap).toBeGreaterThanOrEqual(44);
-  expect(layout.tabToToolbarGap).toBeLessThanOrEqual(66);
-  expect(layout.toolbarRightInset).toBeGreaterThanOrEqual(12);
-  expect(layout.toolbarRightInset).toBeLessThanOrEqual(24);
-  expect(layout.toolbarGaps.every((gap) => gap >= 14 && gap <= 24)).toBe(true);
-  expect(layout.toolbarControlWidths[0]).toBeGreaterThanOrEqual(108);
-  expect(layout.toolbarControlWidths[0]).toBeLessThanOrEqual(118);
-  expect(layout.toolbarControlWidths[1]).toBeGreaterThanOrEqual(104);
-  expect(layout.toolbarControlWidths[1]).toBeLessThanOrEqual(116);
+  expect(layout.tabWidths.every(width => width >= 60)).toBe(true);
+  expect(layout.tabGaps.every(gap => gap === 4)).toBe(true);
+  expect(layout.tabLeftInset).toBe(0);
+  expect(layout.tabToToolbarGap).toBeGreaterThanOrEqual(12);
+  expect(layout.toolbarRightInset).toBe(0);
+  expect(layout.toolbarGaps.every(gap => gap === 8)).toBe(true);
+  expect(layout.toolbarControlWidths.every(width => width >= 36)).toBe(true);
 });
 
 test('keeps empty Career and Shop support bodies on explicit state lanes', async ({ page }) => {
@@ -375,19 +366,14 @@ test('keeps empty Career and Shop support bodies on explicit state lanes', async
   const rail = page.locator('.shop-rail');
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);
-  // Cart and Inventory keep their compact dark status lanes.
-  for (const index of [0, 1]) {
-    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(241, 241, 241)');
-    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
+  for (const index of [0, 1, 2]) {
+    // Empty states inherit the rail's one frame; they do not create nested boxes.
+    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+    await expectReadableContrast(emptyStates.nth(index).locator('strong, small'));
   }
-  // The Wishlist status lane sits on its light reading panel instead.
-  await expect(emptyStates.nth(2)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(emptyStates.nth(2).locator('strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
-  await expect(emptyStates.nth(2).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
 });
 
-test('keeps an empty Shop Rail in the tall reference frame', async ({ page }) => {
+test('keeps every empty Shop Rail module reachable in the main scroll context', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'tall empty Shop Rail footprint targets the primary desktop surface');
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -408,26 +394,15 @@ test('keeps an empty Shop Rail in the tall reference frame', async ({ page }) =>
     };
   });
 
-  expect(footprint.height).toBeGreaterThanOrEqual(780);
-  expect(footprint.bottom).toBeLessThanOrEqual(footprint.footerTop);
   expect(footprint.modules).toHaveLength(4);
-  expect(footprint.modules[0].height).toBeGreaterThanOrEqual(180);
-  expect(footprint.modules[1].height).toBeGreaterThanOrEqual(240);
-  expect(footprint.modules[2].height).toBeGreaterThanOrEqual(84);
-  expect(footprint.modules[3].height).toBeGreaterThanOrEqual(200);
+  expect(footprint.modules.every(module => module.height > 0)).toBe(true);
+  await expectSquarePixelSurfaces(rail.locator(':scope > .rail-module'), 4);
+  const lastState = rail.locator('.rail-wishlist .shop-rail-empty');
+  expect((await wheelMainUntilVisible(page, lastState)).fullyVisible).toBe(true);
 
   const emptyStates = rail.locator('.shop-rail-empty');
   await expect(emptyStates).toHaveCount(3);
-  // Cart and Inventory keep their compact dark status lanes.
-  for (const index of [0, 1]) {
-    await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-    await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(241, 241, 241)');
-    await expect(emptyStates.nth(index).locator('small')).toHaveCSS('color', 'rgb(170, 170, 170)');
-  }
-  // The Wishlist status lane sits on its light reading panel instead.
-  await expect(emptyStates.nth(2)).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-  await expect(emptyStates.nth(2).locator('strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
-  await expect(emptyStates.nth(2).locator('small')).toHaveCSS('color', 'rgb(85, 85, 85)');
+  await expectReadableContrast(emptyStates.locator('strong, small'));
 });
 
 test('keeps the tall Shop inventory lane as a compact dark strip', async ({ page }) => {
@@ -447,10 +422,10 @@ test('keeps the tall Shop inventory lane as a compact dark strip', async ({ page
     };
   });
 
-  expect(geometry.height).toBeGreaterThanOrEqual(84);
-  expect(geometry.height).toBeLessThanOrEqual(104);
-  expect(geometry.headingHeight).toBeLessThanOrEqual(42);
-  expect(geometry.stateHeight).toBeLessThanOrEqual(70);
+  // Bound whitespace by the real header and copy, not the old 104px strip.
+  expect(geometry.height).toBeLessThanOrEqual(geometry.headingHeight + geometry.stateHeight + 48);
+  await expect(inventory.locator('> .detail-panel')).toHaveCSS('padding', '0px');
+  await expect(inventory.locator('> .detail-panel')).toHaveCSS('border-width', '0px');
 });
 
 test('keeps populated Shop inventory as an actionable pixel strip', async ({ page }) => {
@@ -486,16 +461,22 @@ test('keeps populated Shop inventory as an actionable pixel strip', async ({ pag
       stripClientWidth: strip?.clientWidth ?? 0,
     };
   });
-  expect(geometry.height).toBeLessThanOrEqual(104);
-  expect(geometry.stripHeight).toBeGreaterThanOrEqual(42);
-  expect(geometry.stripHeight).toBeLessThanOrEqual(62);
+  const rows = await strip.locator('.inventory-item').evaluateAll(elements => elements.map(element => {
+    const rect = element.getBoundingClientRect();
+    const copy = element.querySelector('.inventory-item-copy')!.getBoundingClientRect();
+    const action = element.querySelector('button')!.getBoundingClientRect();
+    return { height: rect.height, copyRight: copy.right, actionLeft: action.left, actionHeight: action.height };
+  }));
+  expect(rows).toHaveLength(2);
+  expect(rows.every(row => row.height <= 80 && row.copyRight <= row.actionLeft && row.actionHeight >= 36)).toBe(true);
+  expect(geometry.stripHeight).toBeLessThanOrEqual(rows.reduce((sum, row) => sum + row.height, 0) + 8);
   expect(geometry.stripScrollWidth).toBeLessThanOrEqual(geometry.stripClientWidth);
 
-  await strip.getByRole('button', { name: '使用一次', exact: true }).click();
+  await wheelToAndClick(page, strip.getByRole('button', { name: '使用一次', exact: true }));
   await expect(strip.getByText('现磨咖啡', { exact: true })).toHaveCount(0);
 });
 
-test('keeps populated Shop wishlist as light action rows under a dark header', async ({ page }) => {
+test('keeps populated Shop wishlist readable and actionable on its shared rail surface', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
   test.skip((page.viewportSize()?.width ?? 0) < 1321 || (page.viewportSize()?.height ?? 0) < 801, 'populated wishlist surface targets the primary desktop surface');
   const saveKey = 'yuliang-save-v1';
@@ -515,12 +496,12 @@ test('keeps populated Shop wishlist as light action rows under a dark header', a
   await expect(row).toContainText('实用手机');
   await expect(row.getByRole('button', { name: '买下', exact: true })).toBeVisible();
   await expect(row.getByRole('button', { name: '移除', exact: true })).toBeVisible();
-  await expect(wishlist).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(heading).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(heading.getByRole('heading')).toHaveCSS('color', 'rgb(255, 255, 255)');
-  await expect(row).toHaveCSS('background-color', 'rgb(241, 241, 241)');
+  await expect(wishlist).toHaveCSS('background-color', CONSOLE_PANEL);
+  await expectReadableContrast(heading.getByRole('heading'));
+  await expectReadableContrast(row.locator('h2,p,strong,button'));
   await expect(row.locator('.pixel-icon')).toHaveCount(1);
-  await expect(row.getByRole('button', { name: '买下', exact: true })).toHaveCSS('color', 'rgb(0, 0, 0)');
+  await wheelToAndClick(page, row.getByRole('button', { name: '移除', exact: true }));
+  await expect(row).toHaveCount(0);
 });
 
 test('keeps low-height Shop support content in the main scroll context', async ({ page }) => {
@@ -555,94 +536,50 @@ test('keeps low-height Shop support content in the main scroll context', async (
   expect(layout.footerTop).toBeGreaterThanOrEqual(layout.mainBottom);
 });
 
-test('keeps the low-height Shop product matrix above the persistent footer', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height desktop product fit targets the supported landscape surface');
+test('keeps low-height Shop goods readable and wheel-reachable above the footer', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
-
-  const layout = await page.evaluate(() => {
-    const cards = Array.from(document.querySelectorAll<HTMLElement>('.view-shop .shop-main .item-card')).slice(0, 12).map((card) => {
-      const rect = card.getBoundingClientRect();
-      const cta = card.querySelector<HTMLElement>('.item-card-foot .primary-button')?.getBoundingClientRect();
-      const contentBottom = Math.max(
-        card.querySelector<HTMLElement>('.card-art')?.getBoundingClientRect().bottom ?? 0,
-        card.querySelector<HTMLElement>('.catalog-title-row')?.getBoundingClientRect().bottom ?? 0,
-        card.querySelector<HTMLElement>('.catalog-facts')?.getBoundingClientRect().bottom ?? 0,
-        card.querySelector<HTMLElement>('.item-card-foot')?.getBoundingClientRect().bottom ?? 0,
-      );
-      return {
-        bottom: rect.bottom,
-        height: rect.height,
-        ctaBottom: cta?.bottom ?? 0,
-        contentBottom,
-      };
-    });
-    const footer = document.querySelector('.persistent-status')?.getBoundingClientRect();
-    const pager = document.querySelector('.view-shop .catalog-pager')?.getBoundingClientRect();
-    return {
-      cards,
-      footerTop: footer?.top ?? 0,
-      pagerTop: pager?.top ?? 0,
-      maxBottom: Math.max(...cards.map(({ bottom }) => bottom)),
-    };
-  });
-
-  expect(layout.cards).toHaveLength(12);
-  expect(layout.cards.every(({ height, ctaBottom, contentBottom, bottom }) =>
-    height >= 108 && height <= 120 && ctaBottom <= bottom + 0.5 && contentBottom <= bottom - 1
-  )).toBe(true);
-  expect(layout.maxBottom).toBeLessThanOrEqual(layout.footerTop - 8);
-  expect(layout.pagerTop).toBeGreaterThanOrEqual(layout.footerTop);
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByRole('tab', { name: '商品', exact: true }).click();
+  const cards = page.locator('.view-shop .shop-main .item-card');
+  await expectReadableCatalog(cards, 'goods');
+  const action = cards.locator('.item-card-foot button').last();
+  await wheelToAndClick(page, action);
+  await expect(page.locator('.rail-cart')).toContainText('购物袋（1）');
+  const pager = page.getByRole('navigation', { name: '商品分页', exact: true });
+  await wheelToAndClick(page, pager.getByRole('button', { name: '2', exact: true }));
+  await expect(pager.getByRole('button', { name: '2', exact: true })).toHaveAttribute('aria-current', 'page');
+  expect((await wheelMainUntilVisible(page, pager)).fullyVisible).toBe(true);
 });
 
-test('keeps the low-height Shop entertainment matrix above the persistent footer', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height desktop activity fit targets the supported landscape surface');
+test('keeps low-height Shop activities readable and wheel-reachable above the footer', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1280, height: 720 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '娱乐', exact: true }).click();
-
-  const layout = await page.evaluate(() => {
-    const cards = Array.from(document.querySelectorAll<HTMLElement>('.view-shop .shop-main .activity-card')).slice(0, 12).map((card) => {
-      const rect = card.getBoundingClientRect();
-      const cta = card.querySelector<HTMLElement>('.activity-card-body > .secondary-button')?.getBoundingClientRect();
-      const contentBottom = Math.max(
-        card.querySelector<HTMLElement>('.card-art')?.getBoundingClientRect().bottom ?? 0,
-        card.querySelector<HTMLElement>('.catalog-title-row')?.getBoundingClientRect().bottom ?? 0,
-        card.querySelector<HTMLElement>('.catalog-facts')?.getBoundingClientRect().bottom ?? 0,
-        cta?.bottom ?? 0,
-      );
-      return { bottom: rect.bottom, height: rect.height, ctaBottom: cta?.bottom ?? 0, contentBottom };
-    });
-    const footer = document.querySelector('.persistent-status')?.getBoundingClientRect();
-    const pager = document.querySelector('.view-shop .catalog-pager')?.getBoundingClientRect();
-    return {
-      cards,
-      footerTop: footer?.top ?? 0,
-      pagerTop: pager?.top ?? 0,
-      maxBottom: Math.max(...cards.map(({ bottom }) => bottom)),
-    };
-  });
-
-  expect(layout.cards).toHaveLength(12);
-  expect(layout.cards.every(({ height, ctaBottom, contentBottom, bottom }) =>
-    height >= 108 && height <= 120 && ctaBottom <= bottom + 0.5 && contentBottom <= bottom - 1
-  )).toBe(true);
-  expect(layout.maxBottom).toBeLessThanOrEqual(layout.footerTop - 8);
-  expect(layout.pagerTop).toBeGreaterThanOrEqual(layout.footerTop);
+  const cards = page.locator('.view-shop .shop-main .activity-card');
+  await expectReadableCatalog(cards, 'activities');
+  const action = cards.locator('.activity-card-body > button:not(:disabled)').last();
+  await wheelToAndClick(page, action);
+  await expect(page.getByText(/已安排：周/).first()).toBeVisible();
+  const pager = page.getByRole('navigation', { name: '活动分页', exact: true });
+  await wheelToAndClick(page, pager.getByRole('button', { name: '2', exact: true }));
+  await expect(pager.getByRole('button', { name: '2', exact: true })).toHaveAttribute('aria-current', 'page');
+  // Page two contains longer titles: use the same real scroll path after its
+  // natural height changes, without forcing the pager or shrinking the copy.
+  expect((await wheelMainUntilVisible(page, pager)).fullyVisible).toBe(true);
 });
 
-test('keeps Shop Rail modules on the shared stepped outer-frame grammar', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Rail frame grammar targets the supported desktop landscape surface');
+test('keeps Shop Rail modules on a single square pixel frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
-
-  const frames = await page.locator('.view-shop .shop-rail > .rail-module').evaluateAll((modules) => modules.map((module) => {
-    const style = getComputedStyle(module);
-    return { clipPath: style.clipPath, borderWidth: style.borderTopWidth };
-  }));
-
-  expect(frames).toHaveLength(4);
-  expect(frames.every(({ clipPath, borderWidth }) => clipPath !== 'none' && borderWidth === '2px')).toBe(true);
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  await expectSquarePixelSurfaces(page.locator('.view-shop .shop-rail > .rail-module'), 4);
+  for (const selector of ['.rail-inventory', '.rail-wishlist']) {
+    const inner = page.locator('.shop-rail ' + selector + ' > .detail-panel');
+    await expect(inner).toHaveCSS('border-width', '0px');
+    await expect(inner).toHaveCSS('padding', '0px');
+  }
 });
 
 test('keeps Shop inventory and wishlist rail headers on the shared icon grammar', async ({ page }) => {
@@ -655,144 +592,94 @@ test('keeps Shop inventory and wishlist rail headers on the shared icon grammar'
   await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty .pixel-illustration')).toHaveClass(/il-heart/);
 });
 
-test('keeps the Life forecast header on the reference inverse surface', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast header assertion targets the supported desktop landscape surface');
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const forecast = page.locator('.view-life .life-hero-grid > .forecast-strip.inverse');
-  const header = forecast.locator('.forecast-head');
+test('keeps the Life forecast header readable on its inverse reading surface', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const header = page.locator('.view-life .forecast-head');
   const title = header.getByRole('heading', { name: '本周剩余安排', exact: true });
-  const headerGeometry = await header.evaluate((element) => {
-    const rect = element.getBoundingClientRect();
-    return { height: rect.height, width: rect.width, scrollWidth: element.scrollWidth, clientWidth: element.clientWidth };
-  });
-
-  await expect(header).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(title).toHaveCSS('color', 'rgb(255, 255, 255)');
-  expect(headerGeometry.height).toBeGreaterThanOrEqual(42);
-  expect(headerGeometry.height).toBeLessThanOrEqual(58);
-  expect(headerGeometry.scrollWidth).toBeLessThanOrEqual(headerGeometry.clientWidth);
+  await expectReadableContrast(title);
+  expect(await title.evaluate(element => parseFloat(getComputedStyle(element).fontSize))).toBeGreaterThanOrEqual(20);
+  const geometry = await header.evaluate(element => ({ width: element.clientWidth, scrollWidth: element.scrollWidth }));
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.width);
+  await expect(header.getByText('预测范围', { exact: true })).toBeVisible();
 });
 
-test('keeps the tall Life Hero clock on the dominant pixel-display tier', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Life Hero display tier is desktop-only');
+test('keeps the tall Life pixel clock dominant and contained in its time column', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const clock = await page.locator('.view-life .hero-clock').evaluate((element) => {
-    const style = getComputedStyle(element);
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const clock = await page.locator('.view-life .hero-clock').evaluate(element => {
     const rect = element.getBoundingClientRect();
-    return {
-      unit: Number.parseFloat(style.getPropertyValue('--pixel-clock-unit')),
-      width: rect.width,
-      height: rect.height,
-    };
+    const column = element.closest('.hero-time')!.getBoundingClientRect();
+    const unit = parseFloat(getComputedStyle(element).getPropertyValue('--pixel-clock-unit'));
+    return { unit, width: rect.width, height: rect.height, left: rect.left, right: rect.right, columnLeft: column.left, columnRight: column.right };
   });
-
-  expect(clock.unit).toBeGreaterThanOrEqual(12);
-  expect(clock.width).toBeGreaterThanOrEqual(270);
-  expect(clock.width).toBeLessThanOrEqual(285);
-  expect(clock.height).toBeGreaterThanOrEqual(84);
-  expect(clock.height).toBeLessThanOrEqual(92);
+  expect(clock.unit).toBe(11);
+  expect(clock.height).toBeGreaterThanOrEqual(77);
+  expect(clock.left).toBeGreaterThanOrEqual(clock.columnLeft);
+  expect(clock.right).toBeLessThanOrEqual(clock.columnRight + 0.5);
+  await expect(page.getByTestId('clock-value')).toHaveAttribute('aria-label', /08:00/);
 });
 
-test('keeps the tall Life time column on the reference stepped rhythm', async ({ page }) => {
+test('keeps time, date and the real day timeline in a contained reading order', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-  test.skip((page.viewportSize()?.width ?? 0) < 1181 || (page.viewportSize()?.height ?? 0) < 801, 'Life time-column rhythm targets the primary desktop surface');
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const geometry = await page.locator('.view-life .hero-time').evaluate((timeColumn) => {
-    const column = timeColumn.getBoundingClientRect();
-    const read = (selector: string) => {
-      const rect = timeColumn.querySelector<HTMLElement>(selector)?.getBoundingClientRect();
-      return { left: rect?.left ?? 0, top: rect?.top ?? 0, bottom: rect?.bottom ?? 0, width: rect?.width ?? 0, height: rect?.height ?? 0 };
-    };
-    return {
-      label: read('.console-kicker'),
-      clock: read('.hero-clock'),
-      date: read('.hero-date'),
-      icon: read('.hero-day-icon'),
-      column: { left: column.left, top: column.top, right: column.right },
-    };
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const readings = await page.locator('.view-life .hero-time').evaluate(column => {
+    const frame = column.getBoundingClientRect();
+    return Array.from(column.children).map(element => {
+      const rect = element.getBoundingClientRect();
+      return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, frameLeft: frame.left, frameRight: frame.right, frameBottom: frame.bottom };
+    });
   });
-
-  expect(geometry.label.left - geometry.column.left).toBeGreaterThanOrEqual(18);
-  expect(geometry.label.top - geometry.column.top).toBeGreaterThanOrEqual(20);
-  expect(geometry.label.top - geometry.column.top).toBeLessThanOrEqual(34);
-  expect(geometry.clock.top - geometry.column.top).toBeGreaterThanOrEqual(68);
-  expect(geometry.clock.top - geometry.column.top).toBeLessThanOrEqual(92);
-  expect(geometry.clock.left - geometry.column.left).toBeGreaterThanOrEqual(18);
-  expect(geometry.clock.left - geometry.column.left).toBeLessThanOrEqual(26);
-  expect(geometry.date.top - geometry.column.top).toBeGreaterThanOrEqual(185);
-  expect(geometry.date.top - geometry.column.top).toBeLessThanOrEqual(225);
-  expect(geometry.icon.top - geometry.column.top).toBeGreaterThanOrEqual(175);
-  expect(geometry.icon.top - geometry.column.top).toBeLessThanOrEqual(220);
-  expect(geometry.icon.width).toBeGreaterThanOrEqual(36);
-  expect(geometry.icon.width).toBeLessThanOrEqual(44);
-  expect(geometry.icon.height).toBe(geometry.icon.width);
-  expect(geometry.icon.left).toBeLessThan(geometry.column.right - 36);
+  expect(readings).toHaveLength(5);
+  expect(readings.every(row => row.left >= row.frameLeft && row.right <= row.frameRight + 0.5 && row.bottom <= row.frameBottom + 0.5)).toBe(true);
+  expect(readings.slice(1).every((row, i) => row.top >= readings[i].bottom)).toBe(true);
+  await expect(page.getByRole('region', { name: '今日时间线', exact: true })).toBeVisible();
+  await expect(page.locator('.week-track .current')).toHaveText('周一');
 });
 
-test('keeps the Life forecast rail on the reference band surface', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast surface assertion targets the supported desktop landscape surface');
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
+test('keeps weekly finance and attributes on one readable inverse surface', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
   const forecast = page.locator('.view-life .life-hero-grid > .forecast-strip.inverse');
-  const head = forecast.locator('.forecast-head');
-  const net = forecast.locator('.forecast-net');
-  await expect(forecast).toHaveCSS('background-color', 'rgb(241, 241, 241)');
-  await expect(head).toHaveCSS('background-color', 'rgb(0, 0, 0)');
-  await expect(head.locator('h2')).toHaveCSS('color', 'rgb(255, 255, 255)');
-  await expect(forecast.locator('.forecast-row').first()).toHaveCSS('background-color', 'rgb(241, 241, 241)');
-  await expect(forecast.locator('.forecast-attrs')).toHaveCSS('background-color', 'rgb(241, 241, 241)');
-  await expect(net).toHaveCSS('background-color', 'rgb(241, 241, 241)');
-  await expect(net).toHaveCSS('border-top-style', 'dashed');
-  await expect(net.locator('span')).toHaveCSS('color', 'rgb(0, 0, 0)');
-  await expect(net.locator('strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
+  await expect(forecast).toHaveCSS('background-color', CONSOLE_INK);
+  await expect(forecast.locator('.forecast-head')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(forecast.locator('.forecast-row')).toHaveCount(2);
+  await expect(forecast.locator('.forecast-attr')).toHaveCount(5);
+  await expect(forecast.locator('.forecast-net')).toHaveCSS('border-top-style', 'solid');
+  await expectReadableContrast(forecast.locator('.forecast-head h2, .forecast-row :is(span,strong), .forecast-net :is(span,strong), .forecast-attr > :is(span,b)'));
 });
 
-test('keeps the tall Life forecast rail on the extended reference tier', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'desktop', 'tall Life forecast footprint targets the desktop project');
+test('keeps the Life forecast aligned with its console and clear of the planner', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  test.skip((page.viewportSize()?.width ?? 0) < 1181 || (page.viewportSize()?.height ?? 0) < 801, 'tall Life forecast footprint targets the primary desktop surface');
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const geometry = await page.locator('.view-life .life-hero-grid > .forecast-strip.inverse').evaluate((forecast) => {
-    const forecastRect = forecast.getBoundingClientRect();
-    const consoleRect = forecast.parentElement?.querySelector('.time-console')?.getBoundingClientRect();
-    const planningRect = document.querySelector('.view-life .life-planning-section')?.getBoundingClientRect();
-    const moreRect = forecast.querySelector('.forecast-more')?.getBoundingClientRect();
-    return {
-      forecastHeight: forecastRect.height,
-      forecastBottom: forecastRect.bottom,
-      consoleBottom: consoleRect?.bottom ?? 0,
-      planningTop: planningRect?.top ?? 0,
-      moreBottom: moreRect?.bottom ?? 0,
-    };
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const geometry = await page.locator('.view-life .life-hero-grid > .forecast-strip.inverse').evaluate(forecast => {
+    const rect = forecast.getBoundingClientRect();
+    const console = forecast.parentElement!.querySelector('.time-console')!.getBoundingClientRect();
+    const planner = document.querySelector('.life-planning-section')!.getBoundingClientRect();
+    const more = forecast.querySelector('.forecast-more')!.getBoundingClientRect();
+    return { top: rect.top, bottom: rect.bottom, consoleTop: console.top, consoleBottom: console.bottom, plannerTop: planner.top, moreBottom: more.bottom };
   });
-
-  // The reference rail is the tall tier (y143-553, 411px) against a 390px
-  // console, so it always overhangs the console and must stop short of the
-  // planner band. Our rail is still on the previous 400px tier, so the
-  // overhang is asserted as "exists" rather than at the reference's 20px.
-  expect(geometry.forecastHeight).toBeGreaterThanOrEqual(396);
-  expect(geometry.forecastBottom).toBeGreaterThan(geometry.consoleBottom);
-  expect(geometry.forecastBottom).toBeLessThanOrEqual(geometry.planningTop + 24);
-  expect(geometry.moreBottom).toBeGreaterThan(geometry.consoleBottom - 12);
+  expect(Math.abs(geometry.top - geometry.consoleTop)).toBeLessThanOrEqual(0.5);
+  expect(Math.abs(geometry.bottom - geometry.consoleBottom)).toBeLessThanOrEqual(0.5);
+  expect(geometry.bottom).toBeLessThan(geometry.plannerTop);
+  expect(geometry.moreBottom).toBeLessThan(geometry.bottom);
 });
 
-test('keeps the fitted Life forecast data surface flat inside its inverse frame', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast frame assertion targets the supported desktop landscape surface');
+test('keeps the Life forecast data flat without painted inner frames', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const innerFrames = await page.locator('.view-life .life-hero-grid > .forecast-strip.inverse > :is(.forecast-row, .forecast-net, .forecast-attrs)').evaluateAll((elements) => elements.map((element) => {
-    const pseudo = getComputedStyle(element, '::before');
-    return pseudo.display;
-  }));
-
-  expect(innerFrames).toHaveLength(4);
-  expect(innerFrames.every((display) => display === 'none')).toBe(true);
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const frames = await page.locator('.forecast-strip.inverse > :is(.forecast-row, .forecast-net, .forecast-attrs)').evaluateAll(elements => elements.map(element => ({
+    content: getComputedStyle(element, '::before').content,
+    background: getComputedStyle(element).backgroundImage,
+    shadow: getComputedStyle(element).boxShadow,
+  })));
+  expect(frames).toHaveLength(4);
+  expect(frames.every(frame => frame.content === 'none' && frame.background === 'none' && frame.shadow === 'none')).toBe(true);
 });
 
 test('keeps the Life activity progress and next-action band in the lower half of the hero', async ({ page }) => {
@@ -816,26 +703,30 @@ test('keeps the Life activity progress and next-action band in the lower half of
   expect(geometry.nextBottom).toBeGreaterThanOrEqual(geometry.heroTop + geometry.heroHeight * 0.74);
 });
 
-test('keeps a long Life activity title on one reference-like Hero line', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Life Hero title assertion targets the supported desktop landscape surface');
+test('keeps an authored long Life activity title readable without clipping', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const titleGeometry = await page.locator('.view-life .hero-activity h2').evaluate((element) => {
-    const style = getComputedStyle(element);
+  const state = createInitialState(contentRegistry, balanceConfig, 20260825);
+  await page.evaluate(async state => {
+    state.time = { day: 6, hour: 10, minute: 0 };
+    state.currentActivity = undefined;
+    state.weeklyPlan.days[6].day = { kind: 'activity', activityId: 'activity.premium-cinema', optionId: 'imax' };
+    await window.__e2eSave.write(state);
+  }, state);
+  await page.reload();
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const title = page.locator('.hero-activity h2');
+  await expect(title).toHaveText('IMAX 高规格电影');
+  const reading = await title.evaluate(element => {
     const rect = element.getBoundingClientRect();
-    return {
-      height: rect.height,
-      lineHeight: parseFloat(style.lineHeight),
-      whiteSpace: style.whiteSpace,
-      clientWidth: element.clientWidth,
-      scrollWidth: element.scrollWidth,
-    };
+    const parent = element.parentElement!.getBoundingClientRect();
+    const range = element.nextElementSibling!.getBoundingClientRect();
+    return { height: rect.height, line: parseFloat(getComputedStyle(element).lineHeight), right: rect.right, parentRight: parent.right, bottom: rect.bottom, rangeTop: range.top, width: element.clientWidth, scrollWidth: element.scrollWidth };
   });
-
-  expect(titleGeometry.whiteSpace).toBe('nowrap');
-  expect(titleGeometry.height).toBeLessThanOrEqual(titleGeometry.lineHeight * 1.1);
-  expect(titleGeometry.scrollWidth).toBeLessThanOrEqual(titleGeometry.clientWidth);
+  expect(reading.height).toBeLessThanOrEqual(reading.line * 2 + 1);
+  expect(reading.right).toBeLessThanOrEqual(reading.parentRight);
+  expect(reading.bottom).toBeLessThanOrEqual(reading.rangeTop);
+  expect(reading.scrollWidth).toBeLessThanOrEqual(reading.width);
 });
 
 test('keeps collapsed Life details as a floating affordance without a full-width row', async ({ page }) => {
@@ -905,20 +796,24 @@ test('keeps the active navigation state on a stepped inverse surface', async ({ 
   expect(active.height).toBeLessThanOrEqual(41);
 });
 
-test('keeps tall desktop boards flush with the navigation baseline', async ({ page }) => {
+test('keeps navigation stable while context and page headings establish reading order', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1080 });
-
-  const gaps = [];
+  const bands = [];
   for (const view of ['生活', '职业', '商店']) {
-    await page.getByRole('button', { name: view, exact: true }).click();
-    gaps.push(await page.evaluate(() => {
-      const nav = document.querySelector('.main-nav')?.getBoundingClientRect();
-      const board = document.querySelector('.view-life .life-hero-grid, .career-section, .shop-tab-bar')?.getBoundingClientRect();
-      return board && nav ? board.top - nav.bottom : Number.POSITIVE_INFINITY;
-    }));
+    await page.getByLabel('主导航').getByRole('button', { name: view, exact: true }).click();
+    const band = await page.evaluate(() => {
+      const nav = document.querySelector('.main-nav')!.getBoundingClientRect();
+      const context = document.querySelector('.life-context')?.getBoundingClientRect();
+      const heading = document.querySelector('.page-heading')?.getBoundingClientRect();
+      const board = document.querySelector('.life-hero-grid, .career-market-shell, .shop-tab-bar')!.getBoundingClientRect();
+      return { navTop: nav.top, navBottom: nav.bottom, firstTop: context?.top ?? board.top, headingBottom: heading?.bottom, boardTop: board.top };
+    });
+    expect(Math.abs(band.firstTop - band.navBottom)).toBeLessThanOrEqual(1);
+    if (band.headingBottom !== undefined) expect(band.boardTop).toBeGreaterThan(band.headingBottom);
+    bands.push(band);
   }
-
-  expect(gaps.every((gap) => gap >= 0 && gap <= 2)).toBe(true);
+  expect(new Set(bands.map(band => band.navTop)).size).toBe(1);
+  expect(new Set(bands.map(band => band.navBottom)).size).toBe(1);
 });
 
 test('hides dormant scroll tracks on the fitted tall desktop surface', async ({ page }) => {
@@ -985,7 +880,15 @@ test('keeps tall desktop marks on shared pixel primitives without live scrollbar
         .map((element) => element.className || element.tagName);
       const nonPixelSvgs = Array.from(document.querySelectorAll<SVGElement>('svg'))
         .filter((element) => visible(element as unknown as HTMLElement))
-        .filter((element) => !element.classList.contains('pixel-icon') && !element.classList.contains('pixel-illustration'))
+        .filter((element) => {
+          const box = (element as SVGSVGElement).viewBox?.baseVal;
+          const pixelScene = element.getAttribute('data-pixel-scene') === 'true'
+            && element.getAttribute('shape-rendering') === 'crispEdges'
+            && box && [box.x, box.y, box.width, box.height].every(Number.isInteger)
+            && box.width > 0 && box.height > 0
+            && !element.querySelector('linearGradient, radialGradient, filter, image');
+          return !element.classList.contains('pixel-icon') && !element.classList.contains('pixel-illustration') && !pixelScene;
+        })
         .map((element) => element.outerHTML.slice(0, 80));
       const directionalTextMarkers = Array.from(document.querySelectorAll<HTMLElement>('.forecast-more, .inbox-foot button, .rail-link, .status-detail, .career-toolbar-popover > summary'))
         .filter((element) => visible(element))
@@ -1005,54 +908,26 @@ test('keeps tall desktop marks on shared pixel primitives without live scrollbar
   }
 });
 
-test('keeps the header brand cat as a dense stepped 1-bit mark', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'brand mark anatomy targets the supported desktop landscape surface');
+test('keeps the brand cat crisp and contained beside the compact wordmark', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-
-  const metrics = await page.locator('.brand-mascot').evaluate((element) => {
-    const rects = Array.from(element.querySelectorAll('rect'));
-    const box = element.getBoundingClientRect();
+  const mark = await page.locator('.brand-mascot').evaluate(element => {
+    const rect = element.getBoundingClientRect();
+    const parent = element.closest('.brand-block')!.getBoundingClientRect();
     const style = getComputedStyle(element);
-    const brandBlock = element.closest('.brand-block');
-    const wordmark = element.closest('.brand-block')?.querySelector('.brand-wordmark');
-    const subtitle = element.closest('.brand-block')?.querySelector('.brand-subtitle');
-    const mark = element.closest('.brand-block')?.querySelector('.brand-mark');
-    const markRect = mark?.getBoundingClientRect();
-    const subtitleRect = subtitle?.getBoundingClientRect();
-    return {
-      rectCount: rects.length,
-      width: box.width,
-      height: box.height,
-      x: box.x,
-      y: box.y,
-      markX: markRect ? Math.round(markRect.x) : null,
-      markY: markRect ? Math.round(markRect.y) : null,
-      subtitleX: subtitleRect ? Math.round(subtitleRect.x) : null,
-      subtitleY: subtitleRect ? Math.round(subtitleRect.y) : null,
-      backgroundColor: style.backgroundColor,
-      borderStyle: style.borderStyle,
-      padding: style.padding,
-      brandGap: brandBlock ? getComputedStyle(brandBlock).gap : '',
-      wordmarkGap: wordmark ? getComputedStyle(wordmark).gap : '',
-      subtitleFontSize: subtitle ? getComputedStyle(subtitle).fontSize : '',
-    };
+    return { rects: element.querySelectorAll('rect').length, width: rect.width, height: rect.height, left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, parentLeft: parent.left, parentRight: parent.right, parentTop: parent.top, parentBottom: parent.bottom, background: style.backgroundColor, border: style.borderStyle, padding: style.padding, rendering: element.getAttribute('shape-rendering') };
   });
-
-  expect(metrics.rectCount).toBeGreaterThanOrEqual(30);
-  expect(metrics.width).toBe(56);
-  expect(metrics.height).toBe(56);
-  expect(Math.round(metrics.x)).toBe(272);
-  expect(Math.round(metrics.y)).toBe(33);
-  expect(metrics.markX).toBe(44);
-  expect(metrics.markY).toBe(26);
-  expect(metrics.subtitleX).toBe(174);
-  expect(metrics.subtitleY).toBe(34);
-  expect(metrics.brandGap).toBe('23px');
-  expect(metrics.wordmarkGap).toBe('18px');
-  expect(metrics.subtitleFontSize).toBe('18px');
-  expect(metrics.backgroundColor).toBe('rgba(0, 0, 0, 0)');
-  expect(metrics.borderStyle).toBe('none');
-  expect(metrics.padding).toBe('0px');
+  expect(mark.rects).toBeGreaterThanOrEqual(30);
+  expect(mark.width).toBe(44);
+  expect(mark.height).toBe(44);
+  expect(mark.left).toBeGreaterThanOrEqual(mark.parentLeft);
+  expect(mark.right).toBeLessThanOrEqual(mark.parentRight);
+  expect(mark.top).toBeGreaterThanOrEqual(mark.parentTop);
+  expect(mark.bottom).toBeLessThanOrEqual(mark.parentBottom);
+  expect(mark.rendering).toBe('crispEdges');
+  expect(mark.background).toBe('rgba(0, 0, 0, 0)');
+  expect(mark.border).toBe('none');
+  expect(mark.padding).toBe('0px');
 });
 
 test('renders the header brand cat on a fine 1-bit sprite grid', async ({ page }) => {
@@ -1205,6 +1080,8 @@ test('keeps a four-row Life inbox inside its low-height panel frame', async ({ p
   });
 
   expect(geometry.footerBottom).toBeLessThanOrEqual(geometry.panelBottom + 0.5);
+  await wheelToAndClick(page, page.locator('.inbox-messages').getByRole('button', { name: '前往社交', exact: true }));
+  await expect(page.locator('main h1')).toHaveText('社交');
 });
 
 test('keeps Life weekly plan activity icons on the reference anchor tier', async ({ page }) => {
@@ -1421,67 +1298,43 @@ test('keeps the Career search hint aligned with the reference filter rail', asyn
   await expect(page.getByLabel('搜索岗位或公司')).toHaveAttribute('placeholder', '搜索岗位 / 公司 / 关键词');
 });
 
-test('keeps Career planning tools as a quiet utility affordance outside the market filters', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career utility presentation targets the supported desktop landscape surface');
+test('keeps Career planning tools keyboard-accessible on a compact utility button', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '职业', exact: true }).click();
-
-  const trigger = page.getByRole('button', { name: '安排本周与课程' });
-  const style = await trigger.evaluate((element) => {
-    const computed = getComputedStyle(element);
-    const rect = element.getBoundingClientRect();
-    return {
-      height: rect.height,
-      background: computed.backgroundColor,
-      borderTop: computed.borderTopStyle,
-      borderRight: computed.borderRightStyle,
-      borderBottom: computed.borderBottomStyle,
-      borderLeft: computed.borderLeftStyle,
-      fontSize: Number.parseFloat(computed.fontSize),
-      textAlign: computed.textAlign,
-    };
-  });
-
-  expect(style.height).toBeLessThanOrEqual(23);
-  expect(style.background).toBe('rgba(0, 0, 0, 0)');
-  expect(style.borderTop).toBe('none');
-  expect(style.borderRight).toBe('none');
-  expect(style.borderBottom).toBe('none');
-  expect(style.borderLeft).toBe('dotted');
-  expect(style.fontSize).toBeGreaterThanOrEqual(10);
-  expect(style.textAlign).toBe('left');
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  const trigger = page.getByRole('button', { name: '安排本周与课程', exact: true });
+  const geometry = await trigger.evaluate(element => ({ height: element.getBoundingClientRect().height, background: getComputedStyle(element).backgroundColor, font: parseFloat(getComputedStyle(element).fontSize) }));
+  expect(geometry.height).toBe(36);
+  expect(geometry.background).toBe('rgba(0, 0, 0, 0)');
+  expect(geometry.font).toBeGreaterThanOrEqual(12);
+  await trigger.focus();
+  await expect(trigger).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog', { name: '职业工具' })).toBeVisible();
+  await page.getByRole('button', { name: '关闭职业工具', exact: true }).click();
+  await expect(trigger).toBeFocused();
 });
 
-test('keeps the Career identity mark beside the market title without expanding the filter rail', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career identity anatomy targets the supported desktop landscape surface');
+test('keeps the Career page title and market identity in a clear heading hierarchy', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '职业', exact: true }).click();
-
-  const identity = page.locator('.career-market-identity');
-  const geometry = await identity.evaluate((element) => {
-    const mark = element.querySelector('.career-market-identity-mark')?.getBoundingClientRect();
-    const title = element.querySelector('h1')?.getBoundingClientRect();
-    const input = element.parentElement?.querySelector('input')?.getBoundingClientRect();
-    const identityRect = element.getBoundingClientRect();
-    return {
-      markWidth: mark?.width ?? 0,
-      markHeight: mark?.height ?? 0,
-      markRight: mark?.right ?? 0,
-      titleLeft: title?.left ?? 0,
-      titleTop: title?.top ?? 0,
-      identityHeight: identityRect.height,
-      inputTop: input?.top ?? 0,
-    };
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  await expect(page.locator('main h1')).toHaveCount(1);
+  await expect(page.getByRole('heading', { name: '职业', exact: true, level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '招聘市场', exact: true, level: 2 })).toBeVisible();
+  const geometry = await page.locator('.career-market-identity').evaluate(element => {
+    const mark = element.querySelector('.career-market-identity-mark')!.getBoundingClientRect();
+    const title = element.querySelector('h2')!.getBoundingClientRect();
+    const identity = element.getBoundingClientRect();
+    const filters = element.closest('.career-filters')!.getBoundingClientRect();
+    const input = element.parentElement!.querySelector('input')!.getBoundingClientRect();
+    return { markWidth: mark.width, markHeight: mark.height, gap: title.left - mark.right, identityRight: identity.right, filterRight: filters.right, bottom: identity.bottom, inputTop: input.top };
   });
-
-  expect(geometry.markWidth).toBeGreaterThanOrEqual(28);
-  expect(geometry.markWidth).toBeLessThanOrEqual(34);
-  expect(geometry.markHeight).toBeGreaterThanOrEqual(28);
-  expect(geometry.markHeight).toBeLessThanOrEqual(34);
-  expect(geometry.titleLeft - geometry.markRight).toBeGreaterThanOrEqual(4);
-  expect(geometry.titleTop).toBeGreaterThanOrEqual(geometry.markHeight - 1);
-  expect(geometry.identityHeight).toBeLessThanOrEqual(82);
-  expect(geometry.inputTop).toBeLessThanOrEqual(252);
+  expect(geometry.markWidth).toBe(32);
+  expect(geometry.markHeight).toBe(32);
+  expect(geometry.gap).toBeGreaterThanOrEqual(4);
+  expect(geometry.identityRight).toBeLessThanOrEqual(geometry.filterRight);
+  expect(geometry.bottom).toBeLessThanOrEqual(geometry.inputTop);
 });
 
 test('keeps low-height Career toolbar filters readable', async ({ page }) => {
@@ -1782,32 +1635,27 @@ test('uses reference-shaped marks for the Career offer and history headers', asy
   await expect(page.locator('.career-bottom-history .inbox-head .pixel-icon')).toHaveAttribute('data-panel-icon', 'career');
 });
 
-test('keeps Career vacancy descriptions compact inside the fixed card anatomy', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career vacancy-card anatomy is desktop-only');
+test('keeps Career vacancy descriptions readable and clear of their actions', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '职业', exact: true }).click();
-
-  const cards = await page.locator('.career-results .job-card').evaluateAll((items) => items.slice(0, 6).map((card) => {
-    const description = card.querySelector('.job-card-description');
-    const actions = card.querySelector('.job-actions');
-    const cardStyle = getComputedStyle(card);
-    const descriptionStyle = description ? getComputedStyle(description) : null;
-    const cardRect = card.getBoundingClientRect();
-    const descriptionRect = description?.getBoundingClientRect();
-    const actionsRect = actions?.getBoundingClientRect();
-    return {
-      cardHeight: cardRect.height,
-      descriptionHeight: descriptionRect?.height ?? 0,
-      descriptionMinHeight: descriptionStyle ? Number.parseFloat(descriptionStyle.minHeight) : 0,
-      actionsHeight: actionsRect?.height ?? 0,
-      alignContent: cardStyle.alignContent,
-    };
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  const cards = await page.locator('.career-results .job-card').evaluateAll(elements => elements.map(card => {
+    const frame = card.getBoundingClientRect();
+    const description = card.querySelector('.job-card-description')!;
+    const text = description.getBoundingClientRect();
+    const actions = card.querySelector('.job-actions')!.getBoundingClientRect();
+    const style = getComputedStyle(description);
+    return { height: frame.height, descriptionHeight: text.height, descriptionBottom: text.bottom, actionsTop: actions.top, actionsBottom: actions.bottom, cardBottom: frame.bottom, font: parseFloat(style.fontSize), line: parseFloat(style.lineHeight), padding: parseFloat(style.paddingTop), minHeight: style.minHeight };
   }));
-
-  expect(cards.length).toBeGreaterThan(0);
-  expect(cards.every(({ cardHeight, descriptionHeight, descriptionMinHeight, actionsHeight, alignContent }) =>
-    cardHeight >= 240 && descriptionHeight <= 42 && descriptionMinHeight === 0 && actionsHeight >= 29 && alignContent === 'space-between'
-  )).toBe(true);
+  expect(cards).toHaveLength(6);
+  for (const card of cards) {
+    expect(card.height).toBeGreaterThanOrEqual(220);
+    expect(card.font).toBeGreaterThanOrEqual(12);
+    expect(card.descriptionHeight).toBeLessThanOrEqual(card.line * 2 + card.padding + 1);
+    expect(card.minHeight).toBe('0px');
+    expect(card.descriptionBottom).toBeLessThanOrEqual(card.actionsTop);
+    expect(card.actionsBottom).toBeLessThan(card.cardBottom);
+  }
 });
 
 test('keeps Career vacancy art compact beside the card identity', async ({ page }) => {
@@ -2063,33 +1911,24 @@ test('keeps empty Career support lanes readable inside dark shells', async ({ pa
   await expect(page.locator('.career-bottom-insight')).toHaveCSS('background-color', 'rgb(0, 0, 0)');
 });
 
-test('keeps empty Career support copy in a compact horizontal status lane', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'career support empty-state anatomy is desktop-only');
+test('keeps empty Career support copy beside its pixel mark without clipping', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '职业', exact: true }).click();
-
-  const lanes = await page.locator('.career-bottom-panel:nth-child(-n+3) > .career-bottom-empty').evaluateAll((elements) => elements.map((element) => {
-    const style = getComputedStyle(element);
-    const icon = element.querySelector('.pixel-illustration')?.getBoundingClientRect();
-    const strong = element.querySelector('strong')?.getBoundingClientRect();
-    const small = element.querySelector('small')?.getBoundingClientRect();
-    return {
-      columns: style.gridTemplateColumns.split(' ').length,
-      textAlign: style.textAlign,
-      iconWidth: icon?.width ?? 0,
-      iconHeight: icon?.height ?? 0,
-      copyCenter: strong && small ? (strong.left + strong.width / 2 + small.left + small.width / 2) / 2 : 0,
-      iconCenter: icon ? icon.left + icon.width / 2 : 0,
-    };
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  const lanes = await page.locator('.career-bottom-panel:nth-child(-n+3) > .career-bottom-empty').evaluateAll(elements => elements.map(element => {
+    const frame = element.getBoundingClientRect();
+    const icon = element.querySelector('.pixel-illustration')!.getBoundingClientRect();
+    const title = element.querySelector('strong')!;
+    const hint = element.querySelector('small')!;
+    const a = title.getBoundingClientRect(), b = hint.getBoundingClientRect();
+    return { columns: getComputedStyle(element).gridTemplateColumns.split(' ').length, iconRight: icon.right, titleLeft: a.left, hintLeft: b.left, titleRight: a.right, hintRight: b.right, frameRight: frame.right, titleSize: parseFloat(getComputedStyle(title).fontSize), hintSize: parseFloat(getComputedStyle(hint).fontSize) };
   }));
-
   expect(lanes).toHaveLength(3);
-  expect(lanes.every(({ columns, textAlign, iconWidth, iconHeight, copyCenter, iconCenter }) =>
-    columns === 2 && textAlign === 'left' && iconWidth >= 30 && iconHeight >= 30 && Math.abs(copyCenter - iconCenter) <= 120
-  )).toBe(true);
+  expect(lanes.every(lane => lane.columns === 2 && lane.titleLeft >= lane.iconRight && lane.hintLeft >= lane.iconRight && lane.titleRight <= lane.frameRight && lane.hintRight <= lane.frameRight && lane.titleSize >= 11 && lane.hintSize >= 11)).toBe(true);
+  await expectReadableContrast(page.locator('.career-bottom-empty :is(strong,small)'));
 });
 
-test('uses light inverse surfaces for populated Career support rows', async ({ page }) => {
+test('keeps populated Career support rows readable with their real application and history', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'populated Career support surfaces are desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
@@ -2118,68 +1957,34 @@ test('uses light inverse surfaces for populated Career support rows', async ({ p
   await page.reload();
   await page.getByRole('button', { name: '职业', exact: true }).click();
 
-  const surfaces = await page.locator('.career-bottom-panel:nth-child(-n+3):has(> .rail-rows)').evaluateAll((elements) => elements.map((element) => ({
-    background: getComputedStyle(element).backgroundColor,
-    color: getComputedStyle(element).color,
-    headerBackground: getComputedStyle(element.querySelector('.inbox-head')!).backgroundColor,
-    rowBackground: getComputedStyle(element.querySelector('.rail-rows')!).backgroundColor,
-  })));
-
-  expect(surfaces).toHaveLength(3);
-  expect(surfaces.every(({ background, color, headerBackground, rowBackground }) =>
-    background === 'rgb(0, 0, 0)' &&
-    color === 'rgb(241, 241, 241)' &&
-    headerBackground === 'rgb(0, 0, 0)' &&
-    rowBackground === 'rgb(241, 241, 241)'
-  )).toBe(true);
-
-  const rowGeometry = await page.locator('.career-bottom-panel:nth-child(-n+3):has(> .rail-rows)').evaluateAll((elements) => elements.map((element) => {
-    const rows = element.querySelector<HTMLElement>('.rail-rows')!;
-    const item = rows.querySelector<HTMLElement>('li')!;
-    const rowsRect = rows.getBoundingClientRect();
-    const itemRect = item.getBoundingClientRect();
-    return {
-      itemHeight: itemRect.height,
-      rowsHeight: rowsRect.height,
-      centerOffset: Math.abs((itemRect.top + itemRect.height / 2) - (rowsRect.top + rowsRect.height / 2)),
-    };
+  const panels = page.locator('.career-bottom-panel:nth-child(-n+3):has(> .rail-rows)');
+  await expect(panels).toHaveCount(3);
+  await expectReadableContrast(panels.locator('h2, .rail-rows li'));
+  const rows = await panels.locator('.rail-rows').evaluateAll(elements => elements.map(element => {
+    const frame = element.getBoundingClientRect();
+    const item = element.querySelector('li')!.getBoundingClientRect();
+    return { top: item.top, bottom: item.bottom, frameTop: frame.top, frameBottom: frame.bottom, width: element.clientWidth, scrollWidth: element.scrollWidth };
   }));
-
-  expect(rowGeometry.every(({ itemHeight, rowsHeight, centerOffset }) =>
-    itemHeight < rowsHeight - 20 && centerOffset <= 2
-  )).toBe(true);
-
-  const rowIcons = await page.locator('.career-bottom-panel:nth-child(-n+3):has(> .rail-rows) .rail-rows li .pixel-icon').evaluateAll((elements) => elements.map((element) => {
-    const rect = element.getBoundingClientRect();
-    return { width: rect.width, height: rect.height, color: getComputedStyle(element).color };
-  }));
-
-  expect(rowIcons).toHaveLength(3);
-  expect(rowIcons.every(({ width, height, color }) =>
-    width >= 12 && width <= 18 && height >= 12 && height <= 18 && color === 'rgb(0, 0, 0)'
-  )).toBe(true);
+  expect(rows.every(row => row.top >= row.frameTop && row.bottom <= row.frameBottom && row.scrollWidth <= row.width)).toBe(true);
+  await expect(panels.locator('.rail-rows li .pixel-icon')).toHaveCount(3);
+  await expect(panels.first()).toContainText('远程');
+  await wheelMainToBottom(page);
+  expect((await targetVisibility(page, panels.last())).fullyVisible).toBe(true);
 });
 
 test('keeps the selected Career card frame brighter than idle cards', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career card frame contrast is desktop-only');
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '职业', exact: true }).click();
-
-  const frames = await page.locator('.career-results .job-card').evaluateAll((cards) => cards.map((card) => {
-    const style = getComputedStyle(card, '::after');
-    return {
-      selected: card.classList.contains('selected'),
-      borderColor: style.borderTopColor,
-      clipPath: style.clipPath,
-    };
-  }));
-
-  expect(frames.length).toBeGreaterThan(1);
-  expect(frames.filter(({ selected }) => selected)).toHaveLength(1);
-  expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(241, 241, 241)');
-  expect(frames.filter(({ selected }) => !selected).every(({ borderColor, clipPath }) =>
-    borderColor === 'rgb(199, 199, 192)' && clipPath !== 'none'
-  )).toBe(true);
+  await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
+  const cards = page.locator('.career-results .job-card');
+  await expectSelectionFrame(cards);
+  const next = cards.nth(1);
+  const name = await next.locator('h2').innerText();
+  await next.locator('.card-select').click();
+  await page.mouse.move(0,0);
+  await expect(next).toHaveClass(/selected/);
+  await expect(page.locator('.career-detail-title')).toHaveText(name);
+  await expectSelectionFrame(cards);
 });
 
 test('keeps Career vacancy surfaces on the shared stepped outer frame', async ({ page }) => {
@@ -2200,6 +2005,9 @@ test('keeps tall Career support panels above the persistent footer', async ({ pa
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Career footer boundary targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '职业', exact: true }).click();
+  // Natural-height boards may extend below the first viewport. Verify the
+  // actual page bottom, with wheel input, before judging footer containment.
+  await wheelMainToBottom(page);
 
   const geometry = await page.evaluate(() => {
     const shell = document.querySelector<HTMLElement>('.career-market-shell');
@@ -2228,6 +2036,7 @@ test('keeps the low-height Career pager above the persistent footer', async ({ p
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'low-height desktop footer boundary is desktop-only');
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.getByRole('button', { name: '职业', exact: true }).click();
+  await wheelMainUntilVisible(page, page.locator('.career-results .pager-row'));
 
   const geometry = await page.evaluate(() => {
     const main = document.querySelector<HTMLElement>('.main-content');
@@ -2270,84 +2079,58 @@ test('uses the Chinese-first console face for high-signal display headings', asy
   expect(fontFamily).not.toContain('MS Gothic');
 });
 
-test('keeps Shop product metadata and secondary actions in the readable pixel tier', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card anatomy is desktop-only');
+test('keeps Shop product facts, pixel art and goal controls in the readable tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
-
-  const cards = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
-    const art = card.querySelector('.card-art');
-    const illustration = card.querySelector('.card-art .pixel-illustration');
-    const facts = card.querySelector('.catalog-facts > div');
-    const secondary = card.querySelector('.catalog-secondary-action');
-    const primary = card.querySelector('.item-card-foot .primary-button');
-    const factStyle = facts ? getComputedStyle(facts) : null;
-    const primaryStyle = primary ? getComputedStyle(primary) : null;
-    const cardRect = card.getBoundingClientRect();
-    return {
-      cardHeight: cardRect.height,
-      artWidth: art?.getBoundingClientRect().width ?? 0,
-      artHeight: art?.getBoundingClientRect().height ?? 0,
-      illustrationWidth: illustration?.getBoundingClientRect().width ?? 0,
-      illustrationHeight: illustration?.getBoundingClientRect().height ?? 0,
-      factFontSize: factStyle ? Number.parseFloat(factStyle.fontSize) : 0,
-      secondaryWidth: secondary?.getBoundingClientRect().width ?? 0,
-      secondaryHeight: secondary?.getBoundingClientRect().height ?? 0,
-      hasPixelIcon: Boolean(secondary?.querySelector('.pixel-icon')),
-      primaryFontSize: primaryStyle ? Number.parseFloat(primaryStyle.fontSize) : 0,
-      primaryHeight: primary?.getBoundingClientRect().height ?? 0,
-    };
-  }));
-
-  expect(cards.length).toBeGreaterThan(0);
-  expect(cards.every(({ cardHeight, artWidth, artHeight, illustrationWidth, illustrationHeight, factFontSize, secondaryWidth, secondaryHeight, hasPixelIcon, primaryFontSize, primaryHeight }) =>
-    cardHeight >= 150 && artWidth >= 64 && artHeight >= 64 && illustrationWidth >= 60 && illustrationHeight >= 60 &&
-    factFontSize >= 10 && secondaryWidth >= 18 && secondaryHeight >= 18 && hasPixelIcon && primaryFontSize >= 11 && primaryHeight >= 25
-  )).toBe(true);
-});
-
-test('keeps the tall Shop product matrix at the reference detail rhythm', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'tall Shop matrix rhythm targets the supported desktop landscape surface');
-  await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
-
-  const layout = await page.evaluate(() => {
-    const cards = Array.from(document.querySelectorAll<HTMLElement>('.view-shop .shop-main .item-card')).slice(0, 12);
-    const grid = document.querySelector<HTMLElement>('.view-shop .shop-main .item-grid')?.getBoundingClientRect();
-    const pager = document.querySelector<HTMLElement>('.view-shop .shop-main .catalog-pager')?.getBoundingClientRect();
-    const detail = document.querySelector<HTMLElement>('.view-shop .shop-detail')?.getBoundingClientRect();
-    return {
-      cardHeights: cards.map((card) => card.getBoundingClientRect().height),
-      gridBottom: grid?.bottom ?? 0,
-      pagerTop: pager?.top ?? 0,
-      detailTop: detail?.top ?? 0,
-    };
-  });
-
-  expect(layout.cardHeights).toHaveLength(12);
-  expect(layout.cardHeights.every((height) => height >= 150 && height <= 152)).toBe(true);
-  expect(layout.gridBottom).toBeLessThanOrEqual(820);
-  expect(layout.pagerTop).toBeGreaterThanOrEqual(layout.gridBottom);
-  expect(layout.detailTop).toBeGreaterThanOrEqual(858);
-  expect(layout.detailTop).toBeLessThanOrEqual(866);
-});
-
-test('keeps Shop product goal actions as labeled pixel affordances', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card goal action is desktop-only');
-  await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
-
-  const actions = await page.locator('.view-shop .shop-main .item-card .catalog-secondary-action').evaluateAll((buttons) => buttons.slice(0, 4).map((button) => ({
-    text: button.textContent?.trim() ?? '',
-    hasPixelIcon: Boolean(button.querySelector('.pixel-icon')),
-    width: button.getBoundingClientRect().width,
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  const cards = page.locator('.view-shop .shop-main .item-card');
+  await expectReadableCatalog(cards, 'goods');
+  const goals = await cards.locator('.catalog-secondary-action').evaluateAll(elements => elements.map(element => ({
+    width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height, icon: Boolean(element.querySelector('.pixel-icon')), label: element.getAttribute('aria-label'),
   })));
-
-  expect(actions.length).toBeGreaterThan(0);
-  expect(actions.every(({ text, hasPixelIcon, width }) => text.includes('加入目标') && hasPixelIcon && width >= 18 && width <= 24)).toBe(true);
+  expect(goals).toHaveLength(6);
+  expect(goals.every(goal => goal.width >= 36 && goal.height >= 36 && goal.icon && goal.label?.startsWith('加入愿望清单：'))).toBe(true);
 });
 
-test('keeps Shop product CTAs in the reference icon-plus-label anatomy', async ({ page }) => {
+test('keeps selected Shop details before the six-entry catalog and its pager', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  const geometry = await page.evaluate(() => {
+    const detail = document.querySelector('.shop-detail')!.getBoundingClientRect();
+    const grid = document.querySelector('.shop-main .item-grid')!.getBoundingClientRect();
+    const pager = document.querySelector('.shop-main .catalog-pager')!.getBoundingClientRect();
+    return { detailBottom: detail.bottom, gridTop: grid.top, gridBottom: grid.bottom, pagerTop: pager.top };
+  });
+  await expectReadableCatalog(page.locator('.shop-main .item-card'), 'goods');
+  expect(geometry.detailBottom).toBeLessThan(geometry.gridTop);
+  expect(geometry.gridBottom).toBeLessThanOrEqual(geometry.pagerTop);
+  const pager = page.getByRole('navigation', { name: '商品分页', exact: true });
+  await wheelToAndClick(page, pager.getByRole('button', { name: '2', exact: true }));
+  const selected = page.locator('.shop-main .item-card.selected h2');
+  await expect(selected).toHaveCount(1);
+  await expect(page.locator('.shop-detail h2')).toHaveText(await selected.innerText());
+});
+
+test('keeps icon goal controls named, sized and synchronized with the wishlist', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
+  await page.setViewportSize({ width: 1440, height: 1080 });
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  const card = page.locator('.shop-main .item-card').first();
+  const name = await card.locator('h2').innerText();
+  const action = card.locator('.catalog-secondary-action');
+  await expect(action).toHaveAccessibleName('加入愿望清单：' + name);
+  await expect(action).toHaveAttribute('aria-pressed', 'false');
+  await expect(action.locator('.pixel-icon')).toHaveCount(1);
+  expect(await action.evaluate(element => element.getBoundingClientRect().width)).toBeGreaterThanOrEqual(36);
+  await action.focus();
+  await page.keyboard.press('Enter');
+  await expect(action).toHaveAccessibleName('移出愿望清单：' + name);
+  await expect(action).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.rail-wishlist .item-row')).toContainText(name);
+});
+
+test('keeps Shop purchase CTAs on the shared icon-plus-label anatomy', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card CTA anatomy is desktop-only');
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
@@ -2366,7 +2149,7 @@ test('keeps Shop product CTAs in the reference icon-plus-label anatomy', async (
 
   expect(ctas.length).toBeGreaterThan(0);
   expect(ctas.every(({ text, hasPixelIcon, iconWidth, iconHeight, iconHidden }) =>
-    text.includes('加入清单') && hasPixelIcon && iconWidth >= 10 && iconHeight >= 10 && iconHidden
+    text.includes('加入购物袋') && hasPixelIcon && iconWidth >= 10 && iconHeight >= 10 && iconHidden
   )).toBe(true);
 });
 
@@ -2408,32 +2191,30 @@ test('keeps Shop product titles on the primary catalog tier', async ({ page }) =
   expect(typography.every(({ titleFontSize, priceFontSize }) => titleFontSize >= 17 && priceFontSize >= 13)).toBe(true);
 });
 
-test('keeps Shop product identity on one first-scan row', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product identity anatomy is desktop-only');
-  for (const viewport of [{ width: 1440, height: 1080 }, { width: 1280, height: 720 }]) {
+test('keeps Shop names and prices readable in their two-tier identity rows', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'catalog identity targets the supported desktop surface');
+  for(const viewport of [{ width: 1440, height: 1080 }, { width: 1280, height: 720 }]) {
     await page.setViewportSize(viewport);
-    await page.getByRole('button', { name: '商店', exact: true }).click();
-    for (const section of [
-      { tabName: '商品', cardSelector: '.item-card', titleSelector: '.catalog-title-row h2' },
-      { tabName: '娱乐', cardSelector: '.activity-card', titleSelector: '.catalog-title-row h3' },
-    ]) {
-      await page.getByRole('tab', { name: section.tabName, exact: true }).click();
-      const rows = await page.locator(`.view-shop .shop-main ${section.cardSelector}`).evaluateAll((items, titleSelector) => items.slice(0, 4).map((card) => {
-        const badge = card.querySelector('.catalog-badge')?.getBoundingClientRect();
-        const title = card.querySelector(titleSelector)?.getBoundingClientRect();
-        const price = card.querySelector('.catalog-price')?.getBoundingClientRect();
-        const status = card.querySelector('.catalog-card-status')?.getBoundingClientRect();
-        const tops = [badge?.top, title?.top, price?.top, status && status.width > 0 && status.height > 0 ? status.top : undefined]
-          .filter((value): value is number => value !== undefined);
-        return {
-          topSpread: tops.length ? Math.max(...tops) - Math.min(...tops) : Number.POSITIVE_INFINITY,
-          titleWidth: title?.width ?? 0,
-          priceWidth: price?.width ?? 0,
-        };
-      }), section.titleSelector);
-
-      expect(rows).toHaveLength(4);
-      expect(rows.every(({ topSpread, titleWidth, priceWidth }) => topSpread <= 5 && titleWidth > 0 && priceWidth > 0)).toBe(true);
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+    for(const [tab,selector,title] of [['商品','.item-card','h2'],['娱乐','.activity-card','h3']]) {
+      await page.getByRole('tab', { name: tab, exact: true }).click();
+      const readings = await page.locator('.shop-main ' + selector + ' .catalog-title-row').evaluateAll((elements,title) => elements.map(element => {
+        const frame = element.getBoundingClientRect();
+        const name = element.querySelector(title)!;
+        const n = name.getBoundingClientRect();
+        const price = element.querySelector('.catalog-price')!.getBoundingClientRect();
+        return { nameLeft: n.left, nameRight: n.right, nameTop: n.top, nameBottom: n.bottom, priceLeft: price.left, priceRight: price.right, priceTop: price.top, priceBottom: price.bottom, frameLeft: frame.left, frameRight: frame.right, frameBottom: frame.bottom, width: name.clientWidth, scrollWidth: name.scrollWidth, height: n.height, line: parseFloat(getComputedStyle(name).lineHeight) };
+      }),title);
+      expect(readings).toHaveLength(6);
+      for(const row of readings) {
+        expect(row.nameLeft).toBeGreaterThanOrEqual(row.frameLeft);
+        expect(row.nameRight).toBeLessThanOrEqual(row.frameRight + 0.5);
+        expect(row.priceRight).toBeLessThanOrEqual(row.frameRight + 0.5);
+        expect(row.nameBottom).toBeLessThanOrEqual(row.frameBottom + 0.5);
+        expect(row.height).toBeLessThanOrEqual(row.line * 3 + 1);
+        expect(row.scrollWidth).toBeLessThanOrEqual(row.width);
+        expect(row.nameRight <= row.priceLeft || row.priceRight <= row.nameLeft || row.nameBottom <= row.priceTop || row.priceBottom <= row.nameTop, '名称与价格不得相互覆盖').toBe(true);
+      }
     }
   }
 });
@@ -2463,61 +2244,30 @@ test('gives Shop product cards a stronger reference reading tier', async ({ page
 });
 
 test('keeps the selected Shop product frame brighter than idle cards', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Shop product frame contrast is desktop-only');
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
-
-  const frames = await page.locator('.view-shop .shop-main .item-card').evaluateAll((cards) => cards.map((card) => {
-    const style = getComputedStyle(card, '::after');
-    return {
-      selected: card.classList.contains('selected'),
-      borderColor: style.borderTopColor,
-      clipPath: style.clipPath,
-    };
-  }));
-
-  expect(frames.length).toBeGreaterThan(1);
-  expect(frames.filter(({ selected }) => selected)).toHaveLength(1);
-  expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(241, 241, 241)');
-  expect(frames.filter(({ selected }) => !selected).every(({ borderColor, clipPath }) =>
-    borderColor === 'rgb(199, 199, 192)' && clipPath !== 'none'
-  )).toBe(true);
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  const cards = page.locator('.shop-main .item-card');
+  await expectSelectionFrame(cards);
+  const next = cards.nth(1);
+  const name = await next.locator('h2').innerText();
+  await next.locator('.card-overlay').click();
+  await page.mouse.move(0,0);
+  await expect(next).toHaveClass(/selected/);
+  await expect(page.locator('.shop-detail h2')).toHaveText(name);
+  await expectSelectionFrame(cards);
 });
 
-test('keeps Shop Entertainment cards on the Goods card and action tier', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop entertainment-card anatomy is desktop-only');
+test('keeps Shop Entertainment on the shared readable catalog tier', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '娱乐', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '娱乐与生活活动', exact: true })).toBeHidden();
-
-  const cards = await page.locator('.view-shop .shop-main .activity-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
-    const art = card.querySelector('.card-art');
-    const titleRow = card.querySelector('.catalog-title-row');
-    const fact = card.querySelector('.catalog-facts > div');
-    const cta = card.querySelector('.secondary-button');
-    const cardRect = card.getBoundingClientRect();
-    const artRect = art?.getBoundingClientRect();
-    const titleRect = titleRow?.getBoundingClientRect();
-    const ctaRect = cta?.getBoundingClientRect();
-    return {
-      cardHeight: cardRect.height,
-      artWidth: artRect?.width ?? 0,
-      artHeight: artRect?.height ?? 0,
-      factFontSize: fact ? Number.parseFloat(getComputedStyle(fact).fontSize) : 0,
-      ctaFontSize: cta ? Number.parseFloat(getComputedStyle(cta).fontSize) : 0,
-      ctaWidth: ctaRect?.width ?? 0,
-      cardWidth: cardRect.width,
-      contentWidth: titleRect?.width ?? 0,
-      meterRows: card.querySelectorAll('.catalog-meter-row').length,
-    };
-  }));
-
-  expect(cards.length).toBeGreaterThan(0);
-  expect(cards.every(({ cardHeight, artWidth, artHeight, factFontSize, ctaFontSize, ctaWidth, cardWidth, contentWidth, meterRows }) =>
-    cardHeight >= 150 && artWidth >= 54 && artHeight >= 54 &&
-    factFontSize >= 11 && ctaFontSize >= 11 && ctaWidth >= cardWidth - 18 && contentWidth > 0 && meterRows === 0
-  )).toBe(true);
+  await expect(page.getByRole('heading', { name: '商品', exact: true, level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '娱乐与生活活动', exact: true, level: 2 })).toBeVisible();
+  await expect(page.getByRole('tab', { name: '娱乐', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expectReadableCatalog(page.locator('.shop-main .activity-card'), 'activities');
+  await expect(page.locator('.shop-main .activity-card .catalog-meter-row')).toHaveCount(0);
 });
 
 test('keeps a real selected activity detail visible when switching Shop tabs', async ({ page }) => {
@@ -2535,15 +2285,16 @@ test('keeps a real selected activity detail visible when switching Shop tabs', a
     return {
       selectedCount: selected.length,
       detailLabel: detail?.querySelector('.eyebrow')?.textContent?.trim() ?? '',
-      detailTop: detailRect?.top ?? 0,
-      gridBottom: grid?.getBoundingClientRect().bottom ?? 0,
+      detailBottom: detailRect?.bottom ?? 0,
+      gridTop: grid?.getBoundingClientRect().top ?? 0,
       detailHeight: detailRect?.height ?? 0,
     };
   });
 
   expect(anatomy.selectedCount).toBe(1);
   expect(anatomy.detailLabel).toBe('已选活动');
-  expect(anatomy.detailTop).toBeGreaterThan(anatomy.gridBottom);
+  // Selection is now read before the catalogue, so the action stays near its context.
+  expect(anatomy.detailBottom).toBeLessThanOrEqual(anatomy.gridTop);
   expect(anatomy.detailHeight).toBeGreaterThanOrEqual(100);
 });
 
@@ -2575,35 +2326,26 @@ test('keeps Shop Entertainment CTA inside the card at low-height desktop', async
   expect(layout.horizontalOverflow).toBe(false);
 });
 
-test('keeps Shop product CTAs across the full card frame', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop product-card anatomy is desktop-only');
+test('keeps Shop product CTAs across the full content width within their frame', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
-
-  const ctas = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
-    const footer = card.querySelector('.item-card-foot');
-    const cardRect = card.getBoundingClientRect();
-    const footerRect = footer?.getBoundingClientRect();
-    const style = footer ? getComputedStyle(footer) : null;
-    return {
-      cardWidth: cardRect.width,
-      footerWidth: footerRect?.width ?? 0,
-      leftInset: footerRect ? footerRect.left - cardRect.left : 0,
-      rightInset: footerRect ? cardRect.right - footerRect.right : 0,
-      footerTop: footerRect?.top ?? 0,
-      footerBottom: footerRect?.bottom ?? 0,
-      cardTop: cardRect.top,
-      cardBottom: cardRect.bottom,
-      gridArea: style?.gridArea ?? '',
-    };
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  const ctas = await page.locator('.shop-main .item-card').evaluateAll(elements => elements.map(card => {
+    const frame = card.getBoundingClientRect();
+    const style = getComputedStyle(card);
+    const footer = card.querySelector('.item-card-foot')!.getBoundingClientRect();
+    const button = card.querySelector('.item-card-foot button')!.getBoundingClientRect();
+    return { width: button.width, footerWidth: footer.width, contentWidth: frame.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) - parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth), left: footer.left, right: footer.right, frameLeft: frame.left, frameRight: frame.right, bottom: button.bottom, frameBottom: frame.bottom, height: button.height };
   }));
-
-  expect(ctas.length).toBeGreaterThan(0);
-  expect(ctas.every(({ cardWidth, footerWidth, leftInset, rightInset, footerTop, footerBottom, cardTop, cardBottom, gridArea }) =>
-    // Anatomy areas: the CTA owns the full-width 'foot' grid area.
-    gridArea === 'foot' && footerWidth >= cardWidth - 22 && leftInset <= 11 && rightInset <= 11 &&
-    footerTop > cardTop + (cardBottom - cardTop) / 2 && footerBottom <= cardBottom + 0.5
-  )).toBe(true);
+  expect(ctas).toHaveLength(6);
+  for(const cta of ctas) {
+    expect(Math.abs(cta.width - cta.contentWidth)).toBeLessThanOrEqual(1);
+    expect(cta.width).toBe(cta.footerWidth);
+    expect(cta.left).toBeGreaterThan(cta.frameLeft);
+    expect(cta.right).toBeLessThan(cta.frameRight);
+    expect(cta.bottom).toBeLessThan(cta.frameBottom);
+    expect(cta.height).toBeGreaterThanOrEqual(36);
+  }
 });
 
 test('shows the pending settlement mode in the top status while the ceremony is open', async ({ page }) => {
@@ -2810,29 +2552,18 @@ test('keeps visible Settlement copy free of internal identifiers', async ({ page
   expect(visibleCopy).not.toContain('pendingReward');
 });
 
-test('keeps Shop catalog art on the open 1-bit illustration tier', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shop catalog-art anatomy is desktop-only');
+test('keeps Shop catalog art frameless and on the shared crisp pixel grid', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
-
-  const art = await page.locator('.view-shop .shop-main .item-card').evaluateAll((items) => items.slice(0, 4).map((card) => {
-    const frame = card.querySelector('.card-art');
-    const illustration = card.querySelector('.card-art .pixel-illustration');
-    const frameStyle = frame ? getComputedStyle(frame) : null;
-    return {
-      background: frameStyle?.backgroundColor ?? '',
-      topBorder: frameStyle?.borderTopStyle ?? '',
-      rightBorder: frameStyle?.borderRightStyle ?? '',
-      illustrationSize: illustration?.getBoundingClientRect().width ?? 0,
-    };
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  const art = await page.locator('.shop-main .card-art').evaluateAll(elements => elements.map(element => {
+    const style = getComputedStyle(element);
+    const svg = element.querySelector('svg')!;
+    const box = svg.getAttribute('viewBox')!.split(' ').map(Number);
+    return { background: style.backgroundColor, border: style.borderWidth, width: svg.getBoundingClientRect().width, height: svg.getBoundingClientRect().height, rendering: svg.getAttribute('shape-rendering'), integerGrid: box.every(Number.isInteger), effects: svg.querySelectorAll('linearGradient,radialGradient,filter,image').length };
   }));
-
-  expect(art.length).toBeGreaterThan(0);
-  // Reference anatomy: the illustration sits frameless in the body-left area;
-  // the dotted rule lives on the fact table's left edge instead.
-  expect(art.every(({ background, topBorder, rightBorder, illustrationSize }) =>
-    background === 'rgba(0, 0, 0, 0)' && topBorder === 'none' && rightBorder === 'none' && illustrationSize >= 52
-  )).toBe(true);
+  expect(art).toHaveLength(6);
+  expect(art.every(icon => icon.background === 'rgba(0, 0, 0, 0)' && icon.border === '0px' && icon.width === 48 && icon.height === 48 && icon.rendering === 'crispEdges' && icon.integerGrid && icon.effects === 0)).toBe(true);
 });
 
 test('keeps the breakfast voucher visually distinct from meal products', async ({ page }) => {
@@ -2840,7 +2571,7 @@ test('keeps the breakfast voucher visually distinct from meal products', async (
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.getByRole('button', { name: '商店', exact: true }).click();
 
-  const voucherCard = page.locator('.view-shop .shop-main .item-card').filter({ hasText: '早餐券' });
+  const voucherCard = await findCatalogEntry(page, '早餐券');
   await expect(voucherCard).toHaveCount(1);
   await expect(voucherCard.locator('.pixel-illustration.il-voucher')).toHaveCount(1);
 });
@@ -2911,41 +2642,44 @@ test('keeps the low-height Life weekly planner fully above the persistent footer
   expect(geometry.cells.every(({ clientHeight, scrollHeight }) => scrollHeight <= clientHeight + 1)).toBe(true);
 });
 
-test('keeps the Life forecast attribute rows on the readable pixel tier', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast attribute tier is desktop-only');
+test('keeps Life forecast attributes readable with aligned real values', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const rows = await page.locator('.view-life .forecast-attr').evaluateAll((elements) => elements.map((element) => {
-    const row = element.getBoundingClientRect();
-    const label = element.querySelector(':scope > span:not(.forecast-sub)');
-    const icon = element.querySelector('.pixel-icon');
-    return {
-      rowHeight: row.height,
-      labelFontSize: label ? Number.parseFloat(getComputedStyle(label).fontSize) : 0,
-      iconSize: icon?.getBoundingClientRect().width ?? 0,
-    };
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const rows = await page.locator('.forecast-attr').evaluateAll(elements => elements.map(element => {
+    const rect = element.getBoundingClientRect();
+    const label = element.querySelector(':scope > span:not(.forecast-sub)')!;
+    const icon = element.querySelector('.pixel-icon')!.getBoundingClientRect();
+    const value = element.querySelector('b')!.getBoundingClientRect();
+    return { height: rect.height, font: parseFloat(getComputedStyle(label).fontSize), line: parseFloat(getComputedStyle(label).lineHeight), iconHeight: icon.height, bottom: value.bottom, rowBottom: rect.bottom };
   }));
-
-  expect(rows.length).toBe(5);
-  expect(rows.every(({ rowHeight, labelFontSize, iconSize }) => rowHeight >= 22 && labelFontSize >= 11 && iconSize >= 14)).toBe(true);
+  expect(rows).toHaveLength(5);
+  expect(rows.every(row => row.height >= row.line && row.font >= 12 && row.iconHeight <= row.height && row.bottom <= row.rowBottom)).toBe(true);
+  await expectReadableContrast(page.locator('.forecast-attr > :is(span,b)'));
 });
 
-test('keeps Life forecast meters on the ten-step reference scale', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'forecast meter scale targets the supported desktop landscape surface');
+test('keeps Life forecast meters on ten equal steps synchronized with their values', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const meters = await page.locator('.view-life .forecast-attr .segment-meter').evaluateAll((elements) => elements.map((element) => ({
-    segments: element.querySelectorAll('i').length,
-    ariaMax: element.getAttribute('aria-valuemax'),
-    display: getComputedStyle(element).display,
-    width: element.getBoundingClientRect().width,
-    segmentWidth: element.querySelector('i')?.getBoundingClientRect().width ?? 0,
-  })));
-
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  const meters = await page.locator('.forecast-attr .segment-meter').evaluateAll(elements => elements.map(element => {
+    const frame = element.getBoundingClientRect();
+    const row = element.closest('.forecast-attr')!.getBoundingClientRect();
+    const parts = Array.from(element.querySelectorAll('i'));
+    return { count: parts.length, filled: parts.filter(part => part.classList.contains('filled')).length, max: element.getAttribute('aria-valuemax'), value: element.getAttribute('aria-valuenow'), display: getComputedStyle(element).display, widths: parts.map(part => part.getBoundingClientRect().width), left: frame.left, right: frame.right, rowLeft: row.left, rowRight: row.right };
+  }));
   expect(meters).toHaveLength(5);
-  expect(meters.every(({ segments, ariaMax, display, width, segmentWidth }) => segments === 10 && ariaMax === '100' && display === 'grid' && width >= 120 && width <= 132 && segmentWidth >= 10 && segmentWidth <= 12)).toBe(true);
+  expect(meters.map(meter => meter.value)).toEqual(['10','50','10','10','0']);
+  expect(meters.map(meter => meter.filled)).toEqual([1,5,1,1,0]);
+  for(const meter of meters) {
+    expect(meter.count).toBe(10);
+    expect(meter.max).toBe('100');
+    expect(meter.display).toBe('grid');
+    expect(Math.min(...meter.widths)).toBeGreaterThanOrEqual(8);
+    expect(Math.max(...meter.widths)-Math.min(...meter.widths)).toBeLessThan(0.5);
+    expect(meter.left).toBeGreaterThan(meter.rowLeft);
+    expect(meter.right).toBeLessThan(meter.rowRight);
+  }
 });
 
 test('keeps Life forecast meter cells on the chunky pixel tier', async ({ page }) => {
@@ -3464,7 +3198,7 @@ test('gives empty settlement ledgers a framed neutral status lane', async ({ pag
   expect(lowHeight.every(({ height, whiteSpace, borderStyle }) => height >= 28 && whiteSpace === 'nowrap' && borderStyle === 'dashed')).toBe(true);
 });
 
-test('gives settlement financial panels a shared pixel-corner frame', async ({ page }) => {
+test('gives settlement financial panels a shared square pixel frame', async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1181, 'settlement frame assertion targets the supported desktop landscape surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
   const saveKey = 'yuliang-save-v1';
@@ -3479,13 +3213,9 @@ test('gives settlement financial panels a shared pixel-corner frame', async ({ p
   await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
 
-  const frames = await page.locator('.monthly-summary.fullframe .settle-grid > .settle-panel').evaluateAll((items) => items.map((item) => {
-    const style = getComputedStyle(item, '::after');
-    return { content: style.content, borderWidth: style.borderTopWidth, clipPath: style.clipPath, surfaceClipPath: getComputedStyle(item).clipPath };
-  }));
-
-  expect(frames).toHaveLength(3);
-  expect(frames.every(({ content, borderWidth, clipPath, surfaceClipPath }) => content === '""' && Number.parseFloat(borderWidth) >= 1 && clipPath !== 'none' && surfaceClipPath !== 'none')).toBe(true);
+  await expectSquarePixelSurfaces(page.locator('.monthly-summary.fullframe .settle-grid > .settle-panel'), 3);
+  await expect(page.getByRole('dialog').getByText('收入（总计）', { exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog').getByText('支出（总计）', { exact: true })).toBeVisible();
 });
 
 test('gives the settlement Hero a full-width title divider', async ({ page }) => {
@@ -4123,75 +3853,35 @@ test('keeps the header date copy before its trailing calendar anchor', async ({ 
   expect(layout.iconTop).toBeGreaterThanOrEqual(layout.copyBottom - 20);
 });
 
-test('keeps shared panels on the stepped corner and divider grammar', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'shared frame grammar targets the supported desktop landscape surface');
+test('keeps shared panels on square pixel frames and explicit dotted dividers', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const grammar = await page.evaluate(() => {
-    const read = (selector: string, pseudo: '::before' | '::after') => {
-      const element = document.querySelector(selector);
-      if (!element) return null;
-      const style = getComputedStyle(element, pseudo);
-      return {
-        backgroundImage: style.backgroundImage,
-        borderWidth: style.borderTopWidth,
-        borderColor: style.borderTopColor,
-      };
-    };
-    const divider = document.querySelector('.view-life .inbox-head');
-    const dividerStyle = divider ? getComputedStyle(divider) : null;
-    return {
-      hero: read('.view-life .time-console', '::before'),
-      inbox: read('.view-life .inbox-panel', '::after'),
-      planner: read('.view-life .planner.pixel-corners', '::before'),
-      divider: dividerStyle ? {
-        style: dividerStyle.borderBottomStyle,
-        color: dividerStyle.borderBottomColor,
-      } : null,
-    };
-  });
-
-  expect(grammar.hero?.backgroundImage).toContain('linear-gradient');
-  expect(grammar.inbox?.backgroundImage).toContain('linear-gradient');
-  expect(grammar.planner?.backgroundImage).toContain('linear-gradient');
-  expect(grammar.divider).toEqual({ style: 'dotted', color: 'rgb(87, 87, 83)' });
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  await expectSquarePixelSurfaces(page.locator('.time-console, .planner.pixel-corners, .inbox-panel.pixel-corners'), 6);
+  const divider = page.locator('.inbox-head').first();
+  await expect(divider).toHaveCSS('border-bottom-style', 'dotted');
+  // The retained Life inbox uses the legacy neutral #666 dotted separator;
+  // the new page frames use --ui-line. Both are recorded in the visual baseline.
+  await expect(divider).toHaveCSS('border-bottom-color', 'rgb(102, 102, 102)');
 });
 
-test('keeps Life board surfaces on the shared stepped pixel silhouette', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'Life surface silhouette targets the supported desktop landscape surface');
+test('keeps Life board surfaces square and free of forced inner scrollbars', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '生活', exact: true }).click();
-
-  const frames = await page.locator('.view-life .time-console, .view-life .planner.pixel-corners, .view-life .inbox-panel.pixel-corners').evaluateAll((elements) => elements.map((element) => {
-    const style = getComputedStyle(element);
-    return { clipPath: style.clipPath, overflowX: style.overflowX, overflowY: style.overflowY };
-  }));
-
-  expect(frames).toHaveLength(6);
-  expect(frames.every(({ clipPath, overflowX, overflowY }) => clipPath !== 'none' && overflowX !== 'scroll' && overflowY !== 'scroll')).toBe(true);
+  await page.getByLabel('主导航').getByRole('button', { name: '生活', exact: true }).click();
+  await expectSquarePixelSurfaces(page.locator('.time-console, .planner.pixel-corners, .inbox-panel.pixel-corners'), 6);
 });
 
-test('keeps secondary desktop surfaces on the shared stepped pixel silhouette', async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'secondary surface silhouettes target the supported desktop landscape surface');
+test('keeps secondary desktop surfaces on the shared square pixel grammar', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-
-  const surfaces = [
-    { nav: '职业', selector: '.career-filters, .career-detail.inverse, .career-bottom-panel' },
-    { nav: '商店', selector: '.view-shop .shop-rail .rail-module, .view-shop .shop-detail' },
-    { nav: '生活', selector: '.view-life .forecast-strip.inverse' },
-  ];
-
-  for (const { nav, selector } of surfaces) {
-    await page.getByRole('button', { name: nav, exact: true }).click();
-    const frames = await page.locator(selector).evaluateAll((elements) => elements.map((element) => ({
-      clipPath: getComputedStyle(element).clipPath,
-      overflowX: getComputedStyle(element).overflowX,
-      overflowY: getComputedStyle(element).overflowY,
-    })));
-
-    expect(frames.length, `${nav} should expose its real secondary surfaces`).toBeGreaterThan(0);
-    expect(frames.every(({ clipPath, overflowX, overflowY }) => clipPath !== 'none' && overflowX !== 'scroll' && overflowY !== 'scroll')).toBe(true);
+  for(const [name,selector] of [
+    ['职业','.career-filters, .career-detail.inverse, .career-bottom-panel'],
+    ['商店','.shop-rail .rail-module, .shop-detail'],
+    ['生活','.forecast-strip.inverse'],
+  ]) {
+    await page.getByLabel('主导航').getByRole('button', { name, exact: true }).click();
+    await expectSquarePixelSurfaces(page.locator(selector));
   }
 });
 
@@ -4339,43 +4029,19 @@ test('gives low-height desktop content a visible pixel scroll affordance', async
   });
 });
 
-test('keeps empty Shop rail modules on dark shells with the wishlist reading panel light', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name === 'mobile', 'Shop rail surface anatomy targets the supported desktop landscape surface');
+test('keeps empty Shop rail modules on one readable dark frame per function', async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1181, 'visual contract targets the supported desktop surface');
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.getByRole('button', { name: '商店', exact: true }).click();
-
-  const surfaces = await page.evaluate(() => Object.fromEntries([
-    ['cart', '.rail-cart > .shop-rail-empty'],
-    ['inventory', '.rail-inventory .shop-rail-empty'],
-    ['wishlist', '.rail-wishlist .shop-rail-empty'],
-  ].map(([key, selector]) => {
-    const element = document.querySelector(selector);
-    const style = element ? getComputedStyle(element) : null;
-    const shell = element?.closest('.rail-module');
-    const shellStyle = shell ? getComputedStyle(shell) : null;
-    return [key, {
-      backgroundColor: style?.backgroundColor,
-      color: style?.color,
-      shellBackgroundColor: shellStyle?.backgroundColor,
-    }];
-  })));
-
-  expect(surfaces).toEqual({
-    // Cart and Inventory keep the reference's compact dark insets.
-    cart: { backgroundColor: 'rgb(0, 0, 0)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(0, 0, 0)' },
-    inventory: { backgroundColor: 'rgb(0, 0, 0)', color: 'rgb(170, 170, 170)', shellBackgroundColor: 'rgb(0, 0, 0)' },
-    // The empty Wishlist shares the populated form's dark shell, but its
-    // status lane sits on the light reading panel instead of a dark inset.
-    wishlist: { backgroundColor: 'rgba(0, 0, 0, 0)', color: 'rgb(85, 85, 85)', shellBackgroundColor: 'rgb(0, 0, 0)' },
-  });
-
-  // Without rows the module would otherwise read as a second dead dark lane;
-  // the reference keeps a real reading surface in this rail slot.
-  const wishlistPanel = page.locator('.shop-rail .rail-wishlist > .detail-panel');
-  await expect(wishlistPanel).toHaveCSS('background-color', 'rgb(241, 241, 241)');
-  await expect(wishlistPanel).toHaveCSS('color', 'rgb(0, 0, 0)');
-  await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty strong')).toHaveCSS('color', 'rgb(0, 0, 0)');
-  await expect(page.locator('.shop-rail .rail-wishlist .shop-rail-empty .pixel-illustration')).toHaveCSS('color', 'rgb(0, 0, 0)');
+  await page.getByLabel('主导航').getByRole('button', { name: '商店', exact: true }).click();
+  const modules = page.locator('.shop-rail > .rail-module');
+  await expect(modules).toHaveCount(4);
+  for(let i=0;i<4;i++) await expect(modules.nth(i)).toHaveCSS('background-color', CONSOLE_PANEL);
+  const empty = page.locator('.shop-rail .shop-rail-empty');
+  await expect(empty).toHaveCount(3);
+  await expectReadableContrast(empty.locator('strong, small'));
+  for(const selector of ['.rail-inventory','.rail-wishlist']) {
+    await expect(page.locator('.shop-rail ' + selector + ' > .detail-panel')).toHaveCSS('border-width', '0px');
+  }
 });
 
 test('keeps tall Shop Rail empty-state copy above the micro tier', async ({ page }, testInfo) => {
@@ -4489,7 +4155,7 @@ test('turns the education course qualification into a persistent teaching assist
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('线上课程助教');
   await page.getByRole('button', { name: '进入下个月' }).click();
-  await page.getByLabel('主导航').getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('heading', { name: '完成线上课程助教' }).first()).toBeVisible();
   await page.reload();
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
@@ -4712,7 +4378,8 @@ test('discovers the expanded daily services and subscriptions', async ({ page })
 });
 
 test('shows locked wealth requirements with an actionable acquisition route', async ({ page }) => {
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
+  await page.getByText('查看获取条件与路径', { exact: true }).click();
   const panel = page.getByRole('region', { name: '获取路径' });
   await expect(panel).toContainText('精品珠宝');
   await expect(panel).toContainText('需要能力 市场洞察');
@@ -4785,7 +4452,7 @@ test('charges and cancels a monthly subscription with persisted history', async 
   await page.getByRole('tab', { name: '服务', exact: true }).click();
   await page.getByRole('heading', { name: '基础通信套餐' }).locator('..').locator('..').getByRole('button', { name: '取消订阅' }).click();
   await expect(subscription.getByRole('button', { name: '开通订阅' })).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   const serviceHistory = page.getByRole('region', { name: '人生记录' });
   await serviceHistory.getByRole('button', { name: '服务', exact: true }).click();
@@ -4793,7 +4460,7 @@ test('charges and cancels a monthly subscription with persisted history', async 
   await expect(serviceHistory.getByText('取消基础通信套餐')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   const serviceHistoryAfterReload = page.getByRole('region', { name: '人生记录' });
   await serviceHistoryAfterReload.getByRole('button', { name: '服务', exact: true }).click();
@@ -4816,14 +4483,14 @@ test('uses the basic fitness assessment service and keeps its history', async ({
 test('discovers the riverside night market activity', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '娱乐', exact: true }).click();
-  const market = page.locator('article.activity-card').filter({ hasText: '河畔夜市 · 逛一圈' });
+  const market = await findCatalogEntry(page, '河畔夜市 · 逛一圈', '活动');
   await expect(market.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
 
 test('discovers the industrial design exhibition trip', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '旅行', exact: true }).click();
-  const exhibition = page.locator('article.activity-card').filter({ hasText: '北部产业设计展 · 看展' });
+  const exhibition = await findCatalogEntry(page, '北部产业设计展 · 看展', '活动');
   await expect(exhibition).toContainText('¥280');
   await expect(exhibition.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
@@ -4831,12 +4498,12 @@ test('discovers the industrial design exhibition trip', async ({ page }) => {
 test('discovers and plans the expanded dining and concert activities', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '社交', exact: true }).click();
-  const dining = page.locator('article.activity-card').filter({ hasText: '精品餐厅晚餐 · 慢慢吃完' });
+  const dining = await findCatalogEntry(page, '精品餐厅晚餐 · 慢慢吃完', '活动');
   await expect(dining).toContainText('¥380');
   await expect(dining.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await dining.getByRole('button', { name: '安排到本周自由时间' }).click();
   await page.getByRole('tab', { name: '学习', exact: true }).click();
-  const concert = page.locator('article.activity-card').filter({ hasText: '演唱会 · 去现场' });
+  const concert = await findCatalogEntry(page, '演唱会 · 去现场', '活动');
   await expect(concert).toContainText('¥680');
   await expect(concert.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await openCareerTools(page);
@@ -4846,14 +4513,14 @@ test('discovers and plans the expanded dining and concert activities', async ({ 
 test('discovers the expanded home, cinema, and fitness activities', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '娱乐', exact: true }).click();
-  const cinema = page.locator('article.activity-card').filter({ hasText: 'IMAX 高规格电影 · 特别放映厅' });
+  const cinema = await findCatalogEntry(page, 'IMAX 高规格电影 · 特别放映厅', '活动');
   await expect(cinema).toContainText('¥138');
   await expect(cinema.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
-  const fitness = page.locator('article.activity-card').filter({ hasText: '去健身房 · 训练一小时' });
+  const fitness = await findCatalogEntry(page, '去健身房 · 训练一小时', '活动');
   await expect(fitness).toContainText('¥45');
   await expect(fitness).toContainText('体能 +1');
   await expect(fitness.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
-  const homeMovie = page.locator('article.activity-card').filter({ hasText: '在家看电影 · 在家看一部' });
+  const homeMovie = await findCatalogEntry(page, '在家看电影 · 在家看一部', '活动');
   await expect(homeMovie.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
 
@@ -4867,17 +4534,18 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '旅行', exact: true }).click();
-  const dayTrip = page.locator('article.activity-card').filter({ hasText: '城郊一日游 · 安排一日出行' });
+  const dayTrip = await findCatalogEntry(page, '城郊一日游 · 安排一日出行', '活动');
   await expect(dayTrip).toContainText('¥280');
-  const premiumWeekend = page.locator('article.activity-card').filter({ hasText: '品质周末旅行 · 安排品质周末' });
+  const premiumWeekend = await findCatalogEntry(page, '品质周末旅行 · 安排品质周末', '活动');
   await expect(premiumWeekend).toContainText('¥2,200');
   await expect(premiumWeekend.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
-  const domestic = page.locator('article.activity-card').filter({ hasText: '普通国内旅行 · 安排国内探索' });
+  const domestic = await findCatalogEntry(page, '普通国内旅行 · 安排国内探索', '活动');
   await expect(domestic).toContainText('¥2,800');
   await expect(domestic).toContainText('3 天');
-  const luxury = page.locator('article.activity-card').filter({ hasText: '豪华度假 · 安排豪华度假' });
+  const luxury = await findCatalogEntry(page, '豪华度假 · 安排豪华度假', '活动');
   await expect(luxury).toContainText('¥18,000');
   await expect(luxury).toContainText('5 天');
+  await findCatalogEntry(page, '品质周末旅行 · 安排品质周末', '活动');
   await premiumWeekend.getByRole('button', { name: '安排到本周自由时间' }).click();
   await openCareerTools(page);
   await expect(page.getByRole('button', { name: /周[一二三四五六日]白天计划/ }).filter({ hasText: '品质周末旅行 · 安排品质周末' })).toBeVisible();
@@ -4886,7 +4554,7 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
 test('discovers a contact-specific activity and schedules it with its relationship gate', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '社交', exact: true }).click();
-  const coffee = page.locator('article.activity-card').filter({ hasText: '和联系人喝咖啡 · 和林晨聊聊' });
+  const coffee = await findCatalogEntry(page, '和联系人喝咖啡 · 和林晨聊聊', '活动');
   await expect(coffee).toContainText('¥100');
   await expect(coffee).toContainText('关系 +3');
   await expect(coffee.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
@@ -4907,11 +4575,12 @@ test('acquires camping gear and unlocks the weekend camping plan', async ({ page
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '旅行', exact: true }).click();
+  await page.getByText('获取与安排说明', { exact: true }).click();
   const hints = page.getByRole('region', { name: '活动获取提示' });
   await expect(hints).toContainText('周末露营 · 搭帐篷住一晚');
   await expect(hints).toContainText('需要商品 露营装备');
   await hints.getByRole('button', { name: '购买 露营装备' }).click();
-  const camping = page.locator('article.activity-card').filter({ hasText: '周末露营 · 搭帐篷住一晚' });
+  const camping = await findCatalogEntry(page, '周末露营 · 搭帐篷住一晚', '活动');
   await expect(camping.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await camping.getByRole('button', { name: '安排到本周自由时间' }).click();
   await openCareerTools(page);
@@ -4931,7 +4600,7 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await page.getByRole('button', { name: '出售 10% 股权' }).click();
   await expect(page.getByText('持股 70% · 已投入资本 ¥0 · 融资 ¥0')).toBeVisible();
@@ -4941,12 +4610,12 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('投资分红');
   await page.getByRole('button', { name: '进入下个月' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('出售早餐与咖啡档 10% 股权')).toBeVisible();
   await expect(page.getByText('买入早餐与咖啡档公开股权')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('region', { name: '公开股权' })).toContainText('企业持股 70% · 市场流通 30%');
 });
 
@@ -4964,8 +4633,9 @@ test('runs a business from purchase through funding, listing, daily profit and p
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await page.getByRole('button', { name: '买入 ¥3,200' }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await page.getByRole('button', { name: '投入 ¥1,000' }).click();
   await page.getByRole('button', { name: '发起融资' }).click();
@@ -4976,11 +4646,11 @@ test('runs a business from purchase through funding, listing, daily profit and p
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('企业收入');
   await page.getByRole('button', { name: '进入下个月' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('heading', { name: '早餐与咖啡档完成融资' }).first()).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('button', { name: '已上市' })).toBeVisible();
   await expect(page.getByRole('region', { name: '公开股权' })).toContainText('早餐与咖啡档');
 });
@@ -5000,18 +4670,19 @@ test('acquires an unlocked business and persists the holding history', async ({ 
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '可并购企业' })).toBeVisible();
   await page.getByRole('button', { name: '并购 ¥8,580' }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '线上小店' }).last()).toBeVisible();
   const acquiredState = await readPersistedState(page);
   expect(acquiredState.businesses['business.online-store']).toBeDefined();
   expect(acquiredState.lifeHistory).toContainEqual(expect.objectContaining({ title: '并购线上小店' }));
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('并购线上小店')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('并购线上小店')).toBeVisible();
 });
 
@@ -5030,17 +4701,21 @@ test('joins a relationship-gated business partnership and persists the partial h
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByText('合伙方案：与周妍共同经营 · 你持股 50%')).toBeVisible();
   await page.getByRole('button', { name: '加入合伙 ¥4,200' }).click();
-  await expect(page.getByText('预计净利润 ¥65 /天 · 持股 50%', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openWealthPage(page, '经营');
+  const operations = page.getByRole('heading', { name: '企业经营', exact: true }).locator('xpath=ancestor::section[1]');
+  await expect(operations).toContainText('预计净利润 ¥65 /天');
+  await expect(operations).toContainText('持股 50%');
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('加入线上小店合伙')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
-  await expect(page.getByText('预计净利润 ¥65 /天 · 持股 50%', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openWealthPage(page, '经营');
+  await expect(operations).toContainText('预计净利润 ¥65 /天');
+  await expect(operations).toContainText('持股 50%');
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('加入线上小店合伙')).toBeVisible();
 });
 
@@ -5063,24 +4738,25 @@ test('joins and settles the official consulting studio partnership through the b
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await page.getByRole('button', { name: '加入合伙 ¥12,000' }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await expect(page.getByText(/咨询工作室/).first()).toBeVisible();
   await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('企业收入');
   await page.getByRole('button', { name: '进入下个月' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('加入咨询工作室合伙')).toBeVisible();
   const settledState = await readPersistedState(page);
   expect(settledState.financialHistory?.length).toBeGreaterThan(0);
   expect(settledState.financialHistory.at(-1).income.categories.business_income).toBeGreaterThan(0);
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('加入咨询工作室合伙')).toBeVisible();
 });
 
@@ -5095,17 +4771,18 @@ test('completes a wishlist purchase goal and persists its history', async ({ pag
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await findCatalogEntry(page, '新款手机');
   await page.getByRole('button', { name: '加入愿望清单：新款手机' }).click();
   const wishlist = page.getByRole('region', { name: '愿望清单' });
   await expect(wishlist).toContainText('新款手机');
   await expect(wishlist).toContainText('现在可以买');
   await wishlist.getByRole('button', { name: '买下' }).click();
   await expect(page.getByTestId('cash-value')).toHaveText('现金 ¥820');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('愿望清单完成：新款手机')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('愿望清单完成：新款手机')).toBeVisible();
 });
 
@@ -5170,7 +4847,7 @@ test('buys and persists the Isle lifestyle technology smart-home set', async ({ 
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
-  const item = page.locator('article.item-card').filter({ hasText: '智能家居套装' });
+  const item = await findCatalogEntry(page, '智能家居套装', '商品');
   await expect(item).toContainText('¥5,999');
   await item.getByRole('button', { name: '加入购物袋：智能家居套装' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
@@ -5178,7 +4855,7 @@ test('buys and persists the Isle lifestyle technology smart-home set', async ({ 
   const settled = await readPersistedState(page);
   expect(settled.cash).toBe(4_001);
   expect(settled.lifestyle - (beforePurchase.lifestyle ?? 10)).toBe(6);
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('购买智能家居套装')).toBeVisible();
 
   await page.reload();
@@ -5203,14 +4880,14 @@ test('settles a business operating risk event with persisted financial history',
   await event.getByRole('button', { name: '马上维修设备' }).click();
   await expect(event).toContainText('-300¥');
   await page.getByRole('button', { name: '收下并暂停' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('设备今天不太配合')).toBeVisible();
   const settled = await readPersistedState(page);
   expect(settled.cash).toBe(700);
   expect(settled.reputation).toBe((initial.reputation ?? 0) + 1);
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('设备今天不太配合')).toBeVisible();
 });
 
@@ -5230,9 +4907,11 @@ test('applies the industrial hub city event and persists its development', async
   await expect(page.getByRole('dialog')).toContainText('北部产业区发展 +1');
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '北部产业区', exact: true })).toBeVisible();
+  await page.locator('.district-nav button').filter({ hasText: '北部产业区' }).click();
+  await expect(page.locator('.district-summary h2')).toContainText('北部产业区');
   await page.reload();
   await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
+  await page.locator('.district-nav button').filter({ hasText: '北部产业区' }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 });
 
@@ -5242,10 +4921,10 @@ test('reads and persists the official storyline dialogue', async ({ page }) => {
   await storyline.getByRole('button', { name: '开始故事' }).click();
   await expect(storyline).toContainText('最近这段时间，你好像一直在处理很复杂的事情。');
   await storyline.getByRole('button', { name: '约个时间聊聊' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('远程连接：约个时间聊聊')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('远程连接：约个时间聊聊')).toBeVisible();
 });
 
@@ -5265,10 +4944,10 @@ test('completes the first fund investment storyline after entering the market', 
   await expect(storyline).toContainText('你已经开始把钱放进投资里了');
   await storyline.getByRole('button', { name: '先从低风险开始' }).click();
   await storyline.getByRole('button', { name: '把投资留在生活计划里' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('第一次买基金：把投资留在生活计划里')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('第一次买基金：把投资留在生活计划里')).toBeVisible();
 });
 
@@ -5317,10 +4996,10 @@ test('completes the first real consulting project storyline with a persisted out
   await storyline.getByRole('button', { name: '参加客户会议' }).click();
   await storyline.getByRole('button', { name: '多花 2h 准备' }).click();
   await storyline.getByRole('button', { name: '根据现有数据给出初步判断' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('第一次真正的项目：根据现有数据给出初步判断')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('第一次真正的项目：根据现有数据给出初步判断')).toBeVisible();
 });
 
@@ -5340,10 +5019,10 @@ test('completes the ecommerce big-promotion storyline with a persisted career re
   await storyline.getByRole('button', { name: '开始故事' }).click();
   await storyline.getByRole('button', { name: '加入核心项目' }).click();
   await storyline.getByRole('button', { name: '完成项目复盘' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('大促：完成项目复盘')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('大促：完成项目复盘')).toBeVisible();
 });
 
@@ -5390,12 +5069,12 @@ test('uses the employee purchase plan to buy a discounted smart-home set', async
   await storyline.getByRole('button', { name: '折扣购买' }).click();
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
-  const item = page.locator('article.item-card').filter({ hasText: '智能家居套装' });
+  const item = await findCatalogEntry(page, '智能家居套装', '商品');
   await expect(item).toContainText('¥4,499');
   await item.getByRole('button', { name: '加入购物袋：智能家居套装' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
   await expect(page.getByRole('heading', { name: '智能家居套装' }).first()).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('购买智能家居套装')).toBeVisible();
 });
 
@@ -5434,7 +5113,7 @@ test('shows persisted vehicle maintenance history in wealth', async ({ page }) =
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '历史');
   await expect(page.getByRole('region', { name: '车辆维护记录' })).toContainText('实用二手小车车辆成本');
 });
 
@@ -5449,7 +5128,8 @@ test('shows persisted ambient city sightings in the city view', async ({ page })
   await page.reload();
 
   await page.getByRole('button', { name: '城市', exact: true }).click();
-  await expect(page.getByRole('region', { name: '城市见闻' })).toContainText('夜间公交延长');
+  await page.getByText(/城市见闻 ·/).click();
+  await expect(page.getByLabel('城市见闻')).toContainText('夜间公交延长');
 });
 
 test('discovers and plans the friend-specific cafe activity', async ({ page }) => {
@@ -5465,8 +5145,9 @@ test('discovers and plans the friend-specific cafe activity', async ({ page }) =
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '学习', exact: true }).click();
+  await page.getByText('获取与安排说明', { exact: true }).click();
   await expect(page.getByRole('region', { name: '活动获取提示' })).toContainText('需要商品 复古相机');
-  const outing = page.locator('article').filter({ hasText: '和陈宇坐坐' });
+  const outing = await findCatalogEntry(page, '去咖啡馆坐一会 · 和陈宇坐坐', '活动');
   await expect(outing).toContainText('和陈宇坐坐');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
   await expect(page.getByRole('button', { name: '职业', exact: true })).toBeVisible();
@@ -5523,8 +5204,7 @@ test('buys and gives a preference-matching gift with persisted social history', 
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
-  await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
-  const flowers = page.locator('article').filter({ hasText: '一束花' }).first();
+  const flowers = await findCatalogEntry(page, '一束花');
   await flowers.getByRole('button', { name: '加入购物袋：一束花' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
   await page.getByRole('button', { name: '社交', exact: true }).click();
@@ -5554,10 +5234,12 @@ test('settles a city development event and keeps the location change after reloa
   await expect(page.getByRole('dialog')).toContainText('临江区发展 +1');
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
+  await page.locator('.district-nav button').filter({ hasText: '临江区' }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 
   await page.reload();
   await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
+  await page.locator('.district-nav button').filter({ hasText: '临江区' }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 });
 
@@ -5596,12 +5278,12 @@ test('shows the player-triggered company state in annual world history', async (
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const worldHistory = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
   await expect(worldHistory).toContainText('星河科技');
   await expect(worldHistory).toContainText('企业服务线提前启动（玩家参与）');
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]')).toContainText('企业服务线提前启动（玩家参与）');
 });
 
@@ -5649,16 +5331,20 @@ test('unlocks and trades the high-value collectible through the wealth flow', as
   await expect(page.getByRole('dialog')).toContainText('一份很简单的理财说明');
   await page.getByRole('dialog').getByRole('button', { name: /花点时间看懂它/ }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByText('限量机械腕表')).toBeVisible();
   await page.getByRole('button', { name: '买入 ¥18,000' }).click();
+  await openWealthPage(page, '持有');
   await expect(page.getByRole('button', { name: '出售 ¥18,000' })).toBeVisible();
   await page.getByRole('button', { name: '出售 ¥18,000' }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByRole('button', { name: '买入 ¥18,000' })).toBeVisible();
   await expect(page.getByText('精品珠宝')).toBeVisible();
   await page.getByRole('button', { name: '买入 ¥28,000' }).click();
+  await openWealthPage(page, '持有');
   await expect(page.getByRole('button', { name: '出售 ¥28,000' })).toBeVisible();
   await page.getByRole('button', { name: '出售 ¥28,000' }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByRole('button', { name: '买入 ¥28,000' })).toBeVisible();
 });
 
@@ -5673,17 +5359,16 @@ test('buys and resells the official diamond pendant with persisted purchase hist
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
-  await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
-  const product = page.getByRole('heading', { name: '小型钻石吊坠' }).locator('xpath=ancestor::article[1]');
+  const product = await findCatalogEntry(page, '小型钻石吊坠');
   await product.getByRole('button', { name: '加入购物袋：小型钻石吊坠' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
   await expect(page.getByText('库存 ×1')).toBeVisible();
   await page.getByRole('button', { name: '出售一次' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '人生记录' })).toContainText('购买小型钻石吊坠');
   await expect(page.getByRole('region', { name: '人生记录' })).toContainText('出售小型钻石吊坠');
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '人生记录' })).toContainText('出售小型钻石吊坠');
 });
 
@@ -5703,17 +5388,18 @@ test('shows persisted wealth milestones in the profile on desktop and mobile', a
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   const records = page.getByRole('region', { name: '财富阶段记录' });
   await expect(records).toContainText('有积蓄');
   await expect(records).toContainText('稳定');
   await expect(records).toContainText('第 28 天');
+  await openProfilePage(page, '经历与历史');
   const annualReview = page.getByRole('heading', { name: '年度回顾' }).locator('xpath=ancestor::section[1]');
   await expect(annualReview).toBeVisible();
   await expect(annualReview).toContainText('联系人 2 人');
   await expect(annualReview).toContainText('远望零售：门店与社区零售');
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   await expect(page.getByRole('region', { name: '财富阶段记录' })).toContainText('稳定');
 });
 
@@ -5728,7 +5414,7 @@ test('archives and restores annual public equity history in the profile', async 
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const equityHistory = page.getByRole('region', { name: '年度公开股权记录' });
   await expect(equityHistory).toContainText('第 1 年');
   await expect(equityHistory).toContainText('上市企业 1 家');
@@ -5739,7 +5425,7 @@ test('archives and restores annual public equity history in the profile', async 
   await expect(page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]')).toContainText('远望零售：门店与社区零售');
   await expect(page.getByRole('heading', { name: '年度回顾' }).locator('xpath=ancestor::section[1]')).toContainText('周妍 42');
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '年度公开股权记录' })).toContainText('公开流通 35%');
   await expect(page.getByRole('region', { name: '年度公开股权记录' })).toContainText('早餐与咖啡档 10% · 年末估值 ¥220');
   await expect(page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]')).toContainText('周妍 42');
@@ -5766,7 +5452,7 @@ test('finances a home and restores the mortgage state after reload', async ({ pa
   await expect(homeRow).toContainText('首付');
   await homeRow.getByRole('button', { name: '分期购买' }).click();
   await expect(page.getByText('分期中')).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('分期买下独立单间')).toBeVisible();
 
   await page.reload();
@@ -5938,7 +5624,7 @@ test('settles the authored private-equity exit opportunity', async ({ page }) =>
   await page.getByRole('button', { name: '财富', exact: true }).click();
   await page.getByRole('button', { name: '市场', exact: true }).click();
   await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).not.toContainText('持有 1 份');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   await expect(page.getByText('卖出城际生活早期股权')).toBeVisible();
 });
@@ -5985,7 +5671,7 @@ test('unlocks and trades the authored local restaurant investment opportunity', 
   // Accepting the authored buyout liquidates the holding in the same accounting
   // path as a manual sale, so no second sell step remains.
   await expect(page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..')).not.toContainText('持有 1 份');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   await expect(page.getByText('卖出小型餐饮项目合伙份额')).toBeVisible();
 });
@@ -6026,7 +5712,7 @@ test('keeps a fresh private-equity holding locked for 90 days and unlocks sellin
   await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).not.toContainText('持有 1 份');
   await awaitSaveSynced(page);
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   await expect(page.getByText('卖出城际生活早期股权')).toBeVisible();
 });
@@ -6041,10 +5727,11 @@ test('buys and sells independent public company equity with persisted history', 
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   const equity = page.getByRole('heading', { name: '启明服务公开股权' }).locator('..');
   await expect(equity).toContainText('独立于自营企业');
   await equity.getByRole('button', { name: '买入 1 份' }).click();
+  await openWealthPage(page, '持有');
   await expect(equity).toContainText('持有 1 份');
   await expect(equity).toContainText('已投入');
   await expect(equity).toContainText('平均成本');
@@ -6052,13 +5739,14 @@ test('buys and sells independent public company equity with persisted history', 
   await expect(equity).toContainText('未实现收益');
   await expect(equity).toContainText('30 日变化');
   await equity.getByRole('button', { name: '卖出 1 份' }).click();
+  await openWealthPage(page, '市场');
   await expect(equity).not.toContainText('持有 1 份');
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('买入启明服务公开股权')).toBeVisible();
   await expect(page.getByText('卖出启明服务公开股权')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('卖出启明服务公开股权')).toBeVisible();
 });
 
@@ -6119,7 +5807,7 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '概览');
   const summary = page.getByRole('region', { name: '财富组合摘要' });
   await expect(summary).toContainText('房产总值');
   await expect(summary).toContainText('现金余额');
@@ -6135,6 +5823,7 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   await expect(allocation).toContainText('现金');
   await expect(allocation).toContainText('金融投资');
   await expect(allocation).toContainText('投资房');
+  await openWealthPage(page, '历史');
   const history = page.getByRole('region', { name: '财富组合历史' });
   await expect(history).toContainText('第 2 月');
   await expect(history).toContainText('第 3 月');
@@ -6144,8 +5833,9 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   await expect(history).toContainText('分红 ¥80');
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '概览');
   await expect(page.getByRole('region', { name: '财富组合摘要' })).toContainText('房产净值');
+  await openWealthPage(page, '历史');
   await expect(page.getByRole('region', { name: '财富组合历史' })).toContainText('第 3 月');
 });
 
@@ -6161,13 +5851,13 @@ test('records and shows a reached milestone in the profile', async ({ page }) =>
 
   await page.getByRole('button', { name: '生活', exact: true }).click();
   await page.getByRole('button', { name: '开始本周' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   const records = page.getByRole('region', { name: '里程碑记录' });
   await expect(records).toContainText('第一万现金');
   await expect(records).toContainText('已达成');
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一万现金');
 });
 
@@ -6188,11 +5878,11 @@ test('records the first investment dividend as a milestone after monthly settlem
   await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toContainText('第 1 月');
   await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一笔投资分红');
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一笔投资分红');
 });
 
@@ -6216,7 +5906,7 @@ test('completes and persists an official course through the weekly plan', async 
   await expect(page.getByRole('dialog')).toContainText('第 1 月');
   await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('完成课程：职场基础课')).toBeVisible();
   await openCareerTools(page);
   await expect(page.getByRole('heading', { name: '职场基础课' }).locator('xpath=ancestor::div[contains(@class, "item-row")]')).toContainText('已完成');
@@ -6236,7 +5926,8 @@ test('settles Zhou business interaction and persists the follow-up message', asy
   await page.reload();
 
   await page.getByRole('button', { name: '社交', exact: true }).click();
-  const contact = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '周妍', exact: true }) });
+  await page.locator('.contact-list .contact-row').filter({ hasText: '周妍' }).click();
+  const contact = page.locator('.contact-detail');
   await contact.getByRole('button', { name: /一起看看店/ }).click();
   await expect(contact).toContainText('12');
   await expect(page.getByRole('region', { name: '消息' })).toContainText('周妍发来新消息');
@@ -6244,7 +5935,7 @@ test('settles Zhou business interaction and persists the follow-up message', asy
   await page.reload();
   await page.getByRole('button', { name: '社交', exact: true }).click();
   await expect(page.getByRole('region', { name: '消息' })).toContainText('周妍发来新消息');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const relationshipHistory = page.getByRole('region', { name: '关系历史' });
   await expect(relationshipHistory).toContainText('周妍');
   await expect(relationshipHistory).toContainText('当前关系 12');
@@ -6264,14 +5955,15 @@ test('settles Guqing consulting review interaction with preference feedback', as
   await page.reload();
 
   await page.getByRole('button', { name: '社交', exact: true }).click();
-  const contact = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '顾清', exact: true }) });
+  await page.locator('.contact-list .contact-row').filter({ hasText: '顾清' }).click();
+  const contact = page.locator('.contact-detail');
   await contact.getByRole('button', { name: /一起复盘项目/ }).click();
   await expect(contact).toContainText('7');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '关系历史' })).toContainText('和顾清复盘项目');
   await page.reload();
   await page.getByRole('button', { name: '社交', exact: true }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '关系历史' })).toContainText('和顾清复盘项目');
 });
 
@@ -6291,9 +5983,10 @@ test('builds a controlling stake through staged entry and persists board decisio
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByRole('region', { name: '企业组合' })).toHaveCount(0);
   await page.getByRole('button', { name: /入股 30%/ }).click();
+  await openWealthPage(page, '经营');
   const group = page.getByRole('region', { name: '企业组合' });
   await expect(group).toBeVisible();
   await expect(group).toContainText('战略 / 少数股权');
@@ -6306,12 +5999,12 @@ test('builds a controlling stake through staged entry and persists board decisio
   await page.getByRole('button', { name: /精简组织/ }).click();
   await expect(page.getByText(/重组效率 \+5%/).first()).toBeVisible();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('入股早餐与咖啡档')).toBeVisible();
   await expect(page.getByText('早餐与咖啡档完成组织精简')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('region', { name: '企业组合' })).toContainText('组合归母估值');
   await expect(page.getByText(/重组效率 \+5%/).first()).toBeVisible();
 });
@@ -6331,10 +6024,11 @@ test('evolves NPC and company timelines from world state and archives them', asy
 
   // Live evolution: the social timeline reshapes from persisted world state.
   await page.getByRole('button', { name: '社交', exact: true }).click();
-  const linCard = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '林晨', exact: true }) });
+  const linCard = page.locator('.contact-detail');
   await expect(linCard).toContainText('临江内容工作室 · 联合创始人');
   await expect(linCard).not.toContainText('电商运营助理');
-  const xukeCard = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '徐可', exact: true }) });
+  await page.locator('.contact-list .contact-row').filter({ hasText: '徐可' }).click();
+  const xukeCard = page.locator('.contact-detail');
   await expect(xukeCard).toContainText('星河企业服务线 · 技术合伙人');
 
   // Archived evolution: a completed annual snapshot renders its branched company and NPC states after reload.
@@ -6347,14 +6041,14 @@ test('evolves NPC and company timelines from world state and archives them', asy
     await window.__e2eSave.write(state);
   }, { key: saveKey, state: seeded });
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const worldRecords = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
   await expect(worldRecords).toContainText('北部转岗培训中心');
   await expect(worldRecords).toContainText('企业服务线并购整合');
   await expect(worldRecords).toContainText('临江内容工作室 · 联合创始人');
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const worldAfterReload = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
   await expect(worldAfterReload).toContainText('北部转岗培训中心');
 });
@@ -6425,7 +6119,7 @@ test('starts the old-photo storyline with song-yuran and persists its branch', a
   await page.getByRole('button', { name: '把这页翻过去' }).click();
   await expect(page.getByText('已完成').first()).toBeVisible();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('把这页翻过去').first()).toBeVisible();
 
   await page.reload();
@@ -6444,17 +6138,18 @@ test('discovers the new districts and reaches their venue activities', async ({ 
   await page.reload();
 
   await page.getByRole('button', { name: '城市', exact: true }).click();
-  await expect(page.locator('.item-card', { hasText: '南岸居住区' }).first()).toBeVisible();
+  await expect(page.locator('.district-nav button').filter({ hasText: '南岸居住区' })).toBeVisible();
 
   // Reach the tech-park venue card and jump into its bound activity.
-  const lectureVenue = page.locator('article.item-card').filter({ hasText: '科技园路演厅' });
+  const lectureVenue = page.locator('.venue-row').filter({ hasText: '科技园路演厅' });
   await expect(lectureVenue).toContainText('园区公开课');
-  await page.getByRole('button', { name: '去安排活动' }).last().click();
-  await expect(page.locator('.activity-card', { hasText: '园区公开课' })).toBeVisible();
+  await lectureVenue.getByRole('button', { name: '去安排活动' }).click();
+  await expect(page.getByRole('region', { name: '已选活动详情' })).toContainText('园区公开课');
 });
 test('runs a multi-year life in the real browser and keeps annual records consistent', async ({ page }) => {
+  test.setTimeout(180_000);
   const saveKey = 'yuliang-save-v1';
-  await page.goto('/');
+  await page.goto('./');
   await page.evaluate(() => localStorage.setItem('yuliang-e2e-hook', '1'));
   const initial = await readPersistedState(page);
   await page.evaluate(async ({ key, state }) => {

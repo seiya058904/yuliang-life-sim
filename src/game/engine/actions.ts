@@ -1226,6 +1226,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const relationshipMultiplier = Math.max(0.25, 1 - recentRepeats * 0.25);
       state.cash -= option.cashCost;
       recordStateFinancialEntry(state, { day: state.time.day, direction: 'expense', category: 'social', amount: option.cashCost, label: `${interaction.name} · ${option.label}`, sourceType: 'relationship', sourceId: interaction.id });
+      if (option.cashCost > 0) effects.push({ type: 'cash', amount: -option.cashCost, reason: option.label });
       const interactionEffects = (preferred ? (option.effects ?? []).map((effect) => effect.type === 'relation' ? { ...effect, amount: effect.amount + 2 } : effect) : option.effects ?? []).map((effect) => effect.type === 'relation' ? { ...effect, amount: Math.max(1, Math.round(effect.amount * relationshipMultiplier)) } : effect);
       applyContentEffects(state, interactionEffects, content, balance, effects);
       addLifeRecord(state, { category: 'relationship', title: `${interaction.name} · ${option.label}`, detail: `${preferred ? '符合对方偏好，关系进展更顺利' : '关系留下了新的进展'}${recentRepeats > 0 ? '；近期重复互动收益递减' : ''}`, sourceId: interaction.id, amount: option.cashCost ? -option.cashCost : undefined });

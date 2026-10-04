@@ -14,6 +14,18 @@ describe('game store persistence', () => {
     expect(store.getState().activeView).toBe('life');
   });
 
+  it('keeps an action error readable during simulation until the next player action', () => {
+    const store = createGameStore(contentRegistry, mergeBalanceConfig({ eventDailyLimit: 0 }), 1);
+    store.getState().dispatch({ type: 'start_week' });
+    expect(store.getState().dispatch({ type: 'purchase_items', items: { 'item.missing': 1 } })).toBe(false);
+    const error = store.getState().lastError;
+    expect(error).toBeTruthy();
+    store.getState().dispatch({ type: 'advance_simulation', minutes: 1 });
+    expect(store.getState().lastError).toBe(error);
+    store.getState().dispatch({ type: 'pause_simulation' });
+    expect(store.getState().lastError).toBeUndefined();
+  });
+
   it('persists the exact minute and restores the current schedule activity', async () => {
     const balance = mergeBalanceConfig({ eventDailyLimit: 0 });
     const first = createGameStore(contentRegistry, balance, 1);

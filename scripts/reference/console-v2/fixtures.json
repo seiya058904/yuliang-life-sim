@@ -1,0 +1,2491 @@
+{
+  "initial": {
+    "version": 10,
+    "nextLifeRecordSequence": 0,
+    "businessFacts": {
+      "history": "complete",
+      "lastCompleted": {},
+      "interactions": {},
+      "retentionClaims": {}
+    },
+    "contentVersion": 1,
+    "time": {
+      "day": 1,
+      "hour": 8,
+      "minute": 0
+    },
+    "calendar": {
+      "week": 1,
+      "weekday": 1,
+      "month": 1,
+      "weekOfMonth": 1
+    },
+    "cash": 500,
+    "ability": 10,
+    "reputation": 0,
+    "lifestyle": 10,
+    "attributes": {
+      "professional": 10,
+      "knowledge": 10,
+      "communication": 10,
+      "fitness": 10,
+      "appearance": 10,
+      "network": 0,
+      "mood": 50
+    },
+    "currentJobId": "job.seed-shop-clerk",
+    "employment": {
+      "jobId": "job.seed-shop-clerk",
+      "startedDay": 1,
+      "schedule": {
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "startMinute": 540,
+        "endMinute": 1020
+      },
+      "effectiveWeek": 1,
+      "basePay": 96,
+      "salaryAdjustment": 0,
+      "negotiationStage": 0
+    },
+    "weeklyPlan": {
+      "days": {
+        "1": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "2": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "3": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "4": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "5": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "6": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "7": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        }
+      },
+      "autoRepeat": true
+    },
+    "previousWeeklyPlan": {
+      "days": {
+        "1": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "2": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "3": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "4": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "5": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "6": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "7": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        }
+      },
+      "autoRepeat": true
+    },
+    "autoRepeatPlan": true,
+    "currentActivity": {
+      "kind": "life",
+      "start": {
+        "day": 1,
+        "hour": 7,
+        "minute": 0
+      },
+      "end": {
+        "day": 1,
+        "hour": 9,
+        "minute": 0
+      }
+    },
+    "simulationMode": "planning",
+    "simulationSpeed": 1,
+    "monthlyLedger": {
+      "wageIncome": 0,
+      "sideJobIncome": 0,
+      "businessIncome": 0,
+      "assetIncome": 0,
+      "rentExpense": 0,
+      "purchaseExpense": 0,
+      "livingExpense": 0,
+      "netWorthStart": {
+        "kind": "known",
+        "value": 500
+      },
+      "netWorthEnd": {
+        "kind": "known",
+        "value": 500
+      }
+    },
+    "financialLedger": {
+      "month": 1,
+      "nextSequence": 1,
+      "entriesComplete": true,
+      "entries": [],
+      "cashStart": {
+        "kind": "known",
+        "value": 500
+      },
+      "netWorthStart": {
+        "kind": "known",
+        "value": 500
+      }
+    },
+    "financialHistory": [],
+    "annualHistory": [],
+    "wealthMilestones": [],
+    "worldHistory": [],
+    "locationDevelopment": {
+      "location.central": 0,
+      "location.riverside": 0,
+      "location.industrial": 0,
+      "location.old-town": 0,
+      "location.south-residential": 0,
+      "location.tech-park": 0
+    },
+    "jobExperience": {},
+    "courseProgress": {},
+    "careerExperience": {},
+    "qualifications": [],
+    "inventory": {},
+    "itemPurchasePrices": {},
+    "wishlist": [],
+    "unlockedCapabilities": [],
+    "unlockedJobIds": [
+      "job.seed-shop-clerk",
+      "job.seed-warehouse",
+      "job.delivery-shift",
+      "job.course-operations-assistant",
+      "job.learning-consultant",
+      "job.course-operations-specialist",
+      "job.auto-service-assistant",
+      "job.sales-consultant-assistant",
+      "job.auto-sales-consultant",
+      "job.auto-customer-operations",
+      "job.production-assistant",
+      "job.video-operations",
+      "job.customer-experience-assistant",
+      "job.product-support-specialist",
+      "job.user-research-assistant",
+      "job.lifestyle-product-operations"
+    ],
+    "unlockedHousingIds": [
+      "housing.shared-room",
+      "housing.seed-room"
+    ],
+    "unlockedBusinessIds": [],
+    "unlockedAssetIds": [
+      "asset.used-compact",
+      "asset.city-sedan",
+      "asset.city-ev",
+      "asset.quality-sedan",
+      "asset.city-suv",
+      "asset.executive-sedan"
+    ],
+    "housing": {
+      "housingId": "housing.shared-room",
+      "mode": "rent"
+    },
+    "housingHoldings": {},
+    "locationVisits": {},
+    "interestFamiliarity": {},
+    "relationships": {
+      "character.seed-lin": 8,
+      "character.seed-zhou": 5,
+      "character.chenyu": 0,
+      "character.xuke": 0,
+      "character.heyan": 0,
+      "character.xuheng": 0,
+      "character.guqing": 0,
+      "character.song-yuran": 0,
+      "character.tang-ke": 0,
+      "character.luo-lan": 0,
+      "character.yan-zhe": 0
+    },
+    "messages": [],
+    "nextMessageSequence": 0,
+    "nextApplicationSequence": 0,
+    "applicationCooldowns": {},
+    "consumedOpportunityIds": [],
+    "businesses": {},
+    "publicBusinessEquities": {},
+    "completedBusinessProjects": [],
+    "assets": {},
+    "investments": {},
+    "activeSubscriptions": {},
+    "completedEvents": [],
+    "completedMilestones": [],
+    "eventCooldowns": {},
+    "chainStages": {},
+    "flags": {},
+    "modifiers": [],
+    "discounts": [],
+    "marketJobIds": [
+      "job.seed-shop-clerk",
+      "job.seed-warehouse",
+      "job.seed-office",
+      "job.seed-remote",
+      "job.delivery-shift",
+      "job.cafe-assistant",
+      "job.customer-service",
+      "job.data-entry",
+      "job.operations-specialist",
+      "job.remote-operator",
+      "job.project-coordinator",
+      "job.independent-consultant",
+      "job.regional-operations-manager",
+      "job.category-operations-expert",
+      "job.photography-assistant-gig",
+      "job.huanliu-warehouse-assistant",
+      "job.huanliu-dispatch-coordinator",
+      "job.course-operations-assistant",
+      "job.learning-consultant",
+      "job.course-operations-specialist",
+      "job.course-teaching-assistant",
+      "job.research-assistant",
+      "job.business-analysis-assistant",
+      "job.business-analyst",
+      "job.travel-product-assistant",
+      "job.order-operations-assistant",
+      "job.ecommerce-operations-assistant",
+      "job.ecommerce-operations-specialist",
+      "job.growth-operations",
+      "job.auto-service-assistant",
+      "job.sales-consultant-assistant",
+      "job.auto-sales-consultant",
+      "job.auto-customer-operations",
+      "job.production-assistant",
+      "job.content-editor",
+      "job.video-operations",
+      "job.customer-experience-assistant",
+      "job.product-support-specialist",
+      "job.user-research-assistant",
+      "job.lifestyle-product-operations",
+      "job.city-dispatch-manager",
+      "job.learning-product-lead",
+      "job.principal-analyst",
+      "job.travel-experience-designer",
+      "job.media-producer-lead",
+      "job.lifestyle-product-expert",
+      "job.auto-regional-trainer",
+      "job.starbridge-growth-director"
+    ],
+    "eventMeter": 0,
+    "eventDay": 1,
+    "eventsToday": 0,
+    "lastSettledDay": 0,
+    "rentReliefAvailableDay": 0,
+    "housingReliefUntilDay": 0,
+    "rng": {
+      "seed": 20260825,
+      "cursor": 0
+    },
+    "majorEventsThisMonth": 0,
+    "ambientLog": [],
+    "storylineStages": {},
+    "applications": [],
+    "opportunities": [],
+    "acquiredSideJobs": {},
+    "gigs": [],
+    "employmentHistory": [],
+    "monthlyHighlights": [],
+    "lifeHistory": [],
+    "vacancies": [
+      {
+        "vacancyId": "vacancy.vacancy-template.office-xinghe.1",
+        "jobId": "job.seed-office",
+        "companyId": "company.xinghe",
+        "salaryRange": [
+          160,
+          185
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.office-yuanwang.1",
+        "jobId": "job.seed-office",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          151,
+          171
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.shop-qiming.1",
+        "jobId": "job.seed-shop-clerk",
+        "companyId": "company.qiming",
+        "salaryRange": [
+          88,
+          104
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.warehouse-yuanwang.1",
+        "jobId": "job.seed-warehouse",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          118,
+          138
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.regional-manager-yuanwang.1",
+        "jobId": "job.regional-operations-manager",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          570,
+          670
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.category-expert-xinghe.1",
+        "jobId": "job.category-operations-expert",
+        "companyId": "company.xinghe",
+        "salaryRange": [
+          684,
+          778
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.warehouse-huanliu.1",
+        "jobId": "job.huanliu-warehouse-assistant",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          129,
+          147
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.dispatch-huanliu.1",
+        "jobId": "job.huanliu-dispatch-coordinator",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          269,
+          315
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.course-assistant-greenfield.1",
+        "jobId": "job.course-operations-assistant",
+        "companyId": "company.greenfield-education",
+        "salaryRange": [
+          219,
+          257
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.research-clearview.1",
+        "jobId": "job.research-assistant",
+        "companyId": "company.clearview-consulting",
+        "salaryRange": [
+          261,
+          297
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.travel-assistant-harbor.1",
+        "jobId": "job.travel-product-assistant",
+        "companyId": "company.harbor-travel",
+        "salaryRange": [
+          247,
+          281
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.order-operations-starbridge.1",
+        "jobId": "job.order-operations-assistant",
+        "companyId": "company.starbridge-ecommerce",
+        "salaryRange": [
+          220,
+          251
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.auto-service-neworder.1",
+        "jobId": "job.auto-service-assistant",
+        "companyId": "company.neworder-auto",
+        "salaryRange": [
+          138,
+          157
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.experience-isle.1",
+        "jobId": "job.customer-experience-assistant",
+        "companyId": "company.isle-lifestyle",
+        "salaryRange": [
+          145,
+          165
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.production-frame.1",
+        "jobId": "job.production-assistant",
+        "companyId": "company.frame-media",
+        "salaryRange": [
+          145,
+          165
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.teaching-assistant-greenfield.1",
+        "jobId": "job.course-teaching-assistant",
+        "companyId": "company.greenfield-education",
+        "salaryRange": [
+          155,
+          181
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.dispatch-manager-huanliu.1",
+        "jobId": "job.city-dispatch-manager",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          512,
+          589
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.producer-lead-frame.1",
+        "jobId": "job.media-producer-lead",
+        "companyId": "company.frame-media",
+        "salaryRange": [
+          532,
+          605
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      }
+    ]
+  },
+  "populated": {
+    "version": 10,
+    "nextLifeRecordSequence": 0,
+    "businessFacts": {
+      "history": "complete",
+      "lastCompleted": {},
+      "interactions": {},
+      "retentionClaims": {}
+    },
+    "contentVersion": 1,
+    "time": {
+      "day": 1,
+      "hour": 8,
+      "minute": 0
+    },
+    "calendar": {
+      "week": 1,
+      "weekday": 1,
+      "month": 1,
+      "weekOfMonth": 1
+    },
+    "cash": 500,
+    "ability": 10,
+    "reputation": 0,
+    "lifestyle": 10,
+    "attributes": {
+      "professional": 10,
+      "knowledge": 10,
+      "communication": 10,
+      "fitness": 10,
+      "appearance": 10,
+      "network": 0,
+      "mood": 50
+    },
+    "currentJobId": "job.seed-shop-clerk",
+    "employment": {
+      "jobId": "job.seed-shop-clerk",
+      "startedDay": 1,
+      "schedule": {
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "startMinute": 540,
+        "endMinute": 1020
+      },
+      "effectiveWeek": 1,
+      "basePay": 96,
+      "salaryAdjustment": 0,
+      "negotiationStage": 0
+    },
+    "weeklyPlan": {
+      "days": {
+        "1": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "2": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "3": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "4": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "5": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "6": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "7": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        }
+      },
+      "autoRepeat": true
+    },
+    "previousWeeklyPlan": {
+      "days": {
+        "1": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "2": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "3": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "4": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "5": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "6": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "7": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        }
+      },
+      "autoRepeat": true
+    },
+    "autoRepeatPlan": true,
+    "currentActivity": {
+      "kind": "life",
+      "start": {
+        "day": 1,
+        "hour": 7,
+        "minute": 0
+      },
+      "end": {
+        "day": 1,
+        "hour": 9,
+        "minute": 0
+      }
+    },
+    "simulationMode": "planning",
+    "simulationSpeed": 1,
+    "monthlyLedger": {
+      "wageIncome": 0,
+      "sideJobIncome": 0,
+      "businessIncome": 0,
+      "assetIncome": 0,
+      "rentExpense": 0,
+      "purchaseExpense": 0,
+      "livingExpense": 0,
+      "netWorthStart": {
+        "kind": "known",
+        "value": 500
+      },
+      "netWorthEnd": {
+        "kind": "known",
+        "value": 500
+      }
+    },
+    "financialLedger": {
+      "month": 1,
+      "nextSequence": 1,
+      "entriesComplete": true,
+      "entries": [],
+      "cashStart": {
+        "kind": "known",
+        "value": 500
+      },
+      "netWorthStart": {
+        "kind": "known",
+        "value": 500
+      }
+    },
+    "financialHistory": [],
+    "annualHistory": [],
+    "wealthMilestones": [],
+    "worldHistory": [],
+    "locationDevelopment": {
+      "location.central": 0,
+      "location.riverside": 0,
+      "location.industrial": 0,
+      "location.old-town": 0,
+      "location.south-residential": 0,
+      "location.tech-park": 0
+    },
+    "jobExperience": {},
+    "courseProgress": {},
+    "careerExperience": {},
+    "qualifications": [],
+    "inventory": {
+      "item.seed-coffee": 1,
+      "item.seed-phone": 1
+    },
+    "itemPurchasePrices": {},
+    "wishlist": [
+      "item.seed-laptop"
+    ],
+    "unlockedCapabilities": [],
+    "unlockedJobIds": [
+      "job.seed-shop-clerk",
+      "job.seed-warehouse",
+      "job.delivery-shift",
+      "job.course-operations-assistant",
+      "job.learning-consultant",
+      "job.course-operations-specialist",
+      "job.auto-service-assistant",
+      "job.sales-consultant-assistant",
+      "job.auto-sales-consultant",
+      "job.auto-customer-operations",
+      "job.production-assistant",
+      "job.video-operations",
+      "job.customer-experience-assistant",
+      "job.product-support-specialist",
+      "job.user-research-assistant",
+      "job.lifestyle-product-operations"
+    ],
+    "unlockedHousingIds": [
+      "housing.shared-room",
+      "housing.seed-room"
+    ],
+    "unlockedBusinessIds": [],
+    "unlockedAssetIds": [
+      "asset.used-compact",
+      "asset.city-sedan",
+      "asset.city-ev",
+      "asset.quality-sedan",
+      "asset.city-suv",
+      "asset.executive-sedan"
+    ],
+    "housing": {
+      "housingId": "housing.shared-room",
+      "mode": "rent"
+    },
+    "housingHoldings": {},
+    "locationVisits": {},
+    "interestFamiliarity": {},
+    "relationships": {
+      "character.seed-lin": 8,
+      "character.seed-zhou": 5,
+      "character.chenyu": 0,
+      "character.xuke": 0,
+      "character.heyan": 0,
+      "character.xuheng": 0,
+      "character.guqing": 0,
+      "character.song-yuran": 0,
+      "character.tang-ke": 0,
+      "character.luo-lan": 0,
+      "character.yan-zhe": 0
+    },
+    "messages": [
+      {
+        "id": "message.visual-low-1",
+        "day": 1,
+        "characterId": "character.seed-lin",
+        "title": "林晨发来消息 1",
+        "body": "最近过得怎么样？有空一起去书店坐坐。",
+        "sourceId": "interaction.seed-lin-meal",
+        "read": false
+      },
+      {
+        "id": "message.visual-low-2",
+        "day": 1,
+        "characterId": "character.seed-lin",
+        "title": "林晨发来消息 2",
+        "body": "最近过得怎么样？有空一起去书店坐坐。",
+        "sourceId": "interaction.seed-lin-meal",
+        "read": false
+      },
+      {
+        "id": "message.visual-low-3",
+        "day": 1,
+        "characterId": "character.seed-lin",
+        "title": "林晨发来消息 3",
+        "body": "最近过得怎么样？有空一起去书店坐坐。",
+        "sourceId": "interaction.seed-lin-meal",
+        "read": false
+      },
+      {
+        "id": "message.visual-low-4",
+        "day": 1,
+        "characterId": "character.seed-lin",
+        "title": "林晨发来消息 4",
+        "body": "最近过得怎么样？有空一起去书店坐坐。",
+        "sourceId": "interaction.seed-lin-meal",
+        "read": false
+      }
+    ],
+    "nextMessageSequence": 0,
+    "nextApplicationSequence": 0,
+    "applicationCooldowns": {},
+    "consumedOpportunityIds": [],
+    "businesses": {},
+    "publicBusinessEquities": {},
+    "completedBusinessProjects": [],
+    "assets": {},
+    "investments": {},
+    "activeSubscriptions": {},
+    "completedEvents": [],
+    "completedMilestones": [],
+    "eventCooldowns": {},
+    "chainStages": {},
+    "flags": {},
+    "modifiers": [],
+    "discounts": [],
+    "marketJobIds": [
+      "job.seed-shop-clerk",
+      "job.seed-warehouse",
+      "job.seed-office",
+      "job.seed-remote",
+      "job.delivery-shift",
+      "job.cafe-assistant",
+      "job.customer-service",
+      "job.data-entry",
+      "job.operations-specialist",
+      "job.remote-operator",
+      "job.project-coordinator",
+      "job.independent-consultant",
+      "job.regional-operations-manager",
+      "job.category-operations-expert",
+      "job.photography-assistant-gig",
+      "job.huanliu-warehouse-assistant",
+      "job.huanliu-dispatch-coordinator",
+      "job.course-operations-assistant",
+      "job.learning-consultant",
+      "job.course-operations-specialist",
+      "job.course-teaching-assistant",
+      "job.research-assistant",
+      "job.business-analysis-assistant",
+      "job.business-analyst",
+      "job.travel-product-assistant",
+      "job.order-operations-assistant",
+      "job.ecommerce-operations-assistant",
+      "job.ecommerce-operations-specialist",
+      "job.growth-operations",
+      "job.auto-service-assistant",
+      "job.sales-consultant-assistant",
+      "job.auto-sales-consultant",
+      "job.auto-customer-operations",
+      "job.production-assistant",
+      "job.content-editor",
+      "job.video-operations",
+      "job.customer-experience-assistant",
+      "job.product-support-specialist",
+      "job.user-research-assistant",
+      "job.lifestyle-product-operations",
+      "job.city-dispatch-manager",
+      "job.learning-product-lead",
+      "job.principal-analyst",
+      "job.travel-experience-designer",
+      "job.media-producer-lead",
+      "job.lifestyle-product-expert",
+      "job.auto-regional-trainer",
+      "job.starbridge-growth-director"
+    ],
+    "eventMeter": 0,
+    "eventDay": 1,
+    "eventsToday": 0,
+    "lastSettledDay": 0,
+    "rentReliefAvailableDay": 0,
+    "housingReliefUntilDay": 0,
+    "rng": {
+      "seed": 20260825,
+      "cursor": 0
+    },
+    "majorEventsThisMonth": 0,
+    "ambientLog": [],
+    "storylineStages": {},
+    "applications": [],
+    "opportunities": [],
+    "acquiredSideJobs": {},
+    "gigs": [],
+    "employmentHistory": [],
+    "monthlyHighlights": [],
+    "lifeHistory": [],
+    "vacancies": [
+      {
+        "vacancyId": "vacancy.vacancy-template.office-xinghe.1",
+        "jobId": "job.seed-office",
+        "companyId": "company.xinghe",
+        "salaryRange": [
+          160,
+          185
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.office-yuanwang.1",
+        "jobId": "job.seed-office",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          151,
+          171
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.shop-qiming.1",
+        "jobId": "job.seed-shop-clerk",
+        "companyId": "company.qiming",
+        "salaryRange": [
+          88,
+          104
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.warehouse-yuanwang.1",
+        "jobId": "job.seed-warehouse",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          118,
+          138
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.regional-manager-yuanwang.1",
+        "jobId": "job.regional-operations-manager",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          570,
+          670
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.category-expert-xinghe.1",
+        "jobId": "job.category-operations-expert",
+        "companyId": "company.xinghe",
+        "salaryRange": [
+          684,
+          778
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.warehouse-huanliu.1",
+        "jobId": "job.huanliu-warehouse-assistant",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          129,
+          147
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.dispatch-huanliu.1",
+        "jobId": "job.huanliu-dispatch-coordinator",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          269,
+          315
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.course-assistant-greenfield.1",
+        "jobId": "job.course-operations-assistant",
+        "companyId": "company.greenfield-education",
+        "salaryRange": [
+          219,
+          257
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.research-clearview.1",
+        "jobId": "job.research-assistant",
+        "companyId": "company.clearview-consulting",
+        "salaryRange": [
+          261,
+          297
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.travel-assistant-harbor.1",
+        "jobId": "job.travel-product-assistant",
+        "companyId": "company.harbor-travel",
+        "salaryRange": [
+          247,
+          281
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.order-operations-starbridge.1",
+        "jobId": "job.order-operations-assistant",
+        "companyId": "company.starbridge-ecommerce",
+        "salaryRange": [
+          220,
+          251
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.auto-service-neworder.1",
+        "jobId": "job.auto-service-assistant",
+        "companyId": "company.neworder-auto",
+        "salaryRange": [
+          138,
+          157
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.experience-isle.1",
+        "jobId": "job.customer-experience-assistant",
+        "companyId": "company.isle-lifestyle",
+        "salaryRange": [
+          145,
+          165
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.production-frame.1",
+        "jobId": "job.production-assistant",
+        "companyId": "company.frame-media",
+        "salaryRange": [
+          145,
+          165
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.teaching-assistant-greenfield.1",
+        "jobId": "job.course-teaching-assistant",
+        "companyId": "company.greenfield-education",
+        "salaryRange": [
+          155,
+          181
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.dispatch-manager-huanliu.1",
+        "jobId": "job.city-dispatch-manager",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          512,
+          589
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.producer-lead-frame.1",
+        "jobId": "job.media-producer-lead",
+        "companyId": "company.frame-media",
+        "salaryRange": [
+          532,
+          605
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      }
+    ]
+  },
+  "career": {
+    "version": 10,
+    "nextLifeRecordSequence": 0,
+    "businessFacts": {
+      "history": "complete",
+      "lastCompleted": {},
+      "interactions": {},
+      "retentionClaims": {}
+    },
+    "contentVersion": 1,
+    "time": {
+      "day": 1,
+      "hour": 8,
+      "minute": 0
+    },
+    "calendar": {
+      "week": 1,
+      "weekday": 1,
+      "month": 1,
+      "weekOfMonth": 1
+    },
+    "cash": 500,
+    "ability": 10,
+    "reputation": 0,
+    "lifestyle": 10,
+    "attributes": {
+      "professional": 10,
+      "knowledge": 10,
+      "communication": 10,
+      "fitness": 10,
+      "appearance": 10,
+      "network": 0,
+      "mood": 50
+    },
+    "currentJobId": "job.seed-shop-clerk",
+    "employment": {
+      "jobId": "job.seed-shop-clerk",
+      "startedDay": 1,
+      "schedule": {
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "startMinute": 540,
+        "endMinute": 1020
+      },
+      "effectiveWeek": 1,
+      "basePay": 96,
+      "salaryAdjustment": 0,
+      "negotiationStage": 0
+    },
+    "weeklyPlan": {
+      "days": {
+        "1": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "2": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "3": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "4": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "5": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "6": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "7": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        }
+      },
+      "autoRepeat": true
+    },
+    "previousWeeklyPlan": {
+      "days": {
+        "1": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "2": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "3": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "4": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "5": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "6": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "7": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        }
+      },
+      "autoRepeat": true
+    },
+    "autoRepeatPlan": true,
+    "currentActivity": {
+      "kind": "life",
+      "start": {
+        "day": 1,
+        "hour": 7,
+        "minute": 0
+      },
+      "end": {
+        "day": 1,
+        "hour": 9,
+        "minute": 0
+      }
+    },
+    "simulationMode": "planning",
+    "simulationSpeed": 1,
+    "monthlyLedger": {
+      "wageIncome": 0,
+      "sideJobIncome": 0,
+      "businessIncome": 0,
+      "assetIncome": 0,
+      "rentExpense": 0,
+      "purchaseExpense": 0,
+      "livingExpense": 0,
+      "netWorthStart": {
+        "kind": "known",
+        "value": 500
+      },
+      "netWorthEnd": {
+        "kind": "known",
+        "value": 500
+      }
+    },
+    "financialLedger": {
+      "month": 1,
+      "nextSequence": 1,
+      "entriesComplete": true,
+      "entries": [],
+      "cashStart": {
+        "kind": "known",
+        "value": 500
+      },
+      "netWorthStart": {
+        "kind": "known",
+        "value": 500
+      }
+    },
+    "financialHistory": [],
+    "annualHistory": [],
+    "wealthMilestones": [],
+    "worldHistory": [],
+    "locationDevelopment": {
+      "location.central": 0,
+      "location.riverside": 0,
+      "location.industrial": 0,
+      "location.old-town": 0,
+      "location.south-residential": 0,
+      "location.tech-park": 0
+    },
+    "jobExperience": {},
+    "courseProgress": {},
+    "careerExperience": {},
+    "qualifications": [],
+    "inventory": {},
+    "itemPurchasePrices": {},
+    "wishlist": [],
+    "unlockedCapabilities": [],
+    "unlockedJobIds": [
+      "job.seed-shop-clerk",
+      "job.seed-warehouse",
+      "job.delivery-shift",
+      "job.course-operations-assistant",
+      "job.learning-consultant",
+      "job.course-operations-specialist",
+      "job.auto-service-assistant",
+      "job.sales-consultant-assistant",
+      "job.auto-sales-consultant",
+      "job.auto-customer-operations",
+      "job.production-assistant",
+      "job.video-operations",
+      "job.customer-experience-assistant",
+      "job.product-support-specialist",
+      "job.user-research-assistant",
+      "job.lifestyle-product-operations"
+    ],
+    "unlockedHousingIds": [
+      "housing.shared-room",
+      "housing.seed-room"
+    ],
+    "unlockedBusinessIds": [],
+    "unlockedAssetIds": [
+      "asset.used-compact",
+      "asset.city-sedan",
+      "asset.city-ev",
+      "asset.quality-sedan",
+      "asset.city-suv",
+      "asset.executive-sedan"
+    ],
+    "housing": {
+      "housingId": "housing.shared-room",
+      "mode": "rent"
+    },
+    "housingHoldings": {},
+    "locationVisits": {},
+    "interestFamiliarity": {},
+    "relationships": {
+      "character.seed-lin": 8,
+      "character.seed-zhou": 5,
+      "character.chenyu": 0,
+      "character.xuke": 0,
+      "character.heyan": 0,
+      "character.xuheng": 0,
+      "character.guqing": 0,
+      "character.song-yuran": 0,
+      "character.tang-ke": 0,
+      "character.luo-lan": 0,
+      "character.yan-zhe": 0
+    },
+    "messages": [],
+    "nextMessageSequence": 0,
+    "nextApplicationSequence": 0,
+    "applicationCooldowns": {},
+    "consumedOpportunityIds": [],
+    "businesses": {},
+    "publicBusinessEquities": {},
+    "completedBusinessProjects": [],
+    "assets": {},
+    "investments": {},
+    "activeSubscriptions": {},
+    "completedEvents": [],
+    "completedMilestones": [],
+    "eventCooldowns": {},
+    "chainStages": {},
+    "flags": {},
+    "modifiers": [],
+    "discounts": [],
+    "marketJobIds": [
+      "job.seed-shop-clerk",
+      "job.seed-warehouse",
+      "job.seed-office",
+      "job.seed-remote",
+      "job.delivery-shift",
+      "job.cafe-assistant",
+      "job.customer-service",
+      "job.data-entry",
+      "job.operations-specialist",
+      "job.remote-operator",
+      "job.project-coordinator",
+      "job.independent-consultant",
+      "job.regional-operations-manager",
+      "job.category-operations-expert",
+      "job.photography-assistant-gig",
+      "job.huanliu-warehouse-assistant",
+      "job.huanliu-dispatch-coordinator",
+      "job.course-operations-assistant",
+      "job.learning-consultant",
+      "job.course-operations-specialist",
+      "job.course-teaching-assistant",
+      "job.research-assistant",
+      "job.business-analysis-assistant",
+      "job.business-analyst",
+      "job.travel-product-assistant",
+      "job.order-operations-assistant",
+      "job.ecommerce-operations-assistant",
+      "job.ecommerce-operations-specialist",
+      "job.growth-operations",
+      "job.auto-service-assistant",
+      "job.sales-consultant-assistant",
+      "job.auto-sales-consultant",
+      "job.auto-customer-operations",
+      "job.production-assistant",
+      "job.content-editor",
+      "job.video-operations",
+      "job.customer-experience-assistant",
+      "job.product-support-specialist",
+      "job.user-research-assistant",
+      "job.lifestyle-product-operations",
+      "job.city-dispatch-manager",
+      "job.learning-product-lead",
+      "job.principal-analyst",
+      "job.travel-experience-designer",
+      "job.media-producer-lead",
+      "job.lifestyle-product-expert",
+      "job.auto-regional-trainer",
+      "job.starbridge-growth-director"
+    ],
+    "eventMeter": 0,
+    "eventDay": 1,
+    "eventsToday": 0,
+    "lastSettledDay": 0,
+    "rentReliefAvailableDay": 0,
+    "housingReliefUntilDay": 0,
+    "rng": {
+      "seed": 20260825,
+      "cursor": 0
+    },
+    "majorEventsThisMonth": 0,
+    "ambientLog": [],
+    "storylineStages": {},
+    "applications": [
+      {
+        "applicationId": "application.visual-career",
+        "vacancyId": "vacancy.visual-career",
+        "jobId": "job.seed-remote",
+        "companyId": "company.xinghe",
+        "salaryRange": [
+          80,
+          100
+        ],
+        "route": "market",
+        "submittedDay": 1,
+        "resultDay": 1,
+        "status": "offer",
+        "competitivenessTier": "competitive",
+        "probabilityBand": 0.7,
+        "willReceiveOffer": true,
+        "feedback": [
+          "条件符合岗位期待"
+        ],
+        "offerExpiresDay": 8
+      }
+    ],
+    "opportunities": [],
+    "acquiredSideJobs": {},
+    "gigs": [],
+    "employmentHistory": [
+      {
+        "jobId": "job.seed-warehouse",
+        "companyId": "company.yuanwang",
+        "startedDay": 1,
+        "endedDay": 1,
+        "finalPay": 130
+      }
+    ],
+    "monthlyHighlights": [],
+    "lifeHistory": [],
+    "vacancies": [
+      {
+        "vacancyId": "vacancy.vacancy-template.office-xinghe.1",
+        "jobId": "job.seed-office",
+        "companyId": "company.xinghe",
+        "salaryRange": [
+          160,
+          185
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.office-yuanwang.1",
+        "jobId": "job.seed-office",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          151,
+          171
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.shop-qiming.1",
+        "jobId": "job.seed-shop-clerk",
+        "companyId": "company.qiming",
+        "salaryRange": [
+          88,
+          104
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.warehouse-yuanwang.1",
+        "jobId": "job.seed-warehouse",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          118,
+          138
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.regional-manager-yuanwang.1",
+        "jobId": "job.regional-operations-manager",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          570,
+          670
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.category-expert-xinghe.1",
+        "jobId": "job.category-operations-expert",
+        "companyId": "company.xinghe",
+        "salaryRange": [
+          684,
+          778
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.warehouse-huanliu.1",
+        "jobId": "job.huanliu-warehouse-assistant",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          129,
+          147
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.dispatch-huanliu.1",
+        "jobId": "job.huanliu-dispatch-coordinator",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          269,
+          315
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.course-assistant-greenfield.1",
+        "jobId": "job.course-operations-assistant",
+        "companyId": "company.greenfield-education",
+        "salaryRange": [
+          219,
+          257
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.research-clearview.1",
+        "jobId": "job.research-assistant",
+        "companyId": "company.clearview-consulting",
+        "salaryRange": [
+          261,
+          297
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.travel-assistant-harbor.1",
+        "jobId": "job.travel-product-assistant",
+        "companyId": "company.harbor-travel",
+        "salaryRange": [
+          247,
+          281
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.order-operations-starbridge.1",
+        "jobId": "job.order-operations-assistant",
+        "companyId": "company.starbridge-ecommerce",
+        "salaryRange": [
+          220,
+          251
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.auto-service-neworder.1",
+        "jobId": "job.auto-service-assistant",
+        "companyId": "company.neworder-auto",
+        "salaryRange": [
+          138,
+          157
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.experience-isle.1",
+        "jobId": "job.customer-experience-assistant",
+        "companyId": "company.isle-lifestyle",
+        "salaryRange": [
+          145,
+          165
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.production-frame.1",
+        "jobId": "job.production-assistant",
+        "companyId": "company.frame-media",
+        "salaryRange": [
+          145,
+          165
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.teaching-assistant-greenfield.1",
+        "jobId": "job.course-teaching-assistant",
+        "companyId": "company.greenfield-education",
+        "salaryRange": [
+          155,
+          181
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.dispatch-manager-huanliu.1",
+        "jobId": "job.city-dispatch-manager",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          512,
+          589
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.producer-lead-frame.1",
+        "jobId": "job.media-producer-lead",
+        "companyId": "company.frame-media",
+        "salaryRange": [
+          532,
+          605
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      }
+    ]
+  },
+  "longActivity": {
+    "version": 10,
+    "nextLifeRecordSequence": 0,
+    "businessFacts": {
+      "history": "complete",
+      "lastCompleted": {},
+      "interactions": {},
+      "retentionClaims": {}
+    },
+    "contentVersion": 1,
+    "time": {
+      "day": 6,
+      "hour": 10,
+      "minute": 0
+    },
+    "calendar": {
+      "week": 1,
+      "weekday": 1,
+      "month": 1,
+      "weekOfMonth": 1
+    },
+    "cash": 500,
+    "ability": 10,
+    "reputation": 0,
+    "lifestyle": 10,
+    "attributes": {
+      "professional": 10,
+      "knowledge": 10,
+      "communication": 10,
+      "fitness": 10,
+      "appearance": 10,
+      "network": 0,
+      "mood": 50
+    },
+    "currentJobId": "job.seed-shop-clerk",
+    "employment": {
+      "jobId": "job.seed-shop-clerk",
+      "startedDay": 1,
+      "schedule": {
+        "workDays": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "startMinute": 540,
+        "endMinute": 1020
+      },
+      "effectiveWeek": 1,
+      "basePay": 96,
+      "salaryAdjustment": 0,
+      "negotiationStage": 0
+    },
+    "weeklyPlan": {
+      "days": {
+        "1": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "2": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "3": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "4": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "5": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "6": {
+          "day": {
+            "kind": "activity",
+            "activityId": "activity.premium-cinema",
+            "optionId": "imax"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "7": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        }
+      },
+      "autoRepeat": true
+    },
+    "previousWeeklyPlan": {
+      "days": {
+        "1": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "2": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "3": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "4": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "study",
+            "durationMinutes": 120
+          }
+        },
+        "5": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "6": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        },
+        "7": {
+          "day": {
+            "kind": "free"
+          },
+          "evening": {
+            "kind": "free"
+          }
+        }
+      },
+      "autoRepeat": true
+    },
+    "autoRepeatPlan": true,
+    "simulationMode": "planning",
+    "simulationSpeed": 1,
+    "monthlyLedger": {
+      "wageIncome": 0,
+      "sideJobIncome": 0,
+      "businessIncome": 0,
+      "assetIncome": 0,
+      "rentExpense": 0,
+      "purchaseExpense": 0,
+      "livingExpense": 0,
+      "netWorthStart": {
+        "kind": "known",
+        "value": 500
+      },
+      "netWorthEnd": {
+        "kind": "known",
+        "value": 500
+      }
+    },
+    "financialLedger": {
+      "month": 1,
+      "nextSequence": 1,
+      "entriesComplete": true,
+      "entries": [],
+      "cashStart": {
+        "kind": "known",
+        "value": 500
+      },
+      "netWorthStart": {
+        "kind": "known",
+        "value": 500
+      }
+    },
+    "financialHistory": [],
+    "annualHistory": [],
+    "wealthMilestones": [],
+    "worldHistory": [],
+    "locationDevelopment": {
+      "location.central": 0,
+      "location.riverside": 0,
+      "location.industrial": 0,
+      "location.old-town": 0,
+      "location.south-residential": 0,
+      "location.tech-park": 0
+    },
+    "jobExperience": {},
+    "courseProgress": {},
+    "careerExperience": {},
+    "qualifications": [],
+    "inventory": {},
+    "itemPurchasePrices": {},
+    "wishlist": [],
+    "unlockedCapabilities": [],
+    "unlockedJobIds": [
+      "job.seed-shop-clerk",
+      "job.seed-warehouse",
+      "job.delivery-shift",
+      "job.course-operations-assistant",
+      "job.learning-consultant",
+      "job.course-operations-specialist",
+      "job.auto-service-assistant",
+      "job.sales-consultant-assistant",
+      "job.auto-sales-consultant",
+      "job.auto-customer-operations",
+      "job.production-assistant",
+      "job.video-operations",
+      "job.customer-experience-assistant",
+      "job.product-support-specialist",
+      "job.user-research-assistant",
+      "job.lifestyle-product-operations"
+    ],
+    "unlockedHousingIds": [
+      "housing.shared-room",
+      "housing.seed-room"
+    ],
+    "unlockedBusinessIds": [],
+    "unlockedAssetIds": [
+      "asset.used-compact",
+      "asset.city-sedan",
+      "asset.city-ev",
+      "asset.quality-sedan",
+      "asset.city-suv",
+      "asset.executive-sedan"
+    ],
+    "housing": {
+      "housingId": "housing.shared-room",
+      "mode": "rent"
+    },
+    "housingHoldings": {},
+    "locationVisits": {},
+    "interestFamiliarity": {},
+    "relationships": {
+      "character.seed-lin": 8,
+      "character.seed-zhou": 5,
+      "character.chenyu": 0,
+      "character.xuke": 0,
+      "character.heyan": 0,
+      "character.xuheng": 0,
+      "character.guqing": 0,
+      "character.song-yuran": 0,
+      "character.tang-ke": 0,
+      "character.luo-lan": 0,
+      "character.yan-zhe": 0
+    },
+    "messages": [],
+    "nextMessageSequence": 0,
+    "nextApplicationSequence": 0,
+    "applicationCooldowns": {},
+    "consumedOpportunityIds": [],
+    "businesses": {},
+    "publicBusinessEquities": {},
+    "completedBusinessProjects": [],
+    "assets": {},
+    "investments": {},
+    "activeSubscriptions": {},
+    "completedEvents": [],
+    "completedMilestones": [],
+    "eventCooldowns": {},
+    "chainStages": {},
+    "flags": {},
+    "modifiers": [],
+    "discounts": [],
+    "marketJobIds": [
+      "job.seed-shop-clerk",
+      "job.seed-warehouse",
+      "job.seed-office",
+      "job.seed-remote",
+      "job.delivery-shift",
+      "job.cafe-assistant",
+      "job.customer-service",
+      "job.data-entry",
+      "job.operations-specialist",
+      "job.remote-operator",
+      "job.project-coordinator",
+      "job.independent-consultant",
+      "job.regional-operations-manager",
+      "job.category-operations-expert",
+      "job.photography-assistant-gig",
+      "job.huanliu-warehouse-assistant",
+      "job.huanliu-dispatch-coordinator",
+      "job.course-operations-assistant",
+      "job.learning-consultant",
+      "job.course-operations-specialist",
+      "job.course-teaching-assistant",
+      "job.research-assistant",
+      "job.business-analysis-assistant",
+      "job.business-analyst",
+      "job.travel-product-assistant",
+      "job.order-operations-assistant",
+      "job.ecommerce-operations-assistant",
+      "job.ecommerce-operations-specialist",
+      "job.growth-operations",
+      "job.auto-service-assistant",
+      "job.sales-consultant-assistant",
+      "job.auto-sales-consultant",
+      "job.auto-customer-operations",
+      "job.production-assistant",
+      "job.content-editor",
+      "job.video-operations",
+      "job.customer-experience-assistant",
+      "job.product-support-specialist",
+      "job.user-research-assistant",
+      "job.lifestyle-product-operations",
+      "job.city-dispatch-manager",
+      "job.learning-product-lead",
+      "job.principal-analyst",
+      "job.travel-experience-designer",
+      "job.media-producer-lead",
+      "job.lifestyle-product-expert",
+      "job.auto-regional-trainer",
+      "job.starbridge-growth-director"
+    ],
+    "eventMeter": 0,
+    "eventDay": 1,
+    "eventsToday": 0,
+    "lastSettledDay": 0,
+    "rentReliefAvailableDay": 0,
+    "housingReliefUntilDay": 0,
+    "rng": {
+      "seed": 20260825,
+      "cursor": 0
+    },
+    "majorEventsThisMonth": 0,
+    "ambientLog": [],
+    "storylineStages": {},
+    "applications": [],
+    "opportunities": [],
+    "acquiredSideJobs": {},
+    "gigs": [],
+    "employmentHistory": [],
+    "monthlyHighlights": [],
+    "lifeHistory": [],
+    "vacancies": [
+      {
+        "vacancyId": "vacancy.vacancy-template.office-xinghe.1",
+        "jobId": "job.seed-office",
+        "companyId": "company.xinghe",
+        "salaryRange": [
+          160,
+          185
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.office-yuanwang.1",
+        "jobId": "job.seed-office",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          151,
+          171
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.shop-qiming.1",
+        "jobId": "job.seed-shop-clerk",
+        "companyId": "company.qiming",
+        "salaryRange": [
+          88,
+          104
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.warehouse-yuanwang.1",
+        "jobId": "job.seed-warehouse",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          118,
+          138
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.regional-manager-yuanwang.1",
+        "jobId": "job.regional-operations-manager",
+        "companyId": "company.yuanwang",
+        "salaryRange": [
+          570,
+          670
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.category-expert-xinghe.1",
+        "jobId": "job.category-operations-expert",
+        "companyId": "company.xinghe",
+        "salaryRange": [
+          684,
+          778
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.warehouse-huanliu.1",
+        "jobId": "job.huanliu-warehouse-assistant",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          129,
+          147
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.dispatch-huanliu.1",
+        "jobId": "job.huanliu-dispatch-coordinator",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          269,
+          315
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.course-assistant-greenfield.1",
+        "jobId": "job.course-operations-assistant",
+        "companyId": "company.greenfield-education",
+        "salaryRange": [
+          219,
+          257
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.research-clearview.1",
+        "jobId": "job.research-assistant",
+        "companyId": "company.clearview-consulting",
+        "salaryRange": [
+          261,
+          297
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.travel-assistant-harbor.1",
+        "jobId": "job.travel-product-assistant",
+        "companyId": "company.harbor-travel",
+        "salaryRange": [
+          247,
+          281
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.order-operations-starbridge.1",
+        "jobId": "job.order-operations-assistant",
+        "companyId": "company.starbridge-ecommerce",
+        "salaryRange": [
+          220,
+          251
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.auto-service-neworder.1",
+        "jobId": "job.auto-service-assistant",
+        "companyId": "company.neworder-auto",
+        "salaryRange": [
+          138,
+          157
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.experience-isle.1",
+        "jobId": "job.customer-experience-assistant",
+        "companyId": "company.isle-lifestyle",
+        "salaryRange": [
+          145,
+          165
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.production-frame.1",
+        "jobId": "job.production-assistant",
+        "companyId": "company.frame-media",
+        "salaryRange": [
+          145,
+          165
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.teaching-assistant-greenfield.1",
+        "jobId": "job.course-teaching-assistant",
+        "companyId": "company.greenfield-education",
+        "salaryRange": [
+          155,
+          181
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.dispatch-manager-huanliu.1",
+        "jobId": "job.city-dispatch-manager",
+        "companyId": "company.huanliu",
+        "salaryRange": [
+          512,
+          589
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      },
+      {
+        "vacancyId": "vacancy.vacancy-template.producer-lead-frame.1",
+        "jobId": "job.media-producer-lead",
+        "companyId": "company.frame-media",
+        "salaryRange": [
+          532,
+          605
+        ],
+        "route": "market",
+        "publishedDay": 1,
+        "expiresDay": 28
+      }
+    ]
+  }
+}

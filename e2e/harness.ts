@@ -14,6 +14,30 @@ export const LEGACY_SAVE_KEY = 'yuliang-save-v1';
 export const navigate = (page: Page, name: string) =>
   page.getByRole('navigation', { name: '主导航', exact: true }).getByRole('button', { name, exact: true }).click();
 
+/** Follow the same partitions and pagination a player uses; hidden content is not a fixture failure. */
+export async function openWealthPage(page: Page, section: '概览' | '持有' | '市场' | '经营' | '历史') {
+  await navigate(page, '财富');
+  await page.getByRole('navigation', { name: '财富分区' }).getByRole('button', { name: section, exact: true }).click();
+}
+
+export async function openProfilePage(page: Page, section: '档案' | '里程碑' | '经历与历史' = '经历与历史') {
+  await navigate(page, '我的');
+  await page.getByRole('navigation', { name: '我的分区' }).getByRole('button', { name: section, exact: true }).click();
+}
+
+export async function findCatalogEntry(page: Page, title: string, kind: '商品' | '活动' = '商品') {
+  const entry = page.locator(kind === '商品' ? 'article.item-card' : 'article.activity-card').filter({ hasText: title });
+  const pager = page.getByRole('navigation', { name: `${kind}分页`, exact: true });
+  if (await pager.count()) await pager.getByRole('button', { name: '1', exact: true }).click();
+  const next = page.getByRole('button', { name: `下一页${kind}`, exact: true });
+  for (let i = 0; i < 20 && !(await entry.count()); i += 1) {
+    if (!(await next.count()) || await next.isDisabled()) break;
+    await next.click();
+  }
+  await expect(entry, `目录中应能通过分页找到 ${title}`).toHaveCount(1);
+  return entry;
+}
+
 /** Navigate to the configured app base and assert the page really landed there. */
 export async function gotoAppRoot(page: Page) {
   await page.goto('./');
@@ -245,22 +269,33 @@ export async function wipeSave(page: Page): Promise<void> {
   }), CANONICAL_SLOT);
 }
 
-/** Wait until the canonical record matches the live in-memory game state. */
-export async function awaitCanonicalSynced(page: Page, timeout = 5_000): Promise<void> {
-  await page.waitForFunction(async (slot: string) => {
-    const record = await new Promise<{ payload?: string } | null>((resolve) => {
-      const request = indexedDB.open('yuliang-save', 1);
-      request.onerror = () => resolve(null);
-      request.onsuccess = () => {
-        const db = request.result;
-        const read = db.transaction('saves', 'readonly').objectStore('saves').get(slot);
-        read.onsuccess = () => { resolve((read.result as { payload?: string } | undefined) ?? null); db.close(); };
-        read.onerror = () => { db.close(); resolve(null); };
-      };
-    });
-    const live = (window as unknown as { __yuliang: { store: { getState: () => { game: unknown } } } }).__yuliang.store.getState().game;
-    return Boolean(record) && record!.payload === JSON.stringify(live);
-  }, CANONICAL_SLOT, { timeout });
+export interface CanonicalSyncSnapshot { persistedPayload: string; livePayload: string }
+
+/** Preserve the matching observation; a running world can advance after it. */
+export async function awaitCanonicalSynced(page: Page, timeout = 5_000): Promise<CanonicalSyncSnapshot> {
+  let snapshot: CanonicalSyncSnapshot | undefined;
+  // waitForFunction sees an async predicate's Promise as truthy before the
+  // IndexedDB read resolves. Poll the resolved value at the same RAF cadence.
+  await expect.poll(async () => {
+    const matched = await page.evaluate(async (slot: string) => {
+      const record = await new Promise<{ payload?: string } | null>((resolve) => {
+        const request = indexedDB.open('yuliang-save', 1);
+        request.onerror = () => resolve(null);
+        request.onsuccess = () => {
+          const db = request.result;
+          const read = db.transaction('saves', 'readonly').objectStore('saves').get(slot);
+          read.onsuccess = () => { resolve((read.result as { payload?: string } | undefined) ?? null); db.close(); };
+          read.onerror = () => { db.close(); resolve(null); };
+        };
+      });
+      const live = (window as unknown as { __yuliang: { store: { getState: () => { game: unknown } } } }).__yuliang.store.getState().game;
+      const livePayload = JSON.stringify(live);
+      return record?.payload === livePayload ? { persistedPayload: record.payload, livePayload } : false;
+    }, CANONICAL_SLOT);
+    if (matched) snapshot = matched;
+    return Boolean(matched);
+  }, { timeout, intervals: [16], message: 'canonical save did not match the observed live payload' }).toBe(true);
+  return snapshot!;
 }
 
 /** The canonical save's revision counter, or 0 when it was never written. */

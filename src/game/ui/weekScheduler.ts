@@ -15,7 +15,7 @@ export interface ScheduleOutcome {
  * 长期兼职) goes through the shared planning scheduler, so no screen can write
  * its own slot-finding policy and no click can silently do nothing.
  */
-export function useWeekScheduler(game: GameState, dispatch: (action: GameAction) => void) {
+export function useWeekScheduler(game: GameState, dispatch: (action: GameAction) => void | boolean) {
   const [notice, setNotice] = useState<string | undefined>(undefined);
 
   const schedule = useCallback((candidate: PlannedActivity, options?: { label?: string }): ScheduleOutcome => {
@@ -31,7 +31,12 @@ export function useWeekScheduler(game: GameState, dispatch: (action: GameAction)
       setNotice(message);
       return { placed: false, message };
     }
-    dispatch({ type: 'set_plan', weekday: search.result.weekday, slot: search.result.slot, activity: candidate });
+    const applied = dispatch({ type: 'set_plan', weekday: search.result.weekday, slot: search.result.slot, activity: candidate });
+    if (applied === false) {
+      const message = '这次安排未生效，请先处理上方提示后重试';
+      setNotice(message);
+      return { placed: false, message };
+    }
     setNotice(`已安排：周${weekdayLabel(search.result.weekday)}${slotLabel(search.result.slot)}${options?.label ? ` · ${options.label}` : ''}`);
     return { placed: true };
   }, [dispatch, game]);
