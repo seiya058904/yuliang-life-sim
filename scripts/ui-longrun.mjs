@@ -24,7 +24,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { chromium } from '@playwright/test';
+import { chromium, expect } from '@playwright/test';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
@@ -81,8 +81,10 @@ async function launch() {
 async function clickNav(page, label) {
   const nav = page.getByLabel('主导航').getByRole('button', { name: label, exact: true });
   const target = (await nav.count()) ? nav.first() : page.getByRole('button', { name: label, exact: true }).first();
-  await target.click({ timeout: 5000 }).catch(() => {});
-  await page.waitForTimeout(80);
+  await target.click({ timeout: 5000 });
+  await expect(target).toHaveAttribute('aria-current', 'page');
+  const titles = { 生活: '本周计划', 职业: '职业', 商店: '商品', 财富: '财富', 社交: '社交', 城市: '城市与地点', 我的: '我的' };
+  await expect(page.getByRole('main').getByRole('heading', { level: 1, name: titles[label], exact: true })).toBeVisible();
 }
 
 /** 页面内可观测的快照：状态来自应用自己的 store 桥，界面数字来自真实 DOM。 */
@@ -309,6 +311,19 @@ try {
     if (idle > IDLE_LIMIT) break;
     await page.waitForTimeout(200);
   }
+  // The target month can end at an event followed by its reward acknowledgement.
+  // Resolve that chain before inspecting pages; never click through an inert shell.
+  // Keep these final gates separate from the measured 60-month decision density.
+  const endingGates = { months: 0, decisions: 0, byChoice: {}, byGate: {}, byTitle: {} };
+  for (let gate = 0; gate < 20; gate += 1) {
+    const info = await dialogInfo(page);
+    if (!info) break;
+    await resolveDialog(page, info, endingGates);
+  }
+  if (await dialogInfo(page)) throw new Error('ending decision chain did not clear');
+  const pause = page.locator('.shell-run-control').getByRole('button', { name: '暂停', exact: true });
+  if (await pause.count()) await pause.click();
+  report.endingGates = endingGates;
   report.harnessMs = Date.now() - startedAt;
 
   const after = await snapshot(page);
@@ -329,11 +344,6 @@ try {
   flush();
 
   // 长跑后回到界面：确认页面还活着、所有主界面都能打开且没有横向溢出。
-  await page.evaluate(() => {
-    const dialog = [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')].at(-1);
-    (dialog?.querySelector('.settle-continue') ?? dialog?.querySelector('button.primary-button'))?.click();
-  }).catch(() => {});
-  await page.waitForTimeout(200);
   const views = [];
   for (const label of ['生活', '职业', '商店', '财富', '社交', '城市', '我的']) {
     try {
@@ -342,6 +352,9 @@ try {
         nodes: document.querySelectorAll('*').length,
         docW: document.documentElement.scrollWidth,
         innerW: window.innerWidth,
+        heading: document.querySelector('main h1')?.textContent ?? null,
+        activeNav: document.querySelector('.main-nav [aria-current="page"]')?.getAttribute('aria-label') ?? null,
+        dialogCount: document.querySelectorAll('[role="dialog"][aria-modal="true"]').length,
       }));
       views.push({ label, ok: true, overflowX: metrics.docW > metrics.innerW, ...metrics });
     } catch (error) { views.push({ label, ok: false, error: String(error).slice(0, 120) }); }
@@ -355,6 +368,22 @@ try {
   await page.screenshot({ path: `${SHOTS}/final-life.png` });
 
   // 存档压力与持久性：读真实 IndexedDB 记录，再刷新页面逐个字段核对。
+  await page.waitForFunction(async () => {
+    const stored = await new Promise((done) => {
+      const request = indexedDB.open('yuliang-save', 1);
+      request.onerror = () => done(null);
+      request.onsuccess = () => {
+        const db = request.result;
+        const transaction = db.transaction('saves', 'readonly');
+        let record = null;
+        const read = transaction.objectStore('saves').get('main');
+        read.onsuccess = () => { record = read.result ?? null; };
+        transaction.oncomplete = () => { db.close(); done(record); };
+        transaction.onabort = () => { db.close(); done(null); };
+      };
+    });
+    return stored?.payload === JSON.stringify(window.__yuliang.store.getState().game);
+  }, undefined, { timeout: 5000 });
   const record = await page.evaluate(() => new Promise((done) => {
     const request = indexedDB.open('yuliang-save', 1);
     request.onerror = () => done(null);
@@ -365,7 +394,7 @@ try {
       read.onsuccess = () => {
         db.close();
         const stored = read.result;
-        done(stored ? { generation: stored.generation, revision: stored.revision, bytes: stored.payload.length } : null);
+        done(stored ? { generation: stored.generation, revision: stored.revision, bytes: new TextEncoder().encode(stored.payload).byteLength } : null);
       };
       read.onerror = () => { db.close(); done(null); };
     };
@@ -373,6 +402,7 @@ try {
   const reloadStart = Date.now();
   await page.reload({ waitUntil: 'load' });
   await page.waitForFunction(() => typeof window.__yuliang?.store?.getState === 'function', undefined, { timeout: 20_000 });
+  await page.waitForFunction(() => window.__yuliang.store.getState().canonical.status === 'ready');
   await page.waitForTimeout(700);
   const reloaded = await snapshot(page);
   report.persistence = {
@@ -387,7 +417,8 @@ try {
   report.bytesPerMonth = record && stats.months ? Math.round((record.bytes / stats.months) * 100) / 100 : null;
   report.consoleErrors = consoleErrors.slice(0, 20);
   report.finishedAt = new Date().toISOString();
-  report.ok = stats.months >= MONTHS && report.persistence.match && consoleErrors.length === 0;
+  report.ok = stats.months >= MONTHS && report.persistence.match && consoleErrors.length === 0
+    && views.length === 7 && views.every(view => view.ok && !view.overflowX && view.activeNav === view.label && view.dialogCount === 0);
 
   await ctx.close();
 } catch (error) {
@@ -423,4 +454,5 @@ try {
     error: report.error ?? null,
     out: OUT,
   }, null, 2));
+  if (!report.ok) process.exitCode = 1;
 }

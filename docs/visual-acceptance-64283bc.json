@@ -1,0 +1,1496 @@
+{
+  "base": "64283bca15a551d7df72e4d4aad6bcc983c36b67",
+  "date": "2026-10-04",
+  "classificationCounts": {
+    "real": 10,
+    "justifiedBaseline": 37,
+    "outdatedScript": 6,
+    "environmentFontPixelNoise": 0
+  },
+  "cases": [
+    {
+      "id": "01",
+      "subject": "商品事实区",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Shop product facts above the purchase rail",
+        "line": 232,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 12\nReceived: 6\n\n  248 |   }));\n  249 |\n> 250 |   expect(cards.length).toBe(12);\n      |                        ^\n  251 |   expect(cards.every(({ factsBottom, footTop, factFontSize, factRowHeight }) => factsBottom <= footTop && factFontSize >= 10 && factRowHeight >= 13)).toBe(true);\n  252 | });\n  253 |\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:250:24"
+      },
+      "reviewed": {
+        "title": "keeps Shop product facts above the purchase rail",
+        "line": 237,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧断言要求 12 张商品卡，实际为 6 张；这来自可读字号和分页的既定改版。",
+      "resolution": "保留事实在 CTA 上方的要求；检查 6 张卡、事实字号至少 12px、行高至少 18px、事实与操作不相交。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps Shop product facts above the purchase rail",
+        "project": "desktop",
+        "status": "expected",
+        "line": 237,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "02",
+      "subject": "商品像素外框",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Shop catalog cards on the shared stepped pixel corners",
+        "line": 254,
+        "failureExcerpt": "Error: expect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 12\nReceived:    6\n\n  262 |   }));\n  263 |\n> 264 |   expect(frames.length).toBeGreaterThanOrEqual(12);\n      |                         ^\n  265 |   expect(frames.every(({ clipPath, borderWidth }) => clipPath !== 'none' && borderWidth === '1px')).toBe(true);\n  266 | });\n  267 |\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:264:25"
+      },
+      "reviewed": {
+        "title": "keeps Shop catalog cards on square bordered pixel surfaces",
+        "line": 260,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧规则同时要求至少 12 卡与 clip-path 台阶角；当前设计契约明确使用方形 1px/2px 边框。",
+      "resolution": "保留像素几何；检查 6 个真实外框、零圆角、无渐变或模糊阴影、真实内容在边界内。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps Shop catalog cards on square bordered pixel surfaces",
+        "project": "desktop",
+        "status": "expected",
+        "line": 260,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "03",
+      "subject": "商店右栏表面",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the shop utility rail on the stepped header-row-footer surfaces",
+        "line": 268,
+        "failureExcerpt": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator:  locator('.shop-rail .rail-cart')\nExpected: \"rgb(0, 0, 0)\"\nReceived: \"rgb(9, 9, 9)\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for locator('.shop-rail .rail-cart')\n    13 × locator resolved to <section aria-label=\"购物清单\" class=\"rail-module rail-cart\">…</section>\n       - unexpected value \"rgb(9, 9, 9)\"\n\n\n  275 |   const cart = page.locator('.shop-rail .rail-cart');\n  276 |   const schedule = page.locator('.shop-rail .rail-schedule');\n> 277 |   await expect(cart).toHaveCSS('background-color', 'rgb(0, 0, 0)');\n      |                      ^\n  278 |   await expect(cart.locator('header')).toHaveCSS('background-color', 'rgb(0, 0, 0)');\n  279 |   await expect(cart.locator('.rail-rows li').first())."
+      },
+      "reviewed": {
+        "title": "keeps the Shop utility rail readable on the shared dark surface",
+        "line": 268,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧纯黑/反白条带不再对应统一的 #090909 面板和透明内部行。",
+      "resolution": "检查四个功能分区及像素图标，标题与实际正文 AA 对比度，不引入第二层装饰面板。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps the Shop utility rail readable on the shared dark surface",
+        "project": "desktop",
+        "status": "expected",
+        "line": 268,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "04",
+      "subject": "商品与右栏比例",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the Shop catalog and utility rail in the reference proportion",
+        "line": 296,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 1312\nReceived:    1400\n\n  325 |\n  326 |   expect(layout.width).toBeGreaterThanOrEqual(1298);\n> 327 |   expect(layout.width).toBeLessThanOrEqual(1312);\n      |                        ^\n  328 |   expect(layout.mainWidth).toBeGreaterThanOrEqual(1000);\n  329 |   expect(layout.mainWidth).toBeLessThanOrEqual(1030);\n  330 |   expect(layout.railWidth).toBeGreaterThanOrEqual(270);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:327:24"
+      },
+      "reviewed": {
+        "title": "keeps the Shop catalog and utility rail in the reference proportion",
+        "line": 293,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧断言锁死约 1305px 总宽度；当前完整利用主内容容器，右栏为 280px、间距为 16px。",
+      "resolution": "检查相对于父容器的实际可用宽度、280px 右栏、6 个可切换分类和至少 36px 操作区域。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps the Shop catalog and utility rail in the reference proportion",
+        "project": "desktop",
+        "status": "expected",
+        "line": 293,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "05",
+      "subject": "空状态阅读面",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps empty Career and Shop support bodies on explicit state lanes",
+        "line": 354,
+        "failureExcerpt": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator:  locator('.shop-rail').locator('.shop-rail-empty').first()\nExpected: \"rgb(0, 0, 0)\"\nReceived: \"rgba(0, 0, 0, 0)\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for locator('.shop-rail').locator('.shop-rail-empty').first()\n    13 × locator resolved to <div role=\"status\" class=\"shop-rail-empty\">…</div>\n       - unexpected value \"rgba(0, 0, 0, 0)\"\n\n\n  380 |   // Cart and Inventory keep their compact dark status lanes.\n  381 |   for (const index of [0, 1]) {\n> 382 |     await expect(emptyStates.nth(index)).toHaveCSS('background-color', 'rgb(0, 0, 0)');\n      |                                          ^\n  383 |     await expect(emptyStates.nth(index).locator('strong')).toHaveCSS('color', 'rgb(241, 24"
+      },
+      "reviewed": {
+        "title": "keeps empty Career and Shop support bodies on explicit state lanes",
+        "line": 343,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "透明空状态继承深色面板；其 computed background 不等于旧纯黑，不能据此认定不可读。",
+      "resolution": "检查真实空状态文案、图标和祖先背景后的 AA 对比度。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps empty Career and Shop support bodies on explicit state lanes",
+        "project": "desktop",
+        "status": "expected",
+        "line": 343,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "06",
+      "subject": "空右栏嵌套面板",
+      "project": "desktop",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps an empty Shop Rail in the tall reference frame",
+        "line": 392,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 1000\nReceived:    1287\n\n  412 |\n  413 |   expect(footprint.height).toBeGreaterThanOrEqual(780);\n> 414 |   expect(footprint.bottom).toBeLessThanOrEqual(footprint.footerTop);\n      |                            ^\n  415 |   expect(footprint.modules).toHaveLength(4);\n  416 |   expect(footprint.modules[0].height).toBeGreaterThanOrEqual(180);\n  417 |   expect(footprint.modules[1].height).toBeGreaterThanOrEqual(240);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:414:28"
+      },
+      "reviewed": {
+        "title": "keeps every empty Shop Rail module reachable in the main scroll context",
+        "line": 376,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "原有库存/愿望组件仍带 detail-panel 的内框和大块 padding；与新右栏外框叠加，造成过宽空白和滚动负担。",
+      "resolution": "移除内框与额外 padding；用真实滚轮到达全部右栏末项。旧 815px 固定高要求不再作为单屏目标。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps every empty Shop Rail module reachable in the main scroll context",
+        "project": "desktop",
+        "status": "expected",
+        "line": 376,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "07",
+      "subject": "空库存紧凑性",
+      "project": "desktop",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps the tall Shop inventory lane as a compact dark strip",
+        "line": 435,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 104\nReceived:    232\n\n  451 |\n  452 |   expect(geometry.height).toBeGreaterThanOrEqual(84);\n> 453 |   expect(geometry.height).toBeLessThanOrEqual(104);\n      |                           ^\n  454 |   expect(geometry.headingHeight).toBeLessThanOrEqual(42);\n  455 |   expect(geometry.stateHeight).toBeLessThanOrEqual(70);\n  456 | });\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:453:27"
+      },
+      "reviewed": {
+        "title": "keeps the tall Shop inventory lane as a compact dark strip",
+        "line": 408,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "库存内面板重复边框与 padding，空状态被膨胀；原来的紧凑性意图有效。",
+      "resolution": "共用右栏外框，内组件 border/padding 为零，保留清楚标题和有界空状态高度。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps the tall Shop inventory lane as a compact dark strip",
+        "project": "desktop",
+        "status": "expected",
+        "line": 408,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "08",
+      "subject": "实际库存操作行",
+      "project": "desktop",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps populated Shop inventory as an actionable pixel strip",
+        "line": 458,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 104\nReceived:    385\n\n  489 |     };\n  490 |   });\n> 491 |   expect(geometry.height).toBeLessThanOrEqual(104);\n      |                           ^\n  492 |   expect(geometry.stripHeight).toBeGreaterThanOrEqual(42);\n  493 |   expect(geometry.stripHeight).toBeLessThanOrEqual(62);\n  494 |   expect(geometry.stripScrollWidth).toBeLessThanOrEqual(geometry.stripClientWidth);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:491:27"
+      },
+      "reviewed": {
+        "title": "keeps populated Shop inventory as an actionable pixel strip",
+        "line": 431,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "两件商品套用了垂直卡片样式，约 117px/行且条带约 122px，操作与文本组织失衡。",
+      "resolution": "改为图形/文案/操作三列，约 59px/行；检查不相交、可读字号、操作尺寸，并实际滚轮找到并使用咖啡。",
+      "reference": "scripts/reference/console-v2/shop-populated-1440.png",
+      "verification": {
+        "title": "keeps populated Shop inventory as an actionable pixel strip",
+        "project": "desktop",
+        "status": "expected",
+        "line": 431,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "09",
+      "subject": "实际愿望行",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps populated Shop wishlist as light action rows under a dark header",
+        "line": 500,
+        "failureExcerpt": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator:  locator('.shop-rail .rail-wishlist')\nExpected: \"rgb(0, 0, 0)\"\nReceived: \"rgb(9, 9, 9)\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for locator('.shop-rail .rail-wishlist')\n    13 × locator resolved to <section aria-label=\"消费目标快捷区\" class=\"rail-module rail-fill rail-wishlist\">…</section>\n       - unexpected value \"rgb(9, 9, 9)\"\n\n\n  518 |   await expect(row.getByRole('button', { name: '买下', exact: true })).toBeVisible();\n  519 |   await expect(row.getByRole('button', { name: '移除', exact: true })).toBeVisible();\n> 520 |   await expect(wishlist).toHaveCSS('background-color', 'rgb(0, 0, 0)');\n      |                          ^\n  521 |   await expect(heading).toHaveCSS('background-color', 'rgb(0, 0"
+      },
+      "reviewed": {
+        "title": "keeps populated Shop wishlist readable and actionable on its shared rail surface",
+        "line": 479,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧白色愿望正文已改为统一深色阅读面；黑白反色用于选中和主操作。",
+      "resolution": "检查真实未拥有的笔记本目标、价格和差额、AA 对比度、购买/移除状态，并实际滚轮移除目标。",
+      "reference": "scripts/reference/console-v2/shop-populated-1440.png",
+      "verification": {
+        "title": "keeps populated Shop wishlist readable and actionable on its shared rail surface",
+        "project": "desktop",
+        "status": "expected",
+        "line": 479,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "10",
+      "subject": "低高度商品目录",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the low-height Shop product matrix above the persistent footer",
+        "line": 560,
+        "failureExcerpt": "Error: expect(received).toHaveLength(expected)\n\nExpected length: 12\nReceived length: 6\nReceived array:  [{\"bottom\": 774, \"contentBottom\": 757, \"ctaBottom\": 757, \"height\": 261}, {\"bottom\": 774, \"contentBottom\": 757, \"ctaBottom\": 757, \"height\": 261}, {\"bottom\": 774, \"contentBottom\": 757, \"ctaBottom\": 757, \"height\": 261}, {\"bottom\": 1011, \"contentBottom\": 994, \"ctaBottom\": 994, \"height\": 225}, {\"bottom\": 1011, \"contentBottom\": 994, \"ctaBottom\": 994, \"height\": 225}, {\"bottom\": 1011, \"contentBottom\": 994, \"ctaBottom\": 994, \"height\": 225}]\n\n  590 |   });\n  591 |\n> 592 |   expect(layout.cards).toHaveLength(12);\n      |                        ^\n  593 |   expect(layout.cards.every(({ height, ctaBottom, contentBottom, bottom }) =>\n  594 |     height >= 108 && height <= 120 && ctaBottom <= bottom + 0"
+      },
+      "reviewed": {
+        "title": "keeps low-height Shop goods readable and wheel-reachable above the footer",
+        "line": 539,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧断言要求 12 张小卡一次塞进 720px；这会牺牲字号和可操作性，与改版目标冲突。",
+      "resolution": "保持每页 6 张可读卡、至少 200px 高和 36px CTA；真实滚轮到达末项及分页并切到第 2 页，检查与固定底栏不重叠。",
+      "reference": "scripts/reference/console-v2/shop-1280.png",
+      "verification": {
+        "title": "keeps low-height Shop goods readable and wheel-reachable above the footer",
+        "project": "desktop",
+        "status": "expected",
+        "line": 539,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "11",
+      "subject": "低高度娱乐目录",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the low-height Shop entertainment matrix above the persistent footer",
+        "line": 600,
+        "failureExcerpt": "Error: expect(received).toHaveLength(expected)\n\nExpected length: 12\nReceived length: 6\nReceived array:  [{\"bottom\": 881, \"contentBottom\": 840, \"ctaBottom\": 840, \"height\": 289}, {\"bottom\": 881, \"contentBottom\": 840, \"ctaBottom\": 840, \"height\": 289}, {\"bottom\": 881, \"contentBottom\": 840, \"ctaBottom\": 840, \"height\": 289}, {\"bottom\": 1182, \"contentBottom\": 1141, \"ctaBottom\": 1141, \"height\": 289}, {\"bottom\": 1182, \"contentBottom\": 1141, \"ctaBottom\": 1141, \"height\": 289}, {\"bottom\": 1182, \"contentBottom\": 1141, \"ctaBottom\": 1141, \"height\": 289}]\n\n  626 |   });\n  627 |\n> 628 |   expect(layout.cards).toHaveLength(12);\n      |                        ^\n  629 |   expect(layout.cards.every(({ height, ctaBottom, contentBottom, bottom }) =>\n  630 |     height >= 108 && height <= 120 && ctaBottom <= bott"
+      },
+      "reviewed": {
+        "title": "keeps low-height Shop activities readable and wheel-reachable above the footer",
+        "line": 555,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "与商品一致，旧 12 卡单屏约束失效。",
+      "resolution": "检查同一套可读目录契约；真实滚轮操作末项及分页，安排活动后核对实际反馈。",
+      "reference": "scripts/reference/console-v2/shop-activities-1280.png",
+      "verification": {
+        "title": "keeps low-height Shop activities readable and wheel-reachable above the footer",
+        "project": "desktop",
+        "status": "expected",
+        "line": 555,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "12",
+      "subject": "右栏单一外框",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Shop Rail modules on the shared stepped outer-frame grammar",
+        "line": 636,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  645 |\n  646 |   expect(frames).toHaveLength(4);\n> 647 |   expect(frames.every(({ clipPath, borderWidth }) => clipPath !== 'none' && borderWidth === '2px')).toBe(true);\n      |                                                                                                     ^\n  648 | });\n  649 |\n  650 | test('keeps Shop inventory and wishlist rail headers on the shared icon grammar', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:647:101"
+      },
+      "reviewed": {
+        "title": "keeps Shop Rail modules on a single square pixel frame",
+        "line": 573,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧规则强制四模块 clip-path 台阶外形；方形边框是当前明确设计方向。",
+      "resolution": "检查四个清晰方形外框和内容边界，内组件不得出现第二套面板边框。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps Shop Rail modules on a single square pixel frame",
+        "project": "desktop",
+        "status": "expected",
+        "line": 573,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "13",
+      "subject": "生活预测标题",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the Life forecast header on the reference inverse surface",
+        "line": 660,
+        "failureExcerpt": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator:  locator('.view-life .life-hero-grid > .forecast-strip.inverse').locator('.forecast-head')\nExpected: \"rgb(0, 0, 0)\"\nReceived: \"rgba(0, 0, 0, 0)\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for locator('.view-life .life-hero-grid > .forecast-strip.inverse').locator('.forecast-head')\n    14 × locator resolved to <header class=\"forecast-head\">…</header>\n       - unexpected value \"rgba(0, 0, 0, 0)\"\n\n\n  670 |   });\n  671 |\n> 672 |   await expect(header).toHaveCSS('background-color', 'rgb(0, 0, 0)');\n      |                        ^\n  673 |   await expect(title).toHaveCSS('color', 'rgb(255, 255, 255)');\n  674 |   expect(headerGeometry.height).toBeGreaterThanOrEqual(42);\n  675 |   expect(headerGeome"
+      },
+      "reviewed": {
+        "title": "keeps the Life forecast header readable on its inverse reading surface",
+        "line": 595,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "预测标题条由黑底白字变成明亮的阅读顶栏，旧精确色值不再对应其角色。",
+      "resolution": "检查标题与新阅读面的实际 AA 对比度、20px 字号和明确层级。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps the Life forecast header readable on its inverse reading surface",
+        "project": "desktop",
+        "status": "expected",
+        "line": 595,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "14",
+      "subject": "生活像素时钟",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the tall Life Hero clock on the dominant pixel-display tier",
+        "line": 679,
+        "failureExcerpt": "Error: expect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 12\nReceived:    11\n\n  692 |   });\n  693 |\n> 694 |   expect(clock.unit).toBeGreaterThanOrEqual(12);\n      |                      ^\n  695 |   expect(clock.width).toBeGreaterThanOrEqual(270);\n  696 |   expect(clock.width).toBeLessThanOrEqual(285);\n  697 |   expect(clock.height).toBeGreaterThanOrEqual(84);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:694:22"
+      },
+      "reviewed": {
+        "title": "keeps the tall Life pixel clock dominant and contained in its time column",
+        "line": 608,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧 100px 固定钟高对应上一版像素单位；当前时钟与时段/日期一起占据紧凑列。",
+      "resolution": "检查至少 77px 主时钟、11px 像素单位、真实 08:00 accessible label 和整列包含关系。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps the tall Life pixel clock dominant and contained in its time column",
+        "project": "desktop",
+        "status": "expected",
+        "line": 608,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "15",
+      "subject": "时间/日期/时间线",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the tall Life time column on the reference stepped rhythm",
+        "line": 701,
+        "failureExcerpt": "Error: expect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 18\nReceived:    0\n\n  719 |   });\n  720 |\n> 721 |   expect(geometry.label.left - geometry.column.left).toBeGreaterThanOrEqual(18);\n      |                                                      ^\n  722 |   expect(geometry.label.top - geometry.column.top).toBeGreaterThanOrEqual(20);\n  723 |   expect(geometry.label.top - geometry.column.top).toBeLessThanOrEqual(34);\n  724 |   expect(geometry.clock.top - geometry.column.top).toBeGreaterThanOrEqual(68);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:721:54"
+      },
+      "reviewed": {
+        "title": "keeps time, date and the real day timeline in a contained reading order",
+        "line": 625,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧 hero-day-icon 的相对定位与 padding 已被真实日程 DayRibbon 替代，不能检查不存在的旧锚点。",
+      "resolution": "检查五个时间列子元素的实际阅读顺序、日期、星期和真实日时间线，全部留在列内。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps time, date and the real day timeline in a contained reading order",
+        "project": "desktop",
+        "status": "expected",
+        "line": 625,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "16",
+      "subject": "周预测阅读面",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the Life forecast rail on the reference band surface",
+        "line": 738,
+        "failureExcerpt": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator:  locator('.view-life .life-hero-grid > .forecast-strip.inverse')\nExpected: \"rgb(241, 241, 241)\"\nReceived: \"rgb(245, 245, 241)\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for locator('.view-life .life-hero-grid > .forecast-strip.inverse')\n    14 × locator resolved to <section class=\"forecast-strip inverse\">…</section>\n       - unexpected value \"rgb(245, 245, 241)\"\n\n\n  743 |   const head = forecast.locator('.forecast-head');\n  744 |   const net = forecast.locator('.forecast-net');\n> 745 |   await expect(forecast).toHaveCSS('background-color', 'rgb(241, 241, 241)');\n      |                          ^\n  746 |   await expect(head).toHaveCSS('background-color', 'rgb(0, 0, 0)');\n  747 |   await exp"
+      },
+      "reviewed": {
+        "title": "keeps weekly finance and attributes on one readable inverse surface",
+        "line": 642,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧条带黑白配色与虚线净值条已经变为统一反白阅读面和实线净变化区。",
+      "resolution": "检查实际净值/属性文案、当前背景/文字对比度和包含关系。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps weekly finance and attributes on one readable inverse surface",
+        "project": "desktop",
+        "status": "expected",
+        "line": 642,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "17",
+      "subject": "预测与主控制台对齐",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the tall Life forecast rail on the extended reference tier",
+        "line": 756,
+        "failureExcerpt": "Error: expect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 396\nReceived:    370.59375\n\n  778 |   // planner band. Our rail is still on the previous 400px tier, so the\n  779 |   // overhang is asserted as \"exists\" rather than at the reference's 20px.\n> 780 |   expect(geometry.forecastHeight).toBeGreaterThanOrEqual(396);\n      |                                   ^\n  781 |   expect(geometry.forecastBottom).toBeGreaterThan(geometry.consoleBottom);\n  782 |   expect(geometry.forecastBottom).toBeLessThanOrEqual(geometry.planningTop + 24);\n  783 |   expect(geometry.moreBottom).toBeGreaterThan(geometry.consoleBottom - 12);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:780:35"
+      },
+      "reviewed": {
+        "title": "keeps the Life forecast aligned with its console and clear of the planner",
+        "line": 655,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧预测栏向下多伸出的固定高度来自旧主板节奏。",
+      "resolution": "检查预测与主控制台高度相差不超过 0.5px，规划板与操作留在各自区域。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps the Life forecast aligned with its console and clear of the planner",
+        "project": "desktop",
+        "status": "expected",
+        "line": 655,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "18",
+      "subject": "无绘制的伪元素",
+      "project": "desktop",
+      "classification": "测试脚本过时",
+      "original": {
+        "title": "keeps the fitted Life forecast data surface flat inside its inverse frame",
+        "line": 786,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  795 |\n  796 |   expect(innerFrames).toHaveLength(4);\n> 797 |   expect(innerFrames.every((display) => display === 'none')).toBe(true);\n      |                                                              ^\n  798 | });\n  799 |\n  800 | test('keeps the Life activity progress and next-action band in the lower half of the hero', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:797:62"
+      },
+      "reviewed": {
+        "title": "keeps the Life forecast data flat without painted inner frames",
+        "line": 672,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧脚本把 ::before 的 display 值当作是否绘制；content:none 即使 display:block 也不会画出内框。",
+      "resolution": "检查 content:none、四个真实数据子项和实际平面背景；不要求无效的 display:none。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps the Life forecast data flat without painted inner frames",
+        "project": "desktop",
+        "status": "expected",
+        "line": 672,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "19",
+      "subject": "真实长活动标题",
+      "project": "desktop",
+      "classification": "测试脚本过时",
+      "original": {
+        "title": "keeps a long Life activity title on one reference-like Hero line",
+        "line": 821,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"nowrap\"\nReceived: \"normal\"\n\n  836 |   });\n  837 |\n> 838 |   expect(titleGeometry.whiteSpace).toBe('nowrap');\n      |                                    ^\n  839 |   expect(titleGeometry.height).toBeLessThanOrEqual(titleGeometry.lineHeight * 1.1);\n  840 |   expect(titleGeometry.scrollWidth).toBeLessThanOrEqual(titleGeometry.clientWidth);\n  841 | });\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:838:36"
+      },
+      "reviewed": {
+        "title": "keeps an authored long Life activity title readable without clipping",
+        "line": 706,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧脚本没有设置长活动，却要求当前短标题严格 nowrap，不能检验其名称声称的场景。",
+      "resolution": "以完整初始状态安排官方 IMAX 高规格电影；允许最多两行可读标题，检查标题在 Hero 内且不遮挡相邻内容。",
+      "reference": "scripts/reference/console-v2/life-long-activity-1440.png",
+      "verification": {
+        "title": "keeps an authored long Life activity title readable without clipping",
+        "project": "desktop",
+        "status": "expected",
+        "line": 706,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "20",
+      "subject": "导航到页面节奏",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps tall desktop boards flush with the navigation baseline",
+        "line": 910,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  921 |   }\n  922 |\n> 923 |   expect(gaps.every((gap) => gap >= 0 && gap <= 2)).toBe(true);\n      |                                                     ^\n  924 | });\n  925 |\n  926 | test('hides dormant scroll tracks on the fitted tall desktop surface', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:923:53"
+      },
+      "reviewed": {
+        "title": "keeps navigation stable while context and page headings establish reading order",
+        "line": 799,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "改版增加真实工作/住房上下文条和统一 PageHeading；旧“主板紧贴导航”绝对坐标失效。",
+      "resolution": "检查导航位置稳定、上下文与主标题顺序和各页实际主板边界；DPR 1 与 2.625 均验证。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps navigation stable while context and page headings establish reading order",
+        "project": "desktop",
+        "status": "expected",
+        "line": 799,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "21",
+      "subject": "品牌像素猫",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the header brand cat as a dense stepped 1-bit mark",
+        "line": 1018,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 56\nReceived: 44\n\n  1042 |\n  1043 |   expect(metrics.rectCount).toBeGreaterThanOrEqual(30);\n> 1044 |   expect(metrics.width).toBe(56);\n       |                         ^\n  1045 |   expect(metrics.height).toBe(56);\n  1046 |   expect(Math.round(metrics.x)).toBe(272);\n  1047 |   expect(Math.round(metrics.y)).toBe(33);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:1044:25"
+      },
+      "reviewed": {
+        "title": "keeps the brand cat crisp and contained beside the compact wordmark",
+        "line": 911,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "品牌标记由旧 56px 大图缩到 44px 盒内 32px 图形，给真实 HUD 更多空间。",
+      "resolution": "保留 1-bit 像素语言，检查整数 SVG rect、crispEdges 和与字标的包含/对齐关系。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps the brand cat crisp and contained beside the compact wordmark",
+        "project": "desktop",
+        "status": "expected",
+        "line": 911,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "22",
+      "subject": "四条来信面板",
+      "project": "desktop",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps a four-row Life inbox inside its low-height panel frame",
+        "line": 1192,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 652.5\nReceived:    656.359375\n\n  1207 |   });\n  1208 |\n> 1209 |   expect(geometry.footerBottom).toBeLessThanOrEqual(geometry.panelBottom + 0.5);\n       |                                 ^\n  1210 | });\n  1211 |\n  1212 | test('keeps Life weekly plan activity icons on the reference anchor tier', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:1209:33"
+      },
+      "reviewed": {
+        "title": "keeps a four-row Life inbox inside its low-height panel frame",
+        "line": 1057,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "低高度固定 inbox 高度使第四条来信后的操作 footer 溢出外框；原包含关系断言有效。",
+      "resolution": "面板按实际四条来信与 footer 共同增高，原包含关系断言保持；真实滚轮到达社交操作。",
+      "reference": "scripts/reference/console-v2/life-four-messages-1280.png",
+      "verification": {
+        "title": "keeps a four-row Life inbox inside its low-height panel frame",
+        "project": "desktop",
+        "status": "expected",
+        "line": 1057,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "23",
+      "subject": "职业安排入口",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Career planning tools as a quiet utility affordance outside the market filters",
+        "line": 1434,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 23\nReceived:    36\n\n  1445 |   });\n  1446 |\n> 1447 |   expect(style.height).toBeLessThanOrEqual(23);\n       |                        ^\n  1448 |   expect(style.background).toBe('rgba(0, 0, 0, 0)');\n  1449 |   expect(style.borderTop).toBe('none');\n  1450 |   expect(style.borderRight).toBe('none');\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:1447:24"
+      },
+      "reviewed": {
+        "title": "keeps Career planning tools keyboard-accessible on a compact utility button",
+        "line": 1301,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧 23px 小入口与新共享 36px 命中范围冲突。",
+      "resolution": "检查至少 36px 语义按钮、12px 可读文案，键盘 Enter 打开工具、关闭后焦点回到入口。",
+      "reference": "scripts/reference/console-v2/career-1440.png",
+      "verification": {
+        "title": "keeps Career planning tools keyboard-accessible on a compact utility button",
+        "project": "desktop",
+        "status": "expected",
+        "line": 1301,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "24",
+      "subject": "职业标题层级",
+      "project": "desktop",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps the Career identity mark beside the market title without expanding the filter rail",
+        "line": 1465,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 82\nReceived:    152\n\n  1483 |   expect(geometry.titleLeft - geometry.markRight).toBeGreaterThanOrEqual(4);\n  1484 |   expect(geometry.titleTop).toBeGreaterThanOrEqual(geometry.markHeight - 1);\n> 1485 |   expect(geometry.identityHeight).toBeLessThanOrEqual(82);\n       |                                   ^\n  1486 |   expect(geometry.inputTop).toBeLessThanOrEqual(252);\n  1487 | });\n  1488 |\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:1485:35"
+      },
+      "reviewed": {
+        "title": "keeps the Career page title and market identity in a clear heading hierarchy",
+        "line": 1318,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "职业 PageHeading 与嵌套招聘标题同时为 h1，产生两个页面主标题。",
+      "resolution": "招聘改为 h2，主区域只有“职业”一个 h1；保留像素标记、标题顺序与布局。单测同步核对语义层级。",
+      "reference": "scripts/reference/console-v2/career-1440.png",
+      "verification": {
+        "title": "keeps the Career page title and market identity in a clear heading hierarchy",
+        "project": "desktop",
+        "status": "expected",
+        "line": 1318,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "25",
+      "subject": "岗位卡说明",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Career vacancy descriptions compact inside the fixed card anatomy",
+        "line": 1795,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  1810 |   expect(cards.every(({ cardHeight, descriptionHeight, descriptionMinHeight, actionsHeight, alignContent }) =>\n  1811 |     cardHeight >= 240 && descriptionHeight <= 42 && descriptionMinHeight === 0 && actionsHeight >= 29 && alignContent === 'space-between'\n> 1812 |   )).toBe(true);\n       |      ^\n  1813 | });\n  1814 |\n  1815 | test('keeps Career vacancy art compact beside the card identity', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:1812:6"
+      },
+      "reviewed": {
+        "title": "keeps Career vacancy descriptions readable and clear of their actions",
+        "line": 1638,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧卡片固定 240px 与新可读卡片的自然高度不一致。",
+      "resolution": "检查至少 220px 卡片、两行 12px 说明和 CTA 不相交，真实文案留在边界内。",
+      "reference": "scripts/reference/console-v2/career-1440.png",
+      "verification": {
+        "title": "keeps Career vacancy descriptions readable and clear of their actions",
+        "project": "desktop",
+        "status": "expected",
+        "line": 1638,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "26",
+      "subject": "职业空状态图文",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps empty Career support copy in a compact horizontal status lane",
+        "line": 2076,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2089 |   expect(lanes.every(({ columns, textAlign, iconWidth, iconHeight, copyCenter, iconCenter }) =>\n  2090 |     columns === 2 && textAlign === 'left' && iconWidth >= 30 && iconHeight >= 30 && Math.abs(copyCenter - iconCenter) <= 120\n> 2091 |   )).toBe(true);\n       |      ^\n  2092 | });\n  2093 |\n  2094 | test('uses light inverse surfaces for populated Career support rows', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2091:6"
+      },
+      "reviewed": {
+        "title": "keeps empty Career support copy beside its pixel mark without clipping",
+        "line": 1914,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧“文案中心不得超过 120px”绝对锚点与当前图形/文案两列不一致。",
+      "resolution": "检查图标与文案实际在单元内、11px 标签可读且对比度达 AA。",
+      "reference": "scripts/reference/console-v2/career-support-1440.png",
+      "verification": {
+        "title": "keeps empty Career support copy beside its pixel mark without clipping",
+        "project": "desktop",
+        "status": "expected",
+        "line": 1914,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "27",
+      "subject": "职业已有记录面",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "uses light inverse surfaces for populated Career support rows",
+        "line": 2102,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2134 |     headerBackground === 'rgb(0, 0, 0)' &&\n  2135 |     rowBackground === 'rgb(241, 241, 241)'\n> 2136 |   )).toBe(true);\n       |      ^\n  2137 |\n  2138 |   const rowGeometry = await page.locator('.career-bottom-panel:nth-child(-n+3):has(> .rail-rows)').evaluateAll((elements) => elements.map((element) => {\n  2139 |     const rows = element.querySelector<HTMLElement>('.rail-rows')!;\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2136:6"
+      },
+      "reviewed": {
+        "title": "keeps populated Career support rows readable with their real application and history",
+        "line": 1931,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "Offer 与履历行改为深色表面，旧强制白色行断言失效。",
+      "resolution": "用完整申请/履历 fixture 检查三条真实记录、AA 对比度、边界与真实滚轮可达性。",
+      "reference": "scripts/reference/console-v2/career-populated-1440.png",
+      "verification": {
+        "title": "keeps populated Career support rows readable with their real application and history",
+        "project": "desktop",
+        "status": "expected",
+        "line": 1931,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "28",
+      "subject": "岗位选中边框",
+      "project": "desktop",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps the selected Career card frame brighter than idle cards",
+        "line": 2173,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"rgb(241, 241, 241)\"\nReceived: \"rgb(245, 245, 241)\"\n\n  2179 |   expect(frames.length).toBeGreaterThan(1);\n  2180 |   expect(frames.filter(({ selected }) => selected)).toHaveLength(1);\n> 2181 |   expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(241, 241, 241)');\n       |                                                                ^\n  2182 |   expect(frames.filter(({ selected }) => !selected).every(({ borderColor, clipPath }) =>\n  2183 |     borderColor === 'rgb(199, 199, 192)' && clipPath !== 'none'\n  2184 |   )).toBe(true);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2181:64"
+      },
+      "reviewed": {
+        "title": "keeps the selected Career card frame brighter than idle cards",
+        "line": 1975,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "伪元素停止绘制后，岗位实际 border 仍和未选中卡同为 #888，选中状态没有被真正画出。",
+      "resolution": "选中卡真实 border 改为信号白；检查恰好一个选中、亮度高于其他卡，并点击另一岗位核对选中与详情同步。",
+      "reference": "scripts/reference/console-v2/career-1440.png",
+      "verification": {
+        "title": "keeps the selected Career card frame brighter than idle cards",
+        "project": "desktop",
+        "status": "expected",
+        "line": 1975,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "29",
+      "subject": "职业支持区底部安全距",
+      "project": "desktop",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps tall Career support panels above the persistent footer",
+        "line": 2209,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 996\nReceived:    1203\n\n  2224 |   expect(geometry.panelHeight).toBeGreaterThanOrEqual(178);\n  2225 |   expect(geometry.panelHeight).toBeLessThanOrEqual(182);\n> 2226 |   expect(geometry.panelBottom).toBeLessThanOrEqual(geometry.footerTop - 4);\n       |                                ^\n  2227 | });\n  2228 |\n  2229 | test('keeps the low-height Career pager above the persistent footer', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2226:32"
+      },
+      "reviewed": {
+        "title": "keeps tall Career support panels above the persistent footer",
+        "line": 2004,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "长屏真实滚到末尾时支持区贴住固定底栏；原安全间距要求有效。",
+      "resolution": "支持区补 8px 下边距；真实滚轮后保留原底部安全范围断言。",
+      "reference": "scripts/reference/console-v2/career-support-1440.png",
+      "verification": {
+        "title": "keeps tall Career support panels above the persistent footer",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2004,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "30",
+      "subject": "低高度职业分页测量",
+      "project": "desktop",
+      "classification": "测试脚本过时",
+      "original": {
+        "title": "keeps the low-height Career pager above the persistent footer",
+        "line": 2237,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 652.5\nReceived:    831\n\n  2254 |   expect(geometry.footerTop).toBeGreaterThanOrEqual(geometry.mainBottom - 0.5);\n  2255 |   expect(geometry.gridBottom).toBeLessThanOrEqual(geometry.pagerTop + 0.5);\n> 2256 |   expect(geometry.pagerBottom).toBeLessThanOrEqual(geometry.mainBottom + 0.5);\n       |                                ^\n  2257 |   expect(geometry.scrollHeight).toBeGreaterThan(geometry.clientHeight);\n  2258 | });\n  2259 |\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2256:32"
+      },
+      "reviewed": {
+        "title": "keeps the low-height Career pager above the persistent footer",
+        "line": 2035,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧脚本在未滚到页底时直接测超出视口的分页坐标，将自然主区滚动误报为遮挡。",
+      "resolution": "先用真实滚轮到分页，再保留同一底栏边界断言并实际切到第 2 页。",
+      "reference": "scripts/reference/console-v2/career-1280.png",
+      "verification": {
+        "title": "keeps the low-height Career pager above the persistent footer",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2035,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "31",
+      "subject": "商品事实/次操作字号",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Shop product metadata and secondary actions in the readable pixel tier",
+        "line": 2283,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2306 |     cardHeight >= 150 && artWidth >= 64 && artHeight >= 64 && illustrationWidth >= 60 && illustrationHeight >= 60 &&\n  2307 |     factFontSize >= 10 && secondaryWidth >= 18 && secondaryHeight >= 18 && hasPixelIcon && primaryFontSize >= 11 && primaryHeight >= 25\n> 2308 |   )).toBe(true);\n       |      ^\n  2309 | });\n  2310 |\n  2311 | test('keeps the tall Shop product matrix at the reference detail rhythm', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2308:6"
+      },
+      "reviewed": {
+        "title": "keeps Shop product facts, pixel art and goal controls in the readable tier",
+        "line": 2082,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧规则从 12 张紧缩卡采样；当前 6 张卡使事实区和图形可以稳定达到可读层级。",
+      "resolution": "检查 12px 事实、48px 像素图、36px 次操作、CTA/事实不相交及 AA 对比度。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps Shop product facts, pixel art and goal controls in the readable tier",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2082,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "32",
+      "subject": "商品详情阅读顺序",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the tall Shop product matrix at the reference detail rhythm",
+        "line": 2319,
+        "failureExcerpt": "Error: expect(received).toHaveLength(expected)\n\nExpected length: 12\nReceived length: 6\nReceived array:  [243, 243, 243, 225, 225, 225]\n\n  2327 |   });\n  2328 |\n> 2329 |   expect(layout.cardHeights).toHaveLength(12);\n       |                              ^\n  2330 |   expect(layout.cardHeights.every((height) => height >= 150 && height <= 152)).toBe(true);\n  2331 |   expect(layout.gridBottom).toBeLessThanOrEqual(820);\n  2332 |   expect(layout.pagerTop).toBeGreaterThanOrEqual(layout.gridBottom);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2329:30"
+      },
+      "reviewed": {
+        "title": "keeps selected Shop details before the six-entry catalog and its pager",
+        "line": 2095,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "选中详情已移到目录上方，避免滚完目录才知道当前商品；旧底部详情坐标失效。",
+      "resolution": "检查详情先于 6 项目录与分页出现，选中模型与实际详情一致。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps selected Shop details before the six-entry catalog and its pager",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2095,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "33",
+      "subject": "愿望心形控件",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Shop product goal actions as labeled pixel affordances",
+        "line": 2345,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2347 |\n  2348 |   expect(actions.length).toBeGreaterThan(0);\n> 2349 |   expect(actions.every(({ text, hasPixelIcon, width }) => text.includes('加入目标') && hasPixelIcon && width >= 18 && width <= 24)).toBe(true);\n       |                                                                                                                                 ^\n  2350 | });\n  2351 |\n  2352 | test('keeps Shop product CTAs in the reference icon-plus-label anatomy', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2349:129"
+      },
+      "reviewed": {
+        "title": "keeps icon goal controls named, sized and synchronized with the wishlist",
+        "line": 2115,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧文本目标按钮已变成共享像素心形，尺寸和 accessible name 仍必须保证可发现。",
+      "resolution": "检查 36px 命名按钮、SVG、aria-pressed false→true 和键盘操作后真实愿望行出现。",
+      "reference": "scripts/reference/console-v2/shop-populated-1440.png",
+      "verification": {
+        "title": "keeps icon goal controls named, sized and synchronized with the wishlist",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2115,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "34",
+      "subject": "购物袋操作文案",
+      "project": "desktop",
+      "classification": "测试脚本过时",
+      "original": {
+        "title": "keeps Shop product CTAs in the reference icon-plus-label anatomy",
+        "line": 2360,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2370 |   expect(ctas.every(({ text, hasPixelIcon, iconWidth, iconHeight, iconHidden }) =>\n  2371 |     text.includes('加入清单') && hasPixelIcon && iconWidth >= 10 && iconHeight >= 10 && iconHidden\n> 2372 |   )).toBe(true);\n       |      ^\n  2373 | });\n  2374 |\n  2375 | test('keeps Shop product facts and primary CTA above the tiny web-copy tier', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2372:6"
+      },
+      "reviewed": {
+        "title": "keeps Shop purchase CTAs on the shared icon-plus-label anatomy",
+        "line": 2133,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧脚本定位“加入清单”，当前明确文案为“加入购物袋”。",
+      "resolution": "只更新语义定位；继续检查原来的 10px SVG 图标与 aria-hidden 契约。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps Shop purchase CTAs on the shared icon-plus-label anatomy",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2133,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "35",
+      "subject": "商品名称/价格层级",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Shop product identity on one first-scan row",
+        "line": 2421,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2436 |\n  2437 |       expect(rows).toHaveLength(4);\n> 2438 |       expect(rows.every(({ topSpread, titleWidth, priceWidth }) => topSpread <= 5 && titleWidth > 0 && priceWidth > 0)).toBe(true);\n       |                                                                                                                         ^\n  2439 |     }\n  2440 |   }\n  2441 | });\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2438:121"
+      },
+      "reviewed": {
+        "title": "keeps Shop names and prices readable in their two-tier identity rows",
+        "line": 2194,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "名称和价格改为图形/种类/名称/金额的两级阅读，旧单行第一扫描断言失效。",
+      "resolution": "在两种宽度和商品/娱乐中检查标题最多三行、价格不遮挡、真实内容在边界内。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps Shop names and prices readable in their two-tier identity rows",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2194,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "36",
+      "subject": "商品选中绘制来源",
+      "project": "desktop",
+      "classification": "测试脚本过时",
+      "original": {
+        "title": "keeps the selected Shop product frame brighter than idle cards",
+        "line": 2475,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: \"rgb(241, 241, 241)\"\nReceived: \"rgb(245, 245, 241)\"\n\n  2481 |   expect(frames.length).toBeGreaterThan(1);\n  2482 |   expect(frames.filter(({ selected }) => selected)).toHaveLength(1);\n> 2483 |   expect(frames.find(({ selected }) => selected)?.borderColor).toBe('rgb(241, 241, 241)');\n       |                                                                ^\n  2484 |   expect(frames.filter(({ selected }) => !selected).every(({ borderColor, clipPath }) =>\n  2485 |     borderColor === 'rgb(199, 199, 192)' && clipPath !== 'none'\n  2486 |   )).toBe(true);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2483:64"
+      },
+      "reviewed": {
+        "title": "keeps the selected Shop product frame brighter than idle cards",
+        "line": 2246,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧脚本读取 content:none 的 ::after border，测到的样式不会绘制；实际商品 border 已正确呈现选中。",
+      "resolution": "检查真正绘制的白色 border、恰好一个选中卡和详情一致性，不用无效伪元素颜色作为证据。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps the selected Shop product frame brighter than idle cards",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2246,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "37",
+      "subject": "娱乐与商品统一目录",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Shop Entertainment cards on the Goods card and action tier",
+        "line": 2497,
+        "failureExcerpt": "Error: expect(locator).toBeHidden() failed\n\nLocator:  getByRole('heading', { name: '娱乐与生活活动', exact: true })\nExpected: hidden\nReceived: visible\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toBeHidden\" with timeout 5000ms\n  - waiting for getByRole('heading', { name: '娱乐与生活活动', exact: true })\n    14 × locator resolved to <h2>娱乐与生活活动</h2>\n       - unexpected value \"visible\"\n\n\n  2492 |   await page.getByRole('button', { name: '商店', exact: true }).click();\n  2493 |   await page.getByRole('tab', { name: '娱乐', exact: true }).click();\n> 2494 |   await expect(page.getByRole('heading', { name: '娱乐与生活活动', exact: true })).toBeHidden();\n       |                                                                             ^\n  2495 |\n  2496 |   const cards = await page.locator('.view-shop .shop-main .activity-"
+      },
+      "reviewed": {
+        "title": "keeps Shop Entertainment on the shared readable catalog tier",
+        "line": 2261,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "主标题保持“商品”，分类内容标题改为 h2“娱乐与生活活动”；旧脚本把分类标题当成全页 h1。",
+      "resolution": "检查主/分类标题语义、选中 tab 与相同 6 卡可读目录契约。",
+      "reference": "scripts/reference/console-v2/shop-activities-1440.png",
+      "verification": {
+        "title": "keeps Shop Entertainment on the shared readable catalog tier",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2261,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "38",
+      "subject": "CTA 内容宽度",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Shop product CTAs across the full card frame",
+        "line": 2589,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2606 |     gridArea === 'foot' && footerWidth >= cardWidth - 22 && leftInset <= 11 && rightInset <= 11 &&\n  2607 |     footerTop > cardTop + (cardBottom - cardTop) / 2 && footerBottom <= cardBottom + 0.5\n> 2608 |   )).toBe(true);\n       |      ^\n  2609 | });\n  2610 |\n  2611 | test('shows the pending settlement mode in the top status while the ceremony is open', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2608:6"
+      },
+      "reviewed": {
+        "title": "keeps Shop product CTAs across the full content width within their frame",
+        "line": 2329,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧 CSS grid-area:foot 内部实现已被新的卡片解剖替换。",
+      "resolution": "按真实 padding/border 计算 CTA 应占的完整内容宽度，检查 36px 高与四边包含关系。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps Shop product CTAs across the full content width within their frame",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2329,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "39",
+      "subject": "开放像素商品图形",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Shop catalog art on the open 1-bit illustration tier",
+        "line": 2824,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2835 |   expect(art.every(({ background, topBorder, rightBorder, illustrationSize }) =>\n  2836 |     background === 'rgba(0, 0, 0, 0)' && topBorder === 'none' && rightBorder === 'none' && illustrationSize >= 52\n> 2837 |   )).toBe(true);\n       |      ^\n  2838 | });\n  2839 |\n  2840 | test('keeps the breakfast voucher visually distinct from meal products', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2837:6"
+      },
+      "reviewed": {
+        "title": "keeps Shop catalog art frameless and on the shared crisp pixel grid",
+        "line": 2555,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "原纯黑小图框被 48px 无框图形替换，computed background 不再等于旧黑色。",
+      "resolution": "检查 frameless、48px、crispEdges、整数 SVG rect，无图片滤镜、渐变或图框。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps Shop catalog art frameless and on the shared crisp pixel grid",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2555,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "40",
+      "subject": "早餐券所在分页",
+      "project": "desktop",
+      "classification": "测试脚本过时",
+      "original": {
+        "title": "keeps the breakfast voucher visually distinct from meal products",
+        "line": 2849,
+        "failureExcerpt": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  locator('.view-shop .shop-main .item-card').filter({ hasText: '早餐券' })\nExpected: 1\nReceived: 0\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCount\" with timeout 5000ms\n  - waiting for locator('.view-shop .shop-main .item-card').filter({ hasText: '早餐券' })\n    14 × locator resolved to 0 elements\n       - unexpected value \"0\"\n\n\n  2844 |\n  2845 |   const voucherCard = page.locator('.view-shop .shop-main .item-card').filter({ hasText: '早餐券' });\n> 2846 |   await expect(voucherCard).toHaveCount(1);\n       |                             ^\n  2847 |   await expect(voucherCard.locator('.pixel-illustration.il-voucher')).toHaveCount(1);\n  2848 | });\n  2849 |\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:284"
+      },
+      "reviewed": {
+        "title": "keeps the breakfast voucher visually distinct from meal products",
+        "line": 2569,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧脚本假设所有 12 商品都在第一页，早餐券在新 6 卡分页下不一定出现。",
+      "resolution": "用真实分页按钮找到早餐券，再保留其区别于餐食的 voucher SVG/图形语义检查。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps the breakfast voucher visually distinct from meal products",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2569,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "41",
+      "subject": "预测属性行",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the Life forecast attribute rows on the readable pixel tier",
+        "line": 2925,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2931 |\n  2932 |   expect(rows.length).toBe(5);\n> 2933 |   expect(rows.every(({ rowHeight, labelFontSize, iconSize }) => rowHeight >= 22 && labelFontSize >= 11 && iconSize >= 14)).toBe(true);\n       |                                                                                                                            ^\n  2934 | });\n  2935 |\n  2936 | test('keeps Life forecast meters on the ten-step reference scale', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:2933:124"
+      },
+      "reviewed": {
+        "title": "keeps Life forecast attributes readable with aligned real values",
+        "line": 2645,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧 14–17px 行高度对应更小字体；当前标签 12px、行高 20px，提升可读性。",
+      "resolution": "检查真实标签/图标/数值包含关系、对齐、至少 12px 字号与 AA 对比度。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps Life forecast attributes readable with aligned real values",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2645,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "42",
+      "subject": "预测十段仪表",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Life forecast meters on the ten-step reference scale",
+        "line": 2945,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  2948 |\n  2949 |   expect(meters).toHaveLength(5);\n> 2950 |   expect(meters.every(({ segments, ariaMax, display, width, segmentWidth }) => segments === 10 && ariaMax === '100' && display === 'grid' && width >= 120 && width <= 132 && segmentWidth >= 10 && segmentWidth <= 12)).toBe(true);\n       |                                                                                                                                                                                                                         ^\n  2951 | });\n  2952 |\n  2953 | test('keeps Life forecast meter cells on the chunky pixel tier', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke"
+      },
+      "reviewed": {
+        "title": "keeps Life forecast meters on ten equal steps synchronized with their values",
+        "line": 2661,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧固定 120–132px 宽不适用于新的预测列宽；十段比例与真实值契约仍有效。",
+      "resolution": "检查十个等宽段、每段至少 8px、ARIA 值 10/50/10/10/0、对应填充 1/5/1/1/0 与 max100。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps Life forecast meters on ten equal steps synchronized with their values",
+        "project": "desktop",
+        "status": "expected",
+        "line": 2661,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "43",
+      "subject": "月结财务外框",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "gives settlement financial panels a shared pixel-corner frame",
+        "line": 3478,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  3488 |\n  3489 |   expect(frames).toHaveLength(3);\n> 3490 |   expect(frames.every(({ content, borderWidth, clipPath, surfaceClipPath }) => content === '\"\"' && Number.parseFloat(borderWidth) >= 1 && clipPath !== 'none' && surfaceClipPath !== 'none')).toBe(true);\n       |                                                                                                                                                                                               ^\n  3491 | });\n  3492 |\n  3493 | test('gives the settlement Hero a full-width title divider', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:3490:191"
+      },
+      "reviewed": {
+        "title": "gives settlement financial panels a shared square pixel frame",
+        "line": 3201,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧 clip-path 台阶角已改为与全局一致的方形财务框。",
+      "resolution": "检查三块财务真实收入/支出/配置标签、外框、无圆角/渐变/模糊阴影，不改财务分类或数值。",
+      "reference": "scripts/reference/console-v2/monthly-summary-1440.png",
+      "verification": {
+        "title": "gives settlement financial panels a shared square pixel frame",
+        "project": "desktop",
+        "status": "expected",
+        "line": 3201,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "44",
+      "subject": "共享方框与点线",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps shared panels on the stepped corner and divider grammar",
+        "line": 4137,
+        "failureExcerpt": "Error: expect(received).toContain(expected) // indexOf\n\nExpected substring: \"linear-gradient\"\nReceived string:    \"none\"\n\n  4155 |   });\n  4156 |\n> 4157 |   expect(grammar.hero?.backgroundImage).toContain('linear-gradient');\n       |                                         ^\n  4158 |   expect(grammar.inbox?.backgroundImage).toContain('linear-gradient');\n  4159 |   expect(grammar.planner?.backgroundImage).toContain('linear-gradient');\n  4160 |   expect(grammar.divider).toEqual({ style: 'dotted', color: 'rgb(87, 87, 83)' });\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:4157:41"
+      },
+      "reviewed": {
+        "title": "keeps shared panels on square pixel frames and explicit dotted dividers",
+        "line": 3856,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧规则同时锁定渐变生成的台阶角；当前保留清楚方形外框及用途明确的点线分隔。",
+      "resolution": "检查六个清晰外框、无渐变；生活信息区既有 #666 点线分隔要求保留。",
+      "reference": "scripts/reference/console-v2/life-four-messages-1440.png",
+      "verification": {
+        "title": "keeps shared panels on square pixel frames and explicit dotted dividers",
+        "project": "desktop",
+        "status": "expected",
+        "line": 3856,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "45",
+      "subject": "生活主板轮廓",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps Life board surfaces on the shared stepped pixel silhouette",
+        "line": 4172,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  4172 |\n  4173 |   expect(frames).toHaveLength(6);\n> 4174 |   expect(frames.every(({ clipPath, overflowX, overflowY }) => clipPath !== 'none' && overflowX !== 'scroll' && overflowY !== 'scroll')).toBe(true);\n       |                                                                                                                                         ^\n  4175 | });\n  4176 |\n  4177 | test('keeps secondary desktop surfaces on the shared stepped pixel silhouette', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:4174:137"
+      },
+      "reviewed": {
+        "title": "keeps Life board surfaces square and free of forced inner scrollbars",
+        "line": 3868,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧强制四角 clip-path 与当前六块方形主板轮廓不一致。",
+      "resolution": "检查六个方框、实际内容在边界内、不强制内层滚动条；自然主区滚动保留。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps Life board surfaces square and free of forced inner scrollbars",
+        "project": "desktop",
+        "status": "expected",
+        "line": 3868,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "46",
+      "subject": "二级桌面表面",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps secondary desktop surfaces on the shared stepped pixel silhouette",
+        "line": 4186,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  4194 |\n  4195 |     expect(frames.length, `${nav} should expose its real secondary surfaces`).toBeGreaterThan(0);\n> 4196 |     expect(frames.every(({ clipPath, overflowX, overflowY }) => clipPath !== 'none' && overflowX !== 'scroll' && overflowY !== 'scroll')).toBe(true);\n       |                                                                                                                                           ^\n  4197 |   }\n  4198 | });\n  4199 |\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:4196:139"
+      },
+      "reviewed": {
+        "title": "keeps secondary desktop surfaces on the shared square pixel grammar",
+        "line": 3875,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "Career/Shop/Forecast 已使用方形共享框；DESIGN.md 明确允许零偏移零模糊的 1px/2px inset 双线。",
+      "resolution": "检查真实方框与包含关系，仅允许明确的 inset 双线；偏移阴影、模糊、渐变和圆角仍失败。",
+      "reference": "scripts/reference/console-v2/career-1440.png",
+      "verification": {
+        "title": "keeps secondary desktop surfaces on the shared square pixel grammar",
+        "project": "desktop",
+        "status": "expected",
+        "line": 3875,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "47",
+      "subject": "愿望空状态统一面",
+      "project": "desktop",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps empty Shop rail modules on dark shells with the wishlist reading panel light",
+        "line": 4353,
+        "failureExcerpt": "Error: expect(received).toEqual(expected) // deep equality\n\n- Expected  - 8\n+ Received  + 8\n\n  Object {\n    \"cart\": Object {\n-     \"backgroundColor\": \"rgb(0, 0, 0)\",\n-     \"color\": \"rgb(170, 170, 170)\",\n-     \"shellBackgroundColor\": \"rgb(0, 0, 0)\",\n+     \"backgroundColor\": \"rgba(0, 0, 0, 0)\",\n+     \"color\": \"rgb(241, 241, 241)\",\n+     \"shellBackgroundColor\": \"rgb(9, 9, 9)\",\n    },\n    \"inventory\": Object {\n-     \"backgroundColor\": \"rgb(0, 0, 0)\",\n-     \"color\": \"rgb(170, 170, 170)\",\n-     \"shellBackgroundColor\": \"rgb(0, 0, 0)\",\n+     \"backgroundColor\": \"rgba(0, 0, 0, 0)\",\n+     \"color\": \"rgb(241, 241, 241)\",\n+     \"shellBackgroundColor\": \"rgb(9, 9, 9)\",\n    },\n    \"wishlist\": Object {\n      \"backgroundColor\": \"rgba(0, 0, 0, 0)\",\n-     \"color\": \"rgb(85, 85, 85)\",\n-     \"shellBackgroundColor"
+      },
+      "reviewed": {
+        "title": "keeps empty Shop rail modules on one readable dark frame per function",
+        "line": 4032,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "旧愿望空状态白色正文与当前四模块统一深色表面不一致。",
+      "resolution": "检查四个实际模块、三种空状态、AA 对比度和内层无第二套边框。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps empty Shop rail modules on one readable dark frame per function",
+        "project": "desktop",
+        "status": "expected",
+        "line": 4032,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "48",
+      "subject": "高 DPR 空右栏",
+      "project": "mobile",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps an empty Shop Rail in the tall reference frame",
+        "line": 392,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 1000\nReceived:    1287\n\n  412 |\n  413 |   expect(footprint.height).toBeGreaterThanOrEqual(780);\n> 414 |   expect(footprint.bottom).toBeLessThanOrEqual(footprint.footerTop);\n      |                            ^\n  415 |   expect(footprint.modules).toHaveLength(4);\n  416 |   expect(footprint.modules[0].height).toBeGreaterThanOrEqual(180);\n  417 |   expect(footprint.modules[1].height).toBeGreaterThanOrEqual(240);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:414:28"
+      },
+      "reviewed": {
+        "title": "keeps every empty Shop Rail module reachable in the main scroll context",
+        "line": 376,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "与 06 同一真实嵌套面板问题；mobile 项目以 1440px 视口保留 DPR2.625，再现同一缺陷。",
+      "resolution": "与 06 共用修复；高 DPR 下用真实滚轮检验四个功能模块可达。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps every empty Shop Rail module reachable in the main scroll context",
+        "project": "mobile",
+        "status": "expected",
+        "line": 376,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "49",
+      "subject": "高 DPR 空库存",
+      "project": "mobile",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps the tall Shop inventory lane as a compact dark strip",
+        "line": 435,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 104\nReceived:    232\n\n  451 |\n  452 |   expect(geometry.height).toBeGreaterThanOrEqual(84);\n> 453 |   expect(geometry.height).toBeLessThanOrEqual(104);\n      |                           ^\n  454 |   expect(geometry.headingHeight).toBeLessThanOrEqual(42);\n  455 |   expect(geometry.stateHeight).toBeLessThanOrEqual(70);\n  456 | });\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:453:27"
+      },
+      "reviewed": {
+        "title": "keeps the tall Shop inventory lane as a compact dark strip",
+        "line": 408,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "与 07 同一真实内框/内边距问题。",
+      "resolution": "与 07 共用修复；高 DPR 下检验紧凑性和单一外框。",
+      "reference": "scripts/reference/console-v2/shop-1440.png",
+      "verification": {
+        "title": "keeps the tall Shop inventory lane as a compact dark strip",
+        "project": "mobile",
+        "status": "expected",
+        "line": 408,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "50",
+      "subject": "高 DPR 库存操作",
+      "project": "mobile",
+      "classification": "真实 UI 问题",
+      "original": {
+        "title": "keeps populated Shop inventory as an actionable pixel strip",
+        "line": 458,
+        "failureExcerpt": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 104\nReceived:    385\n\n  489 |     };\n  490 |   });\n> 491 |   expect(geometry.height).toBeLessThanOrEqual(104);\n      |                           ^\n  492 |   expect(geometry.stripHeight).toBeGreaterThanOrEqual(42);\n  493 |   expect(geometry.stripHeight).toBeLessThanOrEqual(62);\n  494 |   expect(geometry.stripScrollWidth).toBeLessThanOrEqual(geometry.stripClientWidth);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:491:27"
+      },
+      "reviewed": {
+        "title": "keeps populated Shop inventory as an actionable pixel strip",
+        "line": 431,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "与 08 同一真实垂直库存卡片问题。",
+      "resolution": "与 08 共用修复；高 DPR 下检查三列包含关系并真实使用一次库存商品。",
+      "reference": "scripts/reference/console-v2/shop-populated-1440.png",
+      "verification": {
+        "title": "keeps populated Shop inventory as an actionable pixel strip",
+        "project": "mobile",
+        "status": "expected",
+        "line": 431,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "51",
+      "subject": "高 DPR 愿望表面",
+      "project": "mobile",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps populated Shop wishlist as light action rows under a dark header",
+        "line": 500,
+        "failureExcerpt": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator:  locator('.shop-rail .rail-wishlist')\nExpected: \"rgb(0, 0, 0)\"\nReceived: \"rgb(9, 9, 9)\"\nTimeout:  5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for locator('.shop-rail .rail-wishlist')\n    13 × locator resolved to <section aria-label=\"消费目标快捷区\" class=\"rail-module rail-fill rail-wishlist\">…</section>\n       - unexpected value \"rgb(9, 9, 9)\"\n\n\n  518 |   await expect(row.getByRole('button', { name: '买下', exact: true })).toBeVisible();\n  519 |   await expect(row.getByRole('button', { name: '移除', exact: true })).toBeVisible();\n> 520 |   await expect(wishlist).toHaveCSS('background-color', 'rgb(0, 0, 0)');\n      |                          ^\n  521 |   await expect(heading).toHaveCSS('background-color', 'rgb(0, 0"
+      },
+      "reviewed": {
+        "title": "keeps populated Shop wishlist readable and actionable on its shared rail surface",
+        "line": 479,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "与 09 同一合理深色阅读面变化。",
+      "resolution": "高 DPR 下检查真实目标、AA 对比度、购买/移除状态与滚轮移除。",
+      "reference": "scripts/reference/console-v2/shop-populated-1440.png",
+      "verification": {
+        "title": "keeps populated Shop wishlist readable and actionable on its shared rail surface",
+        "project": "mobile",
+        "status": "expected",
+        "line": 479,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "52",
+      "subject": "高 DPR 真实时间线",
+      "project": "mobile",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps the tall Life time column on the reference stepped rhythm",
+        "line": 701,
+        "failureExcerpt": "Error: expect(received).toBeGreaterThanOrEqual(expected)\n\nExpected: >= 18\nReceived:    0\n\n  719 |   });\n  720 |\n> 721 |   expect(geometry.label.left - geometry.column.left).toBeGreaterThanOrEqual(18);\n      |                                                      ^\n  722 |   expect(geometry.label.top - geometry.column.top).toBeGreaterThanOrEqual(20);\n  723 |   expect(geometry.label.top - geometry.column.top).toBeLessThanOrEqual(34);\n  724 |   expect(geometry.clock.top - geometry.column.top).toBeGreaterThanOrEqual(68);\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:721:54"
+      },
+      "reviewed": {
+        "title": "keeps time, date and the real day timeline in a contained reading order",
+        "line": 625,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "与 15 同一合理 DayRibbon 结构变化。",
+      "resolution": "高 DPR 下检查真实日期/时间线与包含关系，不再定位旧相对锚点。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps time, date and the real day timeline in a contained reading order",
+        "project": "mobile",
+        "status": "expected",
+        "line": 625,
+        "results": [
+          "passed"
+        ]
+      }
+    },
+    {
+      "id": "53",
+      "subject": "高 DPR 页面标题节奏",
+      "project": "mobile",
+      "classification": "合理变化使旧基线失效",
+      "original": {
+        "title": "keeps tall desktop boards flush with the navigation baseline",
+        "line": 910,
+        "failureExcerpt": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: true\nReceived: false\n\n  921 |   }\n  922 |\n> 923 |   expect(gaps.every((gap) => gap >= 0 && gap <= 2)).toBe(true);\n      |                                                     ^\n  924 | });\n  925 |\n  926 | test('hides dormant scroll tracks on the fitted tall desktop surface', async ({ page }) => {\n    at D:\\xia zai\\AI project\\Project in Iteration\\8.25 yuliang\\e2e\\smoke.spec.ts:923:53"
+      },
+      "reviewed": {
+        "title": "keeps navigation stable while context and page headings establish reading order",
+        "line": 799,
+        "file": "e2e/smoke.spec.ts"
+      },
+      "evidence": "与 20 同一合理上下文条/PageHeading 变化。",
+      "resolution": "高 DPR 下保留导航稳定、标题顺序和实际板块边界检查。",
+      "reference": "scripts/reference/console-v2/life-1440.png",
+      "verification": {
+        "title": "keeps navigation stable while context and page headings establish reading order",
+        "project": "mobile",
+        "status": "expected",
+        "line": 799,
+        "results": [
+          "passed"
+        ]
+      }
+    }
+  ]
+}

@@ -1392,7 +1392,7 @@ button, input, select { border-radius: 0; }
 @media (max-width: 1180px) {
   .career-section.market-mode > .section-heading { display: none; }
   .career-market-identity { display: block; padding: 2px 0 11px; margin-bottom: 4px; border-bottom: 1px dotted #777; }
-  .career-market-identity h1 { margin: 4px 0 5px; color: #fff; font-size: 24px; line-height: 1; letter-spacing: -.07em; }
+  .career-market-identity h2 { margin: 4px 0 5px; color: #fff; font-size: 24px; line-height: 1; letter-spacing: -.07em; }
   .career-market-identity p { margin: 0; color: #aaa; font-size: 12px; }
   .career-market-tabs { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 9px; }
   .career-market-tabs .filter-button { min-height: 26px; padding: 4px 6px; font-size: 12px; }
@@ -1654,7 +1654,7 @@ button, input, select { border-radius: 0; }
   .career-section.market-mode .career-filters > .filter-button { min-height: 23px; height: 23px; padding-block: 3px; font-size: 12px; }
   .career-section.market-mode .career-filters input { padding-block: 6px; }
   .career-market-identity { padding: 2px 0 13px; margin-bottom: 4px; border-bottom: 1px dotted #777; }
-  .career-market-identity h1 { margin: 4px 0 5px; color: #fff; font-size: 27px; line-height: 1; letter-spacing: -.07em; }
+  .career-market-identity h2 { margin: 4px 0 5px; color: #fff; font-size: 27px; line-height: 1; letter-spacing: -.07em; }
   .career-market-identity p { margin: 0; color: #aaa; font-size: 12px; }
   .career-section.market-mode .career-results { padding-top: 36px; }
   .career-section.market-mode .career-detail.inverse { min-height: 662px; }
@@ -7372,7 +7372,7 @@ textarea {
     grid-template-areas:
       '. actions count'
       'filters filters filters';
-    grid-template-rows: 30px 36px;
+    grid-template-rows: auto auto;
     align-items: end;
     gap: 4px 8px;
     min-height: 76px;
@@ -7707,7 +7707,7 @@ textarea {
     min-width: 0;
   }
 
-  .career-market-identity-copy h1 {
+  .career-market-identity-copy h2 {
     margin-top: 4px;
     font-size: 25px;
     white-space: nowrap;

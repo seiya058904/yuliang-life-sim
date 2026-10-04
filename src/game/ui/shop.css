@@ -81,6 +81,19 @@
 .shop-rail-empty .pixel-illustration { grid-row: span 2; width: 28px; height: 28px; }
 .shop-rail-empty strong { font-size: 14px; }
 .shop-rail-empty small { font-size: 12px; font-weight: 400; color: #aaa; line-height: 1.5; }
+/* Inventory and goals share the rail's frame, rather than nesting a second panel. */
+.shop-rail .detail-panel { margin: 0; padding: 0; border: 0; background: transparent; }
+.shop-rail .section-heading > div { display: flex; align-items: center; gap: 8px; }
+.shop-rail .inventory-strip { display: grid; gap: 8px; }
+.shop-rail .inventory-item { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #575753; }
+.shop-rail .inventory-item-art { width: 28px; height: 28px; }
+.shop-rail .inventory-item-copy { min-width: 0; }
+.shop-rail .inventory-item-copy h3 { margin: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.shop-rail .inventory-item-copy span { font-size: 12px; color: #aaa; }
+.shop-rail .inventory-item-actions { display: flex; flex-direction: column; gap: 4px; }
+.shop-rail .inventory-item-actions button { padding: 6px 8px; white-space: nowrap; }
+.shop-rail .item-row h2 { margin: 0; font-size: 14px; }
+.shop-rail .item-row .row-meta { min-width: 0; }
 .shop-support-panels { margin-block: 20px; }
 /* The selected entry is an immediate reading strip, before the catalogue. */
 .shop-main > .shop-detail { grid-template-columns: 48px minmax(0,1fr) auto; gap: 12px 16px; padding: 16px; margin-bottom: 16px; }

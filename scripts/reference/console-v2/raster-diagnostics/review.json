@@ -1,0 +1,452 @@
+{
+  "sourceHead": "64283bca15a551d7df72e4d4aad6bcc983c36b67",
+  "browser": "154.0.8037.95",
+  "platform": "win32",
+  "fixtureHash": "0812a7de73e190b6a692f5dc6d7d208c53169fff41282d2c63d6926d4a3aeb76",
+  "generatedAt": [
+    "2026-10-04T12:30:54.649Z",
+    "2026-10-04T12:32:16.248Z",
+    "2026-10-04T12:39:51.712Z"
+  ],
+  "comparisons": {
+    "firstVsRepeat": {
+      "exactMatches": 35,
+      "total": 36
+    },
+    "firstVsConfirm": {
+      "exactMatches": 35,
+      "total": 36
+    },
+    "dpr1AllThree": {
+      "exactMatches": 28,
+      "total": 28
+    }
+  },
+  "comparison": "whole PNG byte equality; no mask, threshold or tolerance",
+  "exceptions": [
+    {
+      "file": "social-landscape.png",
+      "capture": "repeat",
+      "differingPixels": 775,
+      "bbox": [
+        154,
+        18,
+        1964,
+        938
+      ],
+      "regions": {
+        "clockFrame": 583,
+        "footerFrame": 192
+      },
+      "bodyTextDifferences": 0
+    },
+    {
+      "file": "shop-activities-landscape.png",
+      "capture": "confirm",
+      "differingPixels": 775,
+      "bbox": [
+        154,
+        18,
+        1964,
+        938
+      ],
+      "regions": {
+        "clockFrame": 583,
+        "footerFrame": 192
+      },
+      "bodyTextDifferences": 0
+    }
+  ],
+  "diagnosticIndependentContexts": 3,
+  "diagnosticSamples": 15,
+  "diagnosticSamplesMatchingFirst": 15,
+  "equalFields": [
+    "fixtureHash",
+    "sourceHashes",
+    "record.metrics",
+    "record.fonts"
+  ],
+  "conclusion": "High-DPR fractional-border raster edge variation; compositor/raster-path cause is an inference. Original images retained. No baseline assertion relaxed.",
+  "records": [
+    {
+      "file": "life-1440.png",
+      "first": "0401e0d01cf032a116d16cb77457d516398d9eb374141fcceaae64e2d3c4c855",
+      "repeat": "0401e0d01cf032a116d16cb77457d516398d9eb374141fcceaae64e2d3c4c855",
+      "confirm": "0401e0d01cf032a116d16cb77457d516398d9eb374141fcceaae64e2d3c4c855"
+    },
+    {
+      "file": "career-1440.png",
+      "first": "212f3ebef579372c9f5489005cd0b8b2b88874aefc7cd4ae5bf7a4571af8353e",
+      "repeat": "212f3ebef579372c9f5489005cd0b8b2b88874aefc7cd4ae5bf7a4571af8353e",
+      "confirm": "212f3ebef579372c9f5489005cd0b8b2b88874aefc7cd4ae5bf7a4571af8353e"
+    },
+    {
+      "file": "shop-1440.png",
+      "first": "e3274fa07a65ae27aa28f696ccc8be60dd404b333dd80653a0f2ad4614a6445d",
+      "repeat": "e3274fa07a65ae27aa28f696ccc8be60dd404b333dd80653a0f2ad4614a6445d",
+      "confirm": "e3274fa07a65ae27aa28f696ccc8be60dd404b333dd80653a0f2ad4614a6445d"
+    },
+    {
+      "file": "wealth-1440.png",
+      "first": "5dcfbfb2b2eeebeb2bde22c91ee23338890214cf44fe2b0f12f907fe882e4776",
+      "repeat": "5dcfbfb2b2eeebeb2bde22c91ee23338890214cf44fe2b0f12f907fe882e4776",
+      "confirm": "5dcfbfb2b2eeebeb2bde22c91ee23338890214cf44fe2b0f12f907fe882e4776"
+    },
+    {
+      "file": "social-1440.png",
+      "first": "014ae5b63b8976cf18f41c81b0dff91bb99026deefe196b17dd696e1e1962728",
+      "repeat": "014ae5b63b8976cf18f41c81b0dff91bb99026deefe196b17dd696e1e1962728",
+      "confirm": "014ae5b63b8976cf18f41c81b0dff91bb99026deefe196b17dd696e1e1962728"
+    },
+    {
+      "file": "city-1440.png",
+      "first": "53e860de36604e97daa26cdb0d6cf75ab06ae4cb3ecf05046b7c4c010f5a0dd5",
+      "repeat": "53e860de36604e97daa26cdb0d6cf75ab06ae4cb3ecf05046b7c4c010f5a0dd5",
+      "confirm": "53e860de36604e97daa26cdb0d6cf75ab06ae4cb3ecf05046b7c4c010f5a0dd5"
+    },
+    {
+      "file": "profile-1440.png",
+      "first": "65d2420d0927d94302e495da74a7bba6549458f50a0b2a1d8e6d1bfcdb53bb98",
+      "repeat": "65d2420d0927d94302e495da74a7bba6549458f50a0b2a1d8e6d1bfcdb53bb98",
+      "confirm": "65d2420d0927d94302e495da74a7bba6549458f50a0b2a1d8e6d1bfcdb53bb98"
+    },
+    {
+      "file": "shop-activities-1440.png",
+      "first": "48e4d136f087dcf69658477236e31a08109652e6451dcb5f58599c3e3ef15854",
+      "repeat": "48e4d136f087dcf69658477236e31a08109652e6451dcb5f58599c3e3ef15854",
+      "confirm": "48e4d136f087dcf69658477236e31a08109652e6451dcb5f58599c3e3ef15854"
+    },
+    {
+      "file": "shop-populated-1440.png",
+      "first": "351a858641de3e21b02d0e04b0d716cf16c3bc92edc90b39e5014c37a6beb0ce",
+      "repeat": "351a858641de3e21b02d0e04b0d716cf16c3bc92edc90b39e5014c37a6beb0ce",
+      "confirm": "351a858641de3e21b02d0e04b0d716cf16c3bc92edc90b39e5014c37a6beb0ce"
+    },
+    {
+      "file": "life-four-messages-1440.png",
+      "first": "ba7f146f4a411ec161c3d9fa7fe99fb7b45da83ef75ecd0b0b903322b7b9f874",
+      "repeat": "ba7f146f4a411ec161c3d9fa7fe99fb7b45da83ef75ecd0b0b903322b7b9f874",
+      "confirm": "ba7f146f4a411ec161c3d9fa7fe99fb7b45da83ef75ecd0b0b903322b7b9f874"
+    },
+    {
+      "file": "career-support-1440.png",
+      "first": "927a6a235799567babd724bd89c66ed7eb1002664d2942773132ee2ea6df3215",
+      "repeat": "927a6a235799567babd724bd89c66ed7eb1002664d2942773132ee2ea6df3215",
+      "confirm": "927a6a235799567babd724bd89c66ed7eb1002664d2942773132ee2ea6df3215"
+    },
+    {
+      "file": "career-populated-1440.png",
+      "first": "7872680c6d0b1387ed99cab955bbca182928c0318979717a5644f62de181d5dd",
+      "repeat": "7872680c6d0b1387ed99cab955bbca182928c0318979717a5644f62de181d5dd",
+      "confirm": "7872680c6d0b1387ed99cab955bbca182928c0318979717a5644f62de181d5dd"
+    },
+    {
+      "file": "life-long-activity-1440.png",
+      "first": "6b0147ace75379a1dc56a499abddd2ad42910445fefa384e28190d65ee5ee7e9",
+      "repeat": "6b0147ace75379a1dc56a499abddd2ad42910445fefa384e28190d65ee5ee7e9",
+      "confirm": "6b0147ace75379a1dc56a499abddd2ad42910445fefa384e28190d65ee5ee7e9"
+    },
+    {
+      "file": "monthly-summary-1440.png",
+      "first": "8db9dfcf13657abc00ea171ca5ad418a9828c2f0709db63208a1d98730a63ad1",
+      "repeat": "8db9dfcf13657abc00ea171ca5ad418a9828c2f0709db63208a1d98730a63ad1",
+      "confirm": "8db9dfcf13657abc00ea171ca5ad418a9828c2f0709db63208a1d98730a63ad1"
+    },
+    {
+      "file": "life-1280.png",
+      "first": "e17fd642854b8eaceba1ac6cbf0104f02833f1a8f6339d79d79034307f63e2a8",
+      "repeat": "e17fd642854b8eaceba1ac6cbf0104f02833f1a8f6339d79d79034307f63e2a8",
+      "confirm": "e17fd642854b8eaceba1ac6cbf0104f02833f1a8f6339d79d79034307f63e2a8"
+    },
+    {
+      "file": "career-1280.png",
+      "first": "8c94710c4edbe7a95d2a7b6a6e144168c00b59982d8e436d7a4507607d955dca",
+      "repeat": "8c94710c4edbe7a95d2a7b6a6e144168c00b59982d8e436d7a4507607d955dca",
+      "confirm": "8c94710c4edbe7a95d2a7b6a6e144168c00b59982d8e436d7a4507607d955dca"
+    },
+    {
+      "file": "shop-1280.png",
+      "first": "f571bc6a9faf8e6e8da00e397cc238e85917c6374df8fe7640f7478c4e11a0fd",
+      "repeat": "f571bc6a9faf8e6e8da00e397cc238e85917c6374df8fe7640f7478c4e11a0fd",
+      "confirm": "f571bc6a9faf8e6e8da00e397cc238e85917c6374df8fe7640f7478c4e11a0fd"
+    },
+    {
+      "file": "wealth-1280.png",
+      "first": "dde8168ebaf49cc0848bc677f4f719a4eb4f3080b3706056bf7341b858cfff8d",
+      "repeat": "dde8168ebaf49cc0848bc677f4f719a4eb4f3080b3706056bf7341b858cfff8d",
+      "confirm": "dde8168ebaf49cc0848bc677f4f719a4eb4f3080b3706056bf7341b858cfff8d"
+    },
+    {
+      "file": "social-1280.png",
+      "first": "f898682130df7fd19a1f65f31bb1db79607701890639b9d9f30d3b102a285417",
+      "repeat": "f898682130df7fd19a1f65f31bb1db79607701890639b9d9f30d3b102a285417",
+      "confirm": "f898682130df7fd19a1f65f31bb1db79607701890639b9d9f30d3b102a285417"
+    },
+    {
+      "file": "city-1280.png",
+      "first": "d3c1e4c0970928c8e9aaadb1fd620f6bdc54d54f06e2c115e781c3a316fb724b",
+      "repeat": "d3c1e4c0970928c8e9aaadb1fd620f6bdc54d54f06e2c115e781c3a316fb724b",
+      "confirm": "d3c1e4c0970928c8e9aaadb1fd620f6bdc54d54f06e2c115e781c3a316fb724b"
+    },
+    {
+      "file": "profile-1280.png",
+      "first": "5afb108522fd91fd5c216e0d0b54adbd3d1fce4bdf0f4fe86e4848f7161df4d4",
+      "repeat": "5afb108522fd91fd5c216e0d0b54adbd3d1fce4bdf0f4fe86e4848f7161df4d4",
+      "confirm": "5afb108522fd91fd5c216e0d0b54adbd3d1fce4bdf0f4fe86e4848f7161df4d4"
+    },
+    {
+      "file": "shop-activities-1280.png",
+      "first": "9cab1b716833d0749045b017e480367c1ae5cb8cea843a0137a14d42230614e3",
+      "repeat": "9cab1b716833d0749045b017e480367c1ae5cb8cea843a0137a14d42230614e3",
+      "confirm": "9cab1b716833d0749045b017e480367c1ae5cb8cea843a0137a14d42230614e3"
+    },
+    {
+      "file": "shop-populated-1280.png",
+      "first": "08f2bc58b4290ae569b6fc71a53ce6e46e30d42d3db328e4fbddb9115db8d8d6",
+      "repeat": "08f2bc58b4290ae569b6fc71a53ce6e46e30d42d3db328e4fbddb9115db8d8d6",
+      "confirm": "08f2bc58b4290ae569b6fc71a53ce6e46e30d42d3db328e4fbddb9115db8d8d6"
+    },
+    {
+      "file": "life-four-messages-1280.png",
+      "first": "d493719f0a707b654662a6b30627f163380313b832e834b83da80f83e3e0c0dd",
+      "repeat": "d493719f0a707b654662a6b30627f163380313b832e834b83da80f83e3e0c0dd",
+      "confirm": "d493719f0a707b654662a6b30627f163380313b832e834b83da80f83e3e0c0dd"
+    },
+    {
+      "file": "career-support-1280.png",
+      "first": "760b9cd70f2fe6d1425b0c72be430793a0955abbcd0f7687a48314866951f0a4",
+      "repeat": "760b9cd70f2fe6d1425b0c72be430793a0955abbcd0f7687a48314866951f0a4",
+      "confirm": "760b9cd70f2fe6d1425b0c72be430793a0955abbcd0f7687a48314866951f0a4"
+    },
+    {
+      "file": "career-populated-1280.png",
+      "first": "157a07f48c8dcf164488ca8f13549c870c5dca6da8e1da18ae282e9e1367b67c",
+      "repeat": "157a07f48c8dcf164488ca8f13549c870c5dca6da8e1da18ae282e9e1367b67c",
+      "confirm": "157a07f48c8dcf164488ca8f13549c870c5dca6da8e1da18ae282e9e1367b67c"
+    },
+    {
+      "file": "life-long-activity-1280.png",
+      "first": "458a2c2a3f050f791e12e0eb8968c3c2c946d65267992c4d8cb6618d58d23334",
+      "repeat": "458a2c2a3f050f791e12e0eb8968c3c2c946d65267992c4d8cb6618d58d23334",
+      "confirm": "458a2c2a3f050f791e12e0eb8968c3c2c946d65267992c4d8cb6618d58d23334"
+    },
+    {
+      "file": "monthly-summary-1280.png",
+      "first": "556ad4bd4c314ff35b3fd1f4350fd6c6df5f294563f2ce04de7bb3789fb13495",
+      "repeat": "556ad4bd4c314ff35b3fd1f4350fd6c6df5f294563f2ce04de7bb3789fb13495",
+      "confirm": "556ad4bd4c314ff35b3fd1f4350fd6c6df5f294563f2ce04de7bb3789fb13495"
+    },
+    {
+      "file": "life-landscape.png",
+      "first": "018aa3fec34e0197eddb3aabe7864ba40fe7640f84244e6e1ea28d3573248368",
+      "repeat": "018aa3fec34e0197eddb3aabe7864ba40fe7640f84244e6e1ea28d3573248368",
+      "confirm": "018aa3fec34e0197eddb3aabe7864ba40fe7640f84244e6e1ea28d3573248368"
+    },
+    {
+      "file": "career-landscape.png",
+      "first": "54444f44442c39c2573a566a35c2dcf7d13a12789fccbca00991ea9ad93f1c33",
+      "repeat": "54444f44442c39c2573a566a35c2dcf7d13a12789fccbca00991ea9ad93f1c33",
+      "confirm": "54444f44442c39c2573a566a35c2dcf7d13a12789fccbca00991ea9ad93f1c33"
+    },
+    {
+      "file": "shop-landscape.png",
+      "first": "51c3976751834dd3424a33a2c6712c9fc86d0195aa1306d7a0de02c08f620587",
+      "repeat": "51c3976751834dd3424a33a2c6712c9fc86d0195aa1306d7a0de02c08f620587",
+      "confirm": "51c3976751834dd3424a33a2c6712c9fc86d0195aa1306d7a0de02c08f620587"
+    },
+    {
+      "file": "wealth-landscape.png",
+      "first": "462628e6d08c3d41fa3a1d61080bdd7339f37fdac7929acdcee107db95e153e6",
+      "repeat": "462628e6d08c3d41fa3a1d61080bdd7339f37fdac7929acdcee107db95e153e6",
+      "confirm": "462628e6d08c3d41fa3a1d61080bdd7339f37fdac7929acdcee107db95e153e6"
+    },
+    {
+      "file": "social-landscape.png",
+      "first": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1",
+      "repeat": "7977ab04ca5d8c0045341ba423967f13480d7b910a9a4d54650823eb1cfeeca2",
+      "confirm": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "file": "city-landscape.png",
+      "first": "5cec759e73b360736ae1962f819aa1ab10d73e91a4c9255043bc061fca5062a6",
+      "repeat": "5cec759e73b360736ae1962f819aa1ab10d73e91a4c9255043bc061fca5062a6",
+      "confirm": "5cec759e73b360736ae1962f819aa1ab10d73e91a4c9255043bc061fca5062a6"
+    },
+    {
+      "file": "profile-landscape.png",
+      "first": "f2b1a4343fdce35da27ecf880f89c1219518d5e22013e09a67df6f2efdc558cc",
+      "repeat": "f2b1a4343fdce35da27ecf880f89c1219518d5e22013e09a67df6f2efdc558cc",
+      "confirm": "f2b1a4343fdce35da27ecf880f89c1219518d5e22013e09a67df6f2efdc558cc"
+    },
+    {
+      "file": "shop-activities-landscape.png",
+      "first": "565c1549a96485f3a3e8dea75a269781c74d0ef623fbdd88d802c610e3c264ac",
+      "repeat": "565c1549a96485f3a3e8dea75a269781c74d0ef623fbdd88d802c610e3c264ac",
+      "confirm": "e3eddbd6b56f7f6563421add61d576446d8ad02a96e8e90fbcc6becd8c3ab8aa"
+    }
+  ],
+  "sampledSocialFrames": [
+    {
+      "run": 1,
+      "sample": 1,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 1,
+      "sample": 2,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 1,
+      "sample": 3,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 1,
+      "sample": 4,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 1,
+      "sample": 5,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 2,
+      "sample": 1,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 2,
+      "sample": 2,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 2,
+      "sample": 3,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 2,
+      "sample": 4,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 2,
+      "sample": 5,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 3,
+      "sample": 1,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 3,
+      "sample": 2,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 3,
+      "sample": 3,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 3,
+      "sample": 4,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    },
+    {
+      "run": 3,
+      "sample": 5,
+      "hash": "647c284ef719197406d66a3d18b725cb823f8e6f0108ddcfdb1f5f030f8a8da1"
+    }
+  ],
+  "socialGeometryAndStyles": [
+    {
+      "class": "status-clock",
+      "rect": {
+        "x": 299.703125,
+        "y": 7,
+        "width": 161,
+        "height": 58,
+        "top": 7,
+        "right": 460.703125,
+        "bottom": 65,
+        "left": 299.703125
+      },
+      "border": "1px dashed rgb(168, 168, 161)",
+      "opacity": "1",
+      "transform": "none",
+      "clip": "none",
+      "shadow": "none",
+      "before": "",
+      "after": ""
+    },
+    {
+      "class": "settings-button",
+      "rect": {
+        "x": 789,
+        "y": 7,
+        "width": 54,
+        "height": 58,
+        "top": 7,
+        "right": 843,
+        "bottom": 65,
+        "left": 789
+      },
+      "border": "2px outset rgb(255, 255, 255)",
+      "opacity": "1",
+      "transform": "none",
+      "clip": "none",
+      "shadow": "none",
+      "before": "",
+      "after": ""
+    },
+    {
+      "class": "pixel-avatar",
+      "rect": {
+        "x": 12,
+        "y": 304,
+        "width": 40,
+        "height": 52,
+        "top": 304,
+        "right": 52,
+        "bottom": 356,
+        "left": 12
+      },
+      "border": "2px solid rgb(255, 255, 255)",
+      "opacity": "1",
+      "transform": "none",
+      "clip": "none",
+      "shadow": "none",
+      "before": "",
+      "after": ""
+    },
+    {
+      "class": "status-attribute-group pixel-corners",
+      "rect": {
+        "x": 60,
+        "y": 308,
+        "width": 683,
+        "height": 44,
+        "top": 308,
+        "right": 743,
+        "bottom": 352,
+        "left": 60
+      },
+      "border": "0px none rgb(238, 238, 238)",
+      "opacity": "1",
+      "transform": "none",
+      "clip": "none",
+      "shadow": "none",
+      "before": "",
+      "after": ""
+    }
+  ],
+  "unchangedGameTime": {
+    "day": 1,
+    "hour": 8,
+    "minute": 0
+  }
+}

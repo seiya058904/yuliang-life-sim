@@ -76,6 +76,8 @@
 .day-ribbon-now { position: absolute; top: -4px; bottom: -4px; width: 2px; background: #f5f5f1; pointer-events: none; }
 .hero-time .day-ribbon { margin: 0; padding: 0 0 8px; gap: 8px; }
 .hero-time .day-ribbon > span:last-child { display: none; }
+/* Four real messages and the action footer must expand the panel together. */
+.view-life .inbox-panel { height: auto; }
 @media (max-height: 800px) {
   .time-console { padding: 16px; }
   .hero-cols { gap: 12px; }
