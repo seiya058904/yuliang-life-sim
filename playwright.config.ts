@@ -34,6 +34,9 @@ export default defineConfig({
       },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile', use: { ...devices['Pixel 7'] } },
+    // Phones reuse the desktop game board; landscape is the supported surface.
+    // Boot in landscape so Chrome emulation does not retain portrait auto-zoom
+    // when a spec subsequently exercises desktop-sized viewports.
+    { name: 'mobile', use: { ...devices['Pixel 7 landscape'] } },
   ],
 });

@@ -13,6 +13,8 @@ import { useWeekScheduler } from './weekScheduler';
 import { PixelIllustration, type PixelIllustrationName } from './pixel/PixelIllustration';
 import { PixelAction, SegmentMeter } from './pixel/PixelUI';
 import { displayContentName, displayMappedLabel, humanizeContentId } from './pixel/displayNames';
+import { useViewState } from './pixel/ViewMemory';
+import { PageHeading } from './pixel/PageHeading';
 
 const categories = ['全部', '基础岗位', '办公室', '技术', '销售', '服务', '管理', '兼职'] as const;
 const states = ['全部', '符合条件', '接近条件', '已申请', '冷却中'] as const;
@@ -81,11 +83,12 @@ export const jobArtFor = (job: JobDefinition): PixelIllustrationName => {
 const applicationStatusLabels: Record<string, string> = { submitted: '已提交', screening: '筛选中', interview: '面试中', waiting: '等待结果', rejected: '未通过', offer: 'Offer 待回复', accepted: '已接受', withdrawn: '已撤回', expired: '已过期' };
 
 export function CareerView({ game, dispatch, jobs, onNavigate, onOpenTools }: { game: GameState; dispatch: (action: GameAction) => void; jobs: readonly JobDefinition[]; onNavigate?: (view: ViewId) => void; onOpenTools?: () => void }) {
-  const [tab, setTab] = useState<CareerTab>('market');
+  const [tab, setTab] = useViewState<CareerTab>('career.tab', 'market');
   const labels: Record<CareerTab, string> = { current: '当前工作', market: '招聘市场', opportunities: '工作机会', applications: '我的申请', 'side-jobs': '我的兼职', history: '职业履历', mobility: '跨行业' };
   return <section className={tab === 'market' ? 'career-section market-mode' : 'career-section'}>
-    <div className="section-heading compact"><div><span className="eyebrow">职业</span><h1>{labels[tab]}</h1></div><p>公开招聘和特殊机会分开；所有申请、Offer 与兼职资格都有明确状态。</p></div>
+    <PageHeading title="职业" icon="career" description="查看工作、申请与机会，安排下一步。" facts={[{ label: '当前工作', value: jobs.find(job => job.id === game.currentJobId)?.name ?? '暂无正式工作' }, { label: '公开岗位', value: `${game.vacancies?.length ?? 0} 个` }, { label: '申请中', value: `${activeApplications(game).length} 份` }]} />
     {tab !== 'market' && <div className="filter-row" aria-label="职业导航">{Object.entries(labels).map(([id, label]) => <button key={id} className={tab === id ? 'filter-button selected' : 'filter-button'} onClick={() => setTab(id as CareerTab)}>{label}</button>)}</div>}
+    {tab !== 'market' && <h2 className="career-section-title">{labels[tab]}</h2>}
     {tab === 'current' && <><CareerProgress game={game} /><CurrentEmployment game={game} jobs={jobs} dispatch={dispatch} /></>}
     {tab === 'market' && <><VacancyMarket game={game} jobs={jobs} dispatch={dispatch} labels={labels} onOpenTab={(next) => setTab(next)} onOpenTools={onOpenTools} /><CareerBottomPanels game={game} jobs={jobs} onOpenTab={(next) => setTab(next)} /></>}
     {tab === 'opportunities' && <OpportunityList game={game} jobs={jobs} dispatch={dispatch} />}
@@ -114,15 +117,15 @@ function CareerProgress({ game }: { game: GameState }) {
 }
 
 function VacancyMarket({ game, jobs, dispatch, labels, onOpenTab, onOpenTools }: { game: GameState; jobs: readonly any[]; dispatch: (action: GameAction) => void; labels: Record<CareerTab, string>; onOpenTab: (tab: CareerTab) => void; onOpenTools?: () => void }) {
-  const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<(typeof categories)[number]>('全部');
-  const [state, setState] = useState<(typeof states)[number]>('全部');
-  const [sort, setSort] = useState<(typeof sorts)[number]>('匹配度');
-  const [region, setRegion] = useState<(typeof regionOptions)[number]['value']>('all');
-  const [salaryBand, setSalaryBand] = useState<(typeof salaryOptions)[number]['value']>('all');
-  const [duration, setDuration] = useState<(typeof durationOptions)[number]['value']>('all');
-  const [selectedId, setSelectedId] = useState<string | undefined>(game.vacancies?.[0]?.vacancyId);
-  const [page, setPage] = useState(0);
+  const [query, setQuery] = useViewState('career.query', '');
+  const [category, setCategory] = useViewState<(typeof categories)[number]>('career.category', '全部');
+  const [state, setState] = useViewState<(typeof states)[number]>('career.filter', '全部');
+  const [sort, setSort] = useViewState<(typeof sorts)[number]>('career.sort', '匹配度');
+  const [region, setRegion] = useViewState<(typeof regionOptions)[number]['value']>('career.region', 'all');
+  const [salaryBand, setSalaryBand] = useViewState<(typeof salaryOptions)[number]['value']>('career.salary', 'all');
+  const [duration, setDuration] = useViewState<(typeof durationOptions)[number]['value']>('career.duration', 'all');
+  const [selectedId, setSelectedId] = useViewState<string | undefined>('career.selected', game.vacancies?.[0]?.vacancyId);
+  const [page, setPage] = useViewState('career.page', 0);
   const [pageMenuOpen, setPageMenuOpen] = useState(false);
   const pageSize = 6;
   const vacancyRows = useMemo(() => (game.vacancies ?? []).map((vacancy) => ({ vacancy, job: jobs.find((job) => job.id === vacancy.jobId) })).filter((row) => row.job), [game.vacancies, jobs]);

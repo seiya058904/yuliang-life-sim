@@ -37,6 +37,11 @@ import { applicationCooldownRemaining, activeApplications, openOfferApplications
 import { PixelDialog, PixelModalFrame } from './game/ui/pixel/PixelDialog';
 import { CityView } from './game/ui/CityView';
 import { PageSections } from './game/ui/pixel/PageSections';
+import { ViewMemory, useViewState } from './game/ui/pixel/ViewMemory';
+import { PageHeading } from './game/ui/pixel/PageHeading';
+import { PixelScene } from './game/ui/pixel/PixelScene';
+import { ActionFeedback } from './game/ui/pixel/ActionFeedback';
+import { recentInteractionCount } from './game/engine/businessFacts';
 import './styles.css';
 import './game/ui/pixel/console-system.css';
 import './game/ui/life.css';
@@ -184,14 +189,20 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shopTab, setShopTab] = useState('goods');
   const [shopActivityId, setShopActivityId] = useState<ContentId>();
+  const scrollPositions = useRef<Partial<Record<ViewId, number>>>({});
+
+  useEffect(() => { scrollPositions.current = {}; }, [game.rng.seed]);
 
   const navigateToView = (view: ViewId) => {
-    if (view === 'shop') { setShopTab('goods'); setShopActivityId(undefined); }
+    if (view === activeView) return;
+    scrollPositions.current[activeView] = document.querySelector('.main-content')?.scrollTop ?? 0;
+    if (view === 'shop') setShopActivityId(undefined);
     setView(view);
   };
   const navigateToShopActivity = (category?: string, activityId?: ContentId) => {
     setShopTab(shopTabForActivityCategory(category));
     setShopActivityId(activityId);
+    scrollPositions.current[activeView] = document.querySelector('.main-content')?.scrollTop ?? 0;
     setView('shop');
   };
 
@@ -228,10 +239,10 @@ function App() {
   useEffect(() => {
     const main = document.querySelector('.main-content');
     if (main) {
-      main.scrollTop = 0;
+      main.scrollTop = scrollPositions.current[activeView] ?? 0;
       main.scrollLeft = 0;
     }
-  }, [activeView]);
+  }, [activeView, game.rng.seed]);
 
   useEffect(() => {
     if (!effects.length) return undefined;
@@ -264,8 +275,9 @@ function App() {
   }
 
   return (
-    <div className={`app-shell mode-${shellMode} view-${activeView}`}>
+      <ViewMemory key={game.rng.seed}><div className={`app-shell mode-${shellMode} view-${activeView}`}>
       <div className="outer-frame" aria-hidden="true" />
+        <a className="skip-link" href="#game-main">跳到当前页面</a>
       <header className="topbar">
         <div className="brand-block"><div className="brand-wordmark"><h1 className="brand-mark"><span className="sr-only">余量</span><PixelIllustration name="brand-wordmark" size={120} className="brand-wordmark-art" /></h1><span className="brand-subtitle">人生模拟<small>v{game.contentVersion} · 澄川市</small></span></div><PixelIllustration name="brand-cat" size={48} className="brand-mascot" /></div>
         <div className="status-line" aria-label="当前状态">
@@ -279,12 +291,19 @@ function App() {
 
       <nav className="main-nav" aria-label="主导航" data-pixel-nav="true">
         <div className="nav-tabs">
-          {navItems.map(([id, label, icon]) => <button key={id} className={activeView === id ? 'nav-item active' : 'nav-item'} aria-current={activeView === id ? 'page' : undefined} onClick={() => navigateToView(id)}><PixelIcon name={icon} />{label}</button>)}
+            {navItems.map(([id, label, icon], index) => <button key={id} className={activeView === id ? 'nav-item active' : 'nav-item'} aria-label={label} aria-current={activeView === id ? 'page' : undefined} onClick={() => navigateToView(id)} onKeyDown={event => {
+              const nextIndex = event.key === 'ArrowRight' ? (index + 1) % navItems.length : event.key === 'ArrowLeft' ? (index + navItems.length - 1) % navItems.length : event.key === 'Home' ? 0 : event.key === 'End' ? navItems.length - 1 : undefined;
+              if (nextIndex === undefined) return;
+              event.preventDefault();
+              (event.currentTarget.parentElement?.children[nextIndex] as HTMLElement)?.focus();
+              navigateToView(navItems[nextIndex][0]);
+            }}><PixelIcon name={icon} />{label}{id === 'relations' && unreadMessageCount(game.messages) > 0 && <span className="nav-count" aria-hidden="true">{unreadMessageCount(game.messages)}</span>}{id === 'work' && openOfferApplications(game).length > 0 && <span className="nav-count" aria-hidden="true">{openOfferApplications(game).length}</span>}</button>)}
         </div>
         {activeView !== 'life' && <div className="shell-run-control"><span role="status">{modeText(shellMode)}</span><button className="secondary-button" disabled={Boolean(game.pendingMonthlySummary || game.pendingOfferApplicationId) || primaryAction(game.simulationMode).disabled} onClick={() => dispatch({ type: primaryAction(game.simulationMode).type } as GameAction)}>{primaryAction(game.simulationMode).label}</button></div>}
       </nav>
 
-      <main className="main-content">
+        <main className="main-content" id="game-main" tabIndex={-1}>
+          {activeView !== 'life' && <div className="life-context" aria-label="人生近况"><span><PixelIcon name="user" size={14} />{contentRegistry.jobs.find(job => job.id === game.currentJobId)?.name ?? '暂无正式工作'}<i aria-hidden="true">·</i>{contentRegistry.housing.find(home => home.id === game.housing.housingId)?.name ?? '暂无居住记录'}</span><span>{unreadMessageCount(game.messages) > 0 ? <button className="text-button" onClick={() => navigateToView('relations')}>未读消息 {unreadMessageCount(game.messages)}</button> : '浏览页面不推进时间'}<span className="context-running" aria-hidden="true" data-running={game.simulationMode === 'running'} /></span></div>}
         {activeView === 'life' && <section className="life-hero-grid life-hero-dashboard" aria-label="生活主控制台"><TimeConsole game={game} dispatch={dispatch} /><ForecastPanel game={game} /></section>}
         <section className="metric-strip" aria-label="成长指标">
           <Metric label="生活水平" value={lifestyle} /><Metric label="能力" value={game.ability} /><Metric label="声誉" value={game.reputation} /><Metric label="关系" value={Object.values(game.relationships).reduce((sum, value) => sum + value, 0)} />
@@ -297,7 +316,7 @@ function App() {
         {activeView === 'life' && <LifeView game={game} dispatch={dispatch} onNavigate={navigateToView} />}
         {activeView === 'work' && <CareerWorkspace game={game} dispatch={dispatch} onNavigate={navigateToView} />}
         {activeView === 'shop' && <><ShopView game={game} dispatch={dispatch} onNavigate={navigateToView} initialTab={shopTab} initialActivityId={shopActivityId} /><details className="shop-support-panels"><summary>获取与安排说明</summary><AcquisitionRequirementsPanel game={game} onNavigate={navigateToView} scope="shop" /><ActivityAcquisitionHints game={game} dispatch={dispatch} /></details></>}
-        {activeView === 'wealth' && <PageSections title="财富" description="先看现金与持有，再决定下一笔配置。估值变化与现金收入分开记录。" sections={[
+        {activeView === 'wealth' && <PageSections title="财富" description="先看现金与持有，再决定下一笔配置。估值变化与现金收入分开记录。" icon="wealth" facts={[{ label: '账本', value: `第 ${game.calendar.month} 月` }, { label: '金融持有', value: `${Object.keys(game.investments ?? {}).length} 项` }, { label: '企业', value: `${Object.keys(game.businesses).length} 家` }]} sections={[
           { id: 'overview', label: '概览', content: <><PortfolioSummary game={game} /><FinancialSummaryView game={game} /><PortfolioAllocation game={game} /></> },
           { id: 'owned', label: '持有', content: <><AssetsView game={game} dispatch={dispatch} mode="owned" /><p className="muted">持有物的买入、卖出沿用原有规则。居住与投资房产管理在生活详情。</p><button className="text-button" onClick={() => navigateToView('life')}>前往生活 · 居住与房产</button></> },
           { id: 'market', label: '市场', content: <><AssetsView game={game} dispatch={dispatch} mode="market" /><details><summary>查看获取条件与路径</summary><AcquisitionRequirementsPanel game={game} onNavigate={navigateToView} scope="wealth" /></details></> },
@@ -306,7 +325,7 @@ function App() {
         ]} />}
         {activeView === 'relations' && <RelationsView game={game} dispatch={dispatch} />}
         {activeView === 'city' && <CityView game={game} onNavigate={navigateToView} onShopActivity={navigateToShopActivity} />}
-        {activeView === 'profile' && <PageSections title="我的" description="记录当前身份、能力与走过的经历。" sections={[
+        {activeView === 'profile' && <PageSections title="我的" description="记录当前身份、能力与走过的经历。" icon="profile" facts={[{ label: '已走过', value: `${game.time.day - 1} 天` }, { label: '人生记录', value: `${game.lifeHistory?.length ?? 0} 条` }, { label: '已获资格', value: `${game.qualifications?.length ?? 0} 项` }]} sections={[
           { id: 'dossier', label: '档案', content: <ProfileView game={game} netWorth={netWorth} lifestyle={lifestyle} onReset={() => setResetOpen(true)} /> },
           { id: 'milestones', label: '里程碑', content: <><WealthMilestoneView game={game} /><MilestoneProgressView game={game} /></> },
           { id: 'history', label: '经历与历史', content: <><LifeHistoryList entries={game.lifeHistory ?? []} /><RelationshipHistoryView game={game} /><AnnualHistoryView game={game} /><WorldHistoryView game={game} /><WorldEquityHistoryView game={game} /></> },
@@ -321,10 +340,10 @@ function App() {
       {!recovery && game.activeResignation && <ResignationModal game={game} dispatch={dispatch} />}
       {!recovery && game.pendingMonthlySummary && <MonthlySummaryModal game={game} dispatch={dispatch} />}
       {!recovery && game.pendingOfferApplicationId && <OfferNoticeModal game={game} dispatch={dispatch} onNavigate={navigateToView} />}
-      {effects.length > 0 && <EffectRail effects={effects} />}
+      <ActionFeedback effects={effects} content={contentRegistry} />
       {resetOpen && <ConfirmReset onCancel={() => setResetOpen(false)} onConfirm={() => { reset(); setResetOpen(false); }} />}
       {settingsOpen && <SettingsPanel game={game} saveError={saveError} onClose={() => setSettingsOpen(false)} onReset={() => { setSettingsOpen(false); setResetOpen(true); }} />}
-    </div>
+    </div></ViewMemory>
   );
 }
 
@@ -341,7 +360,11 @@ function PortfolioSummary({ game }: { game: GameState }) {
   }, 0);
   const investmentValue = Object.values(game.investments ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
   const vehicleAndCollectibleValue = Object.values(game.assets).reduce((total, holding) => total + holding.currentValuation, 0);
-  return <section className="detail-panel" aria-label="财富组合摘要"><div className="section-heading compact"><div><span className="eyebrow">资产结构</span><h2>我的财富组合</h2></div><p>把现金、现金流、资产估值和贷款余额分开看；估值变化不是现金收入。</p></div><div className="profile-grid"><div className="info-panel"><span>现金余额</span><strong>{money(game.cash)}</strong></div><div className="info-panel"><span>房产总值</span><strong>{money(propertyValue)}</strong></div><div className="info-panel"><span>贷款余额</span><strong>{money(mortgage)}</strong></div><div className="info-panel"><span>房产净值</span><strong>{money(propertyValue - mortgage)}</strong></div><div className="info-panel"><span>本月净租金</span><strong>{rentalCashFlow >= 0 ? '+' : '-'}{money(Math.abs(rentalCashFlow))}</strong></div><div className="info-panel"><span>投资资产</span><strong>{money(investmentValue)}</strong></div><div className="info-panel"><span>车辆与收藏</span><strong>{money(vehicleAndCollectibleValue)}</strong></div></div></section>;
+  const positions = [['房产总值', propertyValue], ['贷款余额', mortgage], ['房产净值', propertyValue - mortgage], ['本月净租金', rentalCashFlow], ['投资资产', investmentValue], ['车辆与收藏', vehicleAndCollectibleValue]] as const;
+  return <section className="detail-panel portfolio-overview" aria-label="财富组合摘要">
+    <div className="portfolio-cash"><PixelIllustration name="cash" size={56} /><span>现金余额</span><strong>{money(game.cash)}</strong><p>可以支配的现金。资产估值和贷款分别记录。</p></div>
+    <div className="portfolio-positions"><h2>我的财富组合</h2><dl>{positions.map(([label, value]) => <div className={value === 0 ? 'position-empty' : undefined} key={label}><dt>{label}</dt><dd>{label === '本月净租金' ? signedMoney(value) : money(value)}</dd></div>)}</dl></div>
+  </section>;
 }
 
 function PortfolioAllocation({ game }: { game: GameState }) {
@@ -351,7 +374,8 @@ function PortfolioAllocation({ game }: { game: GameState }) {
     business_equity: '企业与股权', public_business_equity: '公开股权', vehicles_collectibles: '车辆与收藏', inventory_items: '物品余值',
   };
   const categories = wealthAllocationBreakdown(game, contentRegistry, balanceConfig).map((entry) => [allocationLabels[entry.key] ?? entry.key, entry.value] as const);
-  return <section className="detail-panel" aria-label="财富配置"><div className="section-heading compact"><div><span className="eyebrow">估值拆分</span><h2>财富配置</h2></div><p>这里展示当前各类持有物的估值；贷款余额按负债列出，分项合计与净资产一致。</p></div><div className="item-list">{categories.filter(([, value]) => value !== 0).map(([label, value]) => <div className="item-row" key={label}><span>{label}</span><strong>{money(value)}</strong></div>)}</div></section>;
+  const positiveTotal = categories.reduce((sum, [, value]) => sum + Math.max(0, value), 0);
+  return <section className="detail-panel" aria-label="财富配置"><div className="section-heading compact"><div><h2>财富配置</h2></div><p>这里展示当前各类持有物的估值；贷款余额按负债列出，分项合计与净资产一致。</p></div>{positiveTotal > 0 && <div className="allocation-band" aria-label="正值资产占比">{categories.filter(([, value]) => value > 0).map(([label, value], index) => <span key={label} data-tone={index % 4} style={{ flexGrow: value / positiveTotal }} title={`${label} · ${money(value)} · ${Math.round(value / positiveTotal * 100)}%`} />)}</div>}<div className="item-list">{categories.filter(([, value]) => value !== 0).map(([label, value]) => <div className="item-row" key={label}><span>{label}</span><strong>{money(value)}</strong></div>)}</div></section>;
 }
 
 function PortfolioHistory({ game }: { game: GameState }) {
@@ -454,36 +478,36 @@ function modeText(mode: GameState['simulationMode']) {
 function primaryAction(mode: GameState['simulationMode']) {
   return { label: mode === 'running' ? '暂停' : mode === 'paused' ? '继续运行' : mode === 'planning' ? '开始本周' : '等待处理',
     type: (mode === 'running' ? 'pause_simulation' : mode === 'paused' ? 'resume_simulation' : 'start_week') as GameAction['type'],
-    disabled: mode === 'event' || mode === 'reward',
+    disabled: mode === 'event' || mode === 'reward' || mode === 'monthly_summary',
     runEnabled: ['planning', 'paused', 'week_complete'].includes(mode) };
 }
 
 /** 参考图三段式 Hero：时间 / 当前活动 / 运行控制。 */
 function TimeConsole({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
   const currentJob = contentRegistry.jobs.find((job) => job.id === game.currentJobId);
-  const activity = game.currentActivity ?? activityAtTime(game.time, game.weeklyPlan, game.employment, contentRegistry);
+  const activity = game.currentActivity ?? activityAtTime(game.time, game.weeklyPlan, game.employment, contentRegistry, game);
   const progress = deriveActivityProgress(activity, game.time);
   const progressPercent = Math.round(progress * 100);
   const progressSegments = 20;
   const filledSegments = Math.round(progress * progressSegments);
-  const dayActivities = getDailyActivities(game.time.day, game.weeklyPlan, game.employment, contentRegistry);
+  const dayActivities = getDailyActivities(game.time.day, game.weeklyPlan, game.employment, contentRegistry, game);
   const next = dayActivities.find((entry) => absoluteMinute(entry.start) > absoluteMinute(game.time) && !['sleep', 'life', 'free'].includes(entry.kind));
   const action = primaryAction(game.simulationMode);
-  const title = activity.kind === 'work' ? currentJob?.name ?? '工作中' : activity.kind === 'study' ? '学习' : activity.kind === 'side_job' ? contentRegistry.jobs.find((job) => job.id === activity.jobId)?.name ?? '兼职' : activity.kind === 'activity' ? contentRegistry.activities?.find((entry) => entry.id === activity.activityId)?.name ?? '生活活动' : activity.kind === 'sleep' ? '睡眠' : activity.kind === 'life' ? '基础生活' : '自由时间';
+  const title = activityTitle(activity);
   const scene = activityKinds(activity, currentJob);
-  const nextLabel = next ? `${formatClock(next.start.hour, next.start.minute)} · ${next.kind === 'study' ? '学习' : next.kind === 'side_job' ? '兼职' : next.kind === 'activity' ? '生活活动' : '安排'}` : '今天没有特殊安排';
+  const nextLabel = next ? `${formatClock(next.start.hour, next.start.minute)} · ${activityTitle(next)}` : '今天没有特殊安排';
   return <section className="time-console" aria-label="世界时间">
     <div className="hero-cols">
       <div className="hero-time">
         <span className="console-kicker">当前时间</span>
         <PixelClock className="hero-clock" data-testid="clock-value" value={formatClock(game.time.hour, game.time.minute)} />
         <div className="hero-date"><b>第 {game.calendar.week} 周 · 周{weekdayLabel(game.calendar.weekday)}</b><small>{formatDate(game.time)} · {timeOfDayLabel(game.time.hour)}</small></div>
-        <PixelIcon name="spark" size={28} className="hero-day-icon" />
+        <DayRibbon game={game} />
         <div className="week-track" aria-label="本周进度">{([1, 2, 3, 4, 5, 6, 7] as const).map((weekday) => <span key={weekday} className={weekday === game.calendar.weekday ? 'track-day current' : weekday < game.calendar.weekday ? 'track-day passed' : 'track-day'}>周{weekdayLabel(weekday)}</span>)}</div>
       </div>
       <div className="hero-activity">
       <div className="hero-activity-head"><PixelIcon name={scene === 'life' || scene === 'life-main' || scene === 'life-activity' ? 'home' : scene === 'work' || scene.startsWith('job-') ? 'career' : scene === 'sleep' ? 'sleep' : scene === 'book' ? 'book' : scene === 'coin' ? 'cash' : scene === 'suitcase' ? 'plane' : scene === 'users' ? 'users' : scene === 'cash' ? 'wealth' : scene === 'bag' ? 'shop' : 'spark'} /><span className="console-kicker">当前活动</span></div>
-        <PixelIllustration name={scene} size={84} />
+        <PixelScene illustration={scene} hour={game.time.hour} running={game.simulationMode === 'running'} kind={activity.kind} />
         <h2>{title}</h2>
         <p className="hero-range">{formatClock(activity.start.hour, activity.start.minute)} — {formatClock(activity.end.hour, activity.end.minute)} · {activity.kind === 'work' ? '自动排班' : '自动发生'}</p>
         <div className="activity-progress" role="meter" aria-label="今日活动进度" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPercent}>{Array.from({ length: progressSegments }, (_, index) => <i key={index} className={index < filledSegments ? 'filled' : undefined} />)}</div>
@@ -502,6 +526,24 @@ function TimeConsole({ game, dispatch }: { game: GameState; dispatch: (action: G
   </section>;
 }
 
+function activityTitle(activity: NonNullable<GameState['currentActivity']>): string {
+  if (activity.kind === 'work' || activity.kind === 'side_job') return contentRegistry.jobs.find(job => job.id === activity.jobId)?.name ?? (activity.kind === 'work' ? '工作' : '兼职');
+  if (activity.kind === 'course') return contentRegistry.courses?.find(course => course.id === activity.courseId)?.name ?? '课程';
+  if (activity.kind === 'activity') return contentRegistry.activities?.find(entry => entry.id === activity.activityId)?.name ?? '生活活动';
+  return activity.kind === 'study' ? '学习' : activity.kind === 'sleep' ? '睡眠' : activity.kind === 'life' ? '基础生活' : '自由时间';
+}
+
+function DayRibbon({ game }: { game: GameState }) {
+  const dayStart = absoluteMinute({ day: game.time.day, hour: 0, minute: 0 });
+  const activities = getDailyActivities(game.time.day, game.weeklyPlan, game.employment, contentRegistry, game);
+  return <section className="day-ribbon" aria-label="今日时间线"><span>今天</span><div className="day-ribbon-track" role="list">{activities.map(activity => {
+    const start = Math.max(0, absoluteMinute(activity.start) - dayStart);
+    const end = Math.min(1440, absoluteMinute(activity.end) - dayStart);
+    const current = absoluteMinute(activity.start) <= absoluteMinute(game.time) && absoluteMinute(game.time) < absoluteMinute(activity.end);
+    return <span role="listitem" key={`${activity.kind}-${start}`} className={`day-ribbon-slot kind-${activity.kind}${current ? ' current' : ''}`} style={{ flexGrow: Math.max(0, end - start) }} title={`${activityTitle(activity)} · 第 ${activity.start.day} 天 ${formatClock(activity.start.hour, activity.start.minute)} — 第 ${activity.end.day} 天 ${formatClock(activity.end.hour, activity.end.minute)}`} aria-label={`${activityTitle(activity)}${current ? ' · 当前' : ''}`}>{end - start >= 180 ? activityTitle(activity) : ''}</span>;
+  })}<i className="day-ribbon-now" style={{ left: `${(game.time.hour * 60 + game.time.minute) / 1440 * 100}%` }} aria-hidden="true" /></div><span>{formatClock(game.time.hour, game.time.minute)}</span></section>;
+}
+
 function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (action: GameAction) => void; onNavigate: (view: ViewId) => void }) {
   const home = contentRegistry.housing.find((entry) => entry.id === game.housing.housingId);
   const lifestyleScore = calculateLifestyle(game, contentRegistry);
@@ -509,7 +551,7 @@ function LifeView({ game, dispatch, onNavigate }: { game: GameState; dispatch: (
   const monthlyBudget = fixedMonthBudget(game, contentRegistry, balanceConfig);
   const dailyRent = monthlyBudget.rent / 28;
   const fixed = monthlyBudget.total;
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useViewState('life.details', false);
   const action = primaryAction(game.simulationMode);
   return <>
     <section className="life-primary-dashboard" aria-label="生活核心面板">
@@ -837,15 +879,16 @@ function itemCatalogDetailFacts(item: (typeof contentRegistry.items)[number], ga
 }
 
 function ShopView({ game, dispatch, onNavigate, initialTab, initialActivityId }: { game: GameState; dispatch: (action: GameAction) => boolean; onNavigate: (view: ViewId) => void; initialTab: string; initialActivityId?: ContentId }) {
-  const [cart, setCart] = useState<Record<ContentId, number>>({});
-  const [itemCategory, setItemCategory] = useState<string>('all');
-  const [itemSort, setItemSort] = useState<'default' | 'price-asc' | 'price-desc'>('default');
+  const [cart, setCart] = useViewState<Record<ContentId, number>>('shop.cart', {});
+  const [itemCategory, setItemCategory] = useViewState<string>('shop.category', 'all');
+  const [itemSort, setItemSort] = useViewState<'default' | 'price-asc' | 'price-desc'>('shop.sort', 'default');
   const [shopFiltersOpen, setShopFiltersOpen] = useState(false);
-  const [itemPage, setItemPage] = useState(0);
-  const [activityPage, setActivityPage] = useState(0);
-  const [tab, setTab] = useState<string>(initialTab);
-  const [selectedKey, setSelectedKey] = useState<string | null>(() => contentRegistry.items[0] ? `item:${contentRegistry.items[0].id}` : null);
+  const [itemPage, setItemPage] = useViewState('shop.itemPage', 0);
+  const [activityPage, setActivityPage] = useViewState('shop.activityPage', 0);
+  const [tab, setTab] = useViewState<string>('shop.tab', initialTab);
+  const [selectedKey, setSelectedKey] = useViewState<string | null>('shop.selected', () => contentRegistry.items[0] ? `item:${contentRegistry.items[0].id}` : null);
   useEffect(() => {
+    if (!initialActivityId) return;
     setTab(initialTab);
     const entries = (contentRegistry.activities ?? []).filter(activity => shopTabCategories[initialTab]?.includes(activity.category)).flatMap(activity => activity.options.map(option => ({ activity, option })));
     const index = entries.findIndex(entry => entry.activity.id === initialActivityId);
@@ -863,7 +906,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab, initialActivityId }:
   const selectItemCategory = (entry: string) => {
     setItemCategory(entry);
     setItemPage(0);
-    const first = items.find((item) => entry === 'all' || (categoryLabels[item.category] ?? item.category) === entry);
+    const first = contentRegistry.items.find((item) => entry === 'all' || (categoryLabels[item.category] ?? item.category) === entry);
     setSelectedKey(first ? `item:${first.id}` : null);
   };
   const { schedule, notice: scheduleNotice, clearNotice } = useWeekScheduler(game, dispatch);
@@ -961,7 +1004,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab, initialActivityId }:
     return <article className={selectedKey === `item:${item.id}` ? 'item-card selected' : 'item-card'} key={item.id} data-catalog-card><button className="card-overlay" onClick={() => setSelectedKey(`item:${item.id}`)} aria-label={`查看详情：${item.name}`} /><div className="card-art"><PixelIllustration name={itemIllustrationFor(item)} size={64} /></div><div className="catalog-title-row"><span className="catalog-badge">{displayMappedLabel(item.category, categoryLabels)}</span><h2>{item.name}</h2><strong className="catalog-price">{money(getItemCost(game, item))}</strong><span className="catalog-card-status">{hasItem ? <span className="current-label">已拥有</span> : <button className="catalog-secondary-action" onClick={() => dispatch({ type: 'manage_wishlist', itemId: item.id, enabled: !wishlisted })} aria-label={`${wishlisted ? '移出' : '加入'}愿望清单：${item.name}`} aria-pressed={wishlisted} title={wishlisted ? '移出愿望清单' : '加入愿望清单'}><PixelIcon name="heart" size={12} aria-hidden="true" /><span>{wishlisted ? '已加入目标' : '加入目标'}</span></button>}</span></div><p>{item.description}</p><CatalogFacts facts={itemCatalogFacts(item, game)} ariaLabel={`${item.name} 商品信息`} /><div className="item-card-foot"><button className="primary-button" onClick={() => { setSelectedKey(`item:${item.id}`); setCart((current) => ({ ...current, [item.id]: (current[item.id] ?? 0) + 1 })); }} aria-label={`加入购物袋：${item.name}`}><PixelIcon name="bag" size={12} aria-hidden="true" />加入购物袋</button></div></article>;
   };
   return <section className="shop-page" aria-label="商品目录布局">
-    <div className="section-heading compact"><div><span className="eyebrow">商店 · 生活内容</span><h1>商品</h1></div><p>浏览不消耗时间；购买与安排都会进入真实账本、周计划和人生记录。</p></div>
+    <PageHeading title="商品" icon="shop" description="浏览不消耗时间；购买与安排都会进入真实账本、周计划和人生记录。" facts={[{ label: '可用现金', value: money(game.cash) }, { label: '库存', value: `${Object.values(game.inventory).reduce((sum, quantity) => sum + quantity, 0)} 件` }, { label: '购物袋', value: `${cartCount} 件` }]} />
     {scheduleNotice && <p className="planner-notice" role="status">{scheduleNotice}</p>}
     <div className="shop-layout">
       <div className={`shop-main shop-main-tab-${tab}`}>
@@ -969,6 +1012,7 @@ function ShopView({ game, dispatch, onNavigate, initialTab, initialActivityId }:
           <div className="shop-tabs" role="tablist" aria-label="商店分类">{shopTabs.map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} className={tab === id ? 'shop-tab selected' : 'shop-tab'} onClick={() => selectShopTab(id)}>{label}</button>)}</div>
           {tab === 'goods' && <div className="shop-toolbar" aria-label="商品工具栏"><label className="shop-sort-control"><span>排序</span><select aria-label="商品排序" value={itemSort} onChange={(event) => { setItemSort(event.target.value as 'default' | 'price-asc' | 'price-desc'); setItemPage(0); }}><option value="default">默认排序</option><option value="price-asc">价格从低到高</option><option value="price-desc">价格从高到低</option></select></label><button className="shop-toolbar-button" aria-controls="shop-category-filters" aria-expanded={shopFiltersOpen} onClick={() => setShopFiltersOpen((open) => !open)}>筛选{itemCategory === 'all' ? '' : ' 1'} ▾</button></div>}
         </div>
+        {selectedDetail}
         {tab === 'goods' && <>
           <div id="shop-category-filters" className={shopFiltersOpen ? 'filter-row shop-category-filters is-open' : 'filter-row shop-category-filters'} aria-label="商品分类">{categories.map((entry) => <button key={entry} className={itemCategory === entry ? 'filter-button selected' : 'filter-button'} onClick={() => selectItemCategory(entry)}>{entry === 'all' ? '全部' : entry}</button>)}</div>
           <div className="item-grid">{featuredItems.map(renderItemCard)}</div>
@@ -1004,7 +1048,6 @@ function ShopView({ game, dispatch, onNavigate, initialTab, initialActivityId }:
           </div>
           {activityPageCount > 1 && <nav className="catalog-pager" aria-label="活动分页"><button className="text-button" disabled={safeActivityPage === 0} aria-label="上一页活动" onClick={() => setActivityPage(Math.max(0, safeActivityPage - 1))}><PixelIcon name="arrow-left" size={12} /></button>{Array.from({ length: activityPageCount }, (_, page) => <button key={page} className={page === safeActivityPage ? 'filter-button selected' : 'filter-button'} aria-current={page === safeActivityPage ? 'page' : undefined} onClick={() => setActivityPage(page)}>{page + 1}</button>)}<button className="text-button" disabled={safeActivityPage === activityPageCount - 1} aria-label="下一页活动" onClick={() => setActivityPage(Math.min(activityPageCount - 1, safeActivityPage + 1))}><PixelIcon name="arrow-right" size={12} /></button></nav>}
         </>}
-        {selectedDetail}
       </div>
       <aside className="shop-rail" aria-label="商店辅助信息">
         <section className="rail-module rail-cart" aria-label="购物清单"><header><PixelIcon name="bag" size={16} /><h3>购物袋（{cartCount}）</h3></header>
@@ -1087,9 +1130,9 @@ function MessageInbox({ game, dispatch }: { game: GameState; dispatch: (action: 
 }
 
 function RelationsView({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
-  const [selectedId, setSelectedId] = useState(contentRegistry.characters[0]?.id);
+  const [selectedId, setSelectedId] = useViewState('social.contact', contentRegistry.characters[0]?.id);
   return <section className="social-workspace" aria-label="社交">
-    <header className="section-heading compact"><h1>社交</h1><p>选择一个联系人，查看关系、偏好和可以一起做的事。</p></header>
+    <PageHeading title="社交" icon="social" description="选择一个联系人，查看关系、偏好和可以一起做的事。" facts={[{ label: '联系人', value: `${contentRegistry.characters.length} 人` }, { label: '来信', value: `${unreadMessageCount(game.messages)} 条未读` }]} />
     <div className="contact-workspace">
       <nav className="contact-list" aria-label="联系人">{contentRegistry.characters.map((character, index) => {
         const value = game.relationships[character.id] ?? 0;
@@ -1113,14 +1156,26 @@ function SocialDetail({ game, dispatch, characterId }: { game: GameState; dispat
   const value = game.relationships[character.id] ?? 0;
   const currentYear = Math.max(1, Math.ceil(game.calendar.month / 12));
   const stage = [...character.stages].reverse().find((entry) => value >= entry.threshold);
-  const interaction = contentRegistry.relationshipInteractions?.find((entry) => entry.characterId === character.id);
-  const option = interaction?.options[0];
+  const interactions = (contentRegistry.relationshipInteractions ?? []).filter(entry => entry.characterId === character.id);
+  const recent = (game.lifeHistory ?? []).filter(record => record.category === 'relationship' && interactions.some(entry => entry.id === record.sourceId)).slice(-3).reverse();
   const location = character.locationId ? contentRegistry.locations?.find((entry) => entry.id === character.locationId) : undefined;
   const careerHistory = characterCareerHistoryText(game, character, currentYear);
   const giftLabels: Record<string, string> = { dessert: '甜点', flower: '花束', coffee: '咖啡', book: '书籍' };
   const preferredInteractions = character.preferredInteractionCategories?.map((category) => displayMappedLabel(category, interactionCategoryLabels)).join('、');
   const preferredGifts = character.preferredGiftTags?.map((tag) => giftLabels[tag] ?? tag).join('、');
-  return <aside className="social-detail pixel-corners" aria-label="选中人物详情"><div className="social-detail-head"><div className="social-detail-art"><PixelIllustration name={socialPortraitFor(Math.max(0, characterIndex))} size={88} /></div><div><span className="eyebrow">当前焦点 · 关系档案</span><h3>{character.name}</h3><p>{character.identity}{location ? ` · ${location.name}` : ''}</p></div></div><div className="social-detail-score"><span>当前关系</span><strong>{value}</strong><span>{stage?.label ?? '认识'}</span></div><div className="meter"><i style={{ width: `${value}%` }} /></div><section><span className="eyebrow">人物画像</span><p>{character.description}</p>{careerHistory && <p className="muted">职业经历：{careerHistory}</p>}</section><dl className="social-detail-facts"><div><dt>偏好互动</dt><dd>{preferredInteractions || '按当下关系自然相处'}</dd></div><div><dt>礼物偏好</dt><dd>{preferredGifts || '没有特别偏好'}</dd></div><div><dt>关系提示</dt><dd>{value >= 60 ? '可以留意更长期的合作与故事' : value >= 40 ? '会逐渐带来推荐和合作线索' : '先从低成本、符合偏好的互动开始'}</dd></div></dl>{interaction && option && <button className="primary-button full" disabled={game.cash < option.cashCost} onClick={() => dispatch({ type: 'interact_character', interactionId: interaction.id, optionId: option.id })}>{option.label} · {money(option.cashCost)}</button>}</aside>;
+  return <aside className="social-detail pixel-corners" aria-label="选中人物详情">
+    <div className="social-detail-head"><div className="social-detail-art"><PixelIllustration name={socialPortraitFor(Math.max(0, characterIndex))} size={88} /></div><div><h3>{character.name}</h3><p>{character.identity}{location ? ` · ${location.name}` : ''}</p></div><span className="social-stage">{stage?.label ?? '认识'}</span></div>
+    <div className="social-detail-score"><span>当前关系</span><strong>{value}</strong><SegmentMeter value={value} segments={20} label={`与${character.name}的关系`} /></div>
+    <section className="contact-description"><p>{character.description}</p>{careerHistory && <p className="muted">职业经历：{careerHistory}</p>}</section>
+    <dl className="social-detail-facts"><div><dt>偏好互动</dt><dd>{preferredInteractions || '按当下关系自然相处'}</dd></div><div><dt>礼物偏好</dt><dd>{preferredGifts || '没有特别偏好'}</dd></div><div><dt>关系提示</dt><dd>{value >= 60 ? '可以留意更长期的合作与故事' : value >= 40 ? '会逐渐带来推荐和合作线索' : '先从低成本、符合偏好的互动开始'}</dd></div></dl>
+    {interactions.length > 0 && <section className="contact-interactions" aria-label="可以一起做的事"><h4>可以一起做的事</h4>{interactions.flatMap(interaction => interaction.options.map(option => {
+      const ready = !option.requirements || evaluateCondition(option.requirements, game, contentRegistry, balanceConfig);
+      const reason = !ready && option.requirements ? explainCondition(option.requirements, game, contentRegistry, balanceConfig) : game.cash < option.cashCost ? '现金不足' : undefined;
+      const repeated = recentInteractionCount(game, interaction.id) > 0;
+      return <div className="contact-interaction" key={`${interaction.id}:${option.id}`}><div><p>{interaction.description}</p><small>{reason ?? (repeated ? '近期有过同类互动，关系增长会减缓' : character.preferredInteractionCategories?.includes(interaction.category) ? '符合对方偏好' : interactionCategoryLabels[interaction.category])}</small></div><button className="secondary-button" disabled={Boolean(reason)} onClick={() => dispatch({ type: 'interact_character', interactionId: interaction.id, optionId: option.id })}>{option.label} · {money(option.cashCost)}</button></div>;
+    }))}</section>}
+    {recent.length > 0 && <div className="contact-recent" aria-label="最近相处"><h4>最近相处</h4>{recent.map(record => <p key={record.id}><span>第 {record.day} 天</span>{record.title}</p>)}</div>}
+  </aside>;
 }
 
 function StorylinePanel({ game, dispatch }: { game: GameState; dispatch: (action: GameAction) => void }) {
@@ -1249,7 +1304,21 @@ function WorldEquityHistoryView({ game }: { game: GameState }) {
   return <section className="detail-panel" aria-label="年度公开股权记录"><div className="section-heading compact"><div><span className="eyebrow">企业股权变化</span><h2>年度公开股权记录</h2></div><p>上市企业和公开流通比例会随年度结算归档，作为世界状态的一部分保留。</p></div><div className="item-list">{entries.map((entry) => { const publicEquities = Object.entries(entry.publicBusinessEquities ?? {}); return <div className="item-row" key={entry.year}><div><h3>第 {entry.year} 年</h3><p>上市企业 {entry.listedBusinessCount} 家</p>{publicEquities.map(([id, holding]) => <span className="muted" key={id}>{displayContentName(id, contentRegistry.businesses, '企业')} {holding.percent}% · 年末估值 {money(holding.currentValue)}</span>)}</div><div className="row-meta"><strong>公开流通 {entry.publicFloatPercent ?? 0}%</strong></div></div>; })}</div></section>;
 }
 
-function ProfileView({ game, netWorth, lifestyle, onReset }: { game: GameState; netWorth: number; lifestyle: number; onReset: () => void }) { const currentJob = contentRegistry.jobs.find((job) => job.id === game.currentJobId); const attributes = game.attributes; const wealthTier = wealthTierForNetWorth(netWorth); const labels: Array<[string, number]> = [['专业', attributes?.professional ?? game.ability], ['知识', attributes?.knowledge ?? game.ability], ['沟通', attributes?.communication ?? game.ability], ['体能', attributes?.fitness ?? game.ability], ['形象', attributes?.appearance ?? lifestyle], ['人脉', attributes?.network ?? 0], ['心情', attributes?.mood ?? 50]]; return <><div className="profile-identity"><PixelIllustration name="profile" size={72} /><div><h2>当前身份</h2><p>{currentJob?.name ?? '暂无工作'} · 第 {game.calendar.week} 周</p></div></div><div className="profile-grid"><div className="info-panel"><span>现金</span><strong>{money(game.cash)}</strong></div><div className="info-panel"><span>净资产</span><strong>{money(netWorth)}</strong></div><div className="info-panel"><span>财富阶段</span><strong>{wealthTier.name}</strong></div><div className="info-panel"><span>当前工作</span><strong>{currentJob?.name ?? '暂无'}</strong></div></div><details className="profile-wealth-note"><summary>财富阶段说明</summary><h2>{wealthTier.name}</h2><p>{wealthTier.description}</p>{(wealthTier.id === 'world' || wealthTier.id === 'global') && <p className="requirement-met">世界级财富阶段已达成 · 继续生活</p>}</details><div className="attribute-grid">{labels.map(([label, value]) => <div className="attribute-row" key={label}><span>{label}</span><strong>{value}</strong><i style={{ width: `${Math.min(100, value)}%` }} /></div>)}</div>{Object.entries(game.interestFamiliarity ?? {}).length > 0 && <div className="detail-panel"><span className="eyebrow">兴趣熟练度</span><h2>在生活里慢慢熟悉</h2><div className="item-list">{Object.entries(game.interestFamiliarity ?? {}).map(([tag, value]) => <div className="item-row" key={tag}><span>{interestFamiliarityLabel(tag)}</span><strong>{interestFamiliarityStage(Number(value))}</strong></div>)}</div></div>}<div className="detail-panel"><h2>存档</h2><p>每次重要状态变化都会保存。刷新会停在当前分钟，不产生离线时间。</p><button className="secondary-button" onClick={onReset}>重新开始</button></div></>; }
+function ProfileView({ game, netWorth, lifestyle, onReset }: { game: GameState; netWorth: number; lifestyle: number; onReset: () => void }) {
+  const currentJob = contentRegistry.jobs.find(job => job.id === game.currentJobId);
+  const attributes = game.attributes;
+  const wealthTier = wealthTierForNetWorth(netWorth);
+  const labels: Array<[string, number]> = [['专业', attributes?.professional ?? game.ability], ['知识', attributes?.knowledge ?? game.ability], ['沟通', attributes?.communication ?? game.ability], ['体能', attributes?.fitness ?? game.ability], ['形象', attributes?.appearance ?? lifestyle], ['人脉', attributes?.network ?? 0], ['心情', attributes?.mood ?? 50]];
+  return <>
+    <div className="profile-identity"><PixelIllustration name="profile" size={72} /><div><span className="eyebrow">你的生活，正在积累</span><h2>当前身份</h2><p>{currentJob?.name ?? '暂无工作'} · 第 {game.calendar.week} 周</p></div></div>
+    <div className="profile-grid"><div className="info-panel"><span>现金</span><strong>{money(game.cash)}</strong></div><div className="info-panel"><span>净资产</span><strong>{money(netWorth)}</strong></div><div className="info-panel"><span>财富阶段</span><strong>{wealthTier.name}</strong></div><div className="info-panel"><span>当前工作</span><strong>{currentJob?.name ?? '暂无'}</strong></div></div>
+    <details className="profile-wealth-note"><summary>财富阶段说明</summary><h2>{wealthTier.name}</h2><p>{wealthTier.description}</p>{(wealthTier.id === 'world' || wealthTier.id === 'global') && <p className="requirement-met">世界级财富阶段已达成 · 继续生活</p>}</details>
+    <div className="attribute-grid">{labels.map(([label, value]) => <div className="attribute-row" key={label}><span>{label}</span><SegmentMeter label={label} value={value} segments={10} /><strong>{value}</strong></div>)}</div>
+    <p className="attribute-note">这些数值记录经历，不评价人生。量表以 100 为刻度，属性可以继续增长。</p>
+    {Object.entries(game.interestFamiliarity ?? {}).length > 0 && <div className="detail-panel"><span className="eyebrow">兴趣熟练度</span><h2>在生活里慢慢熟悉</h2><div className="item-list">{Object.entries(game.interestFamiliarity ?? {}).map(([tag, value]) => <div className="item-row" key={tag}><span>{interestFamiliarityLabel(tag)}</span><strong>{interestFamiliarityStage(Number(value))}</strong></div>)}</div></div>}
+    <div className="detail-panel"><h2>存档</h2><p>每次重要状态变化都会保存。刷新会停在当前分钟，不产生离线时间。</p><button className="secondary-button" onClick={onReset}>重新开始</button></div>
+  </>;
+}
 
 function RecruitmentModal({ game, job, dispatch }: { game: GameState; job: (typeof contentRegistry.jobs)[number]; dispatch: (action: GameAction) => void }) { const recruitment = game.activeRecruitment!; const recruiter = contentRegistry.characters.find((character) => character.id === recruitment.recruiterCharacterId); const schedule = defaultJobSchedule(job); const recruitmentData = job.recruitment; return <div className="modal-backdrop"><PixelDialog className="event-modal recruitment-modal" role="dialog" aria-modal="true" aria-labelledby="recruitment-title">{recruitment.stage === 'dialogue' ? <><span className="eyebrow">{recruiter?.identity ?? '招聘联系人'}</span><h2 id="recruitment-title">{recruiter?.name ?? '招聘联系人'}</h2><p>{recruitmentData?.intro?.[0]?.text ?? '“最近这边正好缺人。”'}</p><p>{recruitmentData?.intro?.[1]?.text ?? `“${job.name}主要负责${job.description.replace(/[。．]$/, '')}。”`}</p><div className="dialogue-person">{recruiter?.description ?? '有人愿意和你聊聊这份工作。'}</div><button className="primary-button" onClick={() => dispatch({ type: 'advance_recruitment', jobId: job.id })}>继续了解</button></> : recruitment.stage === 'interview' ? <><span className="eyebrow">面试</span><h2 id="recruitment-title">简单聊聊</h2><p>{recruitmentData?.interview?.[0]?.text ?? '“你之前做过哪些类似的事情？”'}</p><p>{recruitmentData?.interview?.[1]?.text ?? '“我们更看重稳定、愿意学习和把事情做完。”'}</p><button className="primary-button" onClick={() => dispatch({ type: 'advance_recruitment', jobId: job.id })}>进入工作邀请</button></> : <><span className="eyebrow">工作邀请</span><h2 id="recruitment-title">{job.name}</h2><p>{recruitmentData?.offerText ?? '这是一份清晰、稳定的工作安排。'}</p><div className="offer-grid"><span>月薪</span><strong>{job.kind === 'regular' ? money(job.basePay * 20) : money(job.basePay)}</strong><span>工作时间</span><strong>{job.kind === 'regular' ? `${schedule.workDays.length * job.hours}h / 周` : `${job.hours}h / 次`}</strong><span>排班</span><strong>{job.kind === 'regular' ? `周一至周五 · ${formatClock(Math.floor(schedule.startMinute / 60), schedule.startMinute % 60)}–${formatClock(Math.floor(schedule.endMinute / 60), schedule.endMinute % 60)}` : '由你的周计划安排'}</strong></div><div className="button-pair"><button className="primary-button" onClick={() => dispatch({ type: 'accept_job_offer', jobId: job.id })}>接受工作</button><button className="secondary-button" onClick={() => dispatch({ type: 'decline_job_offer', jobId: job.id })}>暂时不接受</button></div></>}</PixelDialog></div>; }
 
@@ -1450,23 +1519,12 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
       <div className="settle-foot-text">这些数字都来自真实账本，本月变化已经记录。</div>
       <dl className="settle-attrs">{attributes.map(([label, value]) => <div key={label}><dt><PixelIcon name={settlementAttributeIcons[label] ?? 'users'} size={14} data-attribute-icon={label} />{label}</dt><dd><SegmentMeter value={value} segments={6} label={`${label} ${value}`} /></dd><b>{Math.round(value)}</b></div>)}</dl>
       <button className="primary-button settle-continue" onClick={() => dispatch({ type: 'acknowledge_monthly_summary' })}>进入下个月<PixelIcon name="arrow-right" size={14} aria-hidden="true" /></button>
-      <small className="settle-continue-note">时间不会停止，机会稍纵即逝</small>
+      <small className="settle-continue-note">{resumeText}</small>
     </footer>
   </PixelModalFrame></div>;
 }
 
 function EventModal({ event, onChoose }: { event: (typeof contentRegistry.events)[number]; onChoose: (choiceId: string) => void }) { return <div className="modal-backdrop event-paused"><PixelDialog className="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-title"><span className="eyebrow">世界已暂停 · 发生了一件事</span><h2 id="event-title">{event.title}</h2><p>{event.body}</p><div className="event-choices">{event.choices.map((choice) => <button key={choice.id} className="choice-button" onClick={() => onChoose(choice.id)}>{choice.text}<span>选择</span></button>)}</div></PixelDialog></div>; }
-
-// 解锁提示优先使用内容的中文名；kind 决定去哪个内容集合里查。
-const unlockCollectionByKind: Record<string, readonly { id: string; name: string }[]> = {
-  工作: contentRegistry.jobs,
-  事件: contentRegistry.events,
-  住房: contentRegistry.housing,
-  企业: contentRegistry.businesses ?? [],
-  资产: contentRegistry.assets ?? [],
-};
-
-function EffectRail({ effects }: { effects: ReturnType<typeof gameStore.getState>['effects'] }) { const visible = effects.filter((effect) => effect.type !== 'time' && effect.type !== 'activity'); if (!visible.length) return null; const unlockLabel = (effect: Extract<ReturnType<typeof gameStore.getState>['effects'][number], { type: 'unlock' }>) => { const entries = unlockCollectionByKind[effect.kind]; return `解锁${effect.kind}：${entries ? displayContentName(effect.id, entries, humanizeContentId(effect.id)) : humanizeContentId(effect.id)}`; }; return <div className="effect-rail" aria-live="polite">{visible.slice(-4).map((effect, index) => <div className="effect-item" key={`${effect.type}-${index}`}>{effect.type === 'cash' ? `${effect.amount >= 0 ? '+' : ''}${money(effect.amount)}` : effect.type === 'stat' ? `${effect.stat === 'ability' ? '能力' : effect.stat === 'reputation' ? '声誉' : '生活水平'} ${effect.amount >= 0 ? '+' : ''}${effect.amount}` : effect.type === 'month' ? `第 ${effect.summary.month} 月结算` : effect.type === 'settlement' ? `第 ${effect.day} 天结算` : effect.type === 'unlock' ? unlockLabel(effect) : effect.type === 'purchase' ? `已购买 ${effect.quantity} 件` : effect.type === 'message' ? effect.text : '进展更新'}</div>)}</div>; }
 
 function SettingsPanel({ game, saveError, onClose, onReset }: { game: GameState; saveError?: string; onClose: () => void; onReset: () => void }) {
   return <div className="modal-backdrop" role="presentation" onClick={onClose}><PixelDialog onDismiss={onClose} className="confirm-modal" role="dialog" aria-modal="true" aria-label="设置" onClick={(event) => event.stopPropagation()}>

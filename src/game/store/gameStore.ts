@@ -1689,7 +1689,10 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
         set({ effects: [] });
         return false;
       }
-      set({ game: result.state, effects: result.effects, lastError: undefined, lastNotice: result.notice, ...(outcome ? { saveError: outcome.error } : {}) });
+      set({ game: result.state, effects: result.effects,
+        // A simulation frame is not an acknowledgement of a player-facing result.
+        ...(action.type === 'advance_simulation' ? (result.notice ? { lastNotice: result.notice } : {}) : { lastError: undefined, lastNotice: result.notice }),
+        ...(outcome ? { saveError: outcome.error } : {}) });
       return true;
     },
     flushSave,

@@ -14,6 +14,30 @@ export const LEGACY_SAVE_KEY = 'yuliang-save-v1';
 export const navigate = (page: Page, name: string) =>
   page.getByRole('navigation', { name: '主导航', exact: true }).getByRole('button', { name, exact: true }).click();
 
+/** Follow the same partitions and pagination a player uses; hidden content is not a fixture failure. */
+export async function openWealthPage(page: Page, section: '概览' | '持有' | '市场' | '经营' | '历史') {
+  await navigate(page, '财富');
+  await page.getByRole('navigation', { name: '财富分区' }).getByRole('button', { name: section, exact: true }).click();
+}
+
+export async function openProfilePage(page: Page, section: '档案' | '里程碑' | '经历与历史' = '经历与历史') {
+  await navigate(page, '我的');
+  await page.getByRole('navigation', { name: '我的分区' }).getByRole('button', { name: section, exact: true }).click();
+}
+
+export async function findCatalogEntry(page: Page, title: string, kind: '商品' | '活动' = '商品') {
+  const entry = page.locator(kind === '商品' ? 'article.item-card' : 'article.activity-card').filter({ hasText: title });
+  const pager = page.getByRole('navigation', { name: `${kind}分页`, exact: true });
+  if (await pager.count()) await pager.getByRole('button', { name: '1', exact: true }).click();
+  const next = page.getByRole('button', { name: `下一页${kind}`, exact: true });
+  for (let i = 0; i < 20 && !(await entry.count()); i += 1) {
+    if (!(await next.count()) || await next.isDisabled()) break;
+    await next.click();
+  }
+  await expect(entry, `目录中应能通过分页找到 ${title}`).toHaveCount(1);
+  return entry;
+}
+
 /** Navigate to the configured app base and assert the page really landed there. */
 export async function gotoAppRoot(page: Page) {
   await page.goto('./');

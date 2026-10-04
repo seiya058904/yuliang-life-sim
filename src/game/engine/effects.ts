@@ -2,7 +2,7 @@ import type { BalanceConfig } from '../balance/config';
 import type { ContentId, ContentRegistry, EffectDefinition, GameEffect, GameState, ItemDefinition, PermanentModifierDefinition } from '../content/contracts';
 import { evaluateCondition, getPlayerStage } from './conditions';
 import { nextRandom, weightedPick } from './rng';
-import { applyAttributeDelta, createInitialAttributes } from './attributes';
+import { applyAttributeDelta, createInitialAttributes, getAttribute } from './attributes';
 import { recordStateFinancialEntry } from './financialLedger';
 import { appendLifeRecord } from './lifeHistory';
 
@@ -92,7 +92,8 @@ export function applyContentEffects(
         output.push({ type: 'cash', amount, reason: '事件或内容奖励' });
         break;
       }
-      case 'stat':
+      case 'stat': {
+        const before = state[effect.stat];
         if (effect.stat === 'ability') {
           applyAttributeDelta(state, 'professional', effect.amount);
           applyAttributeDelta(state, 'knowledge', effect.amount);
@@ -105,12 +106,15 @@ export function applyContentEffects(
             state.attributes.appearance = Math.max(0, state.attributes.appearance + effect.amount);
           }
         }
-        output.push({ type: 'stat', stat: effect.stat, amount: effect.amount });
+        output.push({ type: 'stat', stat: effect.stat, amount: state[effect.stat] - before });
         break;
-      case 'attribute':
+      }
+      case 'attribute': {
+        const before = getAttribute(state, effect.attribute);
         applyAttributeDelta(state, effect.attribute, effect.amount);
-        output.push({ type: 'stat', stat: effect.attribute, amount: effect.amount });
+        output.push({ type: 'stat', stat: effect.attribute, amount: getAttribute(state, effect.attribute) - before });
         break;
+      }
       case 'relation': {
         const before = state.relationships[effect.characterId] ?? 0;
         const after = Math.max(0, Math.min(100, before + effect.amount));

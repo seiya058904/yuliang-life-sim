@@ -37,7 +37,7 @@ export function PixelAction({ label, size = 10 }: { label: string; size?: number
 
 export function SegmentMeter({ value, max = 100, segments = 8, label }: { value: number; max?: number; segments?: number; label?: string }) {
   const filled = Math.round(Math.max(0, Math.min(1, value / max)) * segments);
-  return <span className="segment-meter" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.round(value)}>{Array.from({ length: segments }, (_, index) => <i className={index < filled ? 'filled' : ''} key={index} />)}</span>;
+  return <span className="segment-meter" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={Math.round(Math.max(0, Math.min(max, value)))} aria-valuetext={value > max ? `${Math.round(value)}（量表显示上限 ${max}，属性仍可增长）` : String(Math.round(value))}>{Array.from({ length: segments }, (_, index) => <i className={index < filled ? 'filled' : ''} key={index} />)}</span>;
 }
 
 export function PixelPanel({ children, className = '', ...props }: { children: ReactNode; className?: string } & HTMLAttributes<HTMLElement>) {

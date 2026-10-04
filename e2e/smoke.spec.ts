@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { awaitCanonicalSynced, installSaveBridge, readPersistedState, wipeSave } from './harness';
+import { awaitCanonicalSynced, findCatalogEntry, installSaveBridge, openProfilePage, openWealthPage, readPersistedState, wipeSave } from './harness';
 
 test.beforeEach(async ({ page }) => {
   await page.goto('./');
@@ -55,7 +55,7 @@ test('discovers a named city venue and reaches its activity entry', async ({ pag
   await expect(venue).toContainText('去咖啡馆坐一会');
   await venue.getByRole('button', { name: '去安排活动' }).click();
   await expect(page.getByRole('heading', { name: '娱乐与生活活动' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '已选活动详情' }).getByRole('heading', { name: '去咖啡馆坐一会 · 只是休息' })).toBeVisible();
 });
 
 test('discovers the bookstore venue and reaches its knowledge activity', async ({ page }) => {
@@ -63,9 +63,11 @@ test('discovers the bookstore venue and reaches its knowledge activity', async (
   const venue = page.getByRole('heading', { name: '叶脉书店' }).locator('..');
   await expect(venue).toContainText('周末逛书店');
   await venue.getByRole('button', { name: '去安排活动' }).click();
-  await expect(page.getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '周末逛书店 · 和周妍一起逛' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '已选活动详情' }).getByRole('heading', { name: '周末逛书店 · 随便逛逛' })).toBeVisible();
+  const zhouActivity = await findCatalogEntry(page, '周末逛书店 · 和周妍一起逛', '活动');
+  await expect(zhouActivity.getByRole('heading', { name: '周末逛书店 · 和周妍一起逛' })).toBeVisible();
+  const linActivity = await findCatalogEntry(page, '周末逛书店 · 和林晨一起逛', '活动');
+  await expect(linActivity.getByRole('heading', { name: '周末逛书店 · 和林晨一起逛' })).toBeVisible();
 });
 
 test('discovers the vinyl venue and reaches its music activity', async ({ page }) => {
@@ -74,7 +76,7 @@ test('discovers the vinyl venue and reaches its music activity', async ({ page }
   await expect(venue).toContainText('演唱会');
   await expect(venue).not.toContainText('周末逛书店');
   await venue.getByRole('button', { name: '去安排活动' }).click();
-  await expect(page.getByRole('heading', { name: '演唱会 · 去现场' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '已选活动详情' }).getByRole('heading', { name: '演唱会 · 去现场' })).toBeVisible();
 });
 
 test('discovers the riverside night market venue and reaches its activity entry', async ({ page }) => {
@@ -82,7 +84,7 @@ test('discovers the riverside night market venue and reaches its activity entry'
   const venue = page.getByRole('heading', { name: '临江夜市' }).locator('..');
   await expect(venue).toContainText('河畔夜市');
   await venue.getByRole('button', { name: '去安排活动' }).click();
-  await expect(page.getByRole('heading', { name: '河畔夜市 · 逛一圈' })).toBeVisible();
+  await expect(page.getByRole('region', { name: '已选活动详情' }).getByRole('heading', { name: '河畔夜市 · 逛一圈' })).toBeVisible();
 });
 
 test('uses the public market, plans a week, pauses for shopping, and restores the save', async ({ page }) => {
@@ -985,7 +987,15 @@ test('keeps tall desktop marks on shared pixel primitives without live scrollbar
         .map((element) => element.className || element.tagName);
       const nonPixelSvgs = Array.from(document.querySelectorAll<SVGElement>('svg'))
         .filter((element) => visible(element as unknown as HTMLElement))
-        .filter((element) => !element.classList.contains('pixel-icon') && !element.classList.contains('pixel-illustration'))
+        .filter((element) => {
+          const box = (element as SVGSVGElement).viewBox?.baseVal;
+          const pixelScene = element.getAttribute('data-pixel-scene') === 'true'
+            && element.getAttribute('shape-rendering') === 'crispEdges'
+            && box && [box.x, box.y, box.width, box.height].every(Number.isInteger)
+            && box.width > 0 && box.height > 0
+            && !element.querySelector('linearGradient, radialGradient, filter, image');
+          return !element.classList.contains('pixel-icon') && !element.classList.contains('pixel-illustration') && !pixelScene;
+        })
         .map((element) => element.outerHTML.slice(0, 80));
       const directionalTextMarkers = Array.from(document.querySelectorAll<HTMLElement>('.forecast-more, .inbox-foot button, .rail-link, .status-detail, .career-toolbar-popover > summary'))
         .filter((element) => visible(element))
@@ -2535,15 +2545,16 @@ test('keeps a real selected activity detail visible when switching Shop tabs', a
     return {
       selectedCount: selected.length,
       detailLabel: detail?.querySelector('.eyebrow')?.textContent?.trim() ?? '',
-      detailTop: detailRect?.top ?? 0,
-      gridBottom: grid?.getBoundingClientRect().bottom ?? 0,
+      detailBottom: detailRect?.bottom ?? 0,
+      gridTop: grid?.getBoundingClientRect().top ?? 0,
       detailHeight: detailRect?.height ?? 0,
     };
   });
 
   expect(anatomy.selectedCount).toBe(1);
   expect(anatomy.detailLabel).toBe('已选活动');
-  expect(anatomy.detailTop).toBeGreaterThan(anatomy.gridBottom);
+  // Selection is now read before the catalogue, so the action stays near its context.
+  expect(anatomy.detailBottom).toBeLessThanOrEqual(anatomy.gridTop);
   expect(anatomy.detailHeight).toBeGreaterThanOrEqual(100);
 });
 
@@ -4489,7 +4500,7 @@ test('turns the education course qualification into a persistent teaching assist
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('线上课程助教');
   await page.getByRole('button', { name: '进入下个月' }).click();
-  await page.getByLabel('主导航').getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('heading', { name: '完成线上课程助教' }).first()).toBeVisible();
   await page.reload();
   await page.getByLabel('主导航').getByRole('button', { name: '职业', exact: true }).click();
@@ -4712,7 +4723,8 @@ test('discovers the expanded daily services and subscriptions', async ({ page })
 });
 
 test('shows locked wealth requirements with an actionable acquisition route', async ({ page }) => {
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
+  await page.getByText('查看获取条件与路径', { exact: true }).click();
   const panel = page.getByRole('region', { name: '获取路径' });
   await expect(panel).toContainText('精品珠宝');
   await expect(panel).toContainText('需要能力 市场洞察');
@@ -4785,7 +4797,7 @@ test('charges and cancels a monthly subscription with persisted history', async 
   await page.getByRole('tab', { name: '服务', exact: true }).click();
   await page.getByRole('heading', { name: '基础通信套餐' }).locator('..').locator('..').getByRole('button', { name: '取消订阅' }).click();
   await expect(subscription.getByRole('button', { name: '开通订阅' })).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   const serviceHistory = page.getByRole('region', { name: '人生记录' });
   await serviceHistory.getByRole('button', { name: '服务', exact: true }).click();
@@ -4793,7 +4805,7 @@ test('charges and cancels a monthly subscription with persisted history', async 
   await expect(serviceHistory.getByText('取消基础通信套餐')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   const serviceHistoryAfterReload = page.getByRole('region', { name: '人生记录' });
   await serviceHistoryAfterReload.getByRole('button', { name: '服务', exact: true }).click();
@@ -4816,14 +4828,14 @@ test('uses the basic fitness assessment service and keeps its history', async ({
 test('discovers the riverside night market activity', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '娱乐', exact: true }).click();
-  const market = page.locator('article.activity-card').filter({ hasText: '河畔夜市 · 逛一圈' });
+  const market = await findCatalogEntry(page, '河畔夜市 · 逛一圈', '活动');
   await expect(market.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
 
 test('discovers the industrial design exhibition trip', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '旅行', exact: true }).click();
-  const exhibition = page.locator('article.activity-card').filter({ hasText: '北部产业设计展 · 看展' });
+  const exhibition = await findCatalogEntry(page, '北部产业设计展 · 看展', '活动');
   await expect(exhibition).toContainText('¥280');
   await expect(exhibition.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
@@ -4831,12 +4843,12 @@ test('discovers the industrial design exhibition trip', async ({ page }) => {
 test('discovers and plans the expanded dining and concert activities', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '社交', exact: true }).click();
-  const dining = page.locator('article.activity-card').filter({ hasText: '精品餐厅晚餐 · 慢慢吃完' });
+  const dining = await findCatalogEntry(page, '精品餐厅晚餐 · 慢慢吃完', '活动');
   await expect(dining).toContainText('¥380');
   await expect(dining.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await dining.getByRole('button', { name: '安排到本周自由时间' }).click();
   await page.getByRole('tab', { name: '学习', exact: true }).click();
-  const concert = page.locator('article.activity-card').filter({ hasText: '演唱会 · 去现场' });
+  const concert = await findCatalogEntry(page, '演唱会 · 去现场', '活动');
   await expect(concert).toContainText('¥680');
   await expect(concert.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await openCareerTools(page);
@@ -4846,14 +4858,14 @@ test('discovers and plans the expanded dining and concert activities', async ({ 
 test('discovers the expanded home, cinema, and fitness activities', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '娱乐', exact: true }).click();
-  const cinema = page.locator('article.activity-card').filter({ hasText: 'IMAX 高规格电影 · 特别放映厅' });
+  const cinema = await findCatalogEntry(page, 'IMAX 高规格电影 · 特别放映厅', '活动');
   await expect(cinema).toContainText('¥138');
   await expect(cinema.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
-  const fitness = page.locator('article.activity-card').filter({ hasText: '去健身房 · 训练一小时' });
+  const fitness = await findCatalogEntry(page, '去健身房 · 训练一小时', '活动');
   await expect(fitness).toContainText('¥45');
   await expect(fitness).toContainText('体能 +1');
   await expect(fitness.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
-  const homeMovie = page.locator('article.activity-card').filter({ hasText: '在家看电影 · 在家看一部' });
+  const homeMovie = await findCatalogEntry(page, '在家看电影 · 在家看一部', '活动');
   await expect(homeMovie.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
 });
 
@@ -4867,17 +4879,18 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
   await page.reload();
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '旅行', exact: true }).click();
-  const dayTrip = page.locator('article.activity-card').filter({ hasText: '城郊一日游 · 安排一日出行' });
+  const dayTrip = await findCatalogEntry(page, '城郊一日游 · 安排一日出行', '活动');
   await expect(dayTrip).toContainText('¥280');
-  const premiumWeekend = page.locator('article.activity-card').filter({ hasText: '品质周末旅行 · 安排品质周末' });
+  const premiumWeekend = await findCatalogEntry(page, '品质周末旅行 · 安排品质周末', '活动');
   await expect(premiumWeekend).toContainText('¥2,200');
   await expect(premiumWeekend.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
-  const domestic = page.locator('article.activity-card').filter({ hasText: '普通国内旅行 · 安排国内探索' });
+  const domestic = await findCatalogEntry(page, '普通国内旅行 · 安排国内探索', '活动');
   await expect(domestic).toContainText('¥2,800');
   await expect(domestic).toContainText('3 天');
-  const luxury = page.locator('article.activity-card').filter({ hasText: '豪华度假 · 安排豪华度假' });
+  const luxury = await findCatalogEntry(page, '豪华度假 · 安排豪华度假', '活动');
   await expect(luxury).toContainText('¥18,000');
   await expect(luxury).toContainText('5 天');
+  await findCatalogEntry(page, '品质周末旅行 · 安排品质周末', '活动');
   await premiumWeekend.getByRole('button', { name: '安排到本周自由时间' }).click();
   await openCareerTools(page);
   await expect(page.getByRole('button', { name: /周[一二三四五六日]白天计划/ }).filter({ hasText: '品质周末旅行 · 安排品质周末' })).toBeVisible();
@@ -4886,7 +4899,7 @@ test('discovers the expanded travel tiers and schedules a premium weekend', asyn
 test('discovers a contact-specific activity and schedules it with its relationship gate', async ({ page }) => {
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '社交', exact: true }).click();
-  const coffee = page.locator('article.activity-card').filter({ hasText: '和联系人喝咖啡 · 和林晨聊聊' });
+  const coffee = await findCatalogEntry(page, '和联系人喝咖啡 · 和林晨聊聊', '活动');
   await expect(coffee).toContainText('¥100');
   await expect(coffee).toContainText('关系 +3');
   await expect(coffee.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
@@ -4907,11 +4920,12 @@ test('acquires camping gear and unlocks the weekend camping plan', async ({ page
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '旅行', exact: true }).click();
+  await page.getByText('获取与安排说明', { exact: true }).click();
   const hints = page.getByRole('region', { name: '活动获取提示' });
   await expect(hints).toContainText('周末露营 · 搭帐篷住一晚');
   await expect(hints).toContainText('需要商品 露营装备');
   await hints.getByRole('button', { name: '购买 露营装备' }).click();
-  const camping = page.locator('article.activity-card').filter({ hasText: '周末露营 · 搭帐篷住一晚' });
+  const camping = await findCatalogEntry(page, '周末露营 · 搭帐篷住一晚', '活动');
   await expect(camping.getByRole('button', { name: '安排到本周自由时间' })).toBeVisible();
   await camping.getByRole('button', { name: '安排到本周自由时间' }).click();
   await openCareerTools(page);
@@ -4931,7 +4945,7 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await page.getByRole('button', { name: '出售 10% 股权' }).click();
   await expect(page.getByText('持股 70% · 已投入资本 ¥0 · 融资 ¥0')).toBeVisible();
@@ -4941,12 +4955,12 @@ test('trades a listed business equity slice from the wealth flow', async ({ page
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('投资分红');
   await page.getByRole('button', { name: '进入下个月' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('出售早餐与咖啡档 10% 股权')).toBeVisible();
   await expect(page.getByText('买入早餐与咖啡档公开股权')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('region', { name: '公开股权' })).toContainText('企业持股 70% · 市场流通 30%');
 });
 
@@ -4964,8 +4978,9 @@ test('runs a business from purchase through funding, listing, daily profit and p
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await page.getByRole('button', { name: '买入 ¥3,200' }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await page.getByRole('button', { name: '投入 ¥1,000' }).click();
   await page.getByRole('button', { name: '发起融资' }).click();
@@ -4976,11 +4991,11 @@ test('runs a business from purchase through funding, listing, daily profit and p
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('企业收入');
   await page.getByRole('button', { name: '进入下个月' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('heading', { name: '早餐与咖啡档完成融资' }).first()).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('button', { name: '已上市' })).toBeVisible();
   await expect(page.getByRole('region', { name: '公开股权' })).toContainText('早餐与咖啡档');
 });
@@ -5000,18 +5015,19 @@ test('acquires an unlocked business and persists the holding history', async ({ 
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '可并购企业' })).toBeVisible();
   await page.getByRole('button', { name: '并购 ¥8,580' }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '线上小店' }).last()).toBeVisible();
   const acquiredState = await readPersistedState(page);
   expect(acquiredState.businesses['business.online-store']).toBeDefined();
   expect(acquiredState.lifeHistory).toContainEqual(expect.objectContaining({ title: '并购线上小店' }));
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('并购线上小店')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('并购线上小店')).toBeVisible();
 });
 
@@ -5030,17 +5046,21 @@ test('joins a relationship-gated business partnership and persists the partial h
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByText('合伙方案：与周妍共同经营 · 你持股 50%')).toBeVisible();
   await page.getByRole('button', { name: '加入合伙 ¥4,200' }).click();
-  await expect(page.getByText('预计净利润 ¥65 /天 · 持股 50%', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openWealthPage(page, '经营');
+  const operations = page.getByRole('heading', { name: '企业经营', exact: true }).locator('xpath=ancestor::section[1]');
+  await expect(operations).toContainText('预计净利润 ¥65 /天');
+  await expect(operations).toContainText('持股 50%');
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('加入线上小店合伙')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
-  await expect(page.getByText('预计净利润 ¥65 /天 · 持股 50%', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openWealthPage(page, '经营');
+  await expect(operations).toContainText('预计净利润 ¥65 /天');
+  await expect(operations).toContainText('持股 50%');
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('加入线上小店合伙')).toBeVisible();
 });
 
@@ -5063,24 +5083,25 @@ test('joins and settles the official consulting studio partnership through the b
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await page.getByRole('button', { name: '加入合伙 ¥12,000' }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
   await expect(page.getByText(/咨询工作室/).first()).toBeVisible();
   await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toBeVisible({ timeout: 15_000 });
   await expect(page.getByRole('dialog')).toContainText('企业收入');
   await page.getByRole('button', { name: '进入下个月' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('加入咨询工作室合伙')).toBeVisible();
   const settledState = await readPersistedState(page);
   expect(settledState.financialHistory?.length).toBeGreaterThan(0);
   expect(settledState.financialHistory.at(-1).income.categories.business_income).toBeGreaterThan(0);
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('heading', { name: '企业经营' })).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('加入咨询工作室合伙')).toBeVisible();
 });
 
@@ -5095,17 +5116,18 @@ test('completes a wishlist purchase goal and persists its history', async ({ pag
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
+  await findCatalogEntry(page, '新款手机');
   await page.getByRole('button', { name: '加入愿望清单：新款手机' }).click();
   const wishlist = page.getByRole('region', { name: '愿望清单' });
   await expect(wishlist).toContainText('新款手机');
   await expect(wishlist).toContainText('现在可以买');
   await wishlist.getByRole('button', { name: '买下' }).click();
   await expect(page.getByTestId('cash-value')).toHaveText('现金 ¥820');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('愿望清单完成：新款手机')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('愿望清单完成：新款手机')).toBeVisible();
 });
 
@@ -5170,7 +5192,7 @@ test('buys and persists the Isle lifestyle technology smart-home set', async ({ 
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
-  const item = page.locator('article.item-card').filter({ hasText: '智能家居套装' });
+  const item = await findCatalogEntry(page, '智能家居套装', '商品');
   await expect(item).toContainText('¥5,999');
   await item.getByRole('button', { name: '加入购物袋：智能家居套装' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
@@ -5178,7 +5200,7 @@ test('buys and persists the Isle lifestyle technology smart-home set', async ({ 
   const settled = await readPersistedState(page);
   expect(settled.cash).toBe(4_001);
   expect(settled.lifestyle - (beforePurchase.lifestyle ?? 10)).toBe(6);
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('购买智能家居套装')).toBeVisible();
 
   await page.reload();
@@ -5203,14 +5225,14 @@ test('settles a business operating risk event with persisted financial history',
   await event.getByRole('button', { name: '马上维修设备' }).click();
   await expect(event).toContainText('-300¥');
   await page.getByRole('button', { name: '收下并暂停' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('设备今天不太配合')).toBeVisible();
   const settled = await readPersistedState(page);
   expect(settled.cash).toBe(700);
   expect(settled.reputation).toBe((initial.reputation ?? 0) + 1);
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('设备今天不太配合')).toBeVisible();
 });
 
@@ -5230,9 +5252,11 @@ test('applies the industrial hub city event and persists its development', async
   await expect(page.getByRole('dialog')).toContainText('北部产业区发展 +1');
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '北部产业区', exact: true })).toBeVisible();
+  await page.locator('.district-nav button').filter({ hasText: '北部产业区' }).click();
+  await expect(page.locator('.district-summary h2')).toContainText('北部产业区');
   await page.reload();
   await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
+  await page.locator('.district-nav button').filter({ hasText: '北部产业区' }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 });
 
@@ -5242,10 +5266,10 @@ test('reads and persists the official storyline dialogue', async ({ page }) => {
   await storyline.getByRole('button', { name: '开始故事' }).click();
   await expect(storyline).toContainText('最近这段时间，你好像一直在处理很复杂的事情。');
   await storyline.getByRole('button', { name: '约个时间聊聊' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('远程连接：约个时间聊聊')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('远程连接：约个时间聊聊')).toBeVisible();
 });
 
@@ -5265,10 +5289,10 @@ test('completes the first fund investment storyline after entering the market', 
   await expect(storyline).toContainText('你已经开始把钱放进投资里了');
   await storyline.getByRole('button', { name: '先从低风险开始' }).click();
   await storyline.getByRole('button', { name: '把投资留在生活计划里' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('第一次买基金：把投资留在生活计划里')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('第一次买基金：把投资留在生活计划里')).toBeVisible();
 });
 
@@ -5317,10 +5341,10 @@ test('completes the first real consulting project storyline with a persisted out
   await storyline.getByRole('button', { name: '参加客户会议' }).click();
   await storyline.getByRole('button', { name: '多花 2h 准备' }).click();
   await storyline.getByRole('button', { name: '根据现有数据给出初步判断' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('第一次真正的项目：根据现有数据给出初步判断')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('第一次真正的项目：根据现有数据给出初步判断')).toBeVisible();
 });
 
@@ -5340,10 +5364,10 @@ test('completes the ecommerce big-promotion storyline with a persisted career re
   await storyline.getByRole('button', { name: '开始故事' }).click();
   await storyline.getByRole('button', { name: '加入核心项目' }).click();
   await storyline.getByRole('button', { name: '完成项目复盘' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('大促：完成项目复盘')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('大促：完成项目复盘')).toBeVisible();
 });
 
@@ -5390,12 +5414,12 @@ test('uses the employee purchase plan to buy a discounted smart-home set', async
   await storyline.getByRole('button', { name: '折扣购买' }).click();
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
-  const item = page.locator('article.item-card').filter({ hasText: '智能家居套装' });
+  const item = await findCatalogEntry(page, '智能家居套装', '商品');
   await expect(item).toContainText('¥4,499');
   await item.getByRole('button', { name: '加入购物袋：智能家居套装' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
   await expect(page.getByRole('heading', { name: '智能家居套装' }).first()).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('购买智能家居套装')).toBeVisible();
 });
 
@@ -5434,7 +5458,7 @@ test('shows persisted vehicle maintenance history in wealth', async ({ page }) =
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '历史');
   await expect(page.getByRole('region', { name: '车辆维护记录' })).toContainText('实用二手小车车辆成本');
 });
 
@@ -5449,7 +5473,8 @@ test('shows persisted ambient city sightings in the city view', async ({ page })
   await page.reload();
 
   await page.getByRole('button', { name: '城市', exact: true }).click();
-  await expect(page.getByRole('region', { name: '城市见闻' })).toContainText('夜间公交延长');
+  await page.getByText(/城市见闻 ·/).click();
+  await expect(page.getByLabel('城市见闻')).toContainText('夜间公交延长');
 });
 
 test('discovers and plans the friend-specific cafe activity', async ({ page }) => {
@@ -5465,8 +5490,9 @@ test('discovers and plans the friend-specific cafe activity', async ({ page }) =
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
   await page.getByRole('tab', { name: '学习', exact: true }).click();
+  await page.getByText('获取与安排说明', { exact: true }).click();
   await expect(page.getByRole('region', { name: '活动获取提示' })).toContainText('需要商品 复古相机');
-  const outing = page.locator('article').filter({ hasText: '和陈宇坐坐' });
+  const outing = await findCatalogEntry(page, '去咖啡馆坐一会 · 和陈宇坐坐', '活动');
   await expect(outing).toContainText('和陈宇坐坐');
   await outing.getByRole('button', { name: '安排到本周自由时间' }).click();
   await expect(page.getByRole('button', { name: '职业', exact: true })).toBeVisible();
@@ -5523,8 +5549,7 @@ test('buys and gives a preference-matching gift with persisted social history', 
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
-  await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
-  const flowers = page.locator('article').filter({ hasText: '一束花' }).first();
+  const flowers = await findCatalogEntry(page, '一束花');
   await flowers.getByRole('button', { name: '加入购物袋：一束花' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
   await page.getByRole('button', { name: '社交', exact: true }).click();
@@ -5554,10 +5579,12 @@ test('settles a city development event and keeps the location change after reloa
   await expect(page.getByRole('dialog')).toContainText('临江区发展 +1');
   await page.getByRole('button', { name: '收下并暂停' }).click();
   await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
+  await page.locator('.district-nav button').filter({ hasText: '临江区' }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 
   await page.reload();
   await page.getByLabel('主导航').getByRole('button', { name: '城市', exact: true }).click();
+  await page.locator('.district-nav button').filter({ hasText: '临江区' }).click();
   await expect(page.getByText('发展阶段 1/5')).toBeVisible();
 });
 
@@ -5596,12 +5623,12 @@ test('shows the player-triggered company state in annual world history', async (
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const worldHistory = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
   await expect(worldHistory).toContainText('星河科技');
   await expect(worldHistory).toContainText('企业服务线提前启动（玩家参与）');
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]')).toContainText('企业服务线提前启动（玩家参与）');
 });
 
@@ -5649,16 +5676,20 @@ test('unlocks and trades the high-value collectible through the wealth flow', as
   await expect(page.getByRole('dialog')).toContainText('一份很简单的理财说明');
   await page.getByRole('dialog').getByRole('button', { name: /花点时间看懂它/ }).click();
   await page.getByRole('button', { name: '收下并暂停' }).click();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByText('限量机械腕表')).toBeVisible();
   await page.getByRole('button', { name: '买入 ¥18,000' }).click();
+  await openWealthPage(page, '持有');
   await expect(page.getByRole('button', { name: '出售 ¥18,000' })).toBeVisible();
   await page.getByRole('button', { name: '出售 ¥18,000' }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByRole('button', { name: '买入 ¥18,000' })).toBeVisible();
   await expect(page.getByText('精品珠宝')).toBeVisible();
   await page.getByRole('button', { name: '买入 ¥28,000' }).click();
+  await openWealthPage(page, '持有');
   await expect(page.getByRole('button', { name: '出售 ¥28,000' })).toBeVisible();
   await page.getByRole('button', { name: '出售 ¥28,000' }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByRole('button', { name: '买入 ¥28,000' })).toBeVisible();
 });
 
@@ -5673,17 +5704,16 @@ test('buys and resells the official diamond pendant with persisted purchase hist
   await page.reload();
 
   await page.getByRole('button', { name: '商店', exact: true }).click();
-  await page.getByRole('navigation', { name: '商品分页' }).getByRole('button', { name: '3', exact: true }).click();
-  const product = page.getByRole('heading', { name: '小型钻石吊坠' }).locator('xpath=ancestor::article[1]');
+  const product = await findCatalogEntry(page, '小型钻石吊坠');
   await product.getByRole('button', { name: '加入购物袋：小型钻石吊坠' }).click();
   await page.getByRole('button', { name: '一次购买' }).click();
   await expect(page.getByText('库存 ×1')).toBeVisible();
   await page.getByRole('button', { name: '出售一次' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '人生记录' })).toContainText('购买小型钻石吊坠');
   await expect(page.getByRole('region', { name: '人生记录' })).toContainText('出售小型钻石吊坠');
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '人生记录' })).toContainText('出售小型钻石吊坠');
 });
 
@@ -5703,17 +5733,18 @@ test('shows persisted wealth milestones in the profile on desktop and mobile', a
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   const records = page.getByRole('region', { name: '财富阶段记录' });
   await expect(records).toContainText('有积蓄');
   await expect(records).toContainText('稳定');
   await expect(records).toContainText('第 28 天');
+  await openProfilePage(page, '经历与历史');
   const annualReview = page.getByRole('heading', { name: '年度回顾' }).locator('xpath=ancestor::section[1]');
   await expect(annualReview).toBeVisible();
   await expect(annualReview).toContainText('联系人 2 人');
   await expect(annualReview).toContainText('远望零售：门店与社区零售');
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   await expect(page.getByRole('region', { name: '财富阶段记录' })).toContainText('稳定');
 });
 
@@ -5728,7 +5759,7 @@ test('archives and restores annual public equity history in the profile', async 
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const equityHistory = page.getByRole('region', { name: '年度公开股权记录' });
   await expect(equityHistory).toContainText('第 1 年');
   await expect(equityHistory).toContainText('上市企业 1 家');
@@ -5739,7 +5770,7 @@ test('archives and restores annual public equity history in the profile', async 
   await expect(page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]')).toContainText('远望零售：门店与社区零售');
   await expect(page.getByRole('heading', { name: '年度回顾' }).locator('xpath=ancestor::section[1]')).toContainText('周妍 42');
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '年度公开股权记录' })).toContainText('公开流通 35%');
   await expect(page.getByRole('region', { name: '年度公开股权记录' })).toContainText('早餐与咖啡档 10% · 年末估值 ¥220');
   await expect(page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]')).toContainText('周妍 42');
@@ -5766,7 +5797,7 @@ test('finances a home and restores the mortgage state after reload', async ({ pa
   await expect(homeRow).toContainText('首付');
   await homeRow.getByRole('button', { name: '分期购买' }).click();
   await expect(page.getByText('分期中')).toBeVisible();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('分期买下独立单间')).toBeVisible();
 
   await page.reload();
@@ -5938,7 +5969,7 @@ test('settles the authored private-equity exit opportunity', async ({ page }) =>
   await page.getByRole('button', { name: '财富', exact: true }).click();
   await page.getByRole('button', { name: '市场', exact: true }).click();
   await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).not.toContainText('持有 1 份');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   await expect(page.getByText('卖出城际生活早期股权')).toBeVisible();
 });
@@ -5985,7 +6016,7 @@ test('unlocks and trades the authored local restaurant investment opportunity', 
   // Accepting the authored buyout liquidates the holding in the same accounting
   // path as a manual sale, so no second sell step remains.
   await expect(page.getByRole('heading', { name: '小型餐饮项目合伙份额' }).locator('..')).not.toContainText('持有 1 份');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   await expect(page.getByText('卖出小型餐饮项目合伙份额')).toBeVisible();
 });
@@ -6026,7 +6057,7 @@ test('keeps a fresh private-equity holding locked for 90 days and unlocks sellin
   await expect(page.getByRole('heading', { name: '城际生活早期股权' }).locator('..')).not.toContainText('持有 1 份');
   await awaitSaveSynced(page);
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await page.getByRole('button', { name: '经历与历史', exact: true }).click();
   await expect(page.getByText('卖出城际生活早期股权')).toBeVisible();
 });
@@ -6041,10 +6072,11 @@ test('buys and sells independent public company equity with persisted history', 
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   const equity = page.getByRole('heading', { name: '启明服务公开股权' }).locator('..');
   await expect(equity).toContainText('独立于自营企业');
   await equity.getByRole('button', { name: '买入 1 份' }).click();
+  await openWealthPage(page, '持有');
   await expect(equity).toContainText('持有 1 份');
   await expect(equity).toContainText('已投入');
   await expect(equity).toContainText('平均成本');
@@ -6052,13 +6084,14 @@ test('buys and sells independent public company equity with persisted history', 
   await expect(equity).toContainText('未实现收益');
   await expect(equity).toContainText('30 日变化');
   await equity.getByRole('button', { name: '卖出 1 份' }).click();
+  await openWealthPage(page, '市场');
   await expect(equity).not.toContainText('持有 1 份');
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('买入启明服务公开股权')).toBeVisible();
   await expect(page.getByText('卖出启明服务公开股权')).toBeVisible();
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('卖出启明服务公开股权')).toBeVisible();
 });
 
@@ -6119,7 +6152,7 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '概览');
   const summary = page.getByRole('region', { name: '财富组合摘要' });
   await expect(summary).toContainText('房产总值');
   await expect(summary).toContainText('现金余额');
@@ -6135,6 +6168,7 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   await expect(allocation).toContainText('现金');
   await expect(allocation).toContainText('金融投资');
   await expect(allocation).toContainText('投资房');
+  await openWealthPage(page, '历史');
   const history = page.getByRole('region', { name: '财富组合历史' });
   await expect(history).toContainText('第 2 月');
   await expect(history).toContainText('第 3 月');
@@ -6144,8 +6178,9 @@ test('shows the persisted wealth portfolio summary across the wealth flow', asyn
   await expect(history).toContainText('分红 ¥80');
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '概览');
   await expect(page.getByRole('region', { name: '财富组合摘要' })).toContainText('房产净值');
+  await openWealthPage(page, '历史');
   await expect(page.getByRole('region', { name: '财富组合历史' })).toContainText('第 3 月');
 });
 
@@ -6161,13 +6196,13 @@ test('records and shows a reached milestone in the profile', async ({ page }) =>
 
   await page.getByRole('button', { name: '生活', exact: true }).click();
   await page.getByRole('button', { name: '开始本周' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   const records = page.getByRole('region', { name: '里程碑记录' });
   await expect(records).toContainText('第一万现金');
   await expect(records).toContainText('已达成');
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一万现金');
 });
 
@@ -6188,11 +6223,11 @@ test('records the first investment dividend as a milestone after monthly settlem
   await runLongPeriod(page, 1);
   await expect(page.getByRole('dialog')).toContainText('第 1 月');
   await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一笔投资分红');
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '里程碑');
   await expect(page.getByRole('region', { name: '里程碑记录' })).toContainText('第一笔投资分红');
 });
 
@@ -6216,7 +6251,7 @@ test('completes and persists an official course through the weekly plan', async 
   await expect(page.getByRole('dialog')).toContainText('第 1 月');
   await page.getByRole('dialog').getByRole('button', { name: '进入下个月' }).click();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('完成课程：职场基础课')).toBeVisible();
   await openCareerTools(page);
   await expect(page.getByRole('heading', { name: '职场基础课' }).locator('xpath=ancestor::div[contains(@class, "item-row")]')).toContainText('已完成');
@@ -6236,7 +6271,8 @@ test('settles Zhou business interaction and persists the follow-up message', asy
   await page.reload();
 
   await page.getByRole('button', { name: '社交', exact: true }).click();
-  const contact = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '周妍', exact: true }) });
+  await page.locator('.contact-list .contact-row').filter({ hasText: '周妍' }).click();
+  const contact = page.locator('.contact-detail');
   await contact.getByRole('button', { name: /一起看看店/ }).click();
   await expect(contact).toContainText('12');
   await expect(page.getByRole('region', { name: '消息' })).toContainText('周妍发来新消息');
@@ -6244,7 +6280,7 @@ test('settles Zhou business interaction and persists the follow-up message', asy
   await page.reload();
   await page.getByRole('button', { name: '社交', exact: true }).click();
   await expect(page.getByRole('region', { name: '消息' })).toContainText('周妍发来新消息');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const relationshipHistory = page.getByRole('region', { name: '关系历史' });
   await expect(relationshipHistory).toContainText('周妍');
   await expect(relationshipHistory).toContainText('当前关系 12');
@@ -6264,14 +6300,15 @@ test('settles Guqing consulting review interaction with preference feedback', as
   await page.reload();
 
   await page.getByRole('button', { name: '社交', exact: true }).click();
-  const contact = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '顾清', exact: true }) });
+  await page.locator('.contact-list .contact-row').filter({ hasText: '顾清' }).click();
+  const contact = page.locator('.contact-detail');
   await contact.getByRole('button', { name: /一起复盘项目/ }).click();
   await expect(contact).toContainText('7');
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '关系历史' })).toContainText('和顾清复盘项目');
   await page.reload();
   await page.getByRole('button', { name: '社交', exact: true }).click();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByRole('region', { name: '关系历史' })).toContainText('和顾清复盘项目');
 });
 
@@ -6291,9 +6328,10 @@ test('builds a controlling stake through staged entry and persists board decisio
   }, { key: saveKey, state: initial });
   await page.reload();
 
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '市场');
   await expect(page.getByRole('region', { name: '企业组合' })).toHaveCount(0);
   await page.getByRole('button', { name: /入股 30%/ }).click();
+  await openWealthPage(page, '经营');
   const group = page.getByRole('region', { name: '企业组合' });
   await expect(group).toBeVisible();
   await expect(group).toContainText('战略 / 少数股权');
@@ -6306,12 +6344,12 @@ test('builds a controlling stake through staged entry and persists board decisio
   await page.getByRole('button', { name: /精简组织/ }).click();
   await expect(page.getByText(/重组效率 \+5%/).first()).toBeVisible();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('入股早餐与咖啡档')).toBeVisible();
   await expect(page.getByText('早餐与咖啡档完成组织精简')).toBeVisible();
 
   await page.reload();
-  await page.getByRole('button', { name: '财富', exact: true }).click();
+  await openWealthPage(page, '经营');
   await expect(page.getByRole('region', { name: '企业组合' })).toContainText('组合归母估值');
   await expect(page.getByText(/重组效率 \+5%/).first()).toBeVisible();
 });
@@ -6331,10 +6369,11 @@ test('evolves NPC and company timelines from world state and archives them', asy
 
   // Live evolution: the social timeline reshapes from persisted world state.
   await page.getByRole('button', { name: '社交', exact: true }).click();
-  const linCard = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '林晨', exact: true }) });
+  const linCard = page.locator('.contact-detail');
   await expect(linCard).toContainText('临江内容工作室 · 联合创始人');
   await expect(linCard).not.toContainText('电商运营助理');
-  const xukeCard = page.locator('article.relation-card').filter({ has: page.getByRole('heading', { name: '徐可', exact: true }) });
+  await page.locator('.contact-list .contact-row').filter({ hasText: '徐可' }).click();
+  const xukeCard = page.locator('.contact-detail');
   await expect(xukeCard).toContainText('星河企业服务线 · 技术合伙人');
 
   // Archived evolution: a completed annual snapshot renders its branched company and NPC states after reload.
@@ -6347,14 +6386,14 @@ test('evolves NPC and company timelines from world state and archives them', asy
     await window.__e2eSave.write(state);
   }, { key: saveKey, state: seeded });
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const worldRecords = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
   await expect(worldRecords).toContainText('北部转岗培训中心');
   await expect(worldRecords).toContainText('企业服务线并购整合');
   await expect(worldRecords).toContainText('临江内容工作室 · 联合创始人');
 
   await page.reload();
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   const worldAfterReload = page.getByRole('heading', { name: '世界记录' }).locator('xpath=ancestor::section[1]');
   await expect(worldAfterReload).toContainText('北部转岗培训中心');
 });
@@ -6425,7 +6464,7 @@ test('starts the old-photo storyline with song-yuran and persists its branch', a
   await page.getByRole('button', { name: '把这页翻过去' }).click();
   await expect(page.getByText('已完成').first()).toBeVisible();
 
-  await page.getByRole('button', { name: '我的', exact: true }).click();
+  await openProfilePage(page, '经历与历史');
   await expect(page.getByText('把这页翻过去').first()).toBeVisible();
 
   await page.reload();
@@ -6444,17 +6483,18 @@ test('discovers the new districts and reaches their venue activities', async ({ 
   await page.reload();
 
   await page.getByRole('button', { name: '城市', exact: true }).click();
-  await expect(page.locator('.item-card', { hasText: '南岸居住区' }).first()).toBeVisible();
+  await expect(page.locator('.district-nav button').filter({ hasText: '南岸居住区' })).toBeVisible();
 
   // Reach the tech-park venue card and jump into its bound activity.
-  const lectureVenue = page.locator('article.item-card').filter({ hasText: '科技园路演厅' });
+  const lectureVenue = page.locator('.venue-row').filter({ hasText: '科技园路演厅' });
   await expect(lectureVenue).toContainText('园区公开课');
-  await page.getByRole('button', { name: '去安排活动' }).last().click();
-  await expect(page.locator('.activity-card', { hasText: '园区公开课' })).toBeVisible();
+  await lectureVenue.getByRole('button', { name: '去安排活动' }).click();
+  await expect(page.getByRole('region', { name: '已选活动详情' })).toContainText('园区公开课');
 });
 test('runs a multi-year life in the real browser and keeps annual records consistent', async ({ page }) => {
+  test.setTimeout(180_000);
   const saveKey = 'yuliang-save-v1';
-  await page.goto('/');
+  await page.goto('./');
   await page.evaluate(() => localStorage.setItem('yuliang-e2e-hook', '1'));
   const initial = await readPersistedState(page);
   await page.evaluate(async ({ key, state }) => {

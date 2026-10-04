@@ -82,6 +82,32 @@
 .shop-rail-empty strong { font-size: 14px; }
 .shop-rail-empty small { font-size: 12px; font-weight: 400; color: #aaa; line-height: 1.5; }
 .shop-support-panels { margin-block: 20px; }
+/* The selected entry is an immediate reading strip, before the catalogue. */
+.shop-main > .shop-detail { grid-template-columns: 48px minmax(0,1fr) auto; gap: 12px 16px; padding: 16px; margin-bottom: 16px; }
+.shop-main > .shop-detail > .pixel-illustration { width: 48px; height: 48px; }
+.shop-main > .shop-detail .shop-detail-facts { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; }
+.shop-main > .shop-detail .shop-detail-fact { display: block; }
+.shop-main > .shop-detail .shop-detail-fact dt { margin-bottom: 4px; }
+.shop-main > .shop-detail .shop-detail-fact dd { min-height: 24px; }
+.shop-main > .shop-detail > button { grid-column: 3; grid-row: 1; align-self: center; }
+.shop-main > .shop-detail .catalog-meter-row { display: grid; grid-template-columns: 60px minmax(0,1fr) 24px; gap: 8px; }
+.shop-main > .shop-detail .catalog-meter-row .segment-meter { grid-auto-columns: minmax(0,1fr); }
+.shop-main .item-card .catalog-title-row h2 { grid-column: 1; grid-row: 2; font-size: 18px; }
+.shop-main .item-card .catalog-badge { grid-column: 1 / -1; grid-row: 1; }
+.shop-main .item-card .catalog-price { grid-column: 2; grid-row: 2; }
+.shop-main .item-card .catalog-card-status { grid-column: 2; grid-row: 1; justify-self: end; }
+.shop-main .item-card .catalog-secondary-action { min-width: 36px; min-height: 36px; padding: 4px; }
+.shop-main .item-card .catalog-facts { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 12px; }
+.shop-main .item-card { min-height: 200px; }
+.shop-main .item-card .item-card-foot { position: relative; z-index: 2; }
+@media (max-width: 1180px) {
+  .shop-main > .shop-detail { grid-template-columns: 40px minmax(0,1fr); padding: 12px; }
+  .shop-main > .shop-detail > button { grid-column: 1 / -1; grid-row: auto; }
+  .shop-main > .shop-detail .shop-detail-facts { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .shop-main .item-card .catalog-title-row h2 { grid-column: 1 / -1; }
+  .shop-main .item-card .catalog-price { grid-column: 1; grid-row: 3; }
+  .shop-main .item-card .catalog-facts { grid-template-columns: minmax(0,1fr); }
+}
 @media (max-width: 1180px) {
   .shop-layout { grid-template-columns: minmax(0,1fr) 240px; gap: 12px; }
   .shop-main .item-grid, .shop-main .activity-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }

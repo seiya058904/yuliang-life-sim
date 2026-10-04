@@ -1,9 +1,11 @@
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
+import { installSaveBridge, readPersistedState, wipeSave } from './harness';
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('yuliang-e2e-hook', '1'));
+  await installSaveBridge(page);
   await page.goto('./');
   await page.waitForFunction(() => Boolean(window.__yuliang));
 });
@@ -12,8 +14,13 @@ for (const viewport of [{ width: 1440, height: 1080 }, { width: 1280, height: 72
   test(`recovery, reward gate and budget at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     const errors: string[] = [];
+    const expectedFaults: string[] = [];
     page.on('pageerror', error => errors.push(error.message));
-    page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+    page.on('console', message => {
+      if (message.type() !== 'error') return;
+      (message.text().startsWith('[yuliang] 存档 JSON 解析失败') ? expectedFaults : errors).push(message.text());
+    });
+    await wipeSave(page);
     await page.evaluate(() => localStorage.setItem('yuliang-save-v1', '{ broken payload'));
     await page.reload();
     await expect(page.getByRole('button', { name: '导出原始存档' })).toBeVisible();
@@ -23,12 +30,12 @@ for (const viewport of [{ width: 1440, height: 1080 }, { width: 1280, height: 72
     await page.reload();
     await page.getByRole('button', { name: '继续使用当前临时存档' }).click();
     await expect(page.getByRole('button', { name: '导出原始存档' })).toHaveCount(0);
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('yuliang-save-v1')!).version)).toBe(10);
-    await page.evaluate(() => {
-      const state = window.__yuliang!.store.getState().game;
+    expect((await readPersistedState(page)).version).toBe(10);
+    await page.evaluate(async () => {
+      const state = structuredClone(window.__yuliang!.store.getState().game);
       state.pendingEventId = 'event.deleted';
       state.pendingReward = { eventId: 'event.old', lines: ['奖励已经应用，请确认'] };
-      localStorage.setItem('yuliang-save-v1', JSON.stringify(state));
+      await window.__e2eSave.write(state);
     });
     await page.reload();
     await page.getByRole('button', { name: '确认恢复并继续' }).click();
@@ -50,6 +57,7 @@ for (const viewport of [{ width: 1440, height: 1080 }, { width: 1280, height: 72
     await expect(page.locator('body')).not.toContainText('NaN');
     expect(await page.locator('vite-error-overlay').count()).toBe(0);
     expect(errors).toEqual([]);
+    expect(expectedFaults.length).toBeGreaterThan(0);
     await page.locator('.monthly-forecast').evaluate(el => el.scrollIntoView({ block: 'center', behavior: 'instant' }));
     await expect(page.locator('.monthly-forecast')).toBeInViewport({ ratio: 0.9 });
     await page.screenshot({ path: join(tmpdir(), `yuliang-v10-budget-${viewport.width}.png`), fullPage: true });

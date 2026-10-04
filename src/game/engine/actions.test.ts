@@ -636,6 +636,15 @@ describe('game action dispatcher', () => {
     expect(result.state.lifeHistory.at(-1)).toMatchObject({ detail: '符合对方偏好，关系进展更顺利' });
   });
 
+  it('reports a social expense exactly once without advancing the clock', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 1);
+    const result = dispatchGameAction(state, { type: 'interact_character', interactionId: 'interaction.seed-lin-meal', optionId: 'meal' }, contentRegistry, balanceConfig);
+    expect(result.error).toBeUndefined();
+    expect(result.state.cash).toBe(state.cash - 160);
+    expect(result.state.time).toEqual(state.time);
+    expect(result.effects.filter(effect => effect.type === 'cash')).toEqual([{ type: 'cash', amount: -160, reason: '一起吃饭' }]);
+  });
+
   it('consumes a gift, applies the recipient preference, and queues a message', () => {
     const state = createInitialState(contentRegistry, balanceConfig, 1);
     state.inventory['gift.flowers'] = 1;

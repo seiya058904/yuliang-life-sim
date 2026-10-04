@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { PixelAction, PixelClock } from './PixelUI';
+import { PixelAction, PixelClock, SegmentMeter } from './PixelUI';
 import { PixelIcon } from './PixelIcon';
 import { PixelIllustration } from './PixelIllustration';
 
@@ -13,6 +13,17 @@ describe('PixelClock', () => {
     expect(clock).toHaveTextContent('08:00');
     expect(clock.querySelectorAll('.pixel-clock-glyph')).toHaveLength(5);
     expect(clock.querySelectorAll('.pixel-clock-glyph .filled').length).toBeGreaterThan(0);
+  });
+});
+
+describe('SegmentMeter', () => {
+  it('keeps the accessible range valid while reporting attributes above the visual scale', () => {
+    render(<SegmentMeter label="专业" value={170} segments={10} />);
+    const meter = screen.getByRole('meter', { name: '专业' });
+    expect(meter).toHaveAttribute('aria-valuenow', '100');
+    expect(meter).toHaveAttribute('aria-valuemax', '100');
+    expect(meter).toHaveAttribute('aria-valuetext', '170（量表显示上限 100，属性仍可增长）');
+    expect(meter.querySelectorAll('.filled')).toHaveLength(10);
   });
 });
 
