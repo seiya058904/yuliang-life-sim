@@ -249,14 +249,23 @@ test.describe('canonical save protocol (one IndexedDB transaction per save)', ()
     // Run the simulation long enough for the throttled autosave to fire.
     await page.evaluate(() => {
       const store = window.__yuliang.store;
-      store.setState({ game: { ...store.getState().game, simulationMode: 'running' } });
+      // Keep unrelated event gates out of this autosave observation.
+      store.setState({ game: { ...store.getState().game, eventMeter: -10000, simulationMode: 'running' } });
       store.getState().dispatch({ type: 'set_simulation_speed', speed: 4 });
     });
-    await expect.poll(async () => ((await readCanonicalState(page)).time as { minute?: number } | undefined)?.minute ?? 0, { timeout: 15_000 }).toBeGreaterThan(0);
+    await expect.poll(async () => {
+      const saved = await readCanonicalState(page);
+      return saved.simulationMode === 'running' && ((saved.time as { minute?: number } | undefined)?.minute ?? 0) > 0;
+    }, { timeout: 15_000 }).toBe(true);
 
-    await awaitCanonicalSynced(page);
-    const inMemory = await page.evaluate(() => (window.__yuliang.store.getState().game as unknown as { time: unknown }).time);
-    expect((await readCanonicalState(page)).time).toEqual(inMemory);
+    // The preceding record proves the throttled autosave landed while running.
+    // Freeze the clock through the real UI before comparing its latest state.
+    await page.getByRole('button', { name: '暂停', exact: true }).click();
+    // Compare the full payloads captured by the same matching observation.
+    // Separate reads race the still-running clock and can compare different
+    // minutes even when autosave is healthy.
+    const synced = await awaitCanonicalSynced(page);
+    expect(JSON.parse(synced.persistedPayload)).toEqual(JSON.parse(synced.livePayload));
     expect(await saveRevision(page)).toBeGreaterThan(0);
 
     // A normal autosave must not leave an "unsaved progress" anomaly behind.
@@ -720,6 +729,7 @@ test.describe('fault injection (not reachable from the UI)', () => {
     // but the record did not follow it, which is what the error above reports.
     expect(await inMemoryVouchers(page)).toBe(5);
     expect(await persistedVouchers(page)).toBe(1);
+    await expect(awaitCanonicalSynced(page)).rejects.toThrow('canonical save did not match the observed live payload');
 
     // Once the fault is gone the same window saves normally again.
     await page.evaluate(() => { delete window.__yuliang.saveHooks.afterPutBeforeComplete; });

@@ -269,22 +269,33 @@ export async function wipeSave(page: Page): Promise<void> {
   }), CANONICAL_SLOT);
 }
 
-/** Wait until the canonical record matches the live in-memory game state. */
-export async function awaitCanonicalSynced(page: Page, timeout = 5_000): Promise<void> {
-  await page.waitForFunction(async (slot: string) => {
-    const record = await new Promise<{ payload?: string } | null>((resolve) => {
-      const request = indexedDB.open('yuliang-save', 1);
-      request.onerror = () => resolve(null);
-      request.onsuccess = () => {
-        const db = request.result;
-        const read = db.transaction('saves', 'readonly').objectStore('saves').get(slot);
-        read.onsuccess = () => { resolve((read.result as { payload?: string } | undefined) ?? null); db.close(); };
-        read.onerror = () => { db.close(); resolve(null); };
-      };
-    });
-    const live = (window as unknown as { __yuliang: { store: { getState: () => { game: unknown } } } }).__yuliang.store.getState().game;
-    return Boolean(record) && record!.payload === JSON.stringify(live);
-  }, CANONICAL_SLOT, { timeout });
+export interface CanonicalSyncSnapshot { persistedPayload: string; livePayload: string }
+
+/** Preserve the matching observation; a running world can advance after it. */
+export async function awaitCanonicalSynced(page: Page, timeout = 5_000): Promise<CanonicalSyncSnapshot> {
+  let snapshot: CanonicalSyncSnapshot | undefined;
+  // waitForFunction sees an async predicate's Promise as truthy before the
+  // IndexedDB read resolves. Poll the resolved value at the same RAF cadence.
+  await expect.poll(async () => {
+    const matched = await page.evaluate(async (slot: string) => {
+      const record = await new Promise<{ payload?: string } | null>((resolve) => {
+        const request = indexedDB.open('yuliang-save', 1);
+        request.onerror = () => resolve(null);
+        request.onsuccess = () => {
+          const db = request.result;
+          const read = db.transaction('saves', 'readonly').objectStore('saves').get(slot);
+          read.onsuccess = () => { resolve((read.result as { payload?: string } | undefined) ?? null); db.close(); };
+          read.onerror = () => { db.close(); resolve(null); };
+        };
+      });
+      const live = (window as unknown as { __yuliang: { store: { getState: () => { game: unknown } } } }).__yuliang.store.getState().game;
+      const livePayload = JSON.stringify(live);
+      return record?.payload === livePayload ? { persistedPayload: record.payload, livePayload } : false;
+    }, CANONICAL_SLOT);
+    if (matched) snapshot = matched;
+    return Boolean(matched);
+  }, { timeout, intervals: [16], message: 'canonical save did not match the observed live payload' }).toBe(true);
+  return snapshot!;
 }
 
 /** The canonical save's revision counter, or 0 when it was never written. */
