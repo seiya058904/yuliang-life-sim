@@ -1,64 +1,53 @@
-# 《余量》Repository Instructions
+# 《余量》Repository Guide
 
 ## Scope and source of truth
 
-- This repository is a React + TypeScript + Vite + Zustand life-simulation game.
-- Treat the current source, tests, package scripts, and Git state as authoritative. Treat `docs/`, memory notes, screenshots, and codebase indexes as context only; verify them against source before relying on them.
-- Preserve existing Chinese product copy, official content IDs, save compatibility, and the current Desktop-first / Landscape-only pixel-console direction. Mobile is not an independent design target: if supported, phones use landscape orientation and reuse desktop layout logic; portrait is not an officially supported scenario.
-- Make the smallest change that satisfies the request. Do not add speculative features, dependencies, broad refactors, or mobile redesign work unless explicitly requested.
+React + TypeScript + Vite + Zustand life simulation. Treat current source, tests, package scripts and Git state as authoritative; reports and screenshots provide context. Preserve Chinese product copy, authored content IDs, save compatibility and the existing black/white pixel console. Make the smallest scoped change, keep user work intact, and do not add features, dependencies, refactors or a new mobile design without authorization.
 
-## Architecture
+## Entry points and canonical material
 
-- `src/App.tsx` owns the application shell and page composition. Main UI areas are Life, Career, Shop, Wealth, Social, City, and Profile.
-- `src/game/ui/` contains page components; `src/game/ui/pixel/` contains shared pixel UI primitives, icons, illustrations, and persistent status UI. Reuse these patterns before adding new ones.
-- `src/game/engine/` contains the game rules and pure state transitions. The central entry point is `dispatchGameAction(state, action, content, balance)`, which returns a `GameResult`.
-- `src/game/engine/simulation.ts` advances automatic time, settles activities/days/months, and stops at decision gates such as events and monthly summaries. Never silently choose for the player.
-- `src/game/store/gameStore.ts` adapts the engine to Zustand, loads/migrates/saves the browser save, and exposes UI effects. `GameEffect` is presentation feedback; it is not future game state.
-- `src/game/content/contracts.ts` defines content/state contracts. `src/game/content/official/` is authoritative authored content; `src/game/content/seed.ts` and the registry provide fallback/composed content. Keep IDs and contract fields synchronized.
-- `src/game/content/validateContent.ts` and `scripts/validate-content.ts` enforce content integrity. Content changes must pass content validation.
+- `index.html` → `src/main.tsx` → `src/App.tsx`; `src/styles.css` owns the global shell. App composes the Life, Career, Shop, Wealth, Social, City and Profile views; `src/game/ui/` and `src/game/ui/pixel/` hold extracted views and shared primitives.
+- `src/game/engine/actions.ts` exposes `dispatchGameAction(state, action, content, balance)`; rules return `GameResult`. `src/game/engine/simulation.ts` advances time and pauses at decision gates.
+- `src/game/store/gameStore.ts` adapts the engine to Zustand, migrations, save/recovery and UI effects. `src/game/store/canonicalSave.ts` owns canonical IndexedDB transactions.
+- `src/game/content/contracts.ts` defines contracts; `src/game/content/official/` is authoritative authored content. `src/game/content/seed.ts` and `src/game/content/registry.ts` supply fallback/composed content. `src/game/content/validateContent.ts` and `scripts/validate-content.ts` enforce integrity.
+- `PRODUCT.md` and `DESIGN.md` describe product and visual constraints. `docs/` keeps content guides, audits and historical handoffs. `scripts/reference/` is the canonical visual comparison baseline; documented `scripts/ui-*` tools remain useful even when absent from npm scripts.
 
-## Simulation and accounting invariants
+For structural exploration, use the installed `codebase-memory` skill. Select the index matching this root, compare freshness with Git HEAD and check cited-path coverage. Read current source for stale, skipped or partial results; graph results do not replace source evidence.
 
-- The player plans a week; the simulation runs it automatically. Browsing pages should not consume time; actions that explicitly purchase, schedule, interact, or advance time may do so according to the engine rules.
-- Event selection applies authored effects once. `pendingReward` is only a pause/acknowledgement gate; claiming it must not apply the reward again.
-- Keep financial meanings separate: income, consumption, investment transfer, asset liquidation, realized gain/loss, dividends, and net-worth/valuation changes are different records.
-- Use explicit semantic contract fields rather than inferring meaning from legacy values. Update fixtures, seed content, validators, unit tests, and UI/E2E paths together when a required contract field changes.
-- Do not reset or overwrite a normal browser save during testing. Use a separate origin/profile or an explicit test seed; use the existing reset action only when the task requires it.
+## Product invariants and traps
 
-## UI and content work
+- Players plan a week and the world runs automatically. Browsing pages consumes no time. Events, Offer notices, rewards and monthly summaries require explicit player decisions; preserve pending gates across week/month transitions and reloads.
+- Event choices apply authored effects once. `pendingReward` is only an acknowledgement gate; claiming it must not apply the reward again. `GameEffect` is presentation feedback, not future state.
+- Keep income, consumption, investment transfer, liquidation, realized gains, dividends and valuation changes distinct. Use explicit contracts, not legacy-value guesses; synchronize fixtures, validators and relevant tests when contracts change.
+- The canonical save is the IndexedDB `saves/main` record, checked by generation/revision and written atomically in one readwrite transaction. Report success only on transaction completion. Preserve conflict/failure handling, legacy migration and unload-candidate lineage; never fall back to competing localStorage canonical writes.
+- Use an isolated browser origin/profile or explicit test seed. Do not reset or overwrite a player's normal save during acceptance.
+- Keep the shared shell, status and navigation visible, and controls semantic/keyboard-accessible. Desktop and landscape are the supported surfaces; phones reuse that layout and portrait is not an independent design target. Preserve square geometry, borders, readable Chinese text and selected/disabled states.
 
-- Keep the shared shell visible and consistent: branding, time/date, cash, net worth, primary navigation, simulation controls, and persistent attributes. Treat desktop and landscape as the supported UI surfaces; do not add portrait-specific layouts unless explicitly requested.
-- Follow the existing black/white pixel-console system: square geometry, strong borders, semantic selected/disabled states, readable Chinese text, and no decorative SaaS cards, gradients, emoji icons, or unrequested visual polish.
-- Keep controls semantic and accessible: use buttons, labels, headings, regions, keyboard focus, and explicit disabled states. Do not replace real state with display-only mock values.
-- For UI, routing, interaction, responsive, or runtime changes, use a real browser flow. Never claim a browser flow passed unless it was actually run.
+## Commands and verification
 
-## Commands
+Run from the repository root using the existing npm lockfile:
 
 ```text
-npm test                     # Vitest unit/component tests
-npm run content:validate     # validate official/seed content contracts
-npm run content:simulate     # run deterministic simulation smoke script
-npm run build                # content validation + TypeScript build + Vite build
+npm ci
 npm run dev -- --host 127.0.0.1 --port 4173
-npm run e2e                  # Playwright desktop and mobile projects
+npm test
+npm run test:ci
+npm run content:validate
+npm run content:simulate
+npm run build
+npm run e2e
 ```
 
-- Use `npm test`, not Jest-only flags such as `--runInBand`.
-- Run checks proportional to the change: content changes require content validation; engine/store changes require focused tests plus relevant regression tests; UI/runtime changes require the relevant tests and a real browser flow; build-impacting changes require `npm run build`.
+`test:ci` runs Vitest without file parallelism; do not pass Jest-only flags. `build` validates content, checks TypeScript and builds `dist/` with the `/yuliang-life-sim/` Pages base. Dev runs at `/`. Set `YULIANG_E2E_SERVER=preview` for production acceptance: Playwright starts preview on port 4174 and uses the Pages subpath. Both CI workflows run these desktop release gates:
 
-## Git and generated files
+```text
+npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts --project=desktop
+```
 
-- Inspect `git status --short --branch` before editing and keep unrelated user changes intact.
-- Stage only files belonging to the current request. Do not commit, push, deploy, or alter remotes unless explicitly requested.
-- Before claiming completion, inspect the final diff, run `git diff --check`, and report checks that were run or skipped.
-- Generated/local-only paths include `node_modules/`, `dist/`, `test-results/`, `.playwright-cli/`, `.impeccable/`, `artifacts/`, and `.codebase-memory/`. Do not add them to feature commits unless the task explicitly requests a shareable artifact.
+Validate proportionally: content needs contract validation; engine/store changes need focused regressions; UI/runtime/persistence changes need real browser flows; build-impacting changes need build and asset/entry checks. Run `git diff --check` and inspect the final diff/status. Documentation-only edits need path/script/config checks. Do not change test expectations to force a pass, and report checks actually run plus remaining limitations.
 
-## Releases and deployment
+## Generated files, history and delivery
 
-- Delivery is GitHub Pages: pushing `main` runs `deploy-pages.yml`, and a green deployment is the release. Verify the workflow result before claiming a version is live.
-- Do not create GitHub Releases for new versions; mark versions with annotated git tags instead (for example `v1.0.0`). The existing `v1.0.0-rc1` (audit-report assets) and `v1.0.0` releases stay as historical archives.
+`node_modules/`, `dist/`, test/browser reports, `artifacts/`, `output/`, Vite/Python caches and local tool state are ignored. Delete only identified disposable files: unique audit screenshots, long-run results, historical review ZIPs and authoring/save backups may still matter. `docs/` handoff/reference ZIPs and `scripts/reference/` are not caches. `.git-broken-20260910/` is a forensic recovery backup, and the historical `pre-rebuild-20260910` tag is a recovery anchor; retain both. Do not classify maintained capture/diagnostic tools as dead code solely from npm script membership.
 
-## Codebase memory
-
-- The indexed project name is `yuliang-life-sim`, rooted at this repository. The graph is useful for structural discovery, not a substitute for reading current source.
-- Before relying on it, check `index_status` and compare its Git HEAD with the working tree. Check coverage for cited paths; fall back to direct source inspection when coverage is partial, stale, or unavailable.
+`deploy-pages.yml` tests, builds, runs production browser gates and deploys `dist/` when `main` is pushed; a successful Pages deployment is delivery. Existing GitHub Releases/tags are historical archives. Do not create Releases/tags, push, merge or change remotes/deployment without explicit authorization. Stage only task-owned files, inspect the staged diff, then check exact-SHA CI/Pages after an authorized push.
