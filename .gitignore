@@ -35,6 +35,10 @@ output/
 *.tsbuildinfo
 .vite/
 
+# Python caches from the visual comparison tools
+__pycache__/
+*.py[cod]
+
 # Logs
 npm-debug.log*
 yarn-error.log*
