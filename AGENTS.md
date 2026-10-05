@@ -19,6 +19,8 @@ For structural exploration, use the installed `codebase-memory` skill. Select th
 - Players plan a week and the world runs automatically. Browsing pages consumes no time. Events, Offer notices, rewards and monthly summaries require explicit player decisions; preserve pending gates across week/month transitions and reloads.
 - Event choices apply authored effects once. `pendingReward` is only an acknowledgement gate; claiming it must not apply the reward again. `GameEffect` is presentation feedback, not future state.
 - Keep income, consumption, investment transfer, liquidation, realized gains, dividends and valuation changes distinct. Use explicit contracts, not legacy-value guesses; synchronize fixtures, validators and relevant tests when contracts change.
+- Investment purchase UI and engine must share the rounded unit quote, actual transaction quantity (defaulting to authored `minimumUnits`) and `reserveRequired(state, content)`. Keep unit price distinct from the whole position's `currentValuation`; preserve sell-one semantics.
+- Durable study modifiers come from owned non-consumable inventory via `inventoryModifiers`, once per item ID; never copy them into the saved `modifiers` array. Selling the last copy removes future benefit, and buying again must not stack it. `studyGainRemainder` retains earned fractional knowledge; missing or invalid legacy values migrate to zero. Forecasts use the same settlement logic on a copied state.
 - The canonical save is the IndexedDB `saves/main` record, checked by generation/revision and written atomically in one readwrite transaction. Report success only on transaction completion. Preserve conflict/failure handling, legacy migration and unload-candidate lineage; never fall back to competing localStorage canonical writes.
 - Use an isolated browser origin/profile or explicit test seed. Do not reset or overwrite a player's normal save during acceptance.
 - Keep the shared shell, status and navigation visible, and controls semantic/keyboard-accessible. Desktop and landscape are the supported surfaces; phones reuse that layout and portrait is not an independent design target. Preserve square geometry, borders, readable Chinese text and selected/disabled states.
@@ -41,7 +43,7 @@ npm run e2e
 `test:ci` runs Vitest without file parallelism; do not pass Jest-only flags. `build` validates content, checks TypeScript and builds `dist/` with the `/yuliang-life-sim/` Pages base. Dev runs at `/`. Set `YULIANG_E2E_SERVER=preview` for production acceptance: Playwright starts preview on port 4174 and uses the Pages subpath. Both CI workflows run these desktop release gates:
 
 ```text
-npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts --project=desktop
+npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts e2e/investment-study.spec.ts --project=desktop
 ```
 
 Validate proportionally: content needs contract validation; engine/store changes need focused regressions; UI/runtime/persistence changes need real browser flows; build-impacting changes need build and asset/entry checks. Run `git diff --check` and inspect the final diff/status. Documentation-only edits need path/script/config checks. Do not change test expectations to force a pass, and report checks actually run plus remaining limitations.
