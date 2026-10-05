@@ -12,9 +12,16 @@ export function shiftPay(state: GameState, job: JobDefinition, formal: boolean):
   return Math.round(modifierValue(state, 'work_pay', base, job.tags));
 }
 
-export function studyRewards(state: GameState, minutes: number): { knowledge: number; professional: number } {
-  const knowledge = studyGain(state, Math.max(1, Math.floor(minutes / 120)));
-  return { knowledge, professional: Math.max(0, Math.floor(knowledge / 2)) };
+export function studySettlement(state: GameState, minutes: number, content?: ContentRegistry): { knowledge: number; professional: number; remainder: number } {
+  const gain = studyGain(state, Math.max(1, Math.floor(minutes / 120)), content) + (state.studyGainRemainder ?? 0);
+  const knowledge = Math.floor(gain + 1e-9);
+  const remainder = Math.round((gain - knowledge) * 1e9) / 1e9;
+  return { knowledge, professional: Math.max(0, Math.floor(knowledge / 2)), remainder: Math.max(0, remainder) };
+}
+
+export function studyRewards(state: GameState, minutes: number, content?: ContentRegistry): { knowledge: number; professional: number } {
+  const { knowledge, professional } = studySettlement(state, minutes, content);
+  return { knowledge, professional };
 }
 
 export function dailyCosts(state: GameState, content: ContentRegistry, balance: BalanceConfig, day: number) {

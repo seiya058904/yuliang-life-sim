@@ -48,7 +48,7 @@ jobs:
         #    unnoticed.
         #  - `lifecycle-acceptance.spec.ts`: the R04–R06 gate (subscription
         #    billing, gig UI contract, shift-boundary hiring) through the real UI.
-        run: npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts --project=desktop
+        run: npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts e2e/investment-study.spec.ts --project=desktop
         env:
           YULIANG_E2E_SERVER: preview
       - name: Upload test diagnostics

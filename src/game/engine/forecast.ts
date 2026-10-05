@@ -1,4 +1,4 @@
-import { dailyCosts, shiftPay, studyRewards, mortgagePayment, jobAvailable, subscriptionBudget } from './settlementMath';
+import { dailyCosts, shiftPay, studySettlement, mortgagePayment, jobAvailable, subscriptionBudget } from './settlementMath';
 import { getDailyActivities } from './schedule';
 import { absoluteMinute } from './time';
 import type { BalanceConfig } from '../balance/config';
@@ -26,6 +26,8 @@ export interface WeeklyPlanForecast {
  * cells are the reason.
  */
 export function forecastWeeklyPlan(state: GameState, plan: WeeklyPlan, content: ContentRegistry, balance: BalanceConfig): WeeklyPlanForecast {
+  // Only the projected carry changes; forecasting must leave the actual save untouched.
+  state = { ...state };
   const result: WeeklyPlanForecast = {
     income: 0, expense: fixedWeeklyExpense(state, content, balance), netCash: 0,
     hours: { work: 0, sideJob: 0, study: 0, leisure: 0 }, attributes: {}, relationships: {},
@@ -77,7 +79,8 @@ function applyPlanned(activity: PlannedActivity, state: GameState, content: Cont
   if (activity.kind === 'free') return;
   if (activity.kind === 'study') {
     result.hours.study += activity.durationMinutes / 60;
-    const rewards = studyRewards(state, activity.durationMinutes);
+    const rewards = studySettlement(state, activity.durationMinutes, content);
+    state.studyGainRemainder = rewards.remainder;
     result.attributes.knowledge = (result.attributes.knowledge ?? 0) + rewards.knowledge;
     result.attributes.professional = (result.attributes.professional ?? 0) + rewards.professional;
     return;
