@@ -4,6 +4,9 @@ import { contentRegistry } from '../content/registry';
 import type { GameEffect } from '../content/contracts';
 import { createInitialState } from './initialState';
 import { closeMonth } from './monthlySettlement';
+import { fixedMonthBudget, mortgagePayment } from './settlementMath';
+import { forecastWeeklyPlan } from './forecast';
+import { calendarForDay } from './calendar';
 
 describe('annual world snapshots', () => {
   it('records the first achieved wealth tier at month close and keeps it in life history', () => {
@@ -33,6 +36,55 @@ describe('annual world snapshots', () => {
     expect(state.mortgage).toMatchObject({ remainingPrincipal: 4168, paidMonths: 1 });
     expect(state.lastFinancialSummary?.consumption.categories).toMatchObject({ housing: 199 });
     expect(state.lifeHistory).toContainEqual(expect.objectContaining({ title: '住房分期还款', category: 'housing', amount: -199 }));
+  });
+
+  it.each([183, 1_000])('settles the final installment for cash %i using the actual amount everywhere', (cash) => {
+    const state = createInitialState(contentRegistry, balanceConfig, 7);
+    state.cash = cash;
+    state.time = { day: 28, hour: 8, minute: 0 };
+    state.calendar = calendarForDay(28);
+    state.housing = { housingId: 'housing.seed-room', mode: 'owned' };
+    state.mortgage = { housingId: 'housing.seed-room', remainingPrincipal: 182, monthlyPayment: 199, totalMonths: 24, paidMonths: 23 };
+    const before = structuredClone(state);
+    const withoutMortgage = structuredClone(state);
+    delete withoutMortgage.mortgage;
+
+    expect(mortgagePayment(state)).toBe(183);
+    expect(fixedMonthBudget(state, contentRegistry, balanceConfig).mortgage).toBe(183);
+    expect(forecastWeeklyPlan(state, state.weeklyPlan, contentRegistry, balanceConfig).expense
+      - forecastWeeklyPlan(withoutMortgage, withoutMortgage.weeklyPlan, contentRegistry, balanceConfig).expense).toBe(183);
+    expect(state).toEqual(before);
+
+    closeMonth(state, 1, contentRegistry, balanceConfig, []);
+
+    expect(state.cash).toBe(cash - 183);
+    expect(state.mortgage).toBeUndefined();
+    expect(state.lastFinancialSummary?.consumption.categories.housing).toBe(183);
+    expect(state.lifeHistory).toContainEqual(expect.objectContaining({ title: '住房分期还款', amount: -183, detail: '偿还本金 ¥182 · 利息 ¥1' }));
+    expect(fixedMonthBudget(state, contentRegistry, balanceConfig).mortgage).toBe(0);
+
+    closeMonth(state, 2, contentRegistry, balanceConfig, []);
+    expect(state.cash).toBe(cash - 183);
+    expect(state.lifeHistory?.filter((entry) => entry.title === '住房分期还款')).toHaveLength(1);
+    expect(state.lastFinancialSummary?.consumption.categories.housing ?? 0).toBe(0);
+  });
+
+  it('does not charge a final installment when cash is one below the amount due', () => {
+    const state = createInitialState(contentRegistry, balanceConfig, 7);
+    state.cash = 182;
+    state.housing = { housingId: 'housing.seed-room', mode: 'owned' };
+    state.mortgage = { housingId: 'housing.seed-room', remainingPrincipal: 182, monthlyPayment: 199, totalMonths: 24, paidMonths: 23 };
+    const mortgage = structuredClone(state.mortgage);
+    const effects: GameEffect[] = [];
+
+    expect(mortgagePayment(state)).toBe(0);
+    expect(fixedMonthBudget(state, contentRegistry, balanceConfig).mortgage).toBe(183);
+    closeMonth(state, 1, contentRegistry, balanceConfig, effects);
+    expect(state.cash).toBe(182);
+    expect(state.mortgage).toEqual(mortgage);
+    expect(state.lifeHistory?.some((entry) => entry.title === '住房分期还款')).toBe(false);
+    expect(state.lastFinancialSummary?.consumption.categories.housing ?? 0).toBe(0);
+    expect(effects).toContainEqual({ type: 'message', text: '现金不足，本月住房分期未扣款' });
   });
 
   it('settles rent and maintenance for a rented housing holding', () => {

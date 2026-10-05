@@ -39,9 +39,19 @@ export function dailyCosts(state: GameState, content: ContentRegistry, balance: 
   return { rent, living, transport, homeFixed, communication, vehicle, total: rent + living + transport + homeFixed + communication + vehicle };
 }
 
-export function mortgagePayment(state: GameState): number {
+/** Quote one installment before checking cash, including a smaller final payment. */
+export function mortgageInstallment(state: GameState): { payment: number; principalPaid: number; interest: number } {
   const mortgage = state.mortgage;
-  return mortgage && state.cash >= mortgage.monthlyPayment ? mortgage.monthlyPayment : 0;
+  if (!mortgage) return { payment: 0, principalPaid: 0, interest: 0 };
+  const interest = Math.round(mortgage.remainingPrincipal * 0.004);
+  const payment = Math.min(mortgage.monthlyPayment, mortgage.remainingPrincipal + interest);
+  const principalPaid = Math.min(mortgage.remainingPrincipal, Math.max(0, payment - interest));
+  return { payment, principalPaid, interest };
+}
+
+export function mortgagePayment(state: GameState): number {
+  const { payment } = mortgageInstallment(state);
+  return state.cash >= payment ? payment : 0;
 }
 
 export function subscriptionFee(content: ContentRegistry, id: string): number {
@@ -54,7 +64,7 @@ export function subscriptionBudget(state: GameState, content: ContentRegistry): 
 
 export function fixedMonthBudget(state: GameState, content: ContentRegistry, balance: BalanceConfig) {
   const day = dailyCosts(state, content, balance, 1);
-  const mortgage = state.mortgage?.monthlyPayment ?? 0;
+  const mortgage = mortgageInstallment(state).payment;
   const subscriptions = subscriptionBudget(state, content);
   return { subscriptions, rent: day.rent * 28, livingTransport: (day.living + day.transport) * 28, maintenance: (day.homeFixed + day.vehicle) * 28, communication: day.communication, mortgage, total: (day.total - day.communication) * 28 + day.communication + mortgage + subscriptions };
 }
