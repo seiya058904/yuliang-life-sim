@@ -1,4 +1,4 @@
-import { mortgagePayment, subscriptionFee } from './settlementMath';
+import { mortgageInstallment, subscriptionFee } from './settlementMath';
 import { amount, known, unknown, addAmount } from './knownAmount';
 import type { BalanceConfig } from '../balance/config';
 import type { AnnualSummary, ContentRegistry, GameEffect, GameState, MonthlyLedger, MonthlySummary, WorldSnapshot } from '../content/contracts';
@@ -113,14 +113,13 @@ export function closeMonth(state: GameState, month: number, content: ContentRegi
   const mortgage = state.mortgage;
   if (mortgage) {
     state.financialLedger ??= emptyFinancialLedger(month, state.cash, state.monthlyLedger.netWorthStart);
-    if (mortgagePayment(state) > 0) {
-      const interest = Math.round(mortgage.remainingPrincipal * 0.004);
-      const principalPaid = Math.min(mortgage.remainingPrincipal, Math.max(0, mortgage.monthlyPayment - interest));
-      state.cash -= mortgage.monthlyPayment;
+    const { payment, principalPaid, interest } = mortgageInstallment(state);
+    if (payment > 0 && state.cash >= payment) {
+      state.cash -= payment;
       mortgage.remainingPrincipal -= principalPaid;
       mortgage.paidMonths += 1;
-      recordMortgagePayment(state, mortgage.monthlyPayment, mortgage.housingId);
-      state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.housing.mortgage.${mortgage.housingId}.${mortgage.paidMonths}`, day: state.time.day, category: 'housing', title: '住房分期还款', detail: `偿还本金 ¥${principalPaid.toLocaleString('zh-CN')} · 利息 ¥${interest.toLocaleString('zh-CN')}`, sourceId: mortgage.housingId, amount: -mortgage.monthlyPayment });
+      recordMortgagePayment(state, payment, mortgage.housingId);
+      state.lifeHistory = appendLifeRecord(state.lifeHistory, { id: `life.housing.mortgage.${mortgage.housingId}.${mortgage.paidMonths}`, day: state.time.day, category: 'housing', title: '住房分期还款', detail: `偿还本金 ¥${principalPaid.toLocaleString('zh-CN')} · 利息 ¥${interest.toLocaleString('zh-CN')}`, sourceId: mortgage.housingId, amount: -payment });
       if (mortgage.remainingPrincipal <= 0 || mortgage.paidMonths >= mortgage.totalMonths) delete state.mortgage;
     } else {
       output.push({ type: 'message', text: '现金不足，本月住房分期未扣款' });

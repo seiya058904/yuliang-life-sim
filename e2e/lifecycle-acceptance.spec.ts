@@ -65,6 +65,40 @@ function setClock(state: any, day: number, hour: number, minute: number): void {
 const readState = (page: Page) => readPersistedState(page) as Promise<Record<string, any>>;
 const readGame = (page: Page) => page.evaluate(() => window.__yuliang.store.getState().game);
 
+for (const cash of [182, 183]) test(`mortgage final installment cash ${cash}: budget, month close and canonical reload`, async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(String(error)));
+  await bootWithBridge(page);
+  const state = await readGame(page);
+  Object.assign(state, unemployedBase(28, 23, 59, cash), {
+    lastSettledDay: 28,
+    housing: { housingId: 'housing.seed-room', mode: 'owned' },
+    mortgage: { housingId: 'housing.seed-room', remainingPrincipal: 182, monthlyPayment: 199, totalMonths: 24, paidMonths: 23 },
+  });
+  await writeCanonicalState(page, state);
+  await page.reload();
+  await awaitAppReady(page);
+  await page.getByRole('button', { name: '查看生活详情', exact: true }).click();
+  const mortgageBudget = page.locator('.monthly-forecast > div').filter({ has: page.getByText('房贷', { exact: true }) });
+  await expect(mortgageBudget).toContainText('¥183');
+  await page.evaluate(() => {
+    const store = window.__yuliang.store.getState();
+    if (!store.dispatch({ type: 'resume_simulation' }) || !window.__yuliang.store.getState().dispatch({ type: 'advance_simulation', minutes: 1 })) throw new Error('month boundary refused');
+  });
+  await expect.poll(async () => (await readState(page)).simulationMode).toBe('monthly_summary');
+  const settled = await readState(page);
+  expect(settled.cash).toBe(cash === 183 ? 0 : 182);
+  expect(settled.lastFinancialSummary.consumption.categories.housing ?? 0).toBe(cash === 183 ? 183 : 0);
+  if (cash === 183) expect(settled.mortgage).toBeUndefined();
+  else expect(settled.mortgage).toEqual(state.mortgage);
+  await page.reload();
+  await awaitAppReady(page);
+  expect((await readGame(page)).cash).toBe(settled.cash);
+  expect((await readGame(page)).mortgage).toEqual(settled.mortgage);
+  expect((await readGame(page)).lifeHistory.filter((entry: { title: string }) => entry.title === '住房分期还款')).toHaveLength(cash === 183 ? 1 : 0);
+  expect(errors).toEqual([]);
+});
+
 test('current laptop owner keeps empty side-job qualifications after IndexedDB reload (#16)', async ({ page }) => {
   await bootWithState(page, { cash: 5000, ability: 20, attributes: { professional: 20, knowledge: 20, communication: 20, fitness: 20, mood: 20 }, simulationMode: 'paused', acquiredSideJobs: {} });
   expect(await page.evaluate(() => window.__yuliang.store.getState().dispatch({ type: 'purchase_items', items: { 'item.seed-laptop': 1 } }))).toBe(true);

@@ -4,6 +4,7 @@ import { balanceConfig, mergeBalanceConfig } from '../balance/config';
 import { contentRegistry } from '../content/registry';
 import { createGameStore, loadGameState, migrateGameState, saveGameState } from './gameStore';
 import { canonicalCommitCount, canonicalSaveRaw } from './canonicalSaveTestDouble';
+import { closeMonth } from '../engine/monthlySettlement';
 
 describe('game store persistence', () => {
   beforeEach(() => localStorage.clear());
@@ -320,6 +321,27 @@ describe('game store persistence', () => {
 
     localStorage.setItem('yuliang-save-v1', JSON.stringify({ ...state, version: 5, mortgage: { ...validMortgage, housingId: 'housing.unknown' } }));
     expect((await loadGameState(contentRegistry, balanceConfig)).mortgage).toBeUndefined();
+  });
+
+  it('restores the final mortgage installment and never charges a settled loan after reload', async () => {
+    const state = createGameStore(contentRegistry, balanceConfig, 1).getState().game;
+    state.cash = 183;
+    state.housing = { housingId: 'housing.seed-room', mode: 'owned' };
+    state.mortgage = { housingId: 'housing.seed-room', remainingPrincipal: 182, monthlyPayment: 199, totalMonths: 24, paidMonths: 23 };
+    expect((await saveGameState(state)).ok).toBe(true);
+    const restored = await loadGameState(contentRegistry, balanceConfig);
+    expect(restored.mortgage).toEqual(state.mortgage);
+
+    closeMonth(restored, 1, contentRegistry, balanceConfig, []);
+    expect(restored.cash).toBe(0);
+    expect(restored.mortgage).toBeUndefined();
+    expect((await saveGameState(restored)).ok).toBe(true);
+    const settled = await loadGameState(contentRegistry, balanceConfig);
+    expect(settled.mortgage).toBeUndefined();
+    expect(settled.lastFinancialSummary?.consumption.categories.housing).toBe(183);
+    closeMonth(settled, 2, contentRegistry, balanceConfig, []);
+    expect(settled.cash).toBe(0);
+    expect(settled.lifeHistory?.filter((entry) => entry.title === '住房分期还款')).toHaveLength(1);
   });
 
   it('migrates known housing holdings and drops current or unknown properties', async () => {
