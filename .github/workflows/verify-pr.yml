@@ -22,7 +22,7 @@ jobs:
       - run: npm run test:ci
       - run: npm run build
       - run: npx playwright install --with-deps chrome
-      - run: npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts --project=desktop
+      - run: npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts e2e/investment-study.spec.ts --project=desktop
         env:
           YULIANG_E2E_SERVER: preview
   compare-scheduling:

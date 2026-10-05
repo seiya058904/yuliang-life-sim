@@ -47,9 +47,23 @@ export function employmentWorkWindow(state: Pick<GameState, 'modifiers'>, schedu
   return { startMinute: schedule.startMinute, endMinute: schedule.startMinute + duration, durationMinutes: duration };
 }
 
-/** Study gain after the `study_gain` permanent modifier. */
-export function studyGain(state: Pick<GameState, 'modifiers'>, baseAmount: number): number {
-  return Math.max(1, Math.round(modifierValue(state as GameState, 'study_gain', baseAmount, ['study'])));
+/** Durable modifiers are derived once per owned definition, never persisted as permanent rewards. */
+export function inventoryModifiers(state: Pick<GameState, 'inventory'>, content: ContentRegistry): Array<{ itemId: ContentId; modifier: PermanentModifierDefinition }> {
+  return content.items.flatMap(item => !item.consumable && (state.inventory[item.id] ?? 0) > 0
+    ? (item.effects ?? []).flatMap(effect => effect.type === 'modifier' ? [{ itemId: item.id, modifier: effect.modifier }] : [])
+    : []);
+}
+
+/** Preserve permanent-reward rounding; equipment fractions are carried by study settlement. */
+export function studyGain(state: Pick<GameState, 'modifiers'> & Partial<Pick<GameState, 'inventory'>>, baseAmount: number, content?: ContentRegistry): number {
+  let value = Math.max(1, Math.round(modifierValue(state as GameState, 'study_gain', baseAmount, ['study'])));
+  if (content && state.inventory) {
+    for (const { modifier } of inventoryModifiers({ inventory: state.inventory }, content)) {
+      if (modifier.target !== 'study_gain' || (modifier.tags?.length && !modifier.tags.includes('study'))) continue;
+      value = modifier.mode === 'add' ? value + modifier.value : value * modifier.value;
+    }
+  }
+  return Math.max(1, value);
 }
 
 export function getDiscount(state: GameState, item: ItemDefinition): number {

@@ -1,5 +1,5 @@
 import { known } from './knownAmount';
-import { dailyCosts, shiftPay, studyRewards, jobAvailable } from './settlementMath';
+import { dailyCosts, shiftPay, studySettlement, jobAvailable } from './settlementMath';
 import { enterRunning, applyDueEmployment } from './running';
 import { recordBusinessFact, lastCompletedDay as completedDay } from './businessFacts';
 import type { BalanceConfig } from '../balance/config';
@@ -226,7 +226,8 @@ function settleActivity(state: GameState, activity: ReturnType<typeof activityAt
     return;
   }
   if (activity.kind === 'study') {
-    const rewards = studyRewards(state, absoluteMinute(activity.end) - absoluteMinute(activity.start));
+    const rewards = studySettlement(state, absoluteMinute(activity.end) - absoluteMinute(activity.start), content);
+    state.studyGainRemainder = rewards.remainder;
     const amount = rewards.knowledge;
     applyAttributeDelta(state, 'knowledge', rewards.knowledge);
     applyAttributeDelta(state, 'professional', rewards.professional);

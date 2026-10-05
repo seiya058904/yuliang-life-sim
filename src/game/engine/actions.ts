@@ -79,7 +79,7 @@ function recruiterForJob(job: JobDefinition, content: ContentRegistry): ContentI
   return content.characters.some((character) => character.id === tagged) ? tagged : content.characters[0]?.id;
 }
 
-function reserveRequired(state: GameState, content: ContentRegistry): number {
+export function reserveRequired(state: GameState, content: ContentRegistry): number {
   const home = find(content.housing, state.housing.housingId);
   return state.housing.mode === 'rent' && home ? housingRentPerDay(state, home) : 0;
 }

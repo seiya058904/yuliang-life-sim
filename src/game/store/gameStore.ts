@@ -1036,6 +1036,8 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.chainStages = candidate.chainStages ?? {};
   candidate.flags = candidate.flags ?? {};
   candidate.modifiers = candidate.modifiers ?? [];
+  candidate.studyGainRemainder = Number.isFinite(candidate.studyGainRemainder) && candidate.studyGainRemainder! >= 0 && candidate.studyGainRemainder! < 1
+    ? candidate.studyGainRemainder : 0;
   candidate.discounts = candidate.discounts ?? [];
   candidate.rng = candidate.rng ?? initial.rng;
   candidate.marketJobIds = candidate.marketJobIds?.filter((id) => jobIds.has(id)) ?? initial.marketJobIds;

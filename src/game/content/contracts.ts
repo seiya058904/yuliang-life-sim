@@ -1026,6 +1026,8 @@ export interface GameState {
   chainStages: Record<ContentId, number>;
   flags: Record<string, boolean>;
   modifiers: PermanentModifierDefinition[];
+  /** Earned fractional equipment study gain; legacy saves start at zero. */
+  studyGainRemainder?: number;
   discounts: Array<{ percent: number; tags: string[]; expiresDay?: number }>;
   marketJobIds: ContentId[];
   pendingEventId?: ContentId;
