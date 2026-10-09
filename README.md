@@ -1,79 +1,178 @@
-# 《余量》 · Yuliang Life Sim
+<h1 align="center">🕹️ YULIANG · LIFE SIM</h1>
 
-**不是给人生打分，而是让每个选择都有后果。**
+<p align="center">
+  <strong>Plan a week. Live with the consequences.</strong>
+</p>
 
-一个黑白像素控制台风格的人生模拟游戏：规划行动，让世界推进，再面对职业、财务、关系与日常生活的变化。
+<p align="center">
+  An open-ended life simulation presented as a monochrome pixel console.<br>
+  Make your plans, let time move, and decide what matters when life interrupts.
+</p>
 
-**[▶ 在线开始一局](https://seiya058904.github.io/yuliang-life-sim/)** · [玩法循环](#一周一周地生活) · [本地开发](#开发与验证) · [产品设计](PRODUCT.md)
+<p align="center">
+  <a href="https://seiya058904.github.io/yuliang-life-sim/"><strong>▶ Play in Your Browser</strong></a>
+  &nbsp;·&nbsp;
+  <a href="#the-weekly-loop">🗓️ The Life Loop</a>
+  &nbsp;·&nbsp;
+  <a href="#inside-the-simulation">▦ Explore the Systems</a>
+  &nbsp;·&nbsp;
+  <a href="#start-playing">⚙️ Run Locally</a>
+</p>
 
-<img width="750" alt="Yuliang Life Sim project artwork" src="https://github.com/user-attachments/assets/f4bd2de9-fc86-4538-a7d7-e1716ea171d4" />
+<p align="center">
+  <sub>《余量》 — ORIGINAL TITLE &nbsp;·&nbsp; WEEKLY PLANNING &nbsp;·&nbsp; PLAYER-LED DECISIONS &nbsp;·&nbsp; PIXEL CONSOLE</sub>
+</p>
 
+<p align="center">
+  <img width="750" alt="Yuliang Life Sim — original monochrome pixel-console project artwork" src="https://github.com/user-attachments/assets/f4bd2de9-fc86-4538-a7d7-e1716ea171d4" />
+</p>
 
-## 一周一周地生活
+---
 
-> **你负责选择，世界负责演化。** 时间可以自动推进，但关键决策始终交还玩家。
+> **Life isn't a score to maximize.**
+>
+> There is no prescribed career, fortune, or perfect ending to chase. You choose how to spend your time. The simulation handles what follows—and returns control when a decision is yours to make.
 
-玩家负责做选择，模拟系统负责结算世界。
+<a id="the-weekly-loop"></a>
+## 🗓️ The Weekly Loop
 
-1. **规划** — 安排日程与行动，决定时间和资源投入。
-2. **推进** — 观察日、周、月的变化与模拟反馈。
-3. **处理事件** — 在关键决策门停下来，选择下一步，而不是让系统自动替玩家决定。
-4. **继续生活** — 在职业、消费、财富、社交与城市行为之间不断权衡。
+<p align="center"><code>PLAN THE WEEK &nbsp;→&nbsp; LET TIME RUN &nbsp;→&nbsp; MAKE A DECISION &nbsp;→&nbsp; CONTINUE</code></p>
 
-| Domain | What matters |
-| --- | --- |
-| **Life** | 日常安排、时间与状态 |
-| **Career** | 工作路径、机会与投入 |
-| **Wealth** | 收支、资产、投资行为和损益的不同语义 |
-| **Social** | 关系与互动带来的长期结果 |
-| **City / Shop** | 与生活环境和消费相关的选择 |
+1. **Plan.** Arrange activities and commitments around the time, money, and opportunities available to you.
+2. **Advance.** Start the week and watch the world progress through work, daily routines, expenses, and changing circumstances.
+3. **Decide.** When an event, job offer, or settlement requires your attention, the simulation stops for your choice.
+4. **Live with the result.** Review what changed, adjust your plans, and move into another week.
 
-没有预设的“正确人生路线”，也不依赖虚构数值给玩家贴道德标签。
+Browsing the game's pages **does not consume simulated time**. Time advances when you choose to run the simulation; it does not make important choices on your behalf.
 
-## Visual direction
+<a id="inside-the-simulation"></a>
+## ▦ Inside the Simulation
 
-**Monochrome. Pixel geometry. Information first.**
+The game connects several parts of life without turning them into a single success meter.
 
-- 黑白像素控制台：明确的布局网格、边框、状态与反馈。
-- Desktop-first / 横屏优先：优先保证复杂信息在受支持宽屏布局中清晰。
-- 显示必须来源于真实模拟状态，不以设计用假数值填充面板。
-- 保留键盘焦点、足够对比度和减少动态效果的可访问性基础。
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🕰️ Life & Time</h3>
+      <p><sub>ROUTINE · SCHEDULING · CONSEQUENCES</sub></p>
+      <p>Arrange your week, track your current activity, and balance the things you want to do against the time you actually have.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>💼 Work & Career</h3>
+      <p><sub>JOBS · OPPORTUNITIES · DEVELOPMENT</sub></p>
+      <p>Explore work, applications, offers, study, and the longer-term consequences of career decisions.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>💰 Money & Wealth</h3>
+      <p><sub>INCOME · EXPENSES · INVESTMENTS</sub></p>
+      <p>Manage everyday finances and longer-term assets. Cash flow, invested capital, realized gains, and changing valuations have different meanings.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🤝 People & Relationships</h3>
+      <p><sub>INTERACTIONS · CONNECTIONS · EVENTS</sub></p>
+      <p>Make room for the people in your life, respond to encounters, and see how choices can carry forward.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🏙️ City & Daily Living</h3>
+      <p><sub>PLACES · HOUSING · EVERYDAY CHOICES</sub></p>
+      <p>Interact with the city, explore living arrangements, and make decisions that affect your day-to-day options.</p>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🛍️ Shop & Possessions</h3>
+      <p><sub>PURCHASES · INVENTORY · TRADE-OFFS</sub></p>
+      <p>Choose what is worth buying, consider the cost, and let owned items affect play through the game's actual rules.</p>
+    </td>
+  </tr>
+</table>
 
-## 开发与验证
+## ◼ A Life, Rendered in Black and White
 
-React + TypeScript + Vite + Zustand，使用锁文件安装依赖：
+Yuliang's visual identity is deliberately restrained: **hard-edged panels, compact information, high-contrast states, and pixel-inspired geometry**. It aims to feel like a game console for an evolving life—not a business dashboard.
+
+- **Information before decoration.** Dates, activities, money, conditions, and outcomes come from the actual simulation state.
+- **Decisions remain visible.** Events and monthly summaries are meaningful pauses, not background notifications to dismiss automatically.
+- **No morality meter.** A career path or financial outcome is a consequence, not a judgment of how well someone lived.
+- **Readable by design.** Keyboard focus, accessible contrast, and reduced-motion behavior remain part of the interface.
+
+The interface is **desktop- and landscape-first**. Narrower devices reuse the same core experience rather than a separate portrait-only game.
+
+<a id="start-playing"></a>
+## 🚀 Play or Run Locally
+
+### 🌐 Play online
+
+**[Open Yuliang Life Sim →](https://seiya058904.github.io/yuliang-life-sim/)**
+
+The hosted version is published through the repository's GitHub Pages workflow. The game interface remains in Chinese; this README is written in English for repository visitors.
+
+> [!NOTE]
+> **Your progress lives in your browser.** The canonical save uses IndexedDB with transaction-based conflict checks and recovery behavior. Clearing site data or using a different browser/origin can leave you without the same saved game. Treat browser storage as local—not as a cloud account.
+
+### 💻 Local development
+
+Use Node.js and the committed npm lockfile. From the repository root:
 
 ```bash
 npm ci
 npm run dev -- --host 127.0.0.1 --port 4173
 ```
 
+Open **http://127.0.0.1:4173/**. Local development and the GitHub Pages site use different browser origins and do not automatically share a save.
+
+<a id="for-developers"></a>
+## ⚙️ Under the Hood
+
+**React · TypeScript · Vite · Zustand**, with simulation rules kept separate from the interface and the save layer.
+
+<details>
+<summary><strong>🛠️ Expand verification and repository architecture</strong></summary>
+
+### Verification
+
+Run these commands from the repository root:
+
 ```bash
-npm run content:validate   # 官方内容与 seed 契约
-npm run content:simulate   # 确定性模拟冒烟
-npm test                   # Vitest
-npm run build              # 校验、TS 与 Vite 构建
-npm run e2e                # Playwright 浏览器流程
+npm run content:validate   # Authored-content contracts
+npm run content:simulate   # Deterministic simulation checks
+npm test                   # Vitest regression suite
+npm run build              # Content validation, TypeScript, Vite build
+npm run e2e                # Playwright browser tests
 ```
 
-## Architecture and data
+Browser tests require the appropriate Playwright browser setup. The GitHub Actions Pages workflow uses Node.js 22, builds for the `/yuliang-life-sim/` base path, and runs selected desktop browser acceptance checks before deployment.
 
-| Location | Responsibility |
-| --- | --- |
-| [`src/game/engine/`](src/game/engine/) | 纯规则与状态转换，`dispatchGameAction` 为核心接口 |
-| [`src/game/store/`](src/game/store/) | Zustand 适配、存档加载/迁移与持久化 |
-| [`src/game/content/`](src/game/content/) | 合同约束、官方内容和种子内容 |
-| [`src/game/ui/`](src/game/ui/) | Life / Career / Shop / Wealth / Social / City 等界面 |
-| [`scripts/`](scripts/) | 内容验证、模拟与视觉验收工具 |
-| [`e2e/`](e2e/) | 真正的浏览器端到端测试 |
+### Repository map
 
-**关键不变量：** 引擎不替玩家决策，财务记录区分现金流与估值，内容修改需要通过契约校验，持久化与旧存档兼容性不能被表面 UI 改动破坏。
+```text
+src/game/engine/       Simulation, time advancement, and rules
+src/game/store/        Zustand integration and save/recovery logic
+src/game/content/      Authored content, contracts, and validation
+src/game/ui/           Life, career, city, shop, wealth, and social views
+scripts/               Content checks, simulations, and UI tooling
+e2e/                   Browser acceptance scenarios
+PRODUCT.md             Product intent and boundaries
+DESIGN.md              Monochrome visual and interaction system
+AGENTS.md              Repository rules for AI-assisted engineering
+```
 
-## Design and project notes
+The engine must preserve player-controlled decisions, distinct financial accounting semantics, authored-content contracts, and compatibility with existing saves. Visual changes alone do not justify rewriting those systems.
 
-- [`PRODUCT.md`](PRODUCT.md) — 产品定位与明确不做的方向
-- [`DESIGN.md`](DESIGN.md) — 像素视觉、交互和组件规范
-- [`AGENTS.md`](AGENTS.md) — 工程边界、测试与交接
-- [`docs/`](docs/) — 内容、审计、验收及规划记录
+</details>
 
-历史归档 Tag `pre-rebuild-20260910` 属于独立旧历史链，不是当前开发基线；日常工作以 `main` 的当前源码为准。
+## 📚 Project Notes
+
+- **[Product vision](PRODUCT.md)** — the open-ended life simulation and what it deliberately avoids.
+- **[Visual system](DESIGN.md)** — the black-and-white pixel console, type hierarchy, states, and accessibility rules.
+- **[Repository guidance](AGENTS.md)** — canonical source paths, testing expectations, and save-safety boundaries.
+- **[Development notes](docs/)** — content guidance, implementation records, and historical reviews.
+
+---
+
+<p align="center">
+  <sub>YOUR WEEK. YOUR CHOICES. THE WORLD KEEPS MOVING.</sub><br>
+  <sub>《余量》 · A life simulation without a single correct way to live.</sub>
+</p>
