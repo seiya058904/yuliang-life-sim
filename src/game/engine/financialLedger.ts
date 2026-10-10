@@ -56,7 +56,12 @@ export function recordFinancialEntry(ledger: FinancialLedgerState, input: Financ
 
 function groupSummary(entries: readonly FinancialEntry[], group: FinancialGroup): { group: FinancialGroup; amount: number; categories: Record<string, number> } {
   const categories: Record<string, number> = {};
-  for (const entry of entries) if (entry.group === group) categories[entry.category] = (categories[entry.category] ?? 0) + entry.amount;
+  for (const entry of entries) {
+    // Keep noncash valuation marks in the raw ledger, but never describe
+    // depreciation as proceeds from turning a holding back into cash.
+    if (entry.group !== group || (group === 'asset_liquidation' && entry.category === 'valuation_change')) continue;
+    categories[entry.category] = (categories[entry.category] ?? 0) + entry.amount;
+  }
   return { group, amount: Object.values(categories).reduce((sum, amount) => sum + amount, 0), categories };
 }
 

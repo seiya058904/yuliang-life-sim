@@ -4995,13 +4995,13 @@ textarea {
     min-width: 0;
     max-width: 100%;
     font-size: 13.5px !important;
-    line-height: 1.05;
+    line-height: 1.35;
   }
 
   .view-life .life-planning-section .plan-cell small {
     grid-column: 2;
     font-size: 12px !important;
-    line-height: 1.1;
+    line-height: 1.35;
   }
 }
 

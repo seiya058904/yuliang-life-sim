@@ -267,8 +267,19 @@ function commitWithIdb(request: CommitRequest): Promise<CommitOutcome> {
     transaction.oncomplete = () => {
       finish(writtenHead ? { status: 'committed', head: writtenHead } : outcome ?? { status: 'failed', error: '存档事务未写入任何内容' });
     };
-    transaction.onabort = () => finish(outcome?.status === 'failed' ? outcome : { status: 'failed', error: CANONICAL_COMMIT_ABORTED });
-    transaction.onerror = () => finish({ status: 'failed', error: describeError(transaction.error), quotaExceeded: isQuotaError(transaction.error) });
+    transaction.onabort = () => finish(outcome?.status === 'failed' ? outcome : {
+      status: 'failed',
+      error: transaction.error ? describeError(transaction.error) : CANONICAL_COMMIT_ABORTED,
+      ...(transaction.error ? { quotaExceeded: isQuotaError(transaction.error) } : {}),
+    });
+    transaction.onerror = (event) => {
+      // Request errors bubble before the transaction's abort sets its error.
+      // Preserve the request's cause (including quota) and wait for rollback;
+      // resolving here can report `null` and skip the compressed retry.
+      if (outcome?.status === 'failed') return;
+      const error = event.target instanceof IDBRequest ? event.target.error : transaction.error;
+      if (error) outcome = { status: 'failed', error: describeError(error), quotaExceeded: isQuotaError(error) };
+    };
   }), (error: unknown) => ({ status: 'failed' as const, error: describeError(error) }));
 }
 

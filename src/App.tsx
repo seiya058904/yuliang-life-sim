@@ -342,7 +342,7 @@ function App() {
       {!recovery && game.pendingOfferApplicationId && <OfferNoticeModal game={game} dispatch={dispatch} onNavigate={navigateToView} />}
       <ActionFeedback effects={effects} content={contentRegistry} />
       {resetOpen && <ConfirmReset onCancel={() => setResetOpen(false)} onConfirm={() => { reset(); setResetOpen(false); }} />}
-      {settingsOpen && <SettingsPanel game={game} saveError={saveError} onClose={() => setSettingsOpen(false)} onReset={() => { setSettingsOpen(false); setResetOpen(true); }} />}
+      {settingsOpen && <SettingsPanel game={game} saveError={saveError} externalSaveConflict={externalSaveConflict} recoveryPending={Boolean(recovery?.writeProtected)} onClose={() => setSettingsOpen(false)} onReset={() => { setSettingsOpen(false); setResetOpen(true); }} />}
     </div></ViewMemory>
   );
 }
@@ -1526,7 +1526,9 @@ function MonthlySummaryModal({ game, dispatch }: { game: GameState; dispatch: (a
 
 function EventModal({ event, onChoose }: { event: (typeof contentRegistry.events)[number]; onChoose: (choiceId: string) => void }) { return <div className="modal-backdrop event-paused"><PixelDialog className="event-modal" role="dialog" aria-modal="true" aria-labelledby="event-title"><span className="eyebrow">世界已暂停 · 发生了一件事</span><h2 id="event-title">{event.title}</h2><p>{event.body}</p><div className="event-choices">{event.choices.map((choice) => <button key={choice.id} className="choice-button" onClick={() => onChoose(choice.id)}>{choice.text}<span>选择</span></button>)}</div></PixelDialog></div>; }
 
-function SettingsPanel({ game, saveError, onClose, onReset }: { game: GameState; saveError?: string; onClose: () => void; onReset: () => void }) {
+function SettingsPanel({ game, saveError, externalSaveConflict, recoveryPending, onClose, onReset }: { game: GameState; saveError?: string; externalSaveConflict: boolean; recoveryPending: boolean; onClose: () => void; onReset: () => void }) {
+  const saveStatus = externalSaveConflict ? '已停止保存' : recoveryPending ? '恢复待确认' : saveError ? '有存档提示' : '正常';
+  const saveNotice = externalSaveConflict ? EXTERNAL_SAVE_CONFLICT_MESSAGE : recoveryPending ? '存档恢复待确认，自动保存已暂停。请返回页面处理恢复提示。' : saveError;
   return <div className="modal-backdrop" role="presentation" onClick={onClose}><PixelDialog onDismiss={onClose} className="confirm-modal" role="dialog" aria-modal="true" aria-label="设置" onClick={(event) => event.stopPropagation()}>
     <h2>设置</h2>
     <p>《余量》会自动保存到浏览器本地存储。这里可以确认存档状态，或重新开始一段人生。</p>
@@ -1534,9 +1536,9 @@ function SettingsPanel({ game, saveError, onClose, onReset }: { game: GameState;
       <span>存档版本</span><strong>v{game.version}</strong>
       <span>内容版本</span><strong>v{game.contentVersion}</strong>
       <span>当前进度</span><strong>第 {game.calendar.week} 周 · 第 {game.time.day} 天</strong>
-      <span>自动保存</span><strong className={saveError ? 'requirement-missing' : 'requirement-ok'}>{saveError ? '保存失败' : '正常'}</strong>
+      <span>自动保存</span><strong className={saveStatus === '正常' ? 'requirement-ok' : 'requirement-missing'}>{saveStatus}</strong>
     </dl>
-    {saveError && <p className="requirement-missing">{saveError}</p>}
+    {saveNotice && <p className="requirement-missing">{saveNotice}</p>}
     <div className="button-pair">
       <button className="secondary-button" onClick={onClose}>关闭</button>
       <button className="text-button" onClick={onReset}>重新开始</button>

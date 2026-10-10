@@ -96,9 +96,13 @@ function liquidateInvestmentHolding(state: GameState, investment: InvestmentDefi
   if (!holding || units <= 0 || units > holding.units) return undefined;
   const unitValue = Math.round(investmentUnitValue(investment, state.rng.seed, state.time.day));
   const total = unitValue * units;
-  const costBasis = holding.averageCost * units;
+  // Allocate whole-yuan basis, retaining the residual in the remaining units.
+  // Rounding each unit's gain independently would lose basis on split exits.
+  const remainingBasis = Math.round(holding.averageCost * holding.units);
+  const costBasis = units === holding.units ? remainingBasis : Math.round(remainingBasis * (units / holding.units));
   const realized = total - costBasis;
   holding.units -= units;
+  if (holding.units > 0) holding.averageCost = (remainingBasis - costBasis) / holding.units;
   holding.currentValuation = unitValue * holding.units;
   holding.lastValuationDay = state.time.day;
   if (holding.units === 0) delete state.investments![investment.id];
@@ -264,6 +268,15 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const weeklyPlan = reconcilePlanWithEmployment(structuredClone(state.previousWeeklyPlan), state.employment);
       weeklyPlan.autoRepeat = state.autoRepeatPlan;
       const reconciled = reconcilePlanWithContent(state, weeklyPlan, content, balance);
+      // Copying has the same time boundary as editing a single slot: replacing
+      // an already-started cell would rewrite time spent and its pending payout.
+      for (const weekday of [1, 2, 3, 4, 5, 6, 7] as const) {
+        for (const slot of ['day', 'evening'] as const) {
+          if (!slotWithin(weekday, slot, CURRENT_TIME_FROM, state.time)) {
+            reconciled.plan.days[weekday][slot] = state.weeklyPlan.days[weekday][slot];
+          }
+        }
+      }
       state.weeklyPlan = reconciled.plan;
       const issues = collectPlanIssues(state.weeklyPlan, state, { content, balance, employment: state.employment, from: CURRENT_TIME_FROM });
       effects.push({ type: 'message', text: issues.length ? `已沿用上周计划，有 ${issues.length} 处需要调整` : '已沿用上周计划' });
@@ -1197,11 +1210,14 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       state.cash -= total;
       const previous = state.investments?.[investment.id];
       const previousUnits = previous?.units ?? 0;
+      const previousBasis = previous ? Math.round(previous.averageCost * previousUnits) : 0;
       state.investments ??= {};
       const nextHolding: InvestmentHolding = {
         investmentId: investment.id,
         units: previousUnits + action.units,
-        averageCost: previous ? Math.round((previous.averageCost * previousUnits + unitValue * action.units) / (previousUnits + action.units)) : unitValue,
+        // The quote and cash remain whole yuan; the average must retain the
+        // exact combined cost instead of rounding it again per owned unit.
+        averageCost: (previousBasis + total) / (previousUnits + action.units),
         currentValuation: unitValue * (previousUnits + action.units),
         lastValuationDay: state.time.day,
       };

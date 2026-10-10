@@ -747,14 +747,14 @@ test.describe('fault injection (not reachable from the UI)', () => {
     await expect.poll(() => saveError(page)).toContain('未被替换');
     await page.getByRole('button', { name: '设置', exact: true }).click();
     const dialog = page.getByRole('dialog', { name: '设置', exact: true });
-    await expect(dialog.locator('strong.requirement-missing')).toHaveText('保存失败');
+    await expect(dialog.locator('strong.requirement-missing')).toHaveText('有存档提示');
     await page.evaluate(() => {
       for (let tick = 0; tick < 3; tick++) window.__yuliang.store.getState().dispatch({ type: 'advance_simulation', minutes: 1 });
     });
     await expect(dialog).toContainText('未被替换');
     await suspendCommits(page);
     await page.evaluate(() => { void window.__yuliang.store.getState().flushSaveAsync(); });
-    await expect(dialog.locator('strong.requirement-missing')).toHaveText('保存失败');
+    await expect(dialog.locator('strong.requirement-missing')).toHaveText('有存档提示');
     await page.evaluate(() => { delete window.__yuliang.saveHooks.afterPutBeforeComplete; });
     await releaseSuspendedCommits(page);
     await expect.poll(() => saveError(page)).toBeNull();

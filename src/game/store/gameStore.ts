@@ -662,11 +662,11 @@ function commitAttempt(state: GameState, payload: string, request: (payload: str
   return then(backend.commit(request(payload)), (outcome) => {
     const fallback = quotaFallback(state, outcome);
     if (fallback) {
-      return then(backend.commit(request(fallback.payload)), (retry) => retry.status === 'failed'
-        ? { outcome: retry }
-        : { outcome: retry, save: { status: 'compressed', ok: true, payload: fallback.payload, error: fallback.warning } });
+      return then(backend.commit(request(fallback.payload)), (retry) => retry.status === 'committed'
+        ? { outcome: retry, save: { status: 'compressed', ok: true, payload: fallback.payload, error: fallback.warning } }
+        : { outcome: retry });
     }
-    return outcome.status === 'failed' ? { outcome } : { outcome, save: { status: 'full', ok: true, payload } };
+    return outcome.status === 'committed' ? { outcome, save: { status: 'full', ok: true, payload } } : { outcome };
   });
 }
 
@@ -863,6 +863,9 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   const initial = createInitialState(content, balance, 1);
   if (!isRecord(raw)) throw new Error('存档必须是游戏状态对象');
   const candidate = structuredClone({ ...initial, ...raw }) as GameState;
+  // An absent legacy balance uses the initial default; a supplied damaged
+  // balance must stay recoverable before migration or actions do arithmetic.
+  if (!Number.isFinite(candidate.cash)) throw new Error('现金记录无效');
   const rawTime = isRecord(raw.time) ? raw.time : {};
   candidate.time = {
     day: Number.isInteger(rawTime.day) && Number(rawTime.day) > 0 ? Number(rawTime.day) : initial.time.day,
@@ -964,13 +967,30 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   }));
   const businessProjectIds = new Set((content.activities ?? []).flatMap((activity) => activity.options.filter((option) => option.businessProject).map((option) => `${activity.id}.${option.id}`)));
   candidate.completedBusinessProjects = [...new Set((candidate.completedBusinessProjects ?? []).filter((id) => businessProjectIds.has(id)))];
-  candidate.assets = Object.fromEntries(Object.entries(candidate.assets ?? {}).filter(([id]) => knownIds(content, 'assets').has(id)));
+  candidate.assets = Object.fromEntries(Object.entries(candidate.assets ?? {}).filter(([id, holding]) => {
+    if (!knownIds(content, 'assets').has(id)) return false;
+    // Keep the original payload recoverable instead of letting damaged known
+    // financial value reach the simulation or silently discarding the holding.
+    if (!isRecord(holding) || holding.assetId !== id
+      || !Number.isFinite(holding.purchasePrice) || Number(holding.purchasePrice) < 0
+      || !Number.isFinite(holding.currentValuation) || Number(holding.currentValuation) < 0
+      || !Number.isInteger(holding.purchaseDay) || Number(holding.purchaseDay) <= 0) throw new Error('资产持仓记录无效');
+    return true;
+  }));
   const locationIds = new Set((content.locations ?? []).map((entry) => entry.id));
   candidate.locationVisits = Object.fromEntries(Object.entries(candidate.locationVisits ?? {}).filter(([id, value]) => locationIds.has(id) && Number.isInteger(value) && Number(value) > 0).map(([id, value]) => [id, Number(value)]));
   candidate.locationDevelopment = Object.fromEntries(Object.entries(candidate.locationDevelopment ?? {}).filter(([id, value]) => locationIds.has(id) && Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 5).map(([id, value]) => [id, Number(value)]));
   candidate.interestFamiliarity = Object.fromEntries(Object.entries(candidate.interestFamiliarity ?? {}).filter(([id, value]) => typeof id === 'string' && Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 3).map(([id, value]) => [id, Number(value)]));
   const investmentIds = new Set((content.investments ?? []).map((entry) => entry.id));
-  candidate.investments = Object.fromEntries(Object.entries(candidate.investments ?? {}).filter(([id]) => investmentIds.has(id)));
+  candidate.investments = Object.fromEntries(Object.entries(candidate.investments ?? {}).filter(([id, holding]) => {
+    if (!investmentIds.has(id)) return false;
+    if (!isRecord(holding) || holding.investmentId !== id
+      || !Number.isInteger(holding.units) || Number(holding.units) <= 0
+      || !Number.isFinite(holding.averageCost) || Number(holding.averageCost) < 0
+      || !Number.isFinite(holding.currentValuation) || Number(holding.currentValuation) < 0
+      || !Number.isInteger(holding.lastValuationDay) || Number(holding.lastValuationDay) <= 0) throw new Error('投资持仓记录无效');
+    return true;
+  }));
   const subscriptionIds = new Set((content.subscriptions ?? []).map((entry) => entry.id));
   const migrateSubscriptionRecord = (holding: unknown): { subscriptionId: string; startedDay: number; billedUntilDay?: number } | undefined => {
     if (!isRecord(holding) || !subscriptionIds.has(String(holding.subscriptionId)) || !Number.isInteger(holding.startedDay) || Number(holding.startedDay) <= 0) return undefined;
@@ -1072,7 +1092,10 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
   candidate.lifeHistory = (Array.isArray(candidate.lifeHistory) ? candidate.lifeHistory : [])
     .filter(isLifeRecordEntry)
     .filter((entry) => !entry.title.startsWith('查看消息：'));
-  candidate.nextLifeRecordSequence = Math.max(Number.isInteger(raw.nextLifeRecordSequence) ? Number(raw.nextLifeRecordSequence) : 0, candidate.lifeHistory.length, ...candidate.lifeHistory.map(entry => Number(/(\d+)$/.exec(entry.id)?.[1] ?? 0)));
+  candidate.nextLifeRecordSequence = candidate.lifeHistory.reduce(
+    (highest, entry) => Math.max(highest, Number(/(\d+)$/.exec(entry.id)?.[1] ?? 0)),
+    Math.max(Number.isInteger(raw.nextLifeRecordSequence) ? Number(raw.nextLifeRecordSequence) : 0, candidate.lifeHistory.length),
+  );
   // Private-equity sell locks: anchor the explicit field at the latest real
   // purchase record. A holding without a reliable purchase fact is already
   // unlocked — the legacy lastValuationDay anchor was continuously refreshed
@@ -1085,7 +1108,7 @@ export function migrateGameState(raw: unknown, content: ContentRegistry, balance
     const purchaseDays = (candidate.lifeHistory ?? [])
       .filter((entry) => entry.category === 'investment' && entry.sourceId === investmentId && entry.title.startsWith('买入'))
       .map((entry) => entry.day);
-    holding.lockUntilDay = purchaseDays.length ? Math.max(...purchaseDays) + PRIVATE_EQUITY_LOCK_DAYS : candidate.time.day;
+    holding.lockUntilDay = purchaseDays.length ? purchaseDays.reduce((latest, day) => Math.max(latest, day)) + PRIVATE_EQUITY_LOCK_DAYS : candidate.time.day;
   }
   candidate.businessFacts = Number(raw.version) >= 10 && isRecord(raw.businessFacts)
     ? structuredClone(raw.businessFacts) as unknown as GameState['businessFacts']
@@ -1366,6 +1389,12 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
      * overwrite the state of the request that came after it.
      */
     let saveAttempt = 0;
+    // Rotation belongs to the reset and every state descended from it, even if
+    // a newer action supersedes the reset's queued snapshot. Only a committed
+    // write carrying that intent may acknowledge it; an older in-flight write
+    // cannot clear a reset that happened while it was waiting.
+    let resetIntent = 0;
+    let committedResetIntent = 0;
     // Only the explicit replacement window is busy; protected exploration before
     // confirmation remains available. Flush must not enqueue a second replacement.
     let recoveryCommit: Promise<void> | undefined;
@@ -1427,7 +1456,7 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
      * succeeded — and a conflict freezes the window instead of retrying with the
      * version it just observed.
      */
-    const applyCommitOutcome = (attempted: WriteAttempt, state: GameState, attempt: number): PersistResult => {
+    const applyCommitOutcome = (attempted: WriteAttempt, state: GameState, attempt: number, intent: number): PersistResult => {
       const { outcome, save } = attempted;
       if (outcome.status === 'committed') {
         if (!save) {
@@ -1435,6 +1464,7 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
           reportSaveFailure(error, attempt);
           return { status: 'failed', error };
         }
+        committedResetIntent = Math.max(committedResetIntent, intent);
         if (dirtyState === state) dirtyState = undefined;
         confirmedHead = outcome.head;
         canonicalCommits += 1;
@@ -1462,14 +1492,14 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
      * own saves against the same version.
      */
     let commitQueue: Promise<void> = Promise.resolve();
-    const enqueueCommit = (state: GameState, rotate: boolean, attempt: number): Promise<PersistResult> => {
+    const enqueueCommit = (state: GameState, intent: number, attempt: number): Promise<PersistResult> => {
       const run = async (): Promise<PersistResult> => {
         if (dirtyState !== state) return { status: 'superseded' };
         if (externalSaveConflict) return { status: 'refused' };
         // Test barrier; deliberately outside the transaction it delays.
         await testHooks?.beforeCommitRequest?.();
         if (dirtyState !== state) return { status: 'superseded' };
-        return applyCommitOutcome(await commitState(state, rotate), state, attempt);
+        return applyCommitOutcome(await commitState(state, intent > committedResetIntent), state, attempt, intent);
       };
       const settled = commitQueue.then(run, run);
       commitQueue = settled.then(() => undefined, () => undefined);
@@ -1491,19 +1521,19 @@ export function createGameStore(content: ContentRegistry, balance: BalanceConfig
       if (!booted || canonicalStatus !== 'ready') {
         return { status: 'failed', error: canonicalStatus === 'unavailable' ? CANONICAL_STORAGE_UNAVAILABLE : '存档尚未读取完成，写入未开始' };
       }
-      const rotate = options?.rotate === true;
+      const intent = options?.rotate === true ? ++resetIntent : resetIntent;
       const attempt = ++saveAttempt;
       dirtyState = state;
       if (answersSynchronously()) {
-        const immediate = commitState(state, rotate);
-        if (!isThenable(immediate)) return applyCommitOutcome(immediate, state, attempt);
+        const immediate = commitState(state, intent > committedResetIntent);
+        if (!isThenable(immediate)) return applyCommitOutcome(immediate, state, attempt, intent);
         // A backend that declares itself synchronous but answers late already has
         // a commit in flight, so it is reported as queued rather than retried.
         dirtyState = state;
-        return { status: 'scheduled', completion: Promise.resolve(immediate).then((settled) => applyCommitOutcome(settled, state, attempt)) };
+        return { status: 'scheduled', completion: Promise.resolve(immediate).then((settled) => applyCommitOutcome(settled, state, attempt, intent)) };
       }
       dirtyState = state;
-      return { status: 'scheduled', completion: enqueueCommit(state, rotate, attempt) };
+      return { status: 'scheduled', completion: enqueueCommit(state, intent, attempt) };
     };
     /**
      * Unload-only emergency record. The pagehide path cannot wait for a

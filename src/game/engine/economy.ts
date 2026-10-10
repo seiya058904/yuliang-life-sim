@@ -159,7 +159,7 @@ export function calculateNetWorth(state: GameState, content: ContentRegistry, ba
   }, 0);
   const assetValue = Object.entries(state.assets).reduce((total, [assetId, holding]) => {
     const definition = content.assets.find((asset) => asset.id === assetId) as AssetDefinition | undefined;
-    return total + (holding.currentValuation || definition?.valuation || 0);
+    return total + (holding.currentValuation ?? definition?.valuation ?? 0);
   }, 0);
   const investmentValue = Object.values(state.investments ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
   const housingHoldingValue = Object.values(state.housingHoldings ?? {}).reduce((total, holding) => total + holding.currentValuation, 0);
@@ -193,7 +193,7 @@ export function wealthAllocationBreakdown(state: GameState, content: ContentRegi
     }, 0) },
     { key: 'vehicles_collectibles', value: Object.entries(state.assets).reduce((total, [assetId, holding]) => {
       const definition = content.assets.find((asset) => asset.id === assetId) as AssetDefinition | undefined;
-      return total + (holding.currentValuation || definition?.valuation || 0);
+      return total + (holding.currentValuation ?? definition?.valuation ?? 0);
     }, 0) },
     { key: 'inventory_items', value: Object.entries(state.inventory).reduce((total, [itemId, quantity]) => {
       const item = findItem(content, itemId);

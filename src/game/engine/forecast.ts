@@ -1,4 +1,5 @@
-import { dailyCosts, shiftPay, studySettlement, mortgagePayment, jobAvailable, subscriptionBudget } from './settlementMath';
+import { dailyCosts, shiftPay, studySettlement, mortgagePayment, jobAvailable, subscriptionFee } from './settlementMath';
+import { subscriptionDueDay } from './monthlySettlement';
 import { getDailyActivities } from './schedule';
 import { absoluteMinute } from './time';
 import type { BalanceConfig } from '../balance/config';
@@ -70,7 +71,14 @@ function fixedWeeklyExpense(state: GameState, content: ContentRegistry, balance:
   let total = 0;
   for (let day = Math.max(state.time.day, state.lastSettledDay + 1); day <= endDay; day++) {
     total += dailyCosts(state, content, balance, day).total;
-    if (day % 28 === 0) total += mortgagePayment(state) + subscriptionBudget(state, content);
+    if (day % 28 === 0) {
+      // The actual close runs at the start of the following day. A prepaid
+      // period extending beyond that close cannot be charged again this week.
+      const closingDay = day + 1;
+      const subscriptionsDue = Object.entries(state.activeSubscriptions ?? {}).reduce((sum, [id, holding]) =>
+        sum + (subscriptionDueDay(holding, closingDay) <= closingDay ? subscriptionFee(content, id) : 0), 0);
+      total += mortgagePayment(state) + subscriptionsDue;
+    }
   }
   return total;
 }
