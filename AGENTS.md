@@ -44,7 +44,7 @@ npm run e2e
 `test:ci` runs Vitest without file parallelism; do not pass Jest-only flags. `build` validates content, checks TypeScript and builds `dist/` with the `/yuliang-life-sim/` Pages base. Dev runs at `/`. Set `YULIANG_E2E_SERVER=preview` for production acceptance: Playwright starts preview on port 4174 and uses the Pages subpath. Both CI workflows run these desktop release gates:
 
 ```text
-npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts e2e/investment-study.spec.ts --project=desktop
+npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts e2e/investment-study.spec.ts e2e/adversarial-ui.spec.ts e2e/save-request-errors.spec.ts --project=desktop
 ```
 
 Validate proportionally: content needs contract validation; engine/store changes need focused regressions; UI/runtime/persistence changes need real browser flows; build-impacting changes need build and asset/entry checks. Run `git diff --check` and inspect the final diff/status. Documentation-only edits need path/script/config checks. Do not change test expectations to force a pass, and report checks actually run plus remaining limitations.
