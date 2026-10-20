@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <sub>《余量》 — ORIGINAL TITLE &nbsp;·&nbsp; WEEKLY PLANNING &nbsp;·&nbsp; PLAYER-LED DECISIONS &nbsp;·&nbsp; PIXEL CONSOLE</sub>
+  <sub>YULIANG — ORIGINAL TITLE (ROMANIZED) &nbsp;·&nbsp; WEEKLY PLANNING &nbsp;·&nbsp; PLAYER-LED DECISIONS &nbsp;·&nbsp; PIXEL CONSOLE</sub>
 </p>
 
 <p align="center">
@@ -174,5 +174,5 @@ The engine must preserve player-controlled decisions, distinct financial account
 
 <p align="center">
   <sub>YOUR WEEK. YOUR CHOICES. THE WORLD KEEPS MOVING.</sub><br>
-  <sub>《余量》 · A life simulation without a single correct way to live.</sub>
+  <sub>Yuliang · A life simulation without a single correct way to live.</sub>
 </p>
