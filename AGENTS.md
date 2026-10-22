@@ -54,3 +54,9 @@ Validate proportionally: content needs contract validation; engine/store changes
 `node_modules/`, `dist/`, test/browser reports, `artifacts/`, `output/`, Vite/Python caches and local tool state are ignored. Delete only identified disposable files: unique audit screenshots, long-run results, historical review ZIPs and authoring/save backups may still matter. `docs/` handoff/reference ZIPs and `scripts/reference/` are not caches. `.git-broken-20260910/` is a forensic recovery backup, and the historical `pre-rebuild-20260910` tag is a recovery anchor; retain both. Do not classify maintained capture/diagnostic tools as dead code solely from npm script membership.
 
 `deploy-pages.yml` tests, builds, runs production browser gates and deploys `dist/` when `main` is pushed; a successful Pages deployment is delivery. Existing GitHub Releases/tags are historical archives. Do not create Releases/tags, push, merge or change remotes/deployment without explicit authorization. Stage only task-owned files, inspect the staged diff, then check exact-SHA CI/Pages after an authorized push.
+
+## 浏览器测试依赖（固定版本）
+
+- Playwright 固定 1.64.1：@playwright/test 已在 package.json 里精确锁定（不要写 ^、~ 或 latest），配套 chromium build 1248 位于 %LOCALAPPDATA%\ms-playwright。
+- 不要升级、降级或另装第二个 Playwright 版本，也不要把浏览器下载到别的目录或自行构建 Chromium。
+- 确需换版本时，先与其他使用 Playwright 的仓库统一到同一版本，再改本仓库并跑一次浏览器测试。
