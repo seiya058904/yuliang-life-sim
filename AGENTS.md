@@ -60,3 +60,7 @@ Validate proportionally: content needs contract validation; engine/store changes
 - Playwright 固定 1.64.1：@playwright/test 已在 package.json 里精确锁定（不要写 ^、~ 或 latest），配套 chromium build 1248 位于 %LOCALAPPDATA%\ms-playwright。
 - 不要升级、降级或另装第二个 Playwright 版本，也不要把浏览器下载到别的目录或自行构建 Chromium。
 - 确需换版本时，先与其他使用 Playwright 的仓库统一到同一版本，再改本仓库并跑一次浏览器测试。
+
+## 已知问题处理决定
+
+- 2026-10-24 审计 A04：已知合成损坏存档的未知商品坏类型价格可使迁移现金变成 NaN 并在后续保存时写成 null，尚未证明正常玩法会生成该输入；本轮决定暂不修，仅在用户重新授权存档维护时复核。
