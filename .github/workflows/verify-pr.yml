@@ -1,6 +1,11 @@
 name: Verify pull request
 on:
   pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - '**/readme-*'
   workflow_dispatch:
     inputs:
       compare_scheduling:
