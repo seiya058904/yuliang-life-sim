@@ -43,7 +43,12 @@ jobs:
       - name: Build
         run: npm run build
       - name: Prepare Chrome for Playwright
-        run: npx playwright install --with-deps chrome
+        run: |
+          for i in 1 2 3; do
+            timeout 180 npx playwright install --with-deps chrome && break
+            [ "$i" = 3 ] && exit 1
+            sleep 5
+          done
       - name: Release browser acceptance (production preview)
         # Runs against the built dist via `vite preview`; a failure here stops
         # the Pages upload.

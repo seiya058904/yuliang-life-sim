@@ -27,7 +27,12 @@ jobs:
       - run: npm ci
       - run: npm run test:ci
       - run: npm run build
-      - run: npx playwright install --with-deps chrome
+      - run: |
+          for i in 1 2 3; do
+            timeout 180 npx playwright install --with-deps chrome && break
+            [ "$i" = 3 ] && exit 1
+            sleep 5
+          done
       - run: npx playwright test e2e/ui-architecture.spec.ts e2e/boot-failure.spec.ts e2e/save-concurrency.spec.ts e2e/lifecycle-acceptance.spec.ts e2e/investment-study.spec.ts e2e/adversarial-ui.spec.ts e2e/save-request-errors.spec.ts --project=desktop
         env:
           YULIANG_E2E_SERVER: preview
