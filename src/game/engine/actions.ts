@@ -15,7 +15,7 @@ import {
   APPLICATION_HISTORY_LIMIT, activeApplications, appendMessage, applicationCooldownKey, applicationCooldownRemaining, clearReadMessages, clearTerminalApplications, createApplicationId, dismissMessage, dismissTerminalApplication, markAllMessagesRead, markMessageRead, pruneApplicationHistory, pruneExpiredState, recordApplicationCooldown, visibleMessages,
 } from './lifecycle';
 import { groupForCategory, recordStateFinancialEntry, syncLegacyMonthlyLedger } from './financialLedger';
-import { investmentUnitValue, PRIVATE_EQUITY_LOCK_DAYS } from './investments';
+import { investmentUnitQuote, PRIVATE_EQUITY_LOCK_DAYS } from './investments';
 import { applyAttributeDelta } from './attributes';
 import { deterministicApplicationDecision, employmentKind, evaluateApplicationCompetitiveness } from './careers';
 import { appendLifeRecord, addLifeRecord } from './lifeHistory';
@@ -94,7 +94,7 @@ export function reserveRequired(state: GameState, content: ContentRegistry): num
 function liquidateInvestmentHolding(state: GameState, investment: InvestmentDefinition, units: number, output: GameEffect[]): number | undefined {
   const holding = state.investments?.[investment.id];
   if (!holding || units <= 0 || units > holding.units) return undefined;
-  const unitValue = Math.round(investmentUnitValue(investment, state.rng.seed, state.time.day));
+  const unitValue = investmentUnitQuote(investment, state.rng.seed, state.time.day);
   const total = unitValue * units;
   // Allocate whole-yuan basis, retaining the residual in the remaining units.
   // Rounding each unit's gain independently would lose basis on split exits.
@@ -1204,7 +1204,7 @@ export function dispatchGameAction(input: GameState, action: GameAction, content
       const investment = content.investments?.find((entry) => entry.id === action.investmentId);
       if (!investment || !Number.isInteger(action.units) || action.units < investment.minimumUnits) return fail(input, '投资数量无效');
       if (!hasRequirements(state, investment.requirements, content, balance)) return fail(input, '当前条件还不满足');
-      const unitValue = Math.round(investmentUnitValue(investment, state.rng.seed, state.time.day));
+      const unitValue = investmentUnitQuote(investment, state.rng.seed, state.time.day);
       const total = unitValue * action.units;
       if (state.cash - total < reserveRequired(state, content)) return fail(input, '现金不足以完成这项投资');
       state.cash -= total;

@@ -17,8 +17,16 @@ export function investmentUnitValue(definition: InvestmentDefinition, seed: numb
   return Math.max(definition.baseValue * 0.55, Math.round(definition.baseValue * (1 + change * Math.min(day, 365) / 30) * 100) / 100);
 }
 
+/** Cash and listed holdings use the same integer-currency unit quote. */
+export function investmentUnitQuote(definition: InvestmentDefinition, seed: number, day: number): number {
+  return Math.round(investmentUnitValue(definition, seed, day));
+}
+
 export function investmentValuation(definition: InvestmentDefinition, holding: InvestmentHolding, seed: number, day: number): number {
-  return Math.round(investmentUnitValue(definition, seed, day) * holding.units);
+  // Preserve private-equity appraisal semantics and its separate valuation cycle.
+  return definition.kind === 'private_equity'
+    ? Math.round(investmentUnitValue(definition, seed, day) * holding.units)
+    : investmentUnitQuote(definition, seed, day) * holding.units;
 }
 
 export function updateInvestmentValuations(state: GameState, content: ContentRegistry, day = state.time.day): number {

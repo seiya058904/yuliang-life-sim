@@ -8,7 +8,7 @@ import { calculateNetWorth } from './economy';
 import { summarizeFinancialLedger } from './financialLedger';
 import { forecastWeeklyPlan } from './forecast';
 import { createInitialState } from './initialState';
-import { investmentUnitValue } from './investments';
+import { investmentUnitValue, updateInvestmentValuations } from './investments';
 import { fixedMonthBudget } from './settlementMath';
 
 const balance = mergeBalanceConfig({ eventDailyLimit: 0, eventAmbientChance: 0 });
@@ -191,4 +191,32 @@ describe('valuation changes stay separate from liquidation proceeds', () => {
     expect(summary.totalAssetLiquidation).toBe(saleValue);
     expect(summary.assetLiquidation.categories).toEqual({ asset_liquidation: saleValue });
   });
+});
+
+
+describe('listed holdings use the transaction quote after daily valuation', () => {
+  for (const fraction of [0.49, 0.5, 0.51]) for (const units of [1, 20, 100]) {
+    it(`conserves net worth through selling at fraction ${fraction}, units ${units}`, () => {
+      const id = 'investment.isle-lifestyle-equity';
+      const original = content.investments!.find(entry => entry.id === id)!;
+      const registry = { ...content, investments: content.investments!.map(entry => entry.id === id
+        ? { ...original, baseValue: 21 + fraction, dailyDrift: 0, dailyVolatility: 0 } : entry) };
+      let state = fresh();
+      const dispatch = (action: GameAction) => {
+        const result = dispatchGameAction(state, action, registry, balance);
+        expect(result.error).toBeUndefined(); state = result.state;
+      };
+      dispatch({type:'buy_investment', investmentId:id, units});
+      const basis = state.investments![id].averageCost * units;
+      updateInvestmentValuations(state, registry);
+      const before = calculateNetWorth(state, registry, balance);
+      const cash = state.cash;
+      dispatch({type:'sell_investment', investmentId:id, units:1});
+      expect(calculateNetWorth(state, registry, balance)).toBe(before);
+      expect(state.cash - cash).toBe(Math.round(21 + fraction));
+      for(let i=1;i<units;i++) dispatch({type:'sell_investment', investmentId:id, units:1});
+      expect(state.cash - cash).toBe(basis);
+      expect(calculateNetWorth(state, registry, balance)).toBe(before);
+    });
+  }
 });
