@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  <sub>YULIANG — ORIGINAL TITLE (ROMANIZED) &nbsp;·&nbsp; WEEKLY PLANNING &nbsp;·&nbsp; PLAYER-LED DECISIONS &nbsp;·&nbsp; PIXEL CONSOLE</sub>
+  <sub>WEEKLY PLANNING &nbsp;·&nbsp; PLAYER-LED DECISIONS &nbsp;·&nbsp; PIXEL CONSOLE &nbsp;·&nbsp; CHINESE-LANGUAGE GAME</sub>
 </p>
 
 <p align="center">
@@ -116,7 +116,7 @@ The interface is **desktop- and landscape-first**. Narrower devices reuse the sa
 The hosted version is published through the repository's GitHub Pages workflow. The game interface remains in Chinese; this README is written in English for repository visitors.
 
 > [!NOTE]
-> **Your progress lives in your browser.** The canonical save uses IndexedDB with transaction-based conflict checks and recovery behavior. Clearing site data or using a different browser/origin can leave you without the same saved game. Treat browser storage as local—not as a cloud account.
+> **Your progress lives in your browser.** Saves do not sync between devices, browsers, or site addresses. Clearing site data can remove your game. Keep using the same browser and address to continue your progress.
 
 ### 💻 Local development
 
@@ -133,6 +133,8 @@ Open **http://127.0.0.1:4173/**. Local development and the GitHub Pages site use
 ## ⚙️ Under the Hood
 
 **React · TypeScript · Vite · Zustand**, with simulation rules kept separate from the interface and the save layer.
+
+The canonical save uses **IndexedDB**, with transaction-based conflict checks and recovery behavior.
 
 <details>
 <summary><strong>🛠️ Expand verification and repository architecture</strong></summary>
