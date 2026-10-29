@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" role="img" aria-labelledby="title desc">
+  <title id="title">Yuliang Life Sim — monochrome weekly-planner cover</title>
+  <desc id="desc">Original monochrome pixel-console illustration for Yuliang Life Sim, showing a weekly planner and simple console controls.</desc>
+  <rect width="1200" height="400" fill="#edece4"/>
+  <path d="M0 0h1200v400H0z" fill="none" stroke="#242621" stroke-width="16"/>
+  <path d="M32 32h1136v336H32z" fill="none" stroke="#242621" stroke-width="2"/>
+  <rect x="62" y="65" width="16" height="16" fill="#242621"/><rect x="85" y="65" width="16" height="16" fill="#242621"/>
+  <text x="120" y="80" font-family="'Courier New', monospace" font-size="18" font-weight="700" fill="#353830">AN OPEN-ENDED LIFE</text>
+  <text x="59" y="168" font-family="'Courier New', monospace" font-size="72" font-weight="700" letter-spacing="-3" fill="#20221e">YULIANG</text>
+  <text x="62" y="211" font-family="'Courier New', monospace" font-size="33" letter-spacing="7" fill="#44463c">LIFE SIM</text>
+  <path d="M62 237h465" stroke="#242621" stroke-width="2"/>
+  <g font-family="Georgia, serif" font-size="29" fill="#353830"><text x="62" y="284">Plan a week.</text><text x="62" y="325">Live with the consequences.</text></g>
+  <rect x="676" y="61" width="450" height="276" fill="#a6a89a"/>
+  <rect x="661" y="48" width="450" height="276" fill="#20221e"/>
+  <rect x="679" y="66" width="414" height="221" fill="#d5d7c7"/>
+  <text x="699" y="100" font-family="'Courier New', monospace" font-size="20" font-weight="700" fill="#25281f">THIS WEEK</text>
+  <path d="M699 115h374" stroke="#25281f" stroke-width="2"/>
+  <g fill="none" stroke="#505346" stroke-width="2"><path d="M700 137h372v101H700zM753 137v101M806 137v101M859 137v101M912 137v101M965 137v101M1018 137v101M700 187h372"/></g>
+  <g fill="#3d4135"><rect x="714" y="150" width="25" height="25"/><rect x="766" y="200" width="27" height="25"/><rect x="873" y="150" width="25" height="25"/><rect x="980" y="200" width="25" height="25"/></g>
+  <path d="M712 256h149" stroke="#505346" stroke-width="5"/>
+  <path d="M699 304h26m-13-13v26" stroke="#d5d7c7" stroke-width="7"/>
+  <rect x="1037" y="297" width="12" height="12" fill="#d5d7c7"/><rect x="1065" y="297" width="12" height="12" fill="#d5d7c7"/>
+
+</svg>

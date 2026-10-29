@@ -1,6 +1,12 @@
 <h1 align="center">🕹️ YULIANG · LIFE SIM</h1>
 
 <p align="center">
+  <a href="https://seiya058904.github.io/yuliang-life-sim/">
+    <img src="docs/media/readme-cover.svg" width="100%" alt="Original monochrome pixel-console illustration for Yuliang Life Sim, showing a weekly planner and simple console controls." />
+  </a>
+</p>
+
+<p align="center">
   <strong>Plan a week. Live with the consequences.</strong>
 </p>
 
@@ -114,7 +120,7 @@ The hosted version is published through the repository's GitHub Pages workflow. 
 
 ### 💻 Local development
 
-Use Node.js and the committed npm lockfile. From the repository root:
+Use **Node.js 22.12+** and the committed npm lockfile. From the repository root:
 
 ```bash
 npm ci
