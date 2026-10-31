@@ -15,7 +15,7 @@ on:
 permissions:
   contents: read
 jobs:
-  verify:
+  unit:
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
@@ -26,6 +26,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:ci
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - run: npm run build
       - run: |
           # GitHub-hosted Ubuntu runners already ship Google Chrome. Installing it again downloads a 145 MB
