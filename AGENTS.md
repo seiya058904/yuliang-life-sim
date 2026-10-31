@@ -12,7 +12,7 @@ React + TypeScript + Vite + Zustand life simulation. Treat current source, tests
 - `src/game/content/contracts.ts` defines contracts; `src/game/content/official/` is authoritative authored content. `src/game/content/seed.ts` and `src/game/content/registry.ts` supply fallback/composed content. `src/game/content/validateContent.ts` and `scripts/validate-content.ts` enforce integrity.
 - `PRODUCT.md` and `DESIGN.md` describe product and visual constraints. `docs/` keeps content guides, audits and historical handoffs. `scripts/reference/` is the canonical visual comparison baseline; documented `scripts/ui-*` tools remain useful even when absent from npm scripts.
 
-For structural exploration, use the installed `codebase-memory` skill. Select the index matching this root, compare freshness with Git HEAD and check cited-path coverage. Read current source for stale, skipped or partial results; graph results do not replace source evidence.
+For structural exploration, inspect the current source, tests and configuration; verify paths and behavior against the working tree.
 
 ## Product invariants and traps
 
@@ -58,9 +58,13 @@ Validate proportionally: content needs contract validation; engine/store changes
 ## 浏览器测试依赖（固定版本）
 
 - Playwright 固定 1.64.1：@playwright/test 已在 package.json 里精确锁定（不要写 ^、~ 或 latest），配套 chromium build 1248 位于 %LOCALAPPDATA%\ms-playwright。
-- 不要升级、降级或另装第二个 Playwright 版本，也不要把浏览器下载到别的目录或自行构建 Chromium。
-- 确需换版本时，先与其他使用 Playwright 的仓库统一到同一版本，再改本仓库并跑一次浏览器测试。
+- 不得擅自调整本仓库锁定的 Playwright 版本或改用其他项目的浏览器缓存。确需换版本时，先取得明确授权，核对本仓库的兼容性并运行相关浏览器回归。
 
 ## 已知问题处理决定
 
 - 2026-10-24 审计 A04：已知合成损坏存档的未知商品坏类型价格可使迁移现金变成 NaN 并在后续保存时写成 null，尚未证明正常玩法会生成该输入；本轮决定暂不修，仅在用户重新授权存档维护时复核。
+
+## Browser tool selection
+
+- Prefer Ego Browser for exploratory navigation, visual review and interactive checks when available. Use Playwright for repeatable regression, CI, isolation, request interception or other automation requiring its APIs; combine tools when useful. If Ego is unavailable, use a suitable existing browser tool.
+- Keep this repository's required browser commands, versions, profiles and safety boundaries; an exploratory check does not replace required automated tests. Do not alter real user data or production state for testing. Report the tools, coverage and any untested paths.
